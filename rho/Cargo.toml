@@ -1,0 +1,42 @@
+[package]
+name = "rho"
+version = "0.1.0"
+edition = "2024"
+description = "Pollard rho: integer factorization and ECDLP with all canonical optimizations"
+
+[[bin]]
+name = "rho-factor"
+path = "src/factor/cli.rs"
+
+[[bin]]
+name = "rho-dlog"
+path = "src/ecdlp/cli.rs"
+
+[dependencies]
+crypto-bigint = { version = "0.5", features = ["rand_core"] }
+rand = "0.8"
+rand_chacha = "0.3"
+crossbeam-channel = "0.5"
+rayon = "1"
+clap = { version = "4", features = ["derive"] }
+
+[dev-dependencies]
+k256 = { version = "0.13", features = ["arithmetic"] }
+p256 = { version = "0.13", features = ["arithmetic"] }
+proptest = "1"
+
+[profile.bench]
+opt-level = 3
+lto = "thin"
+
+[[bench]]
+name = "field"
+harness = false
+
+[[bench]]
+name = "factor"
+harness = false
+
+[[bench]]
+name = "ecdlp"
+harness = false
