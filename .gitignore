@@ -1,0 +1,6 @@
+# Rust build output
+/target/
+
+# Rust build artifacts that may land outside target/
+*.rlib
+*.rmeta
