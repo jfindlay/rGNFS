@@ -1,9 +1,15 @@
-//! ECDLP benchmark: Brent (single-threaded) vs DP parallel (1, 2, 4 walkers).
+//! ECDLP benchmark: Brent (single-threaded) vs DP parallel (1, 2, 4 walkers)
+//! vs DP with negation map (Phase 6).
 //!
-//! Phase 5 deliverable.  Measures wall time to solve a fixed 35-bit DLP on
-//! `secp_k1_toy` with each solver variant.  The pedagogical signal is the
-//! parallel speedup: each doubling of walkers should roughly halve wall time
-//! (up to the overhead of thread coordination and the DP channel).
+//! Phase 5 deliverable extended in Phase 6.  Measures wall time to solve a
+//! fixed 35-bit DLP on `secp_k1_toy` with each solver variant.
+//!
+//! The Phase 5 pedagogical signal is the parallel speedup: each doubling of
+//! walkers should roughly halve wall time.
+//!
+//! The Phase 6 pedagogical signal is the negation-map speedup: `solve_dp_negmap`
+//! with 2 walkers should be ~√2 faster than `solve_dp` with 2 walkers, because
+//! the negation map halves the effective group size.
 //!
 //! # Fixed DLP
 //!
@@ -20,7 +26,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use crypto_bigint::Uint;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
 use rho::curve::AffinePoint;
-use rho::ecdlp::{solve_brent, solve_dp};
+use rho::ecdlp::{solve_brent, solve_dp, solve_dp_negmap};
 use rho::field::FpMonty;
 
 // ── Fixed DLP parameters ──────────────────────────────────────────────────────
@@ -80,5 +86,35 @@ fn bench_solve_dp(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_brent, bench_solve_dp);
+// ── Phase 6: DP vs DP+negmap comparison ──────────────────────────────────────
+
+/// Compare `solve_dp` and `solve_dp_negmap` at 2 walkers on the same 35-bit DLP.
+///
+/// The negation map should reduce wall time by ~√2 vs plain DP.
+fn bench_negmap_vs_dp(c: &mut Criterion) {
+    let (curve, q) = make_q();
+    let g: AffinePoint<FpMonty> = curve.generator();
+
+    let mut group = c.benchmark_group("ecdlp/negmap_vs_dp");
+
+    // Plain DP with 2 walkers (Phase 5 baseline).
+    group.bench_function("solve_dp/walkers=2", |b| {
+        b.iter(|| {
+            solve_dp(&curve, &g, &q, SECP_N, 2, THETA, SEED)
+                .expect("solve_dp failed")
+        });
+    });
+
+    // DP + negation map with 2 walkers (Phase 6).
+    group.bench_function("solve_dp_negmap/walkers=2", |b| {
+        b.iter(|| {
+            solve_dp_negmap(&curve, &g, &q, SECP_N, 2, THETA, SEED)
+                .expect("solve_dp_negmap failed")
+        });
+    });
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_brent, bench_solve_dp, bench_negmap_vs_dp);
 criterion_main!(benches);

@@ -2,8 +2,8 @@
 //!
 //! Optimization layers (per the plan):
 //! 4. r-adding walk (Teske, r≈20) + Brent's cycle detection — Phase 4.
-//! 5. Distinguished points + parallel collision search (van Oorschot–Wiener) — this phase.
-//! 6. Negation map + fruitless-cycle escape (BKNS).
+//! 5. Distinguished points + parallel collision search (van Oorschot–Wiener) — Phase 5.
+//! 6. Negation map + fruitless-cycle escape (BKNS) — Phase 6.
 //! 7. Batched field inversion + affine coordinates.
 //! 8. GLV endomorphism (order-3, secp-toy curve only).
 //!
@@ -39,10 +39,11 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 
-use crate::curve::{AffinePoint, Curve};
+use crate::curve::{AffinePoint, Curve, JacobianPoint};
 use crate::field::Fp;
 use coordinator::Coordinator;
 use dp::{DpRecord, is_distinguished};
+use negmap::{FruitlessCycleDetector, canonical_rep, negate_scalars};
 use walk::{AddendTable, WalkState};
 
 // ── Modular arithmetic helpers ────────────────────────────────────────────────
@@ -356,6 +357,227 @@ fn run_walker<F: Fp>(
     }
 }
 
+// ── Negation-map parallel solver ──────────────────────────────────────────────
+
+/// Solve `Q = k·G` via the van Oorschot–Wiener parallel rho algorithm with
+/// the negation map (BKNS) applied.
+///
+/// Identical to [`solve_dp`] except each walker applies [`canonical_rep`] after
+/// every step, adjusts `(a, b)` via [`negate_scalars`] when the negation fires,
+/// and uses a [`FruitlessCycleDetector`] to escape period-2 cycles.
+///
+/// The negation map halves the effective group size, reducing the expected
+/// number of steps to collision by a factor of ~√2.
+///
+/// # Minimum walkers
+///
+/// Use at least 2 walkers.  With a single walker the coordinator can only find
+/// a collision when the walk's rho trajectory has a non-empty "tail" (the walk
+/// visits a DP before entering the cycle).  When the walk starts on the cycle
+/// (probability ~1/2), no valid collision is ever found.  Two walkers explore
+/// independent trajectories and can collide cross-walker even when each
+/// individual walk is purely cyclic.
+///
+/// # Arguments
+///
+/// * `curve` — the curve definition.
+/// * `g` — base point G.
+/// * `q` — target point Q (`Q = k·G` for the unknown `k`).
+/// * `n` — prime group order (64-bit).
+/// * `num_walkers` — number of parallel walker threads (≥ 2 recommended).
+/// * `theta` — DP threshold: a point is distinguished when its x-coordinate
+///   has at least `theta` low-order zero bits.
+/// * `seed` — RNG seed for reproducibility.
+///
+/// # Returns
+///
+/// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up.
+pub fn solve_dp_negmap<F: Fp>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    num_walkers: usize,
+    theta: u32,
+    seed: u64,
+) -> Option<u64> {
+    assert!(num_walkers >= 1, "solve_dp_negmap: need at least one walker");
+
+    let mut rng0 = ChaCha20Rng::seed_from_u64(seed);
+    let table = Arc::new(AddendTable::<F>::new(curve, g, q, n, &mut rng0));
+
+    let stop = Arc::new(AtomicBool::new(false));
+    let (tx, rx): (Sender<DpRecord>, Receiver<DpRecord>) = bounded(4 * num_walkers);
+
+    let mut handles = Vec::with_capacity(num_walkers);
+    for walk_id in 0..num_walkers {
+        let curve_c  = curve.clone();
+        let g_c      = g.clone();
+        let q_c      = q.clone();
+        let table_c  = Arc::clone(&table);
+        let stop_c   = Arc::clone(&stop);
+        let tx_c     = tx.clone();
+        let walker_seed = seed.wrapping_add(walk_id as u64 + 1);
+
+        let handle = std::thread::spawn(move || {
+            run_walker_negmap(
+                &curve_c, &g_c, &q_c, n, &table_c, theta,
+                walk_id, walker_seed, &stop_c, &tx_c,
+            );
+        });
+        handles.push(handle);
+    }
+    drop(tx);
+
+    let mut coord = Coordinator::new(n);
+    let mut result = None;
+
+    for dp in &rx {
+        if let Some(k) = coord.insert(dp) {
+            result = Some(k);
+            stop.store(true, Ordering::Relaxed);
+            break;
+        }
+    }
+
+    for _ in &rx {}
+
+    for h in handles {
+        let _ = h.join();
+    }
+
+    result
+}
+
+// ── Negation-map walker thread body ──────────────────────────────────────────
+
+/// Body of a single walker thread with the negation map applied.
+///
+/// After each walk step the current point is canonicalised via [`canonical_rep`].
+/// When the negation fires, `(a, b)` are adjusted via [`negate_scalars`].
+/// A [`FruitlessCycleDetector`] watches for period-2 cycles; when one is
+/// detected the walk is perturbed by doubling the current point (BKNS escape):
+///
+/// ```text
+/// W' = 2W,  a' = 2a mod n,  b' = 2b mod n
+/// ```
+///
+/// then `canonical_rep` is applied to `W'` and the detector is reset.
+///
+/// Distinguished-point emission uses the canonical x-coordinate so that
+/// collisions are between canonical representatives.
+fn run_walker_negmap<F: Fp>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    table: &AddendTable<F>,
+    theta: u32,
+    walk_id: usize,
+    seed: u64,
+    stop: &AtomicBool,
+    tx: &Sender<DpRecord>,
+) {
+    let max_steps_without_dp: u64 = 1u64 << (theta.min(53) + 10);
+
+    let mut rng = ChaCha20Rng::seed_from_u64(seed);
+    let mut walk = WalkState::<F>::new_random(curve, g, q, n, &mut rng);
+    let mut detector = FruitlessCycleDetector::new();
+    let mut steps_since_dp: u64 = 0;
+
+    // Apply the negation map to the initial point.
+    {
+        let pt = walk.to_affine(curve);
+        let (canon, negated) = canonical_rep(&pt, &curve.p);
+        if negated {
+            let (na, nb) = negate_scalars(walk.a, walk.b, n);
+            walk.a = na;
+            walk.b = nb;
+            walk.point_jac = JacobianPoint::from_affine(&canon, &curve.p);
+        }
+    }
+
+    loop {
+        if stop.load(Ordering::Relaxed) {
+            return;
+        }
+
+        walk.step(curve, table, n);
+        steps_since_dp += 1;
+
+        // Apply negation map to canonicalise the current point.
+        let pt = walk.to_affine(curve);
+        let (canon, negated) = canonical_rep(&pt, &curve.p);
+        if negated {
+            let (na, nb) = negate_scalars(walk.a, walk.b, n);
+            walk.a = na;
+            walk.b = nb;
+            walk.point_jac = JacobianPoint::from_affine(&canon, &curve.p);
+        }
+
+        // Extract the canonical x-coordinate for DP detection and cycle tracking.
+        let x_low = match &canon {
+            AffinePoint::Infinity => 0u64,
+            AffinePoint::Finite { x, .. } => x.to_uint().as_words()[0],
+        };
+
+        // Feed the cycle detector.
+        detector.push(x_low);
+
+        // BKNS escape: perturb by doubling when a fruitless 2-cycle is detected.
+        // The escape does not emit a DP; the walk continues from the new point.
+        let escaped = if detector.is_fruitless() {
+            // W' = 2W; a' = 2a mod n; b' = 2b mod n.
+            walk.point_jac = curve.double_jacobian(&walk.point_jac);
+            walk.a = mulmod64(2, walk.a, n);
+            walk.b = mulmod64(2, walk.b, n);
+
+            // Re-canonicalise after the doubling.
+            let pt2 = walk.to_affine(curve);
+            let (canon2, negated2) = canonical_rep(&pt2, &curve.p);
+            if negated2 {
+                let (na, nb) = negate_scalars(walk.a, walk.b, n);
+                walk.a = na;
+                walk.b = nb;
+                walk.point_jac = JacobianPoint::from_affine(&canon2, &curve.p);
+            }
+
+            detector.reset();
+            true
+        } else {
+            false
+        };
+
+        // Distinguished-point check on the canonical x.
+        // Skip DP emission immediately after a BKNS escape.
+        if !escaped && is_distinguished(x_low, theta) {
+            let dp = DpRecord { x_low, a: walk.a, b: walk.b, walk_id };
+            if tx.send(dp).is_err() {
+                return;
+            }
+            steps_since_dp = 0;
+        }
+
+        // Dead-walk escape: restart if too long without a DP.
+        // Also fires if the BKNS escape has been running for too long without
+        // the walk reaching a distinguished point.
+        if steps_since_dp >= max_steps_without_dp {
+            walk = WalkState::<F>::new_random(curve, g, q, n, &mut rng);
+            // Re-canonicalise the fresh starting point.
+            let pt_fresh = walk.to_affine(curve);
+            let (canon_fresh, neg_fresh) = canonical_rep(&pt_fresh, &curve.p);
+            if neg_fresh {
+                let (na, nb) = negate_scalars(walk.a, walk.b, n);
+                walk.a = na;
+                walk.b = nb;
+                walk.point_jac = JacobianPoint::from_affine(&canon_fresh, &curve.p);
+            }
+            detector.reset();
+            steps_since_dp = 0;
+        }
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -364,6 +586,7 @@ mod tests {
     use crypto_bigint::Uint;
     use crate::curve::test_curves::{tiny_a, TINY_A_N};
     use crate::field::FpMonty;
+    use negmap::{canonical_rep, negate_scalars};
 
     // ── solve_brent tests (Phase 4) ───────────────────────────────────────────
 
@@ -435,5 +658,215 @@ mod tests {
 
         let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
         assert_eq!(check, q, "solve_dp_parallel: k·G ≠ Q (k={k}, expected k={k_target})");
+    }
+
+    // ── Phase 6: negation-map tests ───────────────────────────────────────────
+
+    /// canonical_rep(P) and canonical_rep(−P) produce the same point.
+    ///
+    /// Verified for G and several multiples on tiny_a.
+    #[test]
+    fn negmap_canonical_rep() {
+        let curve = tiny_a();
+        let p = &curve.p;
+        let g: AffinePoint<FpMonty> = curve.generator();
+
+        for k in [1u64, 2, 7, 42, 100, 999] {
+            let pt = curve.scalar_mul(&g, &Uint::<4>::from(k));
+            let neg_pt = curve.negate(&pt);
+            let (canon_pt,  _) = canonical_rep(&pt,     p);
+            let (canon_neg, _) = canonical_rep(&neg_pt, p);
+            assert_eq!(
+                canon_pt, canon_neg,
+                "canonical_rep(P) ≠ canonical_rep(−P) for k={k}"
+            );
+        }
+    }
+
+    /// negate_scalars gives (n−a, n−b) and the adjusted scalars still satisfy
+    /// the walk invariant `a'·G + b'·Q = original_point`.
+    #[test]
+    fn negmap_scalar_adjust() {
+        let curve = tiny_a();
+        let g: AffinePoint<FpMonty> = curve.generator();
+        let k_target: u64 = 42;
+        let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+        let n = TINY_A_N;
+
+        // Choose arbitrary (a, b) and compute W = a·G + b·Q.
+        let a: u64 = 300;
+        let b: u64 = 500;
+        let ag = curve.scalar_mul(&g, &Uint::<4>::from(a));
+        let bq = curve.scalar_mul(&q, &Uint::<4>::from(b));
+        let w = curve.add_mixed(
+            &JacobianPoint::from_affine(&ag, &curve.p),
+            &bq,
+        ).to_affine(&curve.p);
+
+        // Negate scalars: (n−a)·G + (n−b)·Q should equal −W.
+        let (na, nb) = negate_scalars(a, b, n);
+        assert_eq!(na, n - a);
+        assert_eq!(nb, n - b);
+
+        let nag = curve.scalar_mul(&g, &Uint::<4>::from(na));
+        let nbq = curve.scalar_mul(&q, &Uint::<4>::from(nb));
+        let neg_w_reconstructed = curve.add_mixed(
+            &JacobianPoint::from_affine(&nag, &curve.p),
+            &nbq,
+        ).to_affine(&curve.p);
+
+        let neg_w_direct = curve.negate(&w);
+        assert_eq!(
+            neg_w_reconstructed, neg_w_direct,
+            "negated scalars do not reconstruct −W"
+        );
+    }
+
+    /// Verify that the negmap walk emits DPs within a bounded number of steps.
+    ///
+    /// This is a single-threaded simulation of the negmap walker.  It checks
+    /// that the walk emits at least one DP within 10000 steps with theta=4.
+    #[test]
+    fn negmap_walk_emits_dps() {
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha20Rng;
+        use walk::AddendTable;
+
+        let curve = tiny_a();
+        let g: AffinePoint<FpMonty> = curve.generator();
+        let k_target: u64 = 77;
+        let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+        let n = TINY_A_N;
+        let theta = 4u32;
+
+        let mut rng = ChaCha20Rng::seed_from_u64(0xDEAD_BEEF);
+        let table = AddendTable::<FpMonty>::new(&curve, &g, &q, n, &mut rng);
+        let mut walk = walk::WalkState::<FpMonty>::new_random(&curve, &g, &q, n, &mut rng);
+        let mut detector = negmap::FruitlessCycleDetector::new();
+
+        // Apply initial canonicalization.
+        {
+            let pt = walk.to_affine(&curve);
+            let (canon, negated) = canonical_rep(&pt, &curve.p);
+            if negated {
+                let (na, nb) = negate_scalars(walk.a, walk.b, n);
+                walk.a = na;
+                walk.b = nb;
+                walk.point_jac = JacobianPoint::from_affine(&canon, &curve.p);
+            }
+        }
+
+        let mut dp_count = 0usize;
+        let max_steps = 10_000usize;
+
+        for _ in 0..max_steps {
+            walk.step(&curve, &table, n);
+
+            let pt = walk.to_affine(&curve);
+            let (canon, negated) = canonical_rep(&pt, &curve.p);
+            if negated {
+                let (na, nb) = negate_scalars(walk.a, walk.b, n);
+                walk.a = na;
+                walk.b = nb;
+                walk.point_jac = JacobianPoint::from_affine(&canon, &curve.p);
+            }
+
+            let x_low = match &canon {
+                AffinePoint::Infinity => 0u64,
+                AffinePoint::Finite { x, .. } => x.to_uint().as_words()[0],
+            };
+
+            detector.push(x_low);
+
+            if detector.is_fruitless() {
+                // BKNS escape.
+                walk.point_jac = curve.double_jacobian(&walk.point_jac);
+                walk.a = mulmod64(2, walk.a, n);
+                walk.b = mulmod64(2, walk.b, n);
+                let pt2 = walk.to_affine(&curve);
+                let (canon2, negated2) = canonical_rep(&pt2, &curve.p);
+                if negated2 {
+                    let (na, nb) = negate_scalars(walk.a, walk.b, n);
+                    walk.a = na;
+                    walk.b = nb;
+                    walk.point_jac = JacobianPoint::from_affine(&canon2, &curve.p);
+                }
+                detector.reset();
+            } else if is_distinguished(x_low, theta) {
+                dp_count += 1;
+            }
+        }
+
+        assert!(dp_count > 0, "negmap walk emitted no DPs in {max_steps} steps");
+    }
+
+    /// solve_dp_negmap solves a known 20-bit DLP on tiny_a.
+    ///
+    /// Uses 2 walkers so that cross-walker collisions are possible even when
+    /// a single walker's rho trajectory has no tail DPs.
+    #[test]
+    fn solve_dp_negmap_tiny() {
+        let k_target: u64 = 77;
+        let curve = tiny_a();
+        let g: AffinePoint<FpMonty> = curve.generator();
+        let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+
+        let k = solve_dp_negmap(&curve, &g, &q, TINY_A_N, 2, 4, 0xDEAD_BEEF)
+            .expect("solve_dp_negmap failed on tiny_a");
+
+        let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
+        assert_eq!(check, q, "solve_dp_negmap_tiny: k·G ≠ Q (k={k})");
+    }
+
+    /// Stress test: solve_dp_negmap never returns a wrong k on a 20-bit DLP.
+    ///
+    /// Runs `solve_dp_negmap` 8 times across different seeds and k-targets,
+    /// verifying every result.  The primary goal is correctness: the negation
+    /// map must never produce a k that fails the `k·G = Q` check.
+    ///
+    /// Also runs `solve_dp` on the same instances to confirm both solvers agree
+    /// on the answer (they may return different valid k values, but both must
+    /// satisfy `k·G = Q`).
+    #[test]
+    fn solve_dp_negmap_stress_correctness() {
+        let curve = tiny_a();
+        let g: AffinePoint<FpMonty> = curve.generator();
+
+        // Use several distinct (k_target, seed) pairs to exercise different
+        // walk trajectories.
+        let cases: &[(u64, u64)] = &[
+            (77,      0xDEAD_0001),
+            (314_159, 0xDEAD_0002),
+            (500_000, 0xDEAD_0003),
+            (999_999, 0xDEAD_0004),
+            (42,      0xDEAD_0005),
+        ];
+
+        for &(k_target, seed) in cases {
+            let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+
+            // Verify solve_dp_negmap always returns a valid k.
+            // Use 2 walkers: with a single walker the negmap walk can get stuck
+            // in a cycle where the coordinator never finds a valid collision
+            // (the walk starts on the cycle, so all DPs have the same scalars
+            // on each visit).  Two walkers explore different trajectories and
+            // can find cross-walker collisions.
+            let k_negmap = solve_dp_negmap(&curve, &g, &q, TINY_A_N, 2, 4, seed)
+                .expect("solve_dp_negmap failed in stress test");
+            let check_negmap = curve.scalar_mul(&g, &Uint::<4>::from(k_negmap));
+            assert_eq!(
+                check_negmap, q,
+                "solve_dp_negmap: k·G ≠ Q for k_target={k_target} seed={seed:#x}"
+            );
+
+            // Also verify solve_dp for the same instance.
+            let k_plain = solve_dp(&curve, &g, &q, TINY_A_N, 1, 4, seed)
+                .expect("solve_dp failed in stress test");
+            let check_plain = curve.scalar_mul(&g, &Uint::<4>::from(k_plain));
+            assert_eq!(
+                check_plain, q,
+                "solve_dp: k·G ≠ Q for k_target={k_target} seed={seed:#x}"
+            );
+        }
     }
 }

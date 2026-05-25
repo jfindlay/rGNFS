@@ -30,7 +30,7 @@ use crypto_bigint::Uint;
 use rho::curve::AffinePoint;
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
-use rho::ecdlp::{solve_brent, solve_dp};
+use rho::ecdlp::{solve_brent, solve_dp, solve_dp_negmap};
 use rho::field::{Fp, FpMonty};
 
 #[derive(Parser, Debug)]
@@ -67,6 +67,13 @@ struct Args {
     /// in the x-coordinate.  Only used when `--walkers > 0` (default: 10).
     #[arg(long, default_value_t = 10u32)]
     theta: u32,
+
+    /// Enable the negation map (BKNS) optimisation.
+    ///
+    /// When true, `solve_dp_negmap` is used instead of `solve_dp`.  Requires
+    /// `--walkers > 0`.  Expected to reduce wall time by ~√2 vs plain DP.
+    #[arg(long, default_value_t = false)]
+    negmap: bool,
 }
 
 /// Parse a `"x,y"` string into two `u64` values.
@@ -137,8 +144,13 @@ fn main() {
     }
 
     // Solve: use parallel DP solver when --walkers > 0, otherwise Brent.
+    // Within the parallel path, --negmap selects the BKNS negation-map variant.
     let result = if args.walkers > 0 {
-        solve_dp(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
+        if args.negmap {
+            solve_dp_negmap(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
+        } else {
+            solve_dp(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
+        }
     } else {
         solve_brent(&curve, &g, &q, n, args.seed, args.retries)
     };
@@ -157,7 +169,8 @@ fn main() {
         }
         None => {
             if args.walkers > 0 {
-                eprintln!("rho-dlog: failed to solve DLP (parallel DP solver gave up)");
+                let variant = if args.negmap { "negmap" } else { "plain" };
+                eprintln!("rho-dlog: failed to solve DLP (parallel DP {variant} solver gave up)");
             } else {
                 eprintln!("rho-dlog: failed to solve DLP after {} retries", args.retries);
             }
