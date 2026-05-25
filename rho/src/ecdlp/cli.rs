@@ -30,7 +30,7 @@ use crypto_bigint::Uint;
 use rho::curve::AffinePoint;
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
-use rho::ecdlp::{solve_brent, solve_dp, solve_dp_negmap};
+use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_negmap};
 use rho::field::{Fp, FpMonty};
 
 #[derive(Parser, Debug)]
@@ -74,6 +74,13 @@ struct Args {
     /// `--walkers > 0`.  Expected to reduce wall time by ~√2 vs plain DP.
     #[arg(long, default_value_t = false)]
     negmap: bool,
+
+    /// Batch size B for the Phase 7 batched-inversion solver (default: 1 = no batching).
+    ///
+    /// When > 1, `solve_dp_batch` is used instead of `solve_dp` or `solve_dp_negmap`.
+    /// Requires `--walkers > 0`.  Typical values: 8–32.
+    #[arg(long, default_value_t = 1usize)]
+    batch_size: usize,
 }
 
 /// Parse a `"x,y"` string into two `u64` values.
@@ -144,9 +151,12 @@ fn main() {
     }
 
     // Solve: use parallel DP solver when --walkers > 0, otherwise Brent.
-    // Within the parallel path, --negmap selects the BKNS negation-map variant.
+    // Within the parallel path, --batch-size > 1 selects the Phase 7 batched-inversion
+    // variant; --negmap selects the BKNS negation-map variant (ignored when batching).
     let result = if args.walkers > 0 {
-        if args.negmap {
+        if args.batch_size > 1 {
+            solve_dp_batch(&curve, &g, &q, n, args.walkers, args.batch_size, args.theta, args.seed)
+        } else if args.negmap {
             solve_dp_negmap(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
         } else {
             solve_dp(&curve, &g, &q, n, args.walkers, args.theta, args.seed)

@@ -5,3 +5,5 @@
 
 pub mod batch_inv;
 pub mod mp;
+
+pub use batch_inv::batch_invert;

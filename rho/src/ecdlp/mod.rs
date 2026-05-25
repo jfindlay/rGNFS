@@ -44,7 +44,7 @@ use crate::field::Fp;
 use coordinator::Coordinator;
 use dp::{DpRecord, is_distinguished};
 use negmap::{FruitlessCycleDetector, canonical_rep, negate_scalars};
-use walk::{AddendTable, WalkState};
+use walk::{AddendTable, AffineWalkState, BatchedWalker, WalkState};
 
 // ── Modular arithmetic helpers ────────────────────────────────────────────────
 
@@ -578,6 +578,223 @@ fn run_walker_negmap<F: Fp>(
     }
 }
 
+// ── Batched-inversion parallel solver (Phase 7) ───────────────────────────────
+
+/// Solve `Q = k·G` via the van Oorschot–Wiener parallel rho algorithm with
+/// batched field inversion (Phase 7).
+///
+/// Each thread owns a [`BatchedWalker`] with `batch_size` walk states.  After
+/// each [`BatchedWalker::step_all`] call, each walk is checked for distinguished
+/// points.  The negation map ([`canonical_rep`]) is applied after every step,
+/// and a [`FruitlessCycleDetector`] is maintained per walk.
+///
+/// The batched inversion amortises the dominant per-step field inversion cost:
+/// `batch_size` inversions are replaced by 1 inversion + 3(batch_size−1)
+/// multiplications per `step_all` call.
+///
+/// # Arguments
+///
+/// * `curve` — the curve definition.
+/// * `g` — base point G.
+/// * `q` — target point Q (`Q = k·G` for the unknown `k`).
+/// * `n` — prime group order (64-bit).
+/// * `num_walkers` — number of parallel threads (≥ 1).
+/// * `batch_size` — walks per thread (B ≥ 1; typical: 8–32).
+/// * `theta` — DP threshold.
+/// * `seed` — RNG seed for reproducibility.
+///
+/// # Returns
+///
+/// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up.
+pub fn solve_dp_batch<F: Fp>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    num_walkers: usize,
+    batch_size: usize,
+    theta: u32,
+    seed: u64,
+) -> Option<u64> {
+    assert!(num_walkers >= 1, "solve_dp_batch: need at least one walker");
+    assert!(batch_size >= 1, "solve_dp_batch: batch_size must be >= 1");
+
+    let mut rng0 = ChaCha20Rng::seed_from_u64(seed);
+    let table = Arc::new(AddendTable::<F>::new(curve, g, q, n, &mut rng0));
+
+    let stop = Arc::new(AtomicBool::new(false));
+    let (tx, rx): (Sender<DpRecord>, Receiver<DpRecord>) = bounded(4 * num_walkers * batch_size);
+
+    let mut handles = Vec::with_capacity(num_walkers);
+    for walk_id_base in 0..num_walkers {
+        let curve_c  = curve.clone();
+        let g_c      = g.clone();
+        let q_c      = q.clone();
+        let table_c  = Arc::clone(&table);
+        let stop_c   = Arc::clone(&stop);
+        let tx_c     = tx.clone();
+        let walker_seed = seed.wrapping_add(walk_id_base as u64 + 1);
+
+        let handle = std::thread::spawn(move || {
+            run_walker_batch(
+                &curve_c, &g_c, &q_c, n, &table_c, theta,
+                walk_id_base, batch_size, walker_seed, &stop_c, &tx_c,
+            );
+        });
+        handles.push(handle);
+    }
+    drop(tx);
+
+    let mut coord = Coordinator::new(n);
+    let mut result = None;
+
+    for dp in &rx {
+        if let Some(k) = coord.insert(dp) {
+            result = Some(k);
+            stop.store(true, Ordering::Relaxed);
+            break;
+        }
+    }
+
+    for _ in &rx {}
+
+    for h in handles {
+        let _ = h.join();
+    }
+
+    result
+}
+
+// ── Batched walker thread body ────────────────────────────────────────────────
+
+/// Body of a single batched-walker thread.
+///
+/// Owns a [`BatchedWalker`] with `batch_size` walk states.  After each
+/// [`BatchedWalker::step_all`], applies the negation map to each walk, checks
+/// for distinguished points, and handles fruitless-cycle escape (BKNS doubling).
+///
+/// Walk IDs are `walk_id_base * batch_size + i` for walk index `i`, ensuring
+/// globally unique IDs across threads.
+fn run_walker_batch<F: Fp>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    table: &AddendTable<F>,
+    theta: u32,
+    walk_id_base: usize,
+    batch_size: usize,
+    seed: u64,
+    stop: &AtomicBool,
+    tx: &Sender<DpRecord>,
+) {
+    let max_steps_without_dp: u64 = 1u64 << (theta.min(53) + 10);
+
+    let mut rng = ChaCha20Rng::seed_from_u64(seed);
+
+    // Initialise B walk states.
+    let walks: Vec<AffineWalkState<F>> = (0..batch_size)
+        .map(|_| AffineWalkState::new_random(curve, g, q, n, &mut rng))
+        .collect();
+
+    let mut bw = BatchedWalker::new(walks, table.clone(), n);
+
+    // Per-walk fruitless-cycle detectors and step counters.
+    let mut detectors: Vec<negmap::FruitlessCycleDetector> =
+        (0..batch_size).map(|_| negmap::FruitlessCycleDetector::new()).collect();
+    let mut steps_since_dp: Vec<u64> = vec![0u64; batch_size];
+
+    // Apply initial canonicalisation to each walk.
+    for i in 0..batch_size {
+        let (canon, negated) = canonical_rep(&bw.walks[i].point, &curve.p);
+        if negated {
+            let (na, nb) = negate_scalars(bw.walks[i].a, bw.walks[i].b, n);
+            bw.walks[i].a = na;
+            bw.walks[i].b = nb;
+            bw.walks[i].point = canon;
+        }
+    }
+
+    loop {
+        if stop.load(Ordering::Relaxed) {
+            return;
+        }
+
+        // Advance all B walks by one step (batched inversion).
+        bw.step_all(curve);
+
+        // Post-step processing for each walk.
+        for i in 0..batch_size {
+            steps_since_dp[i] += 1;
+
+            // Apply negation map.
+            let (canon, negated) = canonical_rep(&bw.walks[i].point, &curve.p);
+            if negated {
+                let (na, nb) = negate_scalars(bw.walks[i].a, bw.walks[i].b, n);
+                bw.walks[i].a = na;
+                bw.walks[i].b = nb;
+                bw.walks[i].point = canon.clone();
+            }
+
+            let x_low = match &canon {
+                AffinePoint::Infinity => 0u64,
+                AffinePoint::Finite { x, .. } => x.to_uint().as_words()[0],
+            };
+
+            detectors[i].push(x_low);
+
+            // BKNS escape: perturb by doubling when a fruitless 2-cycle is detected.
+            let escaped = if detectors[i].is_fruitless() {
+                // W' = 2W; a' = 2a mod n; b' = 2b mod n.
+                let pt_jac = JacobianPoint::from_affine(&bw.walks[i].point, &curve.p);
+                let doubled = curve.double_jacobian(&pt_jac);
+                bw.walks[i].a = mulmod64(2, bw.walks[i].a, n);
+                bw.walks[i].b = mulmod64(2, bw.walks[i].b, n);
+
+                let pt2 = doubled.to_affine(&curve.p);
+                let (canon2, negated2) = canonical_rep(&pt2, &curve.p);
+                if negated2 {
+                    let (na, nb) = negate_scalars(bw.walks[i].a, bw.walks[i].b, n);
+                    bw.walks[i].a = na;
+                    bw.walks[i].b = nb;
+                    bw.walks[i].point = canon2;
+                } else {
+                    bw.walks[i].point = pt2;
+                }
+
+                detectors[i].reset();
+                true
+            } else {
+                false
+            };
+
+            // Distinguished-point check.
+            if !escaped && is_distinguished(x_low, theta) {
+                let walk_id = walk_id_base * batch_size + i;
+                let dp = DpRecord { x_low, a: bw.walks[i].a, b: bw.walks[i].b, walk_id };
+                if tx.send(dp).is_err() {
+                    return;
+                }
+                steps_since_dp[i] = 0;
+            }
+
+            // Dead-walk escape: restart this walk if too long without a DP.
+            if steps_since_dp[i] >= max_steps_without_dp {
+                bw.walks[i] = AffineWalkState::new_random(curve, g, q, n, &mut rng);
+                let (canon_fresh, neg_fresh) = canonical_rep(&bw.walks[i].point, &curve.p);
+                if neg_fresh {
+                    let (na, nb) = negate_scalars(bw.walks[i].a, bw.walks[i].b, n);
+                    bw.walks[i].a = na;
+                    bw.walks[i].b = nb;
+                    bw.walks[i].point = canon_fresh;
+                }
+                detectors[i].reset();
+                steps_since_dp[i] = 0;
+            }
+        }
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -816,6 +1033,47 @@ mod tests {
 
         let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
         assert_eq!(check, q, "solve_dp_negmap_tiny: k·G ≠ Q (k={k})");
+    }
+
+    // ── Phase 7: batch inversion tests ───────────────────────────────────────
+
+    /// batch_invert produces the same results as calling F::inv individually.
+    ///
+    /// Verifies correctness of Montgomery's batched inversion trick on a set
+    /// of field elements from the tiny_a prime field.
+    #[test]
+    fn batch_inv_correctness() {
+        use crate::util::batch_invert;
+        use crate::field::FpMonty;
+
+        let curve = tiny_a();
+        let p = &curve.p;
+        let vals: &[u64] = &[1, 2, 3, 5, 7, 11, 13, 100, 999, 1_048_516];
+        let mut xs: Vec<FpMonty> = vals.iter().map(|&v| FpMonty::from_u64(v, p)).collect();
+        let expected: Vec<FpMonty> = xs.iter().map(|x| x.inv(p)).collect();
+
+        batch_invert(&mut xs, p);
+
+        for (i, (got, want)) in xs.iter().zip(expected.iter()).enumerate() {
+            assert_eq!(got, want, "batch_inv_correctness: mismatch at index {i} (val={})", vals[i]);
+        }
+    }
+
+    /// solve_dp_batch solves a known 20-bit DLP on tiny_a.
+    ///
+    /// Uses 2 threads with batch_size=4 and theta=4.
+    #[test]
+    fn solve_dp_batch_tiny() {
+        let k_target: u64 = 77;
+        let curve = tiny_a();
+        let g: AffinePoint<FpMonty> = curve.generator();
+        let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+
+        let k = solve_dp_batch(&curve, &g, &q, TINY_A_N, 2, 4, 4, 0xBA7C_5EED)
+            .expect("solve_dp_batch failed on tiny_a");
+
+        let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
+        assert_eq!(check, q, "solve_dp_batch_tiny: k·G ≠ Q (k={k})");
     }
 
     /// Stress test: solve_dp_negmap never returns a wrong k on a 20-bit DLP.
