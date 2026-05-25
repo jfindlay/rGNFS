@@ -93,3 +93,59 @@ both p and n are prime, both ≡ 1 (mod 3).
 | `src/curve/generic.rs` (unit) | 4 | Reference scalar multiples, consistency, negation |
 | `src/curve/secp_k1_toy.rs` (unit) | 6 | Reference multiples, n·G=∞, endomorphism, β and λ constants |
 | `tests/ecdlp_kat.rs` (integration) | 8 | Both curves, linearity, endomorphism KAT, k256 cross-check |
+
+## Phase 4 — ECDLP rho baseline (single-threaded)
+
+Phase 4 delivers the working single-threaded DLP solver.  There are no throughput benchmarks
+at this phase (parallelism arrives in Phase 5); the deliverable is correctness: 67 tests,
+0 failures.
+
+### Solver design
+
+- **r-adding walk** (`r = 20`) with a precomputed addend table `R[i] = αᵢ·G + βᵢ·Q`.
+  Partition function: `i = x_low64 mod r` where `x_low64` is the low word of the current
+  point's x-coordinate.
+- **Brent's cycle detection** (single-threaded).  Tortoise is frozen at the start of each
+  power-of-2 window; hare advances one step at a time and is compared to the tortoise.
+  Window doubles on no-collision; tortoise snaps forward to hare's position.
+- **(a, b) scalar tracking** throughout: invariant `W = a·G + b·Q` at every step.  On
+  collision `(a_t, b_t) = (a_h, b_h)`, solution is `k = (a_t − a_h)·(b_h − b_t)⁻¹ mod n`.
+- **Retry on degeneracy**: if `b_h = b_t mod n` at collision time (probability ~1/n per
+  attempt), the solver restarts with a fresh random table and walk.
+
+### Test curves
+
+Two 20-bit prime-order curves were added specifically for solver KATs (`src/curve/test_curves.rs`).
+Both have `√n ≈ 1024`, making them fast to solve even in unoptimized debug builds.
+
+| Curve | p | a | b | n | G |
+|-------|---|---|---|---|---|
+| `tiny_a` | 1_048_517 (20-bit) | −3 mod p | 3 | 1_048_051 (prime) | (1, 1) |
+| `tiny_b` | 1_048_583 (20-bit) | −3 mod p | 16 | 1_048_387 (prime) | (0, 4) |
+
+### DLP KAT solve times (debug, unoptimized, single-threaded)
+
+Wall times from a single run; the dominant cost is one field inversion per walk step
+(Phase 7 will amortise this with batched inversion).
+
+| Curve | k | Steps (approx) | Wall time |
+|-------|---|---------------|-----------|
+| tiny_a | 7 | ~2 000 | ~2 s |
+| tiny_a | 100 | ~2 000 | ~2 s |
+| tiny_a | 33 333 | ~2 000 | ~2 s |
+| tiny_b | 7 | ~2 000 | ~2 s |
+| tiny_b | 42 | ~2 000 | ~2 s |
+| tiny_b | 99 991 | ~2 000 | ~2 s |
+
+The ~2 s per solve in debug reflects the cost of `FpMonty::inv` (~11 µs per inversion at
+this prime size, from the Phase 1 benchmark) × ~1000–2000 walk steps.  In release mode
+the same solves complete in milliseconds.
+
+### Test coverage added
+
+| Test file | Tests added | Scope |
+|-----------|-------------|-------|
+| `src/curve/test_curves.rs` (unit) | 6 | Generator on curve, n·G=∞, reference scalar multiples on tiny_a and tiny_b |
+| `src/ecdlp/walk.rs` (unit) | 2 | Walk invariant `W = a·G + b·Q`, partition in-range |
+| `src/ecdlp/mod.rs` (unit) | 3 | Solver correctness: k=7, 42, 100 on tiny_a |
+| `tests/ecdlp_kat.rs` (integration) | 6 | DLP KATs on tiny_a (k=7, 100, 33333) and tiny_b (k=7, 42, 99991) |

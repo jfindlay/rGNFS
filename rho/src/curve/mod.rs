@@ -20,6 +20,7 @@
 
 pub mod generic;
 pub mod secp_k1_toy;
+pub mod test_curves;
 
 use crypto_bigint::Uint;
 

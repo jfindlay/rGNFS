@@ -1,4 +1,4 @@
-//! Known-answer tests for Phase 3 curve arithmetic.
+//! Known-answer tests for Phase 3 curve arithmetic and Phase 4 ECDLP solver.
 //!
 //! # What is tested
 //!
@@ -29,6 +29,8 @@ use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, Curve, JacobianPoint};
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, GX, LAMBDA};
+use rho::curve::test_curves::{tiny_a, tiny_b, TINY_A_N, TINY_B_N};
+use rho::ecdlp::solve_brent;
 use rho::field::{Fp, FpMonty};
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -264,4 +266,84 @@ fn k256_scalar_mul_sanity() {
         expected_x.as_slice(),
         "k256: 7·G x-coordinate does not match published test vector"
     );
+}
+
+// ── Phase 4 — ECDLP solver KATs ──────────────────────────────────────────────
+//
+// These tests verify `solve_brent` on two 20-bit prime-order test curves.
+// Expected steps to solution: O(√n) ≈ O(2^10) — fast even in debug mode.
+//
+// The solver is not required to return the specific k used to construct Q;
+// any k' ∈ [1, n) with k'·G = Q is a valid solution.  The assertion checks Q.
+
+/// Helper: verify the solver finds a valid DLP solution on the given curve.
+fn check_solver_on_curve(
+    curve: &rho::curve::Curve,
+    n: u64,
+    k_target: u64,
+    label: &str,
+) {
+    let g: AffinePoint<FpMonty> = curve.generator();
+    let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+
+    let k = solve_brent(curve, &g, &q, n, 0, 30)
+        .unwrap_or_else(|| panic!("{label}: solve_brent failed for k_target={k_target}"));
+
+    let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
+    assert_eq!(
+        check, q,
+        "{label}: recovered k={k} gives k·G ≠ Q (k_target={k_target})"
+    );
+}
+
+// ── tiny_a KATs ───────────────────────────────────────────────────────────────
+
+/// DLP k=7 on tiny_a (20-bit prime order curve A).
+///
+/// Q = 7·G = (1_026_105, 636_225) on `y² = x³ − 3x + 3 mod 1_048_517`.
+#[test]
+fn tiny_a_dlog_k7() {
+    check_solver_on_curve(&tiny_a(), TINY_A_N, 7, "tiny_a");
+}
+
+/// DLP k=100 on tiny_a.
+///
+/// Q = 100·G = (659_291, 755_487).
+#[test]
+fn tiny_a_dlog_k100() {
+    check_solver_on_curve(&tiny_a(), TINY_A_N, 100, "tiny_a");
+}
+
+/// DLP k=33333 on tiny_a.
+///
+/// Q = 33333·G = (758_517, 785_775).
+#[test]
+fn tiny_a_dlog_k33333() {
+    check_solver_on_curve(&tiny_a(), TINY_A_N, 33_333, "tiny_a");
+}
+
+// ── tiny_b KATs ───────────────────────────────────────────────────────────────
+
+/// DLP k=7 on tiny_b (20-bit prime order curve B).
+///
+/// Q = 7·G = (284_547, 163_192) on `y² = x³ − 3x + 16 mod 1_048_583`.
+#[test]
+fn tiny_b_dlog_k7() {
+    check_solver_on_curve(&tiny_b(), TINY_B_N, 7, "tiny_b");
+}
+
+/// DLP k=42 on tiny_b.
+///
+/// Q = 42·G = (132_859, 318_692).
+#[test]
+fn tiny_b_dlog_k42() {
+    check_solver_on_curve(&tiny_b(), TINY_B_N, 42, "tiny_b");
+}
+
+/// DLP k=99991 on tiny_b.
+///
+/// Q = 99991·G = (654_745, 751_943).
+#[test]
+fn tiny_b_dlog_k99991() {
+    check_solver_on_curve(&tiny_b(), TINY_B_N, 99_991, "tiny_b");
 }
