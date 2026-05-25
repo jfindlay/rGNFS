@@ -73,6 +73,44 @@ pub fn tiny_b() -> Curve {
 /// Group order of `tiny_b`.
 pub const TINY_B_N: u64 = 1_048_387;
 
+// ── Tiny GLV curve ────────────────────────────────────────────────────────────
+
+/// Return the tiny GLV-capable test curve.
+///
+/// `y² = x³ + 7 mod 1051`.  Prime group order `n = 1093`.
+///
+/// This is a secp256k1-style curve (`a = 0`, `b = 7`) over a small prime field
+/// that admits the GLV endomorphism `φ(x, y) = (β·x mod p, y)` with
+/// `φ(P) = λ·P` for all curve points P.
+///
+/// # Parameters
+///
+/// | Symbol | Value | Notes |
+/// |--------|-------|-------|
+/// | p | `1051` | prime, `p ≡ 3 (mod 4)`, `p ≡ 1 (mod 3)` |
+/// | b | `7` | secp256k1-style |
+/// | n | `1093` | prime group order, `n ≡ 1 (mod 3)` |
+/// | G | `(3, 666)` | base point |
+/// | β | `870` | cube root of unity mod p |
+/// | λ | `151` | GLV scalar (`λ² + λ + 1 ≡ 0 mod n`) |
+pub fn tiny_glv() -> Curve {
+    Curve {
+        p: Uint::<4>::from(1051u64),
+        a: Uint::<4>::ZERO,
+        b: Uint::<4>::from(7u64),
+        n: Uint::<4>::from(1093u64),
+        gx: Uint::<4>::from(3u64),
+        gy: Uint::<4>::from(666u64),
+    }
+}
+
+/// Group order of `tiny_glv`.
+pub const TINY_GLV_N: u64 = 1093;
+/// Cube root of unity mod p for `tiny_glv`.
+pub const TINY_GLV_BETA: u64 = 870;
+/// GLV eigenvalue for `tiny_glv`.
+pub const TINY_GLV_LAMBDA: u64 = 151;
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -166,5 +204,33 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// tiny_glv generator is on the curve.
+    #[test]
+    fn tiny_glv_generator_on_curve() {
+        let c = tiny_glv();
+        let g: AffinePoint<FpMonty> = c.generator();
+        assert!(c.is_on_curve(&g), "tiny_glv: generator not on curve");
+    }
+
+    /// n·G = ∞ for tiny_glv.
+    #[test]
+    fn tiny_glv_n_times_g_is_infinity() {
+        let c = tiny_glv();
+        let g: AffinePoint<FpMonty> = c.generator();
+        let ng = c.scalar_mul(&g, &c.n);
+        assert!(ng.is_infinity(), "tiny_glv: n·G should be ∞");
+    }
+
+    /// φ(G) = λ·G for tiny_glv (verifies the GLV constants are correct).
+    #[test]
+    fn tiny_glv_endomorphism_matches_lambda() {
+        use crate::ecdlp::glv::glv_phi;
+        let c = tiny_glv();
+        let g: AffinePoint<FpMonty> = c.generator();
+        let phi_g = glv_phi(&g, &c.p, TINY_GLV_BETA);
+        let lam_g = c.scalar_mul(&g, &Uint::<4>::from(TINY_GLV_LAMBDA));
+        assert_eq!(phi_g, lam_g, "tiny_glv: φ(G) ≠ λ·G");
     }
 }

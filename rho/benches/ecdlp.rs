@@ -26,7 +26,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use crypto_bigint::Uint;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
 use rho::curve::AffinePoint;
-use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_negmap};
+use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_glv, solve_dp_negmap};
 use rho::field::FpMonty;
 
 // ── Fixed DLP parameters ──────────────────────────────────────────────────────
@@ -149,5 +149,54 @@ fn bench_batch_vs_negmap(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_brent, bench_solve_dp, bench_negmap_vs_dp, bench_batch_vs_negmap);
+// ── Phase 8: GLV vs batch comparison ─────────────────────────────────────────
+
+/// Compare `solve_dp_negmap` (Phase 6), `solve_dp_batch` (Phase 7), and
+/// `solve_dp_glv` (Phase 8) at 2 walkers on the same 35-bit DLP.
+///
+/// The Phase 8 pedagogical signal is the GLV speedup: `solve_dp_glv` collapses
+/// the 6-orbit `{W, φ(W), φ²(W), −W, −φ(W), −φ²(W)}` to a single canonical
+/// representative, reducing the effective group size by 6 and the expected
+/// rho steps by √6 vs the plain walk (√3 vs negmap alone).
+fn bench_glv_vs_batch(c: &mut Criterion) {
+    let (curve, q) = make_q();
+    let g: AffinePoint<FpMonty> = curve.generator();
+
+    let mut group = c.benchmark_group("ecdlp/glv_vs_batch");
+
+    // Phase 6 baseline: negmap with 2 walkers.
+    group.bench_function("solve_dp_negmap/walkers=2", |b| {
+        b.iter(|| {
+            solve_dp_negmap(&curve, &g, &q, SECP_N, 2, THETA, SEED)
+                .expect("solve_dp_negmap failed")
+        });
+    });
+
+    // Phase 7: batched inversion with 2 walkers, batch_size=16.
+    group.bench_function("solve_dp_batch/walkers=2/batch=16", |b| {
+        b.iter(|| {
+            solve_dp_batch(&curve, &g, &q, SECP_N, 2, 16, THETA, SEED)
+                .expect("solve_dp_batch failed")
+        });
+    });
+
+    // Phase 8: GLV endomorphism with 2 walkers, batch_size=16.
+    group.bench_function("solve_dp_glv/walkers=2/batch=16", |b| {
+        b.iter(|| {
+            solve_dp_glv(&curve, &g, &q, SECP_N, 2, 16, THETA, SEED)
+                .expect("solve_dp_glv failed")
+        });
+    });
+
+    group.finish();
+}
+
+criterion_group!(
+    benches,
+    bench_brent,
+    bench_solve_dp,
+    bench_negmap_vs_dp,
+    bench_batch_vs_negmap,
+    bench_glv_vs_batch,
+);
 criterion_main!(benches);

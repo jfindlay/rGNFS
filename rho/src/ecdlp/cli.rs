@@ -24,13 +24,20 @@
 //! Pass `--walkers N` (N ≥ 1) to use the distinguished-point parallel solver
 //! ([`rho::ecdlp::solve_dp`]) instead of the single-threaded Brent solver.
 //! `--theta T` controls the DP threshold (default: 10).
+//!
+//! # GLV mode
+//!
+//! Pass `--glv` to enable the Phase 8 GLV endomorphism solver (`solve_dp_glv`).
+//! Requires `--walkers > 0` and `--curve secp-toy`.  The GLV endomorphism
+//! collapses the 6-orbit `{W, φ(W), φ²(W), −W, −φ(W), −φ²(W)}` to a single
+//! canonical representative, giving a √3 speedup vs the negation-map-only walk.
 
 use clap::Parser;
 use crypto_bigint::Uint;
 use rho::curve::AffinePoint;
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
-use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_negmap};
+use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_glv, solve_dp_negmap};
 use rho::field::{Fp, FpMonty};
 
 #[derive(Parser, Debug)]
@@ -81,6 +88,14 @@ struct Args {
     /// Requires `--walkers > 0`.  Typical values: 8–32.
     #[arg(long, default_value_t = 1usize)]
     batch_size: usize,
+
+    /// Enable the GLV endomorphism optimisation (Phase 8).
+    ///
+    /// When true, `solve_dp_glv` is used.  Requires `--walkers > 0` and
+    /// `--curve secp-toy` (the GLV constants are secp-toy-specific).
+    /// Supersedes `--negmap` and `--batch-size` when set.
+    #[arg(long, default_value_t = false)]
+    glv: bool,
 }
 
 /// Parse a `"x,y"` string into two `u64` values.
@@ -151,10 +166,20 @@ fn main() {
     }
 
     // Solve: use parallel DP solver when --walkers > 0, otherwise Brent.
-    // Within the parallel path, --batch-size > 1 selects the Phase 7 batched-inversion
-    // variant; --negmap selects the BKNS negation-map variant (ignored when batching).
+    // Priority within the parallel path (highest to lowest):
+    //   --glv          → solve_dp_glv  (Phase 8; secp-toy only)
+    //   --batch-size>1 → solve_dp_batch (Phase 7)
+    //   --negmap       → solve_dp_negmap (Phase 6)
+    //   (default)      → solve_dp (Phase 5)
     let result = if args.walkers > 0 {
-        if args.batch_size > 1 {
+        if args.glv {
+            if args.curve != "secp-toy" {
+                eprintln!("rho-dlog: --glv requires --curve secp-toy");
+                std::process::exit(1);
+            }
+            let batch = if args.batch_size > 1 { args.batch_size } else { 16 };
+            solve_dp_glv(&curve, &g, &q, n, args.walkers, batch, args.theta, args.seed)
+        } else if args.batch_size > 1 {
             solve_dp_batch(&curve, &g, &q, n, args.walkers, args.batch_size, args.theta, args.seed)
         } else if args.negmap {
             solve_dp_negmap(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
@@ -179,7 +204,15 @@ fn main() {
         }
         None => {
             if args.walkers > 0 {
-                let variant = if args.negmap { "negmap" } else { "plain" };
+                let variant = if args.glv {
+                    "glv"
+                } else if args.batch_size > 1 {
+                    "batch"
+                } else if args.negmap {
+                    "negmap"
+                } else {
+                    "plain"
+                };
                 eprintln!("rho-dlog: failed to solve DLP (parallel DP {variant} solver gave up)");
             } else {
                 eprintln!("rho-dlog: failed to solve DLP after {} retries", args.retries);
