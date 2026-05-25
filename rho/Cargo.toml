@@ -24,6 +24,7 @@ clap = { version = "4", features = ["derive"] }
 k256 = { version = "0.13", features = ["arithmetic"] }
 p256 = { version = "0.13", features = ["arithmetic"] }
 proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
 name = "field"
