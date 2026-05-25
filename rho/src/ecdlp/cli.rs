@@ -18,13 +18,19 @@
 //! ```
 //!
 //! Output: `k = <decimal>` followed by a verification line.
+//!
+//! # Parallel mode
+//!
+//! Pass `--walkers N` (N ≥ 1) to use the distinguished-point parallel solver
+//! ([`rho::ecdlp::solve_dp`]) instead of the single-threaded Brent solver.
+//! `--theta T` controls the DP threshold (default: 10).
 
 use clap::Parser;
 use crypto_bigint::Uint;
 use rho::curve::AffinePoint;
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
-use rho::ecdlp::solve_brent;
+use rho::ecdlp::{solve_brent, solve_dp};
 use rho::field::{Fp, FpMonty};
 
 #[derive(Parser, Debug)]
@@ -47,8 +53,20 @@ struct Args {
     seed: u64,
 
     /// Maximum retry attempts on degenerate failures (default: 20).
+    /// Only used by the single-threaded Brent solver.
     #[arg(long, default_value_t = 20usize)]
     retries: usize,
+
+    /// Number of parallel walker threads for the DP solver (default: 0 = use Brent).
+    ///
+    /// When > 0, the distinguished-point parallel solver is used instead of Brent.
+    #[arg(long, default_value_t = 0usize)]
+    walkers: usize,
+
+    /// Distinguished-point threshold: number of low-order zero bits required
+    /// in the x-coordinate.  Only used when `--walkers > 0` (default: 10).
+    #[arg(long, default_value_t = 10u32)]
+    theta: u32,
 }
 
 /// Parse a `"x,y"` string into two `u64` values.
@@ -118,8 +136,14 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Solve.
-    match solve_brent(&curve, &g, &q, n, args.seed, args.retries) {
+    // Solve: use parallel DP solver when --walkers > 0, otherwise Brent.
+    let result = if args.walkers > 0 {
+        solve_dp(&curve, &g, &q, n, args.walkers, args.theta, args.seed)
+    } else {
+        solve_brent(&curve, &g, &q, n, args.seed, args.retries)
+    };
+
+    match result {
         Some(k) => {
             println!("k = {k}");
             // Verify by computing k·G and comparing to Q.
@@ -132,7 +156,11 @@ fn main() {
             }
         }
         None => {
-            eprintln!("rho-dlog: failed to solve DLP after {} retries", args.retries);
+            if args.walkers > 0 {
+                eprintln!("rho-dlog: failed to solve DLP (parallel DP solver gave up)");
+            } else {
+                eprintln!("rho-dlog: failed to solve DLP after {} retries", args.retries);
+            }
             std::process::exit(1);
         }
     }
