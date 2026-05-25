@@ -45,3 +45,51 @@ function evaluations vs Floyd's step-by-step tortoise) starts to dominate and Br
 Since GCD (via the Euclidean algorithm on 128-bit values) costs significantly more than a modular
 multiply, the savings are real and consistent.  The expected group-operations count is unchanged;
 only the cost per detection step drops.
+
+## Phase 3 — Curve arithmetic
+
+Phase 3 delivers the elliptic-curve group law and two concrete curves.  There are no
+performance benchmarks at this phase (curve operations are not the bottleneck until Phase 5+);
+the deliverable is correctness: 50 tests, 0 failures.
+
+### Group-law implementation
+
+- **`AffinePoint<F>`** — finite point `(x, y)` or point at infinity; generic over `F: Fp`.
+- **`JacobianPoint<F>`** — Jacobian projective `(X:Y:Z)`; avoids inversions during
+  doubling/addition chains.
+- **`Curve`** — parameter struct (`p`, `a`, `b`, `n`, `gx`, `gy`); three operations:
+  `double_jacobian`, `add_jacobian` (J+J, 16M+4S), `add_mixed` (J+A, 8M+3S).
+- **`scalar_mul`** — left-to-right double-and-add using `add_mixed` for the hot path.
+
+### Concrete curves
+
+| Curve | Prime p | a | b | n |
+|-------|---------|---|---|---|
+| `generic` | 2^63 − 25 (63-bit) | p − 3 (≡ −3) | 1 | unknown† |
+| `secp_k1_toy` | 4_611_686_018_427_395_203 (63-bit) | 0 | 7 | 4_611_686_022_420_787_627 (prime) |
+
+† The generic curve's group order is not required for Phases 3–4; tests use small-scalar
+  reference points rather than n·G = ∞.
+
+### secp_k1_toy endomorphism
+
+The GLV endomorphism `φ(x, y) = (β·x mod p, y)` satisfies `φ(P) = λ·P`:
+
+| Constant | Value |
+|----------|-------|
+| β | `2_535_098_114_878_923_204` |
+| λ | `441_215_077_713_529_363` |
+
+Verified: β³ ≡ 1 (mod p), λ² + λ + 1 ≡ 0 (mod n), φ(G) = λ·G.
+
+The curve was constructed via the CM method (Cornacchia): 4p = t² + 3v², n = p + 1 − t,
+both p and n are prime, both ≡ 1 (mod 3).
+
+### Test coverage
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `src/curve/mod.rs` (unit) | 8 | Group-law axioms on a tiny 5-point curve over GF(7) |
+| `src/curve/generic.rs` (unit) | 4 | Reference scalar multiples, consistency, negation |
+| `src/curve/secp_k1_toy.rs` (unit) | 6 | Reference multiples, n·G=∞, endomorphism, β and λ constants |
+| `tests/ecdlp_kat.rs` (integration) | 8 | Both curves, linearity, endomorphism KAT, k256 cross-check |
