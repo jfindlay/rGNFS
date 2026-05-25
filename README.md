@@ -16,34 +16,16 @@ automorphism; GPU/FPGA backends; AVX-512 hand-tuning; distributed (multi-machine
 durable DP storage. The architecture leaves a clean seam at the DP-submission boundary so a
 distributed layer could be added later without restructuring.
 
-## Status
-
-| Phase | Description                                        | Status        |
-|-------|----------------------------------------------------|---------------|
-| 0     | Crate skeleton + `FpNaive`                         | ✅ complete   |
-| 1     | `FpMonty` + field benchmark                        | ✅ implemented; bench stub only |
-| 2     | Factoring rho (Floyd/Brent/batched-GCD/multi-c)    | stub          |
-| 3     | Curve arithmetic (EcPoint, group law, two curves)  | stub          |
-| 4     | ECDLP baseline (r-adding walk, Brent cycle detect) | stub          |
-| 5     | Distinguished points + parallel collision search   | stub          |
-| 6     | Negation map + fruitless-cycle escape              | stub          |
-| 7     | Batched field inversion + affine walks             | stub          |
-| 8     | GLV endomorphism                                   | stub          |
-| 9     | Pedagogical writeup (`docs/PEDAGOGY.md`)           | not started   |
+For the full pedagogical narrative see [`docs/PEDAGOGY.md`](docs/PEDAGOGY.md).
 
 ## Build and test
 
 ```sh
-# Requires stable Rust (rust-toolchain.toml pins to stable; no nightly)
+# Requires stable Rust (rust-toolchain.toml pins to stable; no nightly needed)
 cargo build
-cargo test
-
+cargo test        # 90 unit tests + 20 integration tests (KATs)
 cargo build --release
 ```
-
-Tests currently exercise `FpNaive` (9 inline unit tests) and `FpMonty` (8 inline unit tests,
-including cross-checks against `FpNaive`). Integration tests (`tests/field_kat.rs`,
-`tests/factor_kat.rs`, `tests/ecdlp_kat.rs`) are planned but not yet written.
 
 ## Benchmarks
 
@@ -51,21 +33,41 @@ including cross-checks against `FpNaive`). Integration tests (`tests/field_kat.r
 cargo bench                  # all bench targets
 cargo bench --bench field    # FpNaive vs FpMonty mul/square/inv
 cargo bench --bench factor   # Floyd vs Brent vs Brent+batched-GCD
-cargo bench --bench ecdlp    # baseline → DPs → negmap → GLV
+cargo bench --bench ecdlp    # baseline → DPs → negmap → batched-inv → GLV
 ```
 
-The bench bodies are stubs; `criterion` is not yet in `[dev-dependencies]` and will be added at
-Phase 1. The bench profile uses `opt-level = 3, lto = "thin"`.
+The bench profile uses `opt-level = 3, lto = "thin"`.
 
 ## CLIs
 
+**Factor an integer:**
+
 ```sh
-cargo run --bin rho-factor -- <N> [--threads N] [--batch-size B]
-cargo run --bin rho-dlog   -- <curve> <P> <Q>
+cargo run --release --bin rho-factor -- <N>
+cargo run --release --bin rho-factor -- <N> --threads 4 --batch-size 128
 ```
 
-Both are stubs that print "not yet implemented" and exit 1. Curves will be selected by name
-(`--curve secp-toy`) rather than parsed from CLI parameters.
+**Solve an ECDLP** (`Q = k·P`, returns `k`):
+
+```sh
+# Single-threaded Brent baseline
+cargo run --release --bin rho-dlog -- --curve secp-toy --q <x,y>
+
+# Parallel distinguished-point solver
+cargo run --release --bin rho-dlog -- --curve secp-toy --q <x,y> --walkers 4 --theta 8
+
+# Add negation map
+cargo run --release --bin rho-dlog -- --curve secp-toy --q <x,y> --walkers 4 --negmap
+
+# Add batched inversion (B=16 walks per thread)
+cargo run --release --bin rho-dlog -- --curve secp-toy --q <x,y> --walkers 4 --batch-size 16
+
+# Add GLV endomorphism (secp-toy only)
+cargo run --release --bin rho-dlog -- --curve secp-toy --q <x,y> --walkers 4 --batch-size 16 --glv
+```
+
+Curves: `secp-toy` (63-bit GLV-friendly secp256k1-style) or `generic` (63-bit Weierstrass).
+Points are given as `x,y` in decimal with no spaces.
 
 ## Crate structure
 
@@ -75,60 +77,61 @@ rho/
     lib.rs              # re-exports
     field/
       mod.rs            # Fp trait
-      naive.rs          # FpNaive: schoolbook mod-p on Uint<4>  [implemented]
-      monty.rs          # FpMonty: Montgomery form via DynResidue  [implemented]
+      naive.rs          # FpNaive: schoolbook mod-p on Uint<4>
+      monty.rs          # FpMonty: Montgomery form via DynResidue
     curve/
-      mod.rs
-      generic.rs        # generic Weierstrass y²=x³+ax+b over GF(p)  [stub, Phase 3]
-      secp_k1_toy.rs    # downsized GLV-friendly secp256k1-style curve  [stub, Phase 3]
+      mod.rs            # AffinePoint, JacobianPoint, Curve, group law
+      generic.rs        # generic Weierstrass y²=x³+ax+b over GF(p)
+      secp_k1_toy.rs    # downsized GLV-friendly secp256k1-style curve
+      test_curves.rs    # small curves used in unit tests
     factor/
       mod.rs
-      rho.rs            # Floyd + Brent + Montgomery batched GCD  [stub, Phase 2]
-      cli.rs            # rho-factor binary  [stub]
+      rho.rs            # Floyd + Brent + Montgomery batched GCD + multi-c
+      cli.rs            # rho-factor binary
     ecdlp/
-      mod.rs
-      walk.rs           # r-adding walk, partition function  [stub, Phase 4]
-      dp.rs             # distinguished-point predicate + store  [stub, Phase 5]
-      coordinator.rs    # multi-threaded driver  [stub, Phase 5]
-      negmap.rs         # negation map + BKNS escape  [stub, Phase 6]
-      glv.rs            # GLV endomorphism  [stub, Phase 8]
-      cli.rs            # rho-dlog binary  [stub]
+      mod.rs            # solve_brent, solve_dp, solve_dp_negmap, solve_dp_batch, solve_dp_glv
+      walk.rs           # r-adding walk, AffineWalkState, BatchedWalker
+      dp.rs             # distinguished-point predicate + DpRecord
+      coordinator.rs    # DP hash table, collision detection
+      negmap.rs         # canonical representative, FruitlessCycleDetector, BKNS escape
+      glv.rs            # GLV endomorphism φ, glv_canonical (6-orbit)
+      cli.rs            # rho-dlog binary
     util/
       mod.rs
-      batch_inv.rs      # Montgomery batched inversion  [stub, Phase 7]
-      mp.rs             # multi-precision helpers  [stub, on-demand]
+      batch_inv.rs      # Montgomery's batched inversion trick
+      mp.rs             # multi-precision helpers (reserved; not yet needed)
   benches/
-    field.rs            # FpNaive vs FpMonty  [stub, Phase 1]
-    factor.rs           # Floyd vs Brent vs Brent+batched-GCD  [stub, Phase 2]
-    ecdlp.rs            # baseline → DPs → negmap → GLV  [stub, Phase 5+]
-  tests/                # planned; directory not yet created
-    field_kat.rs        # KATs vs k256/p256 reference
-    factor_kat.rs       # known semiprimes
-    ecdlp_kat.rs        # small known DLPs
+    field.rs            # FpNaive vs FpMonty
+    factor.rs           # Floyd vs Brent vs Brent+batched-GCD
+    ecdlp.rs            # baseline → DPs → negmap → batched-inv → GLV
+  tests/
+    factor_kat.rs       # known semiprimes 15–2^64, all four factor variants
+    ecdlp_kat.rs        # group-law KATs, k256 cross-check, ECDLP solver KATs
 ```
 
 ## Dependencies
 
 **Runtime:**
 
-| Crate               | Role                                                         |
-|---------------------|--------------------------------------------------------------|
-| `crypto-bigint 0.5` | `Uint<4>` multi-precision integers; `DynResidue` for Montgomery form |
-| `rand 0.8`          | RNG traits                                                   |
-| `rand_chacha 0.3`   | Deterministic ChaCha RNG for reproducible walks              |
-| `crossbeam-channel 0.5` | DP submission channel (walkers → coordinator)            |
-| `rayon 1`           | Parallel multi-c restarts for factoring                      |
-| `clap 4`            | CLI argument parsing                                         |
+| Crate                   | Role                                                                 |
+|-------------------------|----------------------------------------------------------------------|
+| `crypto-bigint 0.5`     | `Uint<4>` multi-precision integers; `DynResidue` for Montgomery form |
+| `rand 0.8`              | RNG traits                                                           |
+| `rand_chacha 0.3`       | Deterministic ChaCha RNG for reproducible walks                      |
+| `crossbeam-channel 0.5` | DP submission channel (walkers → coordinator)                        |
+| `rayon 1`               | Parallel multi-c restarts for factoring                              |
+| `clap 4`                | CLI argument parsing                                                 |
 
 **Dev-only:**
 
-| Crate        | Role                                                              |
-|--------------|-------------------------------------------------------------------|
-| `k256 0.13`  | Reference secp256k1 implementation for field/curve KATs           |
-| `p256 0.13`  | Reference P-256 implementation for field/curve KATs               |
-| `proptest 1` | Property-based testing                                            |
+| Crate           | Role                                                                |
+|-----------------|---------------------------------------------------------------------|
+| `k256 0.13`     | Reference secp256k1 implementation for group-law cross-check KATs   |
+| `p256 0.13`     | Reference P-256 implementation (available for future KAT extension) |
+| `proptest 1`    | Property-based testing                                              |
+| `criterion 0.5` | Benchmark harness                                                   |
 
-`k256`/`p256` are used only as reference implementations in tests, not for any production path.
+`k256`/`p256` are used only as reference implementations in tests, not in any production path.
 Their APIs are built for constant-time cryptographic use, which makes negation-map and
 batched-inversion optimizations awkward; that is why curve arithmetic is implemented from scratch.
 
@@ -162,47 +165,36 @@ DP-submission channel is the seam where a distributed layer would cut.
 
 ### Curve scope: GF(p) only
 
-One generic Weierstrass curve (~60–80 bit prime) for the baseline + negation-map phases. One
+One generic Weierstrass curve (~63-bit prime) for the baseline and negation-map phases. One
 GLV-friendly curve (downsized secp256k1-style, explicit order-3 endomorphism λ, β) for the GLV
-phase. Binary-field curves are out of scope (see above).
+phase. Binary-field curves are out of scope: they would require an entirely separate
+field-arithmetic implementation for the sake of one extra optimization (the order-6 Koblitz
+automorphism).
 
 ## Optimization inventory
 
 ### Factoring rho
 
-| Optimization                    | Phase | Notes                                              |
-|---------------------------------|-------|----------------------------------------------------|
-| Floyd's cycle detection         | 2     | Baseline; kept for benchmark comparison only       |
-| Brent's cycle detection         | 2     | ~24% fewer group ops than Floyd                    |
-| Polynomial choice `x² + c`      | 2     | Reject c ∈ {0, −2}                                 |
-| Multi-c parallel restart        | 2     | rayon over c-values                                |
-| Montgomery batched GCD          | 2     | Accumulate ∏(xᵢ−xⱼ) mod N over batch ~100, one GCD |
-| Pollard–Brent backup on `gcd=N` | 2     | Failure-mode recovery                              |
+| Optimization                    | Notes                                              |
+|---------------------------------|----------------------------------------------------|
+| Floyd's cycle detection         | Baseline; kept for benchmark comparison only       |
+| Brent's cycle detection         | ~24% fewer group ops than Floyd                    |
+| Polynomial choice `x² + c`      | Reject c ∈ {0, −2}                                 |
+| Multi-c parallel restart        | `rayon` over c-values                              |
+| Montgomery batched GCD          | Accumulate ∏(xᵢ−xⱼ) mod N over batch ~128, one GCD |
+| Pollard–Brent backup on `gcd=N` | Failure-mode recovery                              |
 
 ### ECDLP rho
 
-| Optimization                        | Phase | Notes                                            |
-|-------------------------------------|-------|--------------------------------------------------|
-| r-adding walk (Teske)               | 4     | r ≈ 20; partition by hash of x-coord             |
-| Brent's cycle detection             | 4     | Single-threaded baseline; DPs replace it later   |
-| Distinguished points (vOW)          | 5     | Predicate: low θ bits of x-coord = 0             |
-| Parallel collision search           | 5     | N walkers + 1 coordinator                        |
-| DP hash table + match-on-insert     | 5     | `HashMap<CompressedPoint, (a, b, walker_id)>`    |
-| Negation map (±P equivalence)       | 6     | Canonical rep = lex-smaller of x(P), x(−P)       |
-| Fruitless-cycle detection + escape  | 6     | BKNS deterministic escape                        |
-| Batched field inversion             | 7     | Montgomery's trick across walks within a thread  |
-| Affine coordinates                  | 7     | Made viable by batched inversion                 |
-| GLV endomorphism (order-3)          | 8     | √2 speedup; composes with negation map           |
-
-## Known risks
-
-**Negation map correctness.** Easy to get subtly wrong. The fruitless-cycle escape is the specific
-failure mode. Mitigation: stress-test Phase 6 against Phase 5's solver on the same instance ~100
-times; the negmap is wrong if it ever returns a wrong k, not just if it is slow.
-
-**`crypto-bigint` Montgomery API.** May not expose batched operations cleanly. If it doesn't,
-Phase 7 may need a small custom Montgomery wrapper. Re-evaluate at the start of Phase 7.
-
-**DP threshold θ tuning.** Affects memory vs. expected-time-to-collision. Default to θ such that
-`2^θ ≈ √n / (worker-count · target-walks)`, giving ~1000 DPs at solution time. Expose as
-`--theta`.
+| Optimization                        | Notes                                                 |
+|-------------------------------------|-------------------------------------------------------|
+| r-adding walk (Teske)               | r = 20; partition by low bits of x-coord              |
+| Brent's cycle detection             | Single-threaded baseline; DPs supersede it            |
+| Distinguished points (vOW)          | Predicate: low θ bits of x-coord = 0                  |
+| Parallel collision search           | N walkers + 1 coordinator; speedup scales as N        |
+| DP hash table + match-on-insert     | `HashMap<x_low, DpRecord>`                            |
+| Negation map (±P equivalence)       | Canonical rep = point with smaller y (≤ p/2)          |
+| Fruitless-cycle detection + escape  | 16-entry sliding window; BKNS deterministic escape    |
+| Batched field inversion             | Montgomery's trick: B inversions → 1 inv + 3(B−1) mul |
+| Affine coordinates                  | Viable once inversions are amortised via batching     |
+| GLV endomorphism (order-3)          | 6-orbit equivalence on secp-toy; ~√3 further speedup  |
