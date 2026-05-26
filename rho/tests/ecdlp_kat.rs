@@ -35,14 +35,14 @@ use rho::field::{Fp, FpMonty};
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-fn affine_x<F: Fp>(pt: &AffinePoint<F>) -> Uint<4> {
+fn affine_x<F: Fp<4>>(pt: &AffinePoint<F>) -> Uint<4> {
     match pt {
         AffinePoint::Finite { x, .. } => x.to_uint(),
         AffinePoint::Infinity => panic!("unexpected point at infinity"),
     }
 }
 
-fn affine_y<F: Fp>(pt: &AffinePoint<F>) -> Uint<4> {
+fn affine_y<F: Fp<4>>(pt: &AffinePoint<F>) -> Uint<4> {
     match pt {
         AffinePoint::Finite { y, .. } => y.to_uint(),
         AffinePoint::Infinity => panic!("unexpected point at infinity"),

@@ -1,0 +1,8 @@
+[package]
+name = "shared-field"
+version = "0.1.0"
+edition = "2024"
+description = "Prime-field arithmetic generic over limb count: Fp trait, FpNaive, FpMonty"
+
+[dependencies]
+crypto-bigint = { version = "0.5", features = ["rand_core"] }

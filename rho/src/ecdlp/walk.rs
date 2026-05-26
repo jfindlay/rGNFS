@@ -54,7 +54,7 @@ fn add_mod_n(a: u64, b: u64, n: u64) -> u64 {
 /// When a walk step selects entry `i`, the current point is updated as
 /// `W ← W + R[i]`, and the tracked scalars as `a ← a + α mod n`, `b ← b + β mod n`.
 #[derive(Clone, Debug)]
-pub struct Addend<F: Fp> {
+pub struct Addend<F: Fp<4>> {
     /// Affine point `α·G + β·Q`.
     pub point: AffinePoint<F>,
     /// Scalar coefficient for G.
@@ -67,12 +67,12 @@ pub struct Addend<F: Fp> {
 ///
 /// Built once per DLP instance; shared (read-only) across all walk states.
 #[derive(Clone, Debug)]
-pub struct AddendTable<F: Fp> {
+pub struct AddendTable<F: Fp<4>> {
     /// The `R` addend entries.
     pub entries: Vec<Addend<F>>,
 }
 
-impl<F: Fp> AddendTable<F> {
+impl<F: Fp<4>> AddendTable<F> {
     /// Build the addend table for the walk.
     ///
     /// Randomly samples `R` scalar pairs `(αᵢ, βᵢ)` from `[1, n)` and computes
@@ -121,7 +121,7 @@ impl<F: Fp> AddendTable<F> {
     /// is taken as a `Uint<4>` and the low limb extracted; this is consistent
     /// regardless of how the field element stores its internal representation.
     #[inline]
-    pub fn partition<F2: Fp>(&self, pt: &AffinePoint<F2>) -> usize {
+    pub fn partition<F2: Fp<4>>(&self, pt: &AffinePoint<F2>) -> usize {
         match pt {
             AffinePoint::Infinity => 0,
             AffinePoint::Finite { x, .. } => {
@@ -139,7 +139,7 @@ impl<F: Fp> AddendTable<F> {
 ///
 /// Invariant: `point = a·G + b·Q` at all times.
 #[derive(Clone, Debug)]
-pub struct WalkState<F: Fp> {
+pub struct WalkState<F: Fp<4>> {
     /// Current walk point in Jacobian coordinates.
     pub point_jac: JacobianPoint<F>,
     /// Scalar coefficient for G: `point = a·G + b·Q`.
@@ -148,7 +148,7 @@ pub struct WalkState<F: Fp> {
     pub b: u64,
 }
 
-impl<F: Fp> WalkState<F> {
+impl<F: Fp<4>> WalkState<F> {
     /// Initialise a walk from random starting scalars `a₀, b₀`.
     ///
     /// Sets `point = a₀·G + b₀·Q` and records `(a₀, b₀)`.
@@ -227,7 +227,7 @@ impl<F: Fp> WalkState<F> {
 ///
 /// Invariant: `point = a·G + b·Q` at all times.
 #[derive(Clone, Debug)]
-pub struct AffineWalkState<F: Fp> {
+pub struct AffineWalkState<F: Fp<4>> {
     /// Current walk point in affine coordinates.
     pub point: AffinePoint<F>,
     /// Scalar coefficient for G: `point = a·G + b·Q`.
@@ -236,7 +236,7 @@ pub struct AffineWalkState<F: Fp> {
     pub b: u64,
 }
 
-impl<F: Fp> AffineWalkState<F> {
+impl<F: Fp<4>> AffineWalkState<F> {
     /// Initialise a walk from random starting scalars `a₀, b₀`.
     ///
     /// Sets `point = a₀·G + b₀·Q` and records `(a₀, b₀)`.
@@ -283,7 +283,7 @@ impl<F: Fp> AffineWalkState<F> {
 /// denominators and batch-inverting them reduces the inversion count from B to 1.
 ///
 /// [`step_all`]: BatchedWalker::step_all
-pub struct BatchedWalker<F: Fp> {
+pub struct BatchedWalker<F: Fp<4>> {
     /// B walk states, each with an affine point.
     pub walks: Vec<AffineWalkState<F>>,
     /// Shared addend table (read-only).
@@ -292,7 +292,7 @@ pub struct BatchedWalker<F: Fp> {
     pub n: u64,
 }
 
-impl<F: Fp> BatchedWalker<F> {
+impl<F: Fp<4>> BatchedWalker<F> {
     /// Create a new batched walker from pre-built walk states and table.
     pub fn new(walks: Vec<AffineWalkState<F>>, table: AddendTable<F>, n: u64) -> Self {
         BatchedWalker { walks, table, n }

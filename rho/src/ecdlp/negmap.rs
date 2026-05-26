@@ -39,7 +39,7 @@ use crate::field::Fp;
 /// `P` and `−P` always share the same x-coordinate.  The canonical
 /// representative is determined by comparing y-coordinates: `min(y, p − y)`.
 /// This is equivalent to choosing the representative with `y ≤ p/2`.
-pub fn canonical_rep<F: Fp>(pt: &AffinePoint<F>, p: &Uint<4>) -> (AffinePoint<F>, bool) {
+pub fn canonical_rep<F: Fp<4>>(pt: &AffinePoint<F>, p: &Uint<4>) -> (AffinePoint<F>, bool) {
     match pt {
         AffinePoint::Infinity => (AffinePoint::Infinity, false),
         AffinePoint::Finite { x, y } => {

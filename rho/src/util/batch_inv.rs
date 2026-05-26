@@ -1,62 +1,17 @@
 //! Montgomery's batched inversion trick.
 //!
-//! Computes `n` modular inverses using a single inversion and `3(n-1)` multiplications.
+//! Re-exports ``batch_invert`` from ``shared-bigint``, fixing the limb count
+//! to ``L = 4`` for backward compatibility with the rest of ``rho``.
 
-use crypto_bigint::Uint;
-
-use crate::field::Fp;
-
-/// Compute modular inverses of all elements in `xs` in-place.
-///
-/// Uses Montgomery's batched inversion trick: 1 inversion and 3(n−1) multiplications
-/// for a batch of n elements.  All elements in `xs` must be non-zero.
-///
-/// Algorithm:
-///
-/// 1. Forward pass: compute prefix products ``p[i] = x[0]·x[1]·…·x[i]``.
-/// 2. Invert the last prefix product: ``inv_all = 1 / p[n-1]``.
-/// 3. Backward pass: working from the right,
-///    ``x[i]_inv = inv_all · p[i-1];  inv_all = inv_all · x[i]``.
-///
-/// # Panics
-///
-/// Panics if `xs` is empty or any element is zero.
-pub fn batch_invert<F: Fp>(xs: &mut [F], p: &Uint<4>) {
-    let n = xs.len();
-    if n == 0 {
-        return;
-    }
-
-    // Forward pass: build prefix products.
-    // prefix[i] = x[0] * x[1] * ... * x[i]
-    let mut prefix = Vec::with_capacity(n);
-    prefix.push(xs[0].clone());
-    for i in 1..n {
-        let prev = prefix[i - 1].clone();
-        prefix.push(prev.mul(&xs[i], p));
-    }
-
-    // Invert the total product (one field inversion).
-    let mut inv_acc = prefix[n - 1].inv(p);
-
-    // Backward pass: recover each individual inverse.
-    for i in (1..n).rev() {
-        // x[i]^{-1} = inv_acc * prefix[i-1]
-        let xi_inv = inv_acc.mul(&prefix[i - 1], p);
-        // Advance accumulator: inv_acc = inv_acc * x[i]  (so it becomes prefix[i-1]^{-1})
-        inv_acc = inv_acc.mul(&xs[i], p);
-        xs[i] = xi_inv;
-    }
-    // x[0]^{-1} = inv_acc (which is now prefix[0]^{-1} = x[0]^{-1})
-    xs[0] = inv_acc;
-}
+pub use shared_bigint::batch_invert;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FpMonty;
+    use crypto_bigint::Uint;
+    use crate::field::{Fp, FpMonty};
 
     fn p_small() -> Uint<4> {
         // Use tiny_a's field prime.

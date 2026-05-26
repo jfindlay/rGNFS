@@ -1,5 +1,5 @@
 [workspace]
-members = ["rho"]
+members = ["rho", "shared/field", "shared/bigint", "shared/numth"]
 resolver = "2"
 
 [profile.bench]

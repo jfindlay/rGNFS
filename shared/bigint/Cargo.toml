@@ -1,0 +1,9 @@
+[package]
+name = "shared-bigint"
+version = "0.1.0"
+edition = "2024"
+description = "Multi-precision helpers: batched field inversion, mp utilities"
+
+[dependencies]
+shared-field = { path = "../field" }
+crypto-bigint = { version = "0.5", features = ["rand_core"] }

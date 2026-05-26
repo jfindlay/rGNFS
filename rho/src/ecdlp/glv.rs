@@ -44,7 +44,7 @@ use crate::field::Fp;
 /// * `pt` — the input point.
 /// * `p_modulus` — the field prime.
 /// * `beta` — the cube root of unity mod p (satisfies β³ ≡ 1 mod p, β ≠ 1).
-pub fn glv_phi<F: Fp>(pt: &AffinePoint<F>, p_modulus: &Uint<4>, beta: u64) -> AffinePoint<F> {
+pub fn glv_phi<F: Fp<4>>(pt: &AffinePoint<F>, p_modulus: &Uint<4>, beta: u64) -> AffinePoint<F> {
     match pt {
         AffinePoint::Infinity => AffinePoint::Infinity,
         AffinePoint::Finite { x, y } => {
@@ -91,7 +91,7 @@ pub(crate) fn beta_mul(x: Uint<4>, p: &Uint<4>, beta: u64) -> Uint<4> {
 /// * `n` — group order.
 /// * `beta` — cube root of unity mod p (GLV endomorphism constant).
 /// * `lambda` — GLV eigenvalue mod n (satisfies λ² + λ + 1 ≡ 0 mod n).
-pub fn glv_canonical<F: Fp>(
+pub fn glv_canonical<F: Fp<4>>(
     pt: &AffinePoint<F>,
     a: u64,
     b: u64,

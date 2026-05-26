@@ -45,7 +45,7 @@ pub enum AffinePoint<F> {
     },
 }
 
-impl<F: Fp> AffinePoint<F> {
+impl<F: Fp<4>> AffinePoint<F> {
     /// Construct a finite affine point. Does not check the curve equation.
     #[inline]
     pub fn new(x: F, y: F) -> Self {
@@ -104,7 +104,7 @@ pub struct JacobianPoint<F> {
     pub z: F,
 }
 
-impl<F: Fp> JacobianPoint<F> {
+impl<F: Fp<4>> JacobianPoint<F> {
     /// Construct the point at infinity.
     pub fn infinity(p: &Uint<4>) -> Self {
         JacobianPoint {
@@ -172,7 +172,7 @@ pub struct Curve {
 
 impl Curve {
     /// Return the base point G as an affine point over field `F`.
-    pub fn generator<F: Fp>(&self) -> AffinePoint<F> {
+    pub fn generator<F: Fp<4>>(&self) -> AffinePoint<F> {
         AffinePoint::Finite {
             x: F::from_uint(self.gx, &self.p),
             y: F::from_uint(self.gy, &self.p),
@@ -180,7 +180,7 @@ impl Curve {
     }
 
     /// Check whether `pt` satisfies the curve equation y² = x³ + ax + b mod p.
-    pub fn is_on_curve<F: Fp>(&self, pt: &AffinePoint<F>) -> bool {
+    pub fn is_on_curve<F: Fp<4>>(&self, pt: &AffinePoint<F>) -> bool {
         match pt {
             AffinePoint::Infinity => true,
             AffinePoint::Finite { x, y } => {
@@ -197,7 +197,7 @@ impl Curve {
     }
 
     /// Negate a point: (x, y) → (x, −y); ∞ → ∞.
-    pub fn negate<F: Fp>(&self, pt: &AffinePoint<F>) -> AffinePoint<F> {
+    pub fn negate<F: Fp<4>>(&self, pt: &AffinePoint<F>) -> AffinePoint<F> {
         pt.negate(&self.p)
     }
 
@@ -211,7 +211,7 @@ impl Curve {
     ///   X' = M² − 2S
     ///   Y' = M·(S − X') − 8·Y⁴
     ///   Z' = 2·Y·Z
-    pub fn double_jacobian<F: Fp>(&self, pt: &JacobianPoint<F>) -> JacobianPoint<F> {
+    pub fn double_jacobian<F: Fp<4>>(&self, pt: &JacobianPoint<F>) -> JacobianPoint<F> {
         let p = &self.p;
         if pt.is_infinity(p) {
             return JacobianPoint::infinity(p);
@@ -251,7 +251,7 @@ impl Curve {
     /// doubling when P = Q, and returns the correct identity when P = −Q.
     ///
     /// Reference: HMV §3.2.2, Algorithm 3.22.
-    pub fn add_jacobian<F: Fp>(
+    pub fn add_jacobian<F: Fp<4>>(
         &self,
         p1: &JacobianPoint<F>,
         p2: &JacobianPoint<F>,
@@ -313,7 +313,7 @@ impl Curve {
     /// path in scalar multiplication and r-adding walks.
     ///
     /// Reference: HMV §3.2.2, Algorithm 3.23.
-    pub fn add_mixed<F: Fp>(
+    pub fn add_mixed<F: Fp<4>>(
         &self,
         p1: &JacobianPoint<F>,
         p2: &AffinePoint<F>,
@@ -368,7 +368,7 @@ impl Curve {
     /// Jacobian+affine addition for the hot path (each add uses the affine input P).
     ///
     /// Returns the result in affine coordinates (one final inversion).
-    pub fn scalar_mul<F: Fp>(&self, pt: &AffinePoint<F>, scalar: &Uint<4>) -> AffinePoint<F> {
+    pub fn scalar_mul<F: Fp<4>>(&self, pt: &AffinePoint<F>, scalar: &Uint<4>) -> AffinePoint<F> {
         let p = &self.p;
         let mut result = JacobianPoint::infinity(p);
         let bits = 256usize;

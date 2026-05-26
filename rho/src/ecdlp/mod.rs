@@ -136,7 +136,7 @@ fn extract_k(a_t: u64, b_t: u64, a_h: u64, b_h: u64, n: u64) -> Option<u64> {
 /// # Returns
 ///
 /// `Some(k)` such that `Q = k·G`, or `None` if all retries were degenerate.
-pub fn solve_brent<F: Fp>(
+pub fn solve_brent<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -225,7 +225,7 @@ pub fn solve_brent<F: Fp>(
 ///
 /// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up
 /// (should not happen in practice for valid inputs).
-pub fn solve_dp<F: Fp>(
+pub fn solve_dp<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -306,7 +306,7 @@ pub fn solve_dp<F: Fp>(
 /// after `2^(theta + 10)` steps without a DP (dead-walk escape).
 ///
 /// Exits when `stop` is set or the `tx` channel is closed (coordinator found k).
-fn run_walker<F: Fp>(
+fn run_walker<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -393,7 +393,7 @@ fn run_walker<F: Fp>(
 /// # Returns
 ///
 /// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up.
-pub fn solve_dp_negmap<F: Fp>(
+pub fn solve_dp_negmap<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -467,7 +467,7 @@ pub fn solve_dp_negmap<F: Fp>(
 ///
 /// Distinguished-point emission uses the canonical x-coordinate so that
 /// collisions are between canonical representatives.
-fn run_walker_negmap<F: Fp>(
+fn run_walker_negmap<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -607,7 +607,7 @@ fn run_walker_negmap<F: Fp>(
 /// # Returns
 ///
 /// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up.
-pub fn solve_dp_batch<F: Fp>(
+pub fn solve_dp_batch<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -676,7 +676,7 @@ pub fn solve_dp_batch<F: Fp>(
 ///
 /// Walk IDs are `walk_id_base * batch_size + i` for walk index `i`, ensuring
 /// globally unique IDs across threads.
-fn run_walker_batch<F: Fp>(
+fn run_walker_batch<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -827,7 +827,7 @@ fn run_walker_batch<F: Fp>(
 /// # Returns
 ///
 /// `Some(k)` such that `Q = k·G`, or `None` if the coordinator gives up.
-pub fn solve_dp_glv<F: Fp>(
+pub fn solve_dp_glv<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -845,7 +845,7 @@ pub fn solve_dp_glv<F: Fp>(
 ///
 /// Separated from [`solve_dp_glv`] so that tests can use small curves with
 /// their own (beta, lambda) parameters without the secp_k1_toy restriction.
-fn solve_dp_glv_impl<F: Fp>(
+fn solve_dp_glv_impl<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,
@@ -923,7 +923,7 @@ fn solve_dp_glv_impl<F: Fp>(
 ///
 /// Walk IDs are `walk_id_base * batch_size + i` for walk index `i`.
 #[allow(clippy::too_many_arguments)]
-fn run_walker_glv<F: Fp>(
+fn run_walker_glv<F: Fp<4>>(
     curve: &Curve,
     g: &AffinePoint<F>,
     q: &AffinePoint<F>,

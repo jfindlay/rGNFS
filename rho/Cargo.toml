@@ -13,6 +13,8 @@ name = "rho-dlog"
 path = "src/ecdlp/cli.rs"
 
 [dependencies]
+shared-field = { path = "../shared/field" }
+shared-bigint = { path = "../shared/bigint" }
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
 rand = "0.8"
 rand_chacha = "0.3"

@@ -1,6 +1,6 @@
-//! Shared utilities.
+//! Multi-precision helpers for prime-field arithmetic.
 //!
-//! - [`batch_inv`]: Montgomery's batched inversion trick (re-exported from ``shared-bigint``).
+//! - [`batch_inv`]: Montgomery's batched inversion trick, generic over ``Fp<L>``.
 //! - [`mp`]: multi-precision helpers beyond ``crypto-bigint`` if needed.
 
 pub mod batch_inv;

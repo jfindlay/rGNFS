@@ -1,70 +1,25 @@
 //! Field arithmetic abstraction.
 //!
-//! Defines the [`Fp`] trait that both implementations must satisfy, plus the
-//! concrete [`FpNaive`] and [`FpMonty`] types.
+//! Re-exports the ``Fp`` trait and concrete implementations from the
+//! ``shared-field`` crate, fixing the limb count to ``L = 4`` (256-bit) for
+//! backward compatibility with the rest of ``rho``.
+//!
+//! All ``F: Fp`` bounds in ``rho`` are written as ``F: Fp<4>`` to fix the
+//! limb count.  The type aliases ``FpNaive`` and ``FpMonty`` resolve to
+//! ``shared_field::FpNaive<4>`` and ``shared_field::FpMonty<4>`` respectively.
 
-pub mod monty;
-pub mod naive;
+// Re-export the generic Fp trait.  All code in rho that imports Fp from here
+// and uses it as a bound must write F: Fp<4>.
+pub use shared_field::Fp;
 
-pub use monty::FpMonty;
-pub use naive::FpNaive;
-
-use crypto_bigint::Uint;
-
-/// Prime-field arithmetic over GF(p).
+/// Type alias: schoolbook 256-bit field element (4 × 64-bit limbs).
 ///
-/// All values are implicitly reduced mod p. Implementations are allowed to use
-/// internal representations (e.g., Montgomery form) as long as [`to_uint`]
-/// returns the canonical residue in `[0, p)`.
+/// Fixes the const generic ``L = 4`` for all code in ``rho`` that operates on
+/// 256-bit primes (secp256k1, P-256, etc.).
+pub type FpNaive = shared_field::FpNaive<4>;
+
+/// Type alias: Montgomery-form 256-bit field element (4 × 64-bit limbs).
 ///
-/// The const generic `L` is the limb count of `Uint<L>` and must be chosen so
-/// that `L * 64 >= bit-width(p)`.
-pub trait Fp: Clone + PartialEq + Eq + std::fmt::Debug + Send + Sync + 'static {
-    /// Number of 64-bit limbs in the underlying `Uint`.
-    const LIMBS: usize;
-
-    /// Additive identity.
-    fn zero(p: &Uint<4>) -> Self;
-
-    /// Multiplicative identity.
-    fn one(p: &Uint<4>) -> Self;
-
-    /// Construct from a small `u64` value, reducing mod p.
-    fn from_u64(v: u64, p: &Uint<4>) -> Self;
-
-    /// Construct from an arbitrary `Uint<4>`, reducing mod p.
-    fn from_uint(v: Uint<4>, p: &Uint<4>) -> Self;
-
-    /// Return the canonical residue in `[0, p)`.
-    fn to_uint(&self) -> Uint<4>;
-
-    /// Modular addition.
-    fn add(&self, rhs: &Self, p: &Uint<4>) -> Self;
-
-    /// Modular subtraction.
-    fn sub(&self, rhs: &Self, p: &Uint<4>) -> Self;
-
-    /// Modular negation.
-    fn neg(&self, p: &Uint<4>) -> Self;
-
-    /// Modular multiplication.
-    fn mul(&self, rhs: &Self, p: &Uint<4>) -> Self;
-
-    /// Modular squaring (`x * x`). May be faster than `mul(x, x)`.
-    fn square(&self, p: &Uint<4>) -> Self;
-
-    /// Modular exponentiation: `self^exp mod p`.
-    fn pow(&self, exp: &Uint<4>, p: &Uint<4>) -> Self;
-
-    /// Modular inverse via Fermat: `self^(p-2) mod p`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `self` is zero (no inverse exists).
-    fn inv(&self, p: &Uint<4>) -> Self;
-
-    /// Return `true` if this element is zero.
-    fn is_zero(&self, _p: &Uint<4>) -> bool {
-        self.to_uint() == Uint::<4>::ZERO
-    }
-}
+/// Fixes the const generic ``L = 4`` for all code in ``rho`` that operates on
+/// 256-bit primes (secp256k1, P-256, etc.).
+pub type FpMonty = shared_field::FpMonty<4>;

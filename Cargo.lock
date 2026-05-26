@@ -983,6 +983,8 @@ dependencies = [
  "rand 0.8.6",
  "rand_chacha 0.3.1",
  "rayon",
+ "shared-bigint",
+ "shared-field",
 ]
 
 [[package]]
@@ -1097,6 +1099,30 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "shared-bigint"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+ "shared-field",
+]
+
+[[package]]
+name = "shared-field"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+]
+
+[[package]]
+name = "shared-numth"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+ "shared-bigint",
+ "shared-field",
 ]
 
 [[package]]
