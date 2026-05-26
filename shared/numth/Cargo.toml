@@ -1,0 +1,10 @@
+[package]
+name = "shared-numth"
+version = "0.1.0"
+edition = "2024"
+description = "Number-theoretic primitives: Miller–Rabin primality testing and B-smoothness detection"
+
+[dependencies]
+shared-field = { path = "../field" }
+shared-bigint = { path = "../bigint" }
+crypto-bigint = { version = "0.5", features = ["rand_core"] }
