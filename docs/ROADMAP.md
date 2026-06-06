@@ -43,6 +43,97 @@ they are treated together.
 This is stronger than "no optimizations" because it distinguishes mathematics-that-matters-at-scale
 from engineering-that-is-orthogonal-to-pedagogy. The former is in scope; the latter is not.
 
+**4. Phenomenology beyond reach — implement the mathematics anyway, and annotate the disconnect.**
+Some mathematically real phenomena cannot be *organically* exhibited at the toy scale this project
+runs at, precisely because surfacing them naturally would require the engineering scale that
+principle 3 puts out of scope. The discipline is: **implement the mathematics regardless, and
+explicitly note the gap between the science (the phenomenon) and the means of reaching it (the
+out-of-scope engineering / resource scaling).** We never skip a mathematically meaningful phenomenon
+merely because toy scale can't trigger it on its own, and we never pretend the toy scale exhibits
+something it does not. The disconnect itself is pedagogical content — part of *honestly* surveying
+how these algorithms behave at the scales they were designed for.
+
+The gap runs in both directions, and the annotation should say which:
+- **Under-exposed at toy scale** — phenomena whose effect only appears at large scale (e.g.
+  large-prime variations only paying off once relation yield is in the millions; block-Lanczos
+  convergence behaviour that a tiny matrix never stresses). Implemented at demonstration fidelity
+  (principle 2), with a note that the *payoff* is unreachable here.
+- **Over-exposed at toy scale** — phenomena that real NFS-scale engineering smooths over
+  statistically, but that a hand-picked toy instance makes proportionally prominent. **Bad primes**
+  (primes p dividing disc(f), where ℤ[α] need not be the full ring of integers ℤ_K and Dedekind's
+  theorem does not apply directly — handled via the Dedekind index criterion; see G.A.3) are the
+  canonical example: at cryptographic scale their contribution is marginal and largely absorbed by
+  polynomial selection, but at toy scale with a hand-picked f they are unavoidable and must be
+  implemented and reasoned about head-on. The honest annotation records that this prominence is a
+  toy-scale artifact, not the typical NFS-scale picture. (The G.A.W chapter §9 is the template: it
+  documents the Round 2 / HNF omission as "engineering scale, not mathematical omission.")
+
+**How the disconnect is annotated.** Wherever such a gap exists it is surfaced in three places that
+stay consistent: a marked note in the code (docstring/comment at the relevant function), the
+corresponding `PEDAGOGY.md` code-tour, and the Track τ textbook chapter. The textbook is where the
+disconnect is explained in full (the science, why toy scale can't reach it organically, what the
+NFS-scale picture is); the code and code-tour cross-reference it.
+
+---
+
+## On scale
+
+The disconnect principle (scoping principle 4) rests on a view of *scale* that is worth stating
+once, plainly, because it recurs across every track. This section is the clinical statement; the
+full exposition — including the part that is genuinely a question of natural philosophy — is owed to
+the Track τ textbook (an "On scale" interlude), where it belongs in a register the planning document
+should not adopt.
+
+**Scale is not one axis.** Casual talk of "toy scale" vs. "NFS scale" implies a single ladder. It is
+not. At least three distinct things travel under the word, and they do not form one ordered line:
+
+1. **Resource / operational scale** — how large an instance one can actually run (toy ≈ 80-bit N on
+   a laptop; "NFS scale" ≈ RSA-768/RSA-829 on a cluster-month). This *is* an unbounded ladder
+   (bigger N always exists, up to a physical-computation ceiling), but it is **phenomenologically
+   flat**: scaling N alone introduces no new mathematics. It makes the same machinery bigger and
+   improves the statistics — which is exactly why over-exposed phenomena (bad primes) *wash out* at
+   scale rather than changing in kind.
+2. **Mathematical-dimension scale** — the degree d = [K:ℚ] of the number field, the embedding degree
+   of a pairing, the characteristic-vs-extension shape of a finite field. These are dimensions *of
+   the mathematics*, distinct from instance size.
+3. **Structural scale** — thresholds where scaling unlocks (or requires) a *different* machine:
+   medium/large-prime variations past a yield threshold; the small-characteristic
+   quasi-polynomial DLP regime; the asymptotic regime where L-notation heuristics become accurate.
+
+**The three couplings.** Axes 1 and 2 are *sometimes independent, sometimes coupled, sometimes
+structural-enabling* — this is the heart of the matter:
+- **Independent:** d and N are separate knobs; either can move with the other fixed.
+- **Coupled along the efficient frontier:** the *optimal* d for NFS is tied to N by
+  d ∼ (3 log N / log log N)^{1/3}, so scaling N "properly" drags d along. Independent as knobs,
+  coupled along the frontier. Invisible at toy scale, where optimal d ≈ 3–4 and barely moves.
+- **Structural-enabling:** at certain thresholds, scaling one axis changes *which* mathematics
+  applies, not just how big it is. This is where new machinery (large-prime variations, the
+  quasi-polynomial regime) becomes reachable. The most pedagogically important transitions live
+  here.
+
+**On convergence — of the method, not the problem.** A natural question: is NFS asymptotically
+convergent, absent new discoveries? The precise answer distinguishes two things the word
+"convergence" blurs:
+- **Convergence of the method (true).** NFS's heuristic complexity has sat at L_N[1/3, (64/9)^{1/3}]
+  since the early 1990s. Three decades of work have improved the *constant* and the *engineering* —
+  not the exponent 1/3. Within the NFS paradigm (sieve number-field relations for smoothness, then
+  linear algebra) the exponent has converged. Note even this is *heuristic*, resting on unproven
+  smoothness assumptions, not a theorem.
+- **Convergence of the problem (false / open).** The true complexity of factoring and discrete log
+  is **open**. L[1/3] is a believed barrier for the *general* problem, not a proven lower bound, and
+  history shows apparent convergence is repeatedly punctured by *structural* discovery: the
+  Barbulescu–Gaudry–Joux–Thomé **quasi-polynomial** algorithm (2014) collapsed small-characteristic
+  DLP — a regime everyone had taken to be L[1/3] — and Shor's algorithm dissolves the barrier
+  entirely in the quantum model (Track ε). The plateau is real but it is a plateau of *one method*;
+  it is reset, not approached, by new mathematical structure.
+
+So: NFS scale is not a "toy" relative to a larger operational regime in any *phenomenological* sense
+— bigger N is flatter, not richer. The genuinely deep hierarchies (the L-exponent phase changes; the
+ramification / arithmetic-geometry tower behind bad primes) are **orthogonal to operational scale**:
+reached by choosing richer fields or crossing structural thresholds, not by spending more compute.
+The one plausibly-infinite hierarchy is *field-structural* (ramification depth), and a toy instance
+over a richly-ramified field can exhibit phenomena a "huge" instance over a tame field never touches.
+
 ---
 
 ## Scope and effort
@@ -55,7 +146,8 @@ from engineering-that-is-orthogonal-to-pedagogy. The former is in scope; the lat
 | δ — Algebraic ECDLP | 25-32 | 9-13 months | Track E: E.A through E.W |
 | ε — Shor + PQ | 7-9 | 3-4 months | Track S: S.A through S.D |
 | ζ — Umbrella writeup | 2-4 | 1 month | Cross-track integration |
-| **Total** | **~70-90** | **23-35 months** | At one session every 3-5 days |
+| τ — Mathematical textbook | 2-3 | spread | Track T: spine + bind; chapters paired with `*.W` |
+| **Total** | **~72-93** | **23-36 months** | At one session every 3-5 days |
 
 At one session per week (more realistic part-time), 27-42 months. Multi-year commitment by design.
 
@@ -77,6 +169,11 @@ Reasoning:
 anywhere after α. If fatigue with classical attacks builds up, switching to ε is a legitimate move
 that doesn't compromise the design.
 
+**Track τ does not sit at a single point in the order — it threads through.** The textbook spine
+(T.0) is written early (it sets the register every later chapter obeys); each math chapter is
+written at its track's ◆ boundary, paired with that track's `*.W` code-tour session; the final
+bind (T.Z) sits at ζ. See the Track τ section for the per-chapter pairing.
+
 ---
 
 ## Sub-track structure
@@ -95,6 +192,17 @@ continue to pass. Sonnet-tier.
 smoothness detection, ECM as a standalone factoring sub-step (used inside NFS large-prime
 variations and inside Pohlig–Hellman). **Last session is Opus-tier** because the smoothness-trait
 interface is consumed by sessions in three tracks (G.C, D.A, E.K) and getting it wrong is costly.
+
+**S0.W — α-substrate integrative writeup (backfill).** 1 session. Predecessor: S0.1, S0.2 (both
+complete). Sonnet-tier. **This was not in the original plan and is owed retroactively:** every other
+phase has a `*.W` integrative chapter (G.W, D.W, E.W, S.D, Z.1), but Phase α shipped its three
+shared crates (`field`, `bigint`, `numth`) with only code-level module docstrings and no integrative
+math chapter — despite containing mathematically substantial content (Lenstra ECM stages 1–2 with
+Suyama parameterisation and the Montgomery ladder; Miller–Rabin; trial-division smoothness and
+`SmoothWitness`; batched inversion; Tonelli–Shanks and the Legendre symbol). The backfill writes
+`shared/numth/docs/PEDAGOGY.md` as a code-tour chapter matching the genre and quality of the G.A.W
+chapter (`shared/numfield/docs/PEDAGOGY.md`). Its Track τ maths-first sibling pairs at T.0/T.G time.
+Drafted at the G.A ◆ boundary (see Discoveries log).
 
 ### Phase β — GNFS for integer factoring (Track G)
 
@@ -216,6 +324,80 @@ modularity-theorem speculation chapter; the structure-based-escape-from-search s
 **All sessions Opus-tier** — this is the artifact-as-a-whole and the highest integrative judgment
 load in the project.
 
+### Phase τ — Mathematical textbook (Track T)
+
+**Motivation.** The project name "rGNFS" is narrower than the project's intent: the work is a
+*survey of discrete-logarithm algorithms, approaches, and applications* (integer factorisation
+enters as the DLP's structural sibling, not as the centre). The `PEDAGOGY.md` chapters
+(`rho` and the α substrate today; `G.W`/`D.W`/`E.W`/`Z.1` planned) are **code-tours** — organised by
+the implementation, assuming the reader already knows the mathematics. Track T adds the complementary
+artifact: a **standing mathematical textbook** in the genre of `tetratile/docs/mathematics.rst` —
+*maths-first, code-second, learnable on its own*. The two are complementary and cross-reference: each
+`*.W` code-tour cites the textbook chapter for the mathematics; each textbook chapter cites the code
+for the realisation.
+
+**Scope contract (the register every chapter obeys — frozen as C-Textbook at T.0).**
+
+- **Audience.** The interested mathematics student, human or agent, with an undergraduate maths
+  background: comfort with proofs, and a full introductory course each in analysis, algebra,
+  probability, and logic. Nothing beyond that is assumed; anything beyond is built up in text or
+  cited.
+- **Depth: survey with proof-sketch depth.** Every key theorem is *stated and motivated*; proofs are
+  *sketches* with citations to the full proof, with complete proofs reserved for the moments where
+  the proof is itself the pedagogical payoff (e.g. *why* index calculus is subexponential — the
+  L-notation derivation; *why* the MOV reduction works). **Complete** (no key idea silently omitted)
+  and **academic and clinical**, but explicitly **not exhaustive** (no encyclopaedic case
+  enumeration) and **not inscrutable** (intuition leads, rigour follows).
+- **Through-line.** *Structure-based escape from search* — every attack is a story about finding
+  exploitable structure (a homomorphism, a smoothness phenomenon, an endomorphism, a pairing, a
+  quantum period) that escapes the generic √n / L-notation search bound.
+- **Artifact location.** A new standing document, separate from `PEDAGOGY.md` (e.g.
+  `docs/MATHEMATICS.md`, or `docs/textbook/` if it grows past single-file scale — decided at T.0).
+  rST or Markdown TBD at T.0 to match the project's doc tooling.
+
+C-Textbook is a documentation-register contract (not a code interface), so it lives here rather than
+in the Cross-track contracts section; but it is genuinely cross-track (every chapter obeys it), so a
+later chapter that needs to break the register (a topic that truly requires graduate background) must
+surface that as a discovery and flex C-Textbook at the next inflection-point review, not silently
+raise the level in one chapter.
+
+**Written incrementally, not in one block at the end.** A chapter is most accurate while its
+implementation is fresh and its contracts are frozen — the same reasoning that places the `*.W`
+code-tours at each ◆ boundary. Track T therefore has a thin spine early, chapters accreted per-track,
+and a final bind:
+
+**T.0 — Textbook spine.** 1 session. No predecessor (can run as early as after α; recommended once
+the register is felt, i.e. after the `rho` and α-substrate chapters exist and G.A has landed).
+Establishes the scope/audience/depth contract above (freezes C-Textbook), notation conventions, the
+table of contents across the whole survey, the structure-based-escape-from-search framing chapter,
+and a **prerequisites chapter** (the undergraduate-background bridge: the specific theorems from
+algebra/analysis/probability/logic later chapters lean on). Includes the "On scale" interlude (the
+full natural-philosophy exposition the ROADMAP's `## On scale` section defers here). Also retro-fits
+the existing `rho` and α-substrate pedagogy into textbook chapters (or chapters that cite them),
+establishing the chapter-pairing pattern. **Opus-tier** — sets the register and through-line that
+bind every later chapter; getting the level wrong is expensive to retrofit across all chapters.
+
+**T.G / T.D / T.E / T.S — per-track math chapters.** ~0 net new sessions; **paired with the existing
+`G.W` / `D.W` / `E.W` / `S.D` writeup sessions**, not scheduled separately. At each track's ◆
+boundary the writeup session produces *two* siblings: the code-tour chapter in `PEDAGOGY.md` (already
+planned) **and** the maths-first textbook chapter (new). Pairing keeps mathematics and code-mapping
+consistent at the moment both are fresh, and avoids double-counting effort. The textbook chapter is
+the larger of the two and may push its paired writeup toward the top of the session-size band (or
+split into a dedicated follow-on if it overruns — decided at the boundary). Tier follows the paired
+`*.W` session, except where the mathematics is itself a designated payoff (the L-notation
+subexponentiality derivation in T.G/T.D; the MOV reduction in T.E), which are **Opus-tier**.
+
+**T.Z — Textbook bind.** 1 session. Predecessor: all per-track chapters + Z.1. Sibling to Z.1: the
+final consistency pass binding the accreted chapters into one coherent, learnable document —
+cross-references resolved, the comparative L-notation synthesis across all attacks written, notation
+unified, the prerequisites chapter reconciled against what the chapters actually used. **Opus-tier**
+— highest integrative judgment load in the textbook, paired with Z.1's umbrella synthesis.
+
+**Sequencing note.** T.0 is the only Track-T session that adds calendar time up front; the per-track
+chapters fold into existing `*.W` sessions, and T.Z folds against ζ. Net schedule impact is ~2-3
+sessions (T.0, T.Z, plus per-chapter overrun allowance), which is why the Scope table lists τ at 2-3
+sessions "spread" rather than as a contiguous phase.
+
 ---
 
 ## Cross-track contracts
@@ -262,7 +444,7 @@ deferred to ζ.
 
 ## Opus-flagged sessions
 
-Total Opus-tier sessions across the project: **~12-15** out of ~70-90 total.
+Total Opus-tier sessions across the project: **~14-17** out of ~72-93 total.
 
 | Session | Reason |
 |---------|--------|
@@ -279,6 +461,8 @@ Total Opus-tier sessions across the project: **~12-15** out of ~70-90 total.
 | E.K.1 | Index-calculus strategy |
 | E.W | Cross-attack synthesis |
 | Z.1.* (all) | Umbrella narrative |
+| T.0 | Textbook register + through-line (C-Textbook) |
+| T.Z | Textbook bind (integrative) |
 
 Plus 5-10 inflection-point Opus reviews at sub-track boundaries — these are not pre-scheduled
 sessions but are triggered by discoveries that need static-frame updates.
@@ -288,6 +472,54 @@ sessions but are triggered by discoveries that need static-frame updates.
 ## Discoveries log
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
+
+### 2026-06 — End of sub-track G.A (Opus inflection-point review at the G.A ◆ boundary)
+
+G.A is complete: G.A.1a (bdba6f5), G.A.1b (05b27c8), G.A.2 (bcd63cd), G.A.3 (7844773), G.A.4
+(2da009b), G.A.W (967e394). Four roadmap-frame updates were taken at this boundary.
+
+- **Track τ (mathematical textbook) added.** A complementary, maths-first, self-contained survey of
+  discrete-logarithm algorithms, modelled on `tetratile/docs/mathematics.rst`, distinct from the
+  code-tour `PEDAGOGY.md` chapters. See the Phase τ section for the full scope contract (C-Textbook).
+  Three genre decisions, not to be re-litigated absent new information: (1) the textbook is a
+  *separate* artifact; the `*.W` chapters stay code-tours and cross-reference it. (2) Depth is
+  *survey with proof-sketch depth* — complete and clinical, not exhaustive, not inscrutable; full
+  proofs only where the proof is the payoff. (3) The audience floor is a *full undergraduate maths
+  background* (proofs + intro analysis/algebra/probability/logic). Chapter-pairing is the
+  effort-neutral move: per-track math chapters pair with existing `*.W` writeups; only T.0 and T.Z
+  add net sessions. Open at next inflection point: artifact location/format
+  (`docs/MATHEMATICS.md` vs `docs/textbook/`; rST vs Markdown) and whether T.0 runs early or is
+  deferred until more chapters exist to calibrate the register against.
+
+- **Scoping principle 4 added (phenomenology beyond reach), prompted by bad-prime apprehension at
+  toy scale.** *Provenance:* during G.A action-frame work a `@build` agent was apprehensive about
+  handling bad primes (p | disc(f)) at toy scale; a juncture agent relayed the concern. This
+  surfaced a gap: the three-way split said what to *implement* but not what to do when a real
+  phenomenon can't be *organically* exhibited at toy scale (or, as with bad primes, is *over*-
+  exhibited relative to the NFS-scale picture). *Resolution:* principle 4 — implement the
+  mathematics regardless, never pretend toy scale exhibits what it doesn't, annotate the
+  science↔engineering disconnect (code + code-tour + Track τ textbook), naming both directions
+  (under- vs over-exposed). *On bad primes specifically:* they are a *correctness* phenomenon, not a
+  performance one. ℤ[α] is generally a subring of ℤ_K; they differ exactly at primes dividing the
+  index [ℤ_K : ℤ[α]], all of which divide disc(f). The G.A.3 implementation already handles the
+  linear-factor case for both good and bad primes and flags `index_divisible`; the G.A.W chapter §9
+  documents the Round 2 / HNF omission as "engineering scale, not mathematical omission" — the
+  template for principle-4 annotations. The `@build` apprehension is legitimate but resolved: bad
+  primes are *more* prominent at toy scale (e.g. disc(x²−2)=8, so p=2 is bad), not absent.
+
+- **`## On scale` section added.** A clinical statement of the scale model behind principle 4 (three
+  axes — resource/operational, mathematical-dimension, structural; the three couplings between
+  field-degree and instance size; method-convergence vs problem-openness of NFS complexity). The
+  full natural-philosophy exposition is deferred to a Track τ "On scale" interlude (T.0).
+
+- **S0.W α-substrate writeup owed (backfill).** Audit at the G.A boundary found Phase α shipped its
+  three shared crates (`field`, `bigint`, `numth`) with only code-level docstrings and **no
+  integrative math chapter** — unlike every other phase (`G.W`/`D.W`/`E.W`/`S.D`/`Z.1`). The α
+  substrate contains mathematically substantial content (Lenstra ECM stages 1–2, Suyama, Montgomery
+  ladder; Miller–Rabin; smoothness + `SmoothWitness`; batched inversion; Tonelli–Shanks/Legendre)
+  that deserves a chapter. Added S0.W (Phase α, Sonnet, 1 session) to write
+  `shared/numth/docs/PEDAGOGY.md` matching the G.A.W chapter's genre and quality. Drafted at this
+  boundary.
 
 ### 2026-05 — End of Phase α (after α.1, α.2, α.3; reviewed at α.4)
 
