@@ -446,6 +446,8 @@ signature is the contract; the float value is heuristic (KAT enforces ordering, 
 Contracts frozen before G.B: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773). G.B opens over the frozen G.A substrate.
 
+G.B ◆ boundary: still-on-intent (2026-06-06). All G.B sessions complete. C-PolyPair and C-Score frozen and ready for G.C sieving.
+
 ---
 
 ## Action-frame digest
