@@ -610,7 +610,7 @@ pub enum RelationError {
 |---|---------|--------|--------|-------|
 | G.C.1 | Sieve substrate: factor bases + Relation type | done | c1dc0b6 | C-Relation, C-FactorBase |
 | G.C.2 | Line-sieving baseline | done | c4e5fc4 | — |
-| G.C.3 | Special-q strategy | pending | — | — |
+| G.C.3 | Special-q strategy | done | 0ef7231 | — |
 | G.C.4 | Lattice sieving | pending | — | — |
 | G.C.W | Integrative writeup | pending | — | — |
 
