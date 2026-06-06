@@ -35,4 +35,5 @@ pub use sieve::{
     ExponentVector, Relation, RelationError,
     line_sieve, LineSieveConfig,
     special_q_sieve, SpecialQConfig, SpecialQResult,
+    lattice_sieve, LatticeBasis, LatticeSieveConfig, LatticeSieveResult,
 };

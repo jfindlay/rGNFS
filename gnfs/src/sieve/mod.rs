@@ -24,11 +24,13 @@
 //! a destructive reshard.
 
 pub mod factor_base;
+pub mod lattice;
 pub mod line;
 pub mod norms;
 pub mod special_q;
 
 pub use factor_base::{AlgebraicPrime, FactorBase};
+pub use lattice::{lattice_sieve, LatticeBasis, LatticeSieveConfig, LatticeSieveResult};
 pub use line::{line_sieve, LineSieveConfig};
 pub use norms::{algebraic_norm, norm_sign, norm_to_uint, rational_norm, NormBridgeError};
 pub use special_q::{special_q_sieve, SpecialQConfig, SpecialQResult};
