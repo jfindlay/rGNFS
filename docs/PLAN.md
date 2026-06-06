@@ -231,7 +231,7 @@ term of Murphy-E). `shared-numfield`: `resultant(f, g)`, `discriminant(f)`, `is_
 **Defined:** α.2. **Consumed by (in G.B):** G.B.3 (primality in root-sieve prime grid). `Uint<4>`;
 C1 resolved at G.A.1a (256 bits suffice for toy norms — see ROADMAP). Stable for G.B.
 
-### C-PolyPair — NFS polynomial pair + selection entry surface (compiler + KAT) — *to be frozen at G.B.1*
+### C-PolyPair — NFS polynomial pair + selection entry surface (compiler + KAT) — *frozen at G.B.1 (2f43f99)*
 **Defined:** G.B.1. **Consumed by:** G.B.2, G.B.3, G.B.4, **G.C (sieving), G.D (filtering)**, and
 adapted by **D.A (NFS-DL)**. The polynomial-pair type `(f, g, m, n)` with the `f(m) ≡ 0 mod N`
 invariant, the `number_field()` constructor (resolving the non-monic seam with C-NF), and the
@@ -437,7 +437,7 @@ signature is the contract; the float value is heuristic (KAT enforces ordering, 
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.B.1 | `gnfs` crate + base-m generation | pending | — | C-PolyPair |
+| G.B.1 | `gnfs` crate + base-m generation | done | 2f43f99 | C-PolyPair |
 | G.B.2 | Murphy-E scoring | pending | — | C-Score |
 | G.B.3 | Root sieve | pending | — | — |
 | G.B.4 | Coppersmith multi-poly | pending | — | — |
@@ -453,7 +453,11 @@ C-Res (bcd63cd), C-Dedekind (7844773). G.B opens over the frozen G.A substrate.
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
 notable texture) for the juncture forks to consume.
 
-*(none yet)*
+### G.B.1 — 2026-06-06
+Discovery/flex: Inflection-point design completed; C-PolyPair frozen as designed. Non-monic seam resolved on the G.B side via `number_field()` homogenisation — C-NF not touched.
+Affected: C-PolyPair (now frozen at 2f43f99)
+Deferred: no
+Texture: `PolyGenerator` trait uses RPITIT (Rust 1.75+, workspace on 1.95 — no boxing needed). `base_m_for_degree` uses `floor(N^{1/(d+1)}) + 1` to guarantee N fits in d+1 digits. Cargo.lock included as allowed extra (standard side effect of new crate).
 
 ---
 
