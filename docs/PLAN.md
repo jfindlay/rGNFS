@@ -219,7 +219,7 @@ G.A.3, G.B, G.C, D.A, E.D. Element representation, `Mul` canonicalisation contra
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| α.5 | `Fp` completion | pending | — | C-Fp (+legendre/sqrt) |
+| α.5 | `Fp` completion | done | cf00ed5 | C-Fp (+legendre/sqrt) |
 | G.A.1a | Number-field substrate | pending | — | C-NF |
 | G.A.1b | Ideal representation | pending | — | C-Ideal |
 | G.A.2 | Resultants / subresultant GCD | pending | — | C-Res |
@@ -227,7 +227,7 @@ G.A.3, G.B, G.C, D.A, E.D. Element representation, `Mul` canonicalisation contra
 | G.A.4 | Bad-prime handling | pending | — | (extends C-Dedekind) |
 | G.A.W | Integrative writeup | pending | — | — |
 
-Contracts frozen so far: C-Fp (α.1, pending α.5 completion), C-numth (α.2).
+Contracts frozen so far: C-Fp (α.1, completed α.5 cf00ed5), C-numth (α.2).
 
 ---
 
