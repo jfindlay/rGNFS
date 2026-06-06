@@ -441,7 +441,7 @@ signature is the contract; the float value is heuristic (KAT enforces ordering, 
 | G.B.2 | Murphy-E scoring | done | 00aa32d | C-Score |
 | G.B.3 | Root sieve | done | 3e2ba1b | — |
 | G.B.4 | Coppersmith multi-poly | done | c115a1b | — |
-| G.B.W | Integrative writeup | pending | — | — |
+| G.B.W | Integrative writeup | done | 7fa9ab9 | — |
 
 Contracts frozen before G.B: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773). G.B opens over the frozen G.A substrate.
