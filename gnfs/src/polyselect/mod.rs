@@ -28,13 +28,16 @@
 //!
 //! - [`mod.rs`](self) — `PolyPair`, `PolyPairError`, `PolyGenerator`, re-exports.
 //! - [`base_m`] — `select_base_m`, `optimal_degree`, `BaseMGenerator`.
+//! - [`root_sieve`] — `root_sieve`, `RootSieveConfig`, `RootSieveGenerator`.
 
 pub mod base_m;
 pub mod murphy;
+pub mod root_sieve;
 pub mod roots;
 
 pub use base_m::{select_base_m, select_base_m_with_m, optimal_degree, BaseMGenerator};
 pub use murphy::score;
+pub use root_sieve::{root_sieve, rotate, RootSieveConfig, RootSieveGenerator};
 
 use num_bigint::BigInt;
 use num_traits::{One, Zero};

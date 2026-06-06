@@ -22,4 +22,5 @@ pub use polyselect::{
     select_base_m, select_base_m_with_m, optimal_degree,
     BaseMGenerator, PolyGenerator, PolyPair, PolyPairError,
     score,
+    root_sieve, rotate, RootSieveConfig, RootSieveGenerator,
 };
