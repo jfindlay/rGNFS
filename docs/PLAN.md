@@ -440,7 +440,7 @@ signature is the contract; the float value is heuristic (KAT enforces ordering, 
 | G.B.1 | `gnfs` crate + base-m generation | done | 2f43f99 | C-PolyPair |
 | G.B.2 | Murphy-E scoring | done | 00aa32d | C-Score |
 | G.B.3 | Root sieve | done | 3e2ba1b | — |
-| G.B.4 | Coppersmith multi-poly | pending | — | — |
+| G.B.4 | Coppersmith multi-poly | done | c115a1b | — |
 | G.B.W | Integrative writeup | pending | — | — |
 
 Contracts frozen before G.B: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
