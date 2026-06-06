@@ -287,8 +287,41 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 ## Discoveries log
 
-(Reserved for entries added at sub-track boundaries when action-frame work reveals roadmap-frame
-updates. Empty at project start.)
+Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
+
+### 2026-05 — End of Phase α (after α.1, α.2, α.3; reviewed at α.4)
+
+- **Contract C1 is currently hardcoded to `Uint<4>`.** `shared::numth`'s entire surface
+  (`miller_rabin`, `is_prime`, `trial_smooth`, `SmoothWitness`, `ecm_factor`) operates on
+  `Uint<4>`. The factor type in `SmoothWitness::factors` is `(u64, u32)`. This is sufficient for
+  the two imminent consumers (G.C, D.A — toy-scale NFS sieving where 256-bit norms suffice) but
+  the trait was specified at α.2 to accommodate three consumers including E.K. G.A.1 will revisit
+  the contract once number-field arithmetic gives concrete bit-widths for NFS norms; widening to
+  `Uint<L>` and parameterising `SmoothWitness` over a Factor type are both mechanical changes
+  that can be done in-place at G.A.1 or G.C.1.
+
+  Decision deferred per the principle "speculative generality is the greater risk than late
+  refactor" (see `multi-session-planning.md` on Contract C3). The cost of refactoring `Uint<4>`
+  → `Uint<L>` at G.C is bounded; the cost of designing the witness shape now without a real
+  second consumer is unbounded.
+
+- **`Fp` trait is missing `legendre` and `sqrt`.** Deferred at α.1 because Tonelli–Shanks
+  requires primality testing, which only existed after α.2. Now that `shared::numth::is_prime` is
+  available the dependency loop is resolved. Will be added in α.5 (patch session) so that G.A.1
+  doesn't have to amend the trait while also doing number-field substrate design.
+
+- **`rho::curve` was NOT lifted to `shared::curve` in α.3.** Deliberate: ECM uses Montgomery-form
+  curves (Suyama parameterization), `rho` uses short Weierstrass. No shared substrate exists yet.
+  Revisit at E.B.1 when pairings need divisor-arithmetic curves.
+
+- **`factor_base_up_to` is O(B·sqrt(B)) via repeated primality tests.** Acknowledged TODO; not
+  bottlenecking at α.2's scale (`B ≤ 400` in tests). Replace with sieve of Eratosthenes when G.C
+  reveals a real bottleneck.
+
+### Opus-flagged sessions table addendum
+
+- **α.5** added as a single mechanical Sonnet session (not Opus). It is a patch-up session for
+  `Fp` trait completion (`legendre`, `sqrt`), not a design session.
 
 ---
 
