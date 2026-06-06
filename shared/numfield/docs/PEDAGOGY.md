@@ -1,0 +1,742 @@
+# Number-Field Substrate: A Code-Tour Chapter
+
+This chapter explains the `shared/numfield` crate — the algebraic substrate that the General Number
+Field Sieve (GNFS) and related algorithms sit on. It is organised by the implementation, not by
+mathematical abstraction: each section introduces the mathematics, then shows how it is realised in
+code. A reader who has read the `rho` PEDAGOGY chapter can read this one without consulting the
+source.
+
+The chapter covers polynomial arithmetic, number fields and their elements, norm and trace, the
+resultant and subresultant GCD, ideal representation, and Dedekind factorisation — including bad
+primes and the Dedekind criterion.
+
+---
+
+## 1. Introduction and Motivation
+
+### Why number fields arise in GNFS
+
+The General Number Field Sieve factors a large integer N by exploiting a homomorphism between two
+rings: the rational integers ℤ and the ring of integers of a number field K = ℚ(α). The key idea
+is to find many pairs (a, b) ∈ ℤ² such that both a + bm (the rational norm, for a suitable integer
+m) and Norm_{K/ℚ}(a + bα) (the algebraic norm) are B-smooth — divisible only by primes up to a
+bound B. When enough such pairs are collected, linear algebra over 𝔽₂ produces a congruence of
+squares mod N, and hence a non-trivial factor.
+
+The algebraic side of the sieve requires computing Norm_{K/ℚ}(a + bα) for each sieve pair (a, b).
+This norm is an integer, and its prime factorisation determines which algebraic prime ideals divide
+the ideal (a + bα) in ℤ[α]. The factor base on the algebraic side consists of prime ideals above
+rational primes p ≤ B — specifically, the prime ideals (p, α − r) where r is a root of f mod p.
+
+This is why the `shared/numfield` crate exists: it provides the arithmetic of K = ℚ(α), the norm
+map, and the ideal-theoretic machinery that the sieve consumes.
+
+### What ℤ[α] gives us that ℤ does not
+
+The rational integers ℤ have unique factorisation. The ring ℤ[α] — polynomials in α with integer
+coefficients, where α satisfies a monic irreducible f ∈ ℤ[x] — is in general not a unique
+factorisation domain. However, the ring of integers ℤ_K of K = ℚ(α) is a Dedekind domain: every
+non-zero ideal factors uniquely into prime ideals. The GNFS exploits this ideal-theoretic unique
+factorisation on the algebraic side.
+
+For the toy-scale GNFS implemented in this project, ℤ[α] is used directly (not the full ring of
+integers ℤ_K, which may be larger). The Dedekind criterion (§9) detects when ℤ[α] ≠ ℤ_K at a
+given prime p; for the polynomials used in practice, this distinction rarely matters at toy scale.
+
+### Coefficient types: a correctness-oracle dependency
+
+All polynomial and element arithmetic in this crate uses `num_bigint::BigInt` for integer
+coefficients and `num_rational::BigRational` for rational coefficients. This is a deliberate
+design choice, analogous to the role of CADO-NFS as a correctness oracle for the sieve: the
+underlying integer and rational arithmetic is delegated to a well-tested third-party library, while
+the number-field abstraction and all algorithms above it are first-party. The alternative —
+implementing arbitrary-precision arithmetic from scratch — would be an engineering optimisation
+orthogonal to the mathematical content of the crate.
+
+---
+
+## 2. Polynomial Arithmetic: `IntPoly` and `RatPoly`
+
+### Data representation
+
+Both polynomial types store coefficients in a `Vec` with the **least-significant coefficient
+first**: `coeffs[i]` is the coefficient of xⁱ. The zero polynomial has an empty `coeffs` vector.
+The **trailing-zero invariant** is maintained throughout: `from_coeffs` trims any trailing zeros
+before storing, and all arithmetic operations produce trimmed results. This means the degree of a
+non-zero polynomial is always `coeffs.len() - 1`, and the zero polynomial has `degree() == None`.
+
+```rust
+// f = x² − 2: coefficients [−2, 0, 1] (constant term first)
+let f = IntPoly::from_coeffs(vec![bi(-2), bi(0), bi(1)]);
+assert_eq!(f.degree(), Some(2));
+assert_eq!(f.leading_coeff(), Some(&bi(1)));
+```
+
+The trailing-zero invariant is not merely cosmetic: it ensures that degree comparisons and leading
+coefficient lookups are O(1), and that equality is coefficient-wise without a normalisation step.
+
+### `IntPoly` — polynomials over ℤ
+
+`IntPoly` provides the arithmetic of ℤ[x]: addition, subtraction, negation, multiplication, and
+scalar multiplication. All operations return new polynomials; the inputs are not mutated. Evaluation
+uses Horner's method for efficiency.
+
+The most important non-trivial operation is **pseudo-division** (`pseudo_div_rem`). Over ℤ[x],
+ordinary long division may require dividing by the leading coefficient of the divisor, which is not
+always an integer. Pseudo-division avoids this by pre-multiplying the dividend by a power of the
+leading coefficient of the divisor:
+
+> Given f and g with leading coefficient lc(g), pseudo-division computes
+> lc(g)^e · f = q · g + r, where e = deg(f) − deg(g) + 1.
+
+The exponent e is chosen so that every division step in the long-division loop is exact over ℤ.
+This is the building block for the subresultant GCD algorithm (§6).
+
+```rust
+// f = 2x² + 3x + 1, g = 2x + 1.
+// lc(g) = 2, e = 2, multiplier = 4.
+// 4f = 8x² + 12x + 4 = (4x + 4)(2x + 1) + 0.
+let (q, r) = f.pseudo_div_rem(&g);
+// q = 4x + 4, r = 0
+```
+
+`IntPoly` also provides `to_rat_poly`, which embeds ℤ[x] into ℚ[x] by converting each `BigInt`
+coefficient to a `BigRational`.
+
+### `RatPoly` — polynomials over ℚ
+
+`RatPoly` provides the arithmetic of ℚ[x], with the same storage convention. The key operation
+that `IntPoly` lacks is **exact polynomial long division** (`div_rem`): over ℚ, the leading
+coefficient of the divisor is always a unit, so division is always possible without pre-scaling.
+
+```rust
+// (x² − 1) / (x − 1) = x + 1, remainder 0.
+let (q, r) = dividend.div_rem(&divisor);
+```
+
+The `rem` method is a convenience wrapper that discards the quotient.
+
+### Why both types are needed
+
+`IntPoly` is used for:
+- The defining polynomial f ∈ ℤ[x] (stored in `NumberField`).
+- The resultant computation (§6), which stays in ℤ throughout via the Bareiss algorithm.
+- The discriminant and Dedekind criterion (§8, §9), which work mod p over ℤ.
+
+`RatPoly` is used for:
+- Element arithmetic in K = ℚ(α): elements have rational coefficients in general.
+- Reduction mod f (the `rem` operation), which requires exact division.
+- The extended Euclidean algorithm for inversion (§3).
+
+The embedding `IntPoly::to_rat_poly` bridges the two: the defining polynomial f lives in ℤ[x] but
+must be treated as an element of ℚ[x] when reducing element products mod f.
+
+---
+
+## 3. Number Fields and Elements
+
+### The number field K = ℚ(α)
+
+A number field K = ℚ(α) is determined by a monic irreducible polynomial f ∈ ℤ[x] of degree d ≥ 1.
+The field is the quotient ring ℚ[x]/(f(x)): elements of K are equivalence classes of polynomials
+in ℚ[x] under the relation g ≡ h iff f | (g − h). The primitive element α is the image of x in
+this quotient; it satisfies f(α) = 0 by construction.
+
+`NumberField` wraps the defining polynomial:
+
+```rust
+pub struct NumberField {
+    pub f: IntPoly,  // monic, irreducible, degree ≥ 1
+}
+```
+
+The constructor panics if f is not monic or has degree < 1. It does **not** verify irreducibility —
+this is the caller's responsibility, enforced by KAT coverage rather than a runtime check (which
+would require a polynomial factorisation algorithm).
+
+The extension degree [K : ℚ] = deg(f) is the dimension of K as a ℚ-vector space. The standard
+basis is {1, α, α², …, α^{d−1}}.
+
+### Elements of K
+
+`NumberFieldElement<'a>` represents an element of K as a polynomial in α of degree strictly less
+than d, with rational coefficients:
+
+```rust
+pub struct NumberFieldElement<'a> {
+    pub field: &'a NumberField,
+    pub poly: RatPoly,  // degree < field.degree()
+}
+```
+
+The lifetime `'a` ties the element to its ambient field. The degree bound `poly.degree() < d` is
+an invariant maintained by all arithmetic operations.
+
+Constructing elements:
+
+```rust
+let k = NumberField::new(IntPoly::from_coeffs(vec![bi(-2), bi(0), bi(1)])); // x² − 2
+let alpha = k.alpha();          // the element α (polynomial x mod f)
+let one = k.from_int(bi(1));    // the element 1 (constant polynomial)
+let beta = one.add(&alpha);     // 1 + α
+```
+
+Addition and subtraction cannot increase the degree beyond d − 1 (since both operands have degree
+< d), so they require no reduction. Negation is coefficient-wise.
+
+### The Mul canonicalisation contract
+
+Multiplication is the critical operation. The product of two polynomials of degree < d has degree
+up to 2d − 2, which exceeds the degree bound. `mul` therefore **eagerly reduces mod f** after
+polynomial multiplication:
+
+```rust
+pub fn mul(&self, rhs: &Self) -> Self {
+    let product = self.poly.mul(&rhs.poly);
+    Self::reduced(self.field, product)  // reduces product mod f via RatPoly::rem
+}
+```
+
+The `reduced` helper calls `poly.rem(&f_rat)`, which performs exact polynomial long division over
+ℚ and returns the remainder. This remainder has degree < d by the definition of polynomial
+division.
+
+The consequence of eager reduction is that **equality is coefficient-wise**: two elements are equal
+if and only if their `poly` fields are equal. No re-reduction is needed before comparison. This is
+the Mul canonicalisation contract (C-NF): it is what makes `PartialEq` for `NumberFieldElement`
+correct and cheap.
+
+```rust
+let alpha_sq = alpha.square();
+// α² ≡ 2 mod (x² − 2), so alpha_sq.poly == [2/1] (the constant 2)
+assert_eq!(alpha_sq, k.from_int(bi(2)));
+```
+
+`square` and `pow` (square-and-multiply) both delegate to `mul` and therefore inherit the
+canonicalisation contract.
+
+### Inversion via extended Euclidean in ℚ[x]
+
+Since f is irreducible over ℚ, for any non-zero β ∈ K the polynomials β.poly and f are coprime in
+ℚ[x]. The extended Euclidean algorithm finds s, t ∈ ℚ[x] such that:
+
+> s · β.poly + t · f = 1
+
+The Bézout coefficient s is then the inverse of β.poly modulo f. The implementation uses the
+standard iterative extended GCD over ℚ[x], normalising the GCD to be monic:
+
+```rust
+pub fn inv(&self) -> Self {
+    let f_rat = self.field.f.to_rat_poly();
+    let (_, s, _) = extended_gcd_rat(&self.poly, &f_rat);
+    Self::reduced(self.field, s)
+}
+```
+
+The final `reduced` call is defensive: s should already have degree < d (since it is a Bézout
+coefficient for polynomials of degree < d and d respectively), but the reduction ensures the
+invariant is maintained regardless.
+
+---
+
+## 4. Norm via Resultant
+
+### The algebraic definition
+
+The field norm N_{K/ℚ}(β) of an element β ∈ K is the product of all conjugates of β:
+
+> N_{K/ℚ}(β) = ∏ᵢ β(αᵢ)
+
+where α₁, …, αd are the d roots of f (in some algebraic closure). For β represented as a
+polynomial g(α) ∈ ℚ[x], this product equals the resultant of f and g with respect to x:
+
+> N_{K/ℚ}(g(α)) = Res_x(f, g)
+
+This identity holds because the resultant of f and g is, by definition, the product ∏ᵢ g(αᵢ)
+times the leading coefficient of f raised to deg(g) — and since f is monic, the leading coefficient
+factor is 1.
+
+### The Sylvester matrix
+
+The resultant Res(f, g) is the determinant of the **Sylvester matrix**, a (d + e) × (d + e) matrix
+where d = deg(f) and e = deg(g). The matrix is built from two blocks of shifted coefficient rows:
+the first e rows are shifts of f (by x⁰, x¹, …, x^{e−1}), and the next d rows are shifts of g
+(by x⁰, x¹, …, x^{d−1}). Coefficients appear in descending order of degree within each row.
+
+For the norm computation, deg(g) < deg(f) = d, so the Sylvester matrix is (d + e) × (d + e) with
+e < d. The implementation in `element.rs` builds this matrix with `BigRational` entries and
+computes its determinant via Gaussian elimination with partial pivoting:
+
+```rust
+fn sylvester_resultant(f: &IntPoly, g: &RatPoly) -> BigRational {
+    let d = f.degree().unwrap();
+    let e = g.degree().unwrap_or(0);
+    let n = d + e;
+    // Build the (d+e)×(d+e) Sylvester matrix...
+    det_rational(&mut mat, n)
+}
+```
+
+Since the arithmetic is over ℚ (exact), Gaussian elimination is numerically exact. The result is
+always a rational number, but for algebraic integers (elements of ℤ[α]) it is always an integer.
+
+### The sign convention
+
+A common source of confusion is the sign of the norm for linear elements. For monic f of degree d
+and the element β = α − c (for c ∈ ℤ), the norm is:
+
+> N_{K/ℚ}(α − c) = Res_x(f, x − c) = (−1)^d · f(c)
+
+The factor (−1)^d arises from the Sylvester matrix construction: the resultant of f (degree d) and
+g = x − c (degree 1) equals (−1)^{d·1} times the product of (αᵢ − c) over all roots αᵢ of f,
+which is (−1)^d · f(c) for monic f.
+
+This sign tripped up the G.A.1a KAT specification: the initial spec stated Norm(α − 1) = −1 for
+f = x³ − x − 1, but the correct value is:
+
+> N(α − 1) = (−1)³ · f(1) = −1 · (1 − 1 − 1) = −1 · (−1) = 1
+
+The implementation is mathematically correct; the KAT spec was corrected to match. The formula
+Norm(α − c) = (−1)^d · f(c) is the reliable reference.
+
+### The numerical-embedding alternative
+
+An alternative approach to computing the norm is via numerical embeddings: embed K into ℂ^d by
+sending α to each of the d roots of f (computed numerically), evaluate β at each embedding, and
+multiply the results. This approach is simpler to implement but introduces floating-point error,
+which must be controlled by working with sufficient precision and rounding to the nearest integer.
+For the GNFS use case, where norms can be large (up to ~2^{150} for toy-scale parameters), the
+rounding step is non-trivial. The resultant approach is exact and is therefore the implementation
+chosen here.
+
+---
+
+## 5. Trace
+
+The field trace Tr_{K/ℚ}(β) is the sum of all conjugates of β:
+
+> Tr_{K/ℚ}(β) = ∑ᵢ β(αᵢ)
+
+For β = g(α) with g ∈ ℚ[x], the trace equals the trace of the matrix g(C), where C is the
+**companion matrix** of f. The companion matrix is the d × d matrix whose characteristic polynomial
+is f; its eigenvalues are exactly the roots α₁, …, αd of f.
+
+The companion matrix of a monic polynomial f = xd + c_{d−1} x^{d−1} + … + c₀ is:
+
+```
+C = [ 0   0  …  0  −c₀  ]
+    [ 1   0  …  0  −c₁  ]
+    [ 0   1  …  0  −c₂  ]
+    [ …   …  …  …   …   ]
+    [ 0   0  …  1  −c_{d−1} ]
+```
+
+(subdiagonal of 1s, last column of negated lower coefficients). The trace of g(C) is computed by
+evaluating the polynomial g at the matrix C using Horner's method, then summing the diagonal
+entries.
+
+For the standard basis element α (g = x), the trace is the sum of the roots of f, which equals
+−c_{d−1} by Vieta's formulas. For the constant element 1 (g = 1), the trace is d (the degree of
+the extension).
+
+The trace is used less frequently than the norm in the GNFS context, but it appears in the
+computation of the discriminant (via the trace form) and in lattice-based algorithms.
+
+---
+
+## 6. Resultant and Subresultant GCD
+
+The `resultant.rs` module provides a standalone, general-purpose resultant and GCD over ℤ[x],
+separate from the norm-specific Sylvester computation in `element.rs`. This module is consumed by
+the discriminant computation (§8) and by the Dedekind criterion (§9).
+
+### Resultant via Sylvester matrix + Bareiss determinant
+
+The public `resultant(f, g)` function builds the Sylvester matrix of f and g as a flat
+row-major `Vec<BigInt>` and computes its determinant using the **Bareiss fraction-free algorithm**.
+
+Bareiss elimination avoids rational arithmetic entirely. The key identity is:
+
+> M[i][j] ← (M[i][j] · pivot − M[i][col] · M[col][j]) / prev_pivot
+
+where `prev_pivot` is the pivot from the previous column. This division is always exact over ℤ
+(this is the content of the Bareiss theorem), so the entire computation stays in ℤ without
+introducing fractions. The result is the determinant of the Sylvester matrix, which equals
+Res(f, g) ∈ ℤ.
+
+The Bareiss algorithm is preferred over Gaussian elimination with rational arithmetic for the
+integer resultant because it avoids the coefficient explosion that would occur if intermediate
+results were kept as fractions.
+
+### Subresultant GCD via pseudo-remainder sequence
+
+The `subresultant_gcd(f, g)` function computes the primitive GCD of f and g over ℤ[x] — a
+polynomial proportional to gcd(f, g) over ℚ[x], with positive leading coefficient.
+
+The naive approach — Euclidean algorithm using `pseudo_div_rem` at each step — suffers from
+**coefficient explosion**: the coefficients of intermediate remainders grow exponentially in the
+degree. The subresultant PRS (pseudo-remainder sequence) avoids this by reducing each remainder to
+its primitive part before the next step:
+
+```rust
+loop {
+    let (_, r) = a.pseudo_div_rem(&b);
+    if r.degree().is_none() {
+        return primitive_part(&b);  // b is the GCD
+    }
+    a = b;
+    b = primitive_part(&r);  // remove content before next step
+}
+```
+
+The `primitive_part` function divides all coefficients by their GCD (the content of the
+polynomial) and normalises the leading coefficient to be positive. This keeps coefficients small
+throughout the sequence. The result is the primitive part of the last non-zero remainder, which is
+the primitive GCD of f and g.
+
+The `pseudo_div_rem` building block (in `poly.rs`) is the engine of this algorithm. It computes
+lc(g)^e · f = q · g + r over ℤ, where the pre-multiplication by lc(g)^e ensures all divisions in
+the long-division loop are exact.
+
+---
+
+## 7. Ideal Representation
+
+### Two-element primary form
+
+An ideal I in ℤ[α] is represented in **two-element primary form**: I = (p, α − r), the ideal
+generated by the rational prime p and the element α − r for some r ∈ ℤ. This representation is
+standard in the NFS literature and is sufficient for the prime ideals that appear in the algebraic
+factor base.
+
+```rust
+pub struct Ideal<'a> {
+    pub field: &'a NumberField,
+    pub p: BigInt,   // rational prime (positive)
+    pub r: BigInt,   // integer r; second generator is α − r
+}
+```
+
+The invariant `p > 0` is enforced by the constructor. The ideal (p, α − r) is a prime ideal of
+ℤ[α] above the rational prime p when r is a root of f mod p — that is, when f(r) ≡ 0 (mod p).
+
+### Ideal norm
+
+The norm of the ideal I = (p, α − r) is defined as the index [ℤ[α] : I] — the number of cosets
+of I in ℤ[α] as an abelian group. For a prime ideal above p with **residue degree 1** (meaning
+the quotient ℤ[α]/I is isomorphic to 𝔽_p), the norm is simply p:
+
+```rust
+pub fn norm(&self) -> BigInt {
+    self.p.clone()
+}
+```
+
+The residue degree 1 convention is the standard NFS assumption: the factor base consists only of
+prime ideals (p, α − r) where r is a root of f mod p, which have residue degree 1. Prime ideals
+above p arising from irreducible factors of f mod p of degree > 1 have higher residue degree and
+are not included in the factor base at toy scale.
+
+### Ideal multiplication via CRT
+
+The product of two prime ideals I = (p₁, α − r₁) and J = (p₂, α − r₂) above distinct primes
+p₁ ≠ p₂ is represented as (p₁p₂, α − r) where r is determined by the **Chinese Remainder
+Theorem**:
+
+> r ≡ r₁ (mod p₁),   r ≡ r₂ (mod p₂)
+
+The CRT solution is:
+
+> r = r₁ + p₁ · ((r₂ − r₁) · p₁⁻¹ mod p₂)
+
+reduced into [0, p₁p₂). This is implemented in `Ideal::mul`:
+
+```rust
+pub fn mul(&self, rhs: &Self) -> Self {
+    let p = &self.p * &rhs.p;
+    let diff = &rhs.r - &self.r;
+    let p1_inv_mod_p2 = mod_inverse(&self.p, &rhs.p).expect("p₁ and p₂ must be coprime");
+    let t = mod_reduce(&(diff * &p1_inv_mod_p2), &rhs.p);
+    let r = mod_reduce(&(&self.r + &self.p * t), &p);
+    Self { field: self.field, p, r }
+}
+```
+
+The norm-multiplicativity identity N(IJ) = N(I) · N(J) follows immediately: N(IJ) = p₁p₂ =
+N(I) · N(J).
+
+### What the two-element form can and cannot represent
+
+The two-element form (p, α − r) represents exactly the prime ideals of residue degree 1 above p.
+It cannot represent:
+- Prime ideals of residue degree > 1 (arising from irreducible factors of f mod p of degree > 1).
+- Non-principal ideals in general (though all prime ideals of residue degree 1 are principal in
+  ℤ[α] when ℤ[α] is a PID).
+- Products of ideals above the same prime p (the CRT formula requires p₁ ≠ p₂).
+
+For a complete ideal-theoretic treatment, one would use the **Hermite Normal Form (HNF) basis**
+representation, which can represent any ideal as a ℤ-module. This is noted as future work; the
+two-element form is sufficient for the NFS factor base at toy scale.
+
+---
+
+## 8. Dedekind Factorisation
+
+### Dedekind's theorem
+
+Given a monic polynomial f ∈ ℤ[x] and a rational prime p with p ∤ disc(f), **Dedekind's theorem**
+states that the prime ideals of ℤ[α] above p correspond bijectively to the irreducible factors of
+f mod p. Specifically:
+
+- If f ≡ ∏ᵢ gᵢ(x)^{eᵢ} (mod p) with gᵢ irreducible over 𝔽_p, then the prime ideals above p are
+  𝔭ᵢ = (p, gᵢ(α)).
+- For a linear factor gᵢ = x − r, the prime ideal is 𝔭ᵢ = (p, α − r) in two-element form.
+- The ramification index eᵢ and residue degree fᵢ = deg(gᵢ) satisfy ∑ eᵢ fᵢ = d = deg(f).
+
+The condition p ∤ disc(f) ensures that f is squarefree mod p (all eᵢ = 1), so the factorisation
+is unramified.
+
+### The linear-factor case
+
+The implementation in `dedekind.rs` handles the **linear-factor case**: it finds all roots r ∈
+{0, …, p−1} with f(r) ≡ 0 (mod p) by brute-force evaluation, and returns the corresponding prime
+ideals (p, α − r):
+
+```rust
+pub fn dedekind_factor<'a>(field: &'a NumberField, p: &BigInt) -> Vec<Ideal<'a>> {
+    let f = &field.f;
+    let mut roots = Vec::new();
+    for r in 0..p_to_usize(p) {
+        let r_big = BigInt::from(r);
+        if mod_reduce(&f.eval(&r_big), p).is_zero() {
+            roots.push(r_big);
+        }
+    }
+    // ...
+}
+```
+
+This is correct and sufficient for the NFS factor base, which consists only of prime ideals of
+residue degree 1. Irreducible factors of f mod p of degree > 1 contribute prime ideals of higher
+residue degree, which are not included in the factor base at toy scale.
+
+### The inert-prime sentinel convention
+
+If f has no roots mod p — that is, all irreducible factors of f mod p have degree > 1 — then (p)
+is **inert** in ℤ[α] (or factors only into higher-degree prime ideals). In this case,
+`dedekind_factor` returns a single **sentinel ideal** (p, α − 0):
+
+```rust
+if roots.is_empty() {
+    vec![Ideal::new(field, p.clone(), BigInt::zero())]
+} else {
+    roots.into_iter().map(|r| Ideal::new(field, p.clone(), r)).collect()
+}
+```
+
+The sentinel convention avoids an ambiguous empty `Vec` return. Callers that need to distinguish
+inert primes from split primes should check whether the returned ideal's r satisfies f(r) ≡ 0
+(mod p). The downstream implication for G.C factor-base construction is that inert primes are
+excluded from the algebraic factor base: the sentinel signals "no linear-factor ideals above p."
+
+---
+
+## 9. Bad Primes and the Dedekind Criterion
+
+### What makes a prime "bad"
+
+A prime p is **bad** for f (equivalently, **ramified** in the discriminant) if p | disc(f). The
+discriminant of a monic polynomial f of degree d is:
+
+> disc(f) = (−1)^{d(d−1)/2} · Res(f, f')
+
+where f' is the formal derivative. The `discriminant` function computes this via the standalone
+`resultant` from `resultant.rs`:
+
+```rust
+pub fn discriminant(f: &IntPoly) -> BigInt {
+    let f_prime = formal_derivative(f);
+    let res = resultant(f, &f_prime);
+    let sign_exp = d * (d - 1) / 2;
+    if sign_exp % 2 == 0 { res } else { -res }
+}
+```
+
+For bad primes, Dedekind's theorem does not apply directly: f may be non-squarefree mod p (some
+eᵢ > 1), and the ring ℤ[α] may not be the full ring of integers ℤ_K at p.
+
+### The Dedekind criterion
+
+The **Dedekind criterion** (also called the index criterion) tests whether p divides the index
+[ℤ_K : ℤ[α]] — that is, whether ℤ[α] is strictly smaller than the full ring of integers at p.
+The algorithm is:
+
+1. Compute g = squarefree part of f mod p: g = f / gcd(f, f') mod p.
+2. Compute h = f / g mod p.
+3. Compute t = (g·h − f) / p mod p. (The numerator is divisible by p coefficient-wise because
+   g·h ≡ f mod p by construction.)
+4. Compute T = gcd(g, gcd(h, t)) mod p.
+5. If T = 1 in 𝔽_p[x] (constant polynomial with value 1 mod p), then p ∤ [ℤ_K : ℤ[α]] and
+   Dedekind's theorem applies normally. If T ≠ 1, then p | [ℤ_K : ℤ[α]] and ℤ[α] is not the
+   maximal order at p.
+
+The GCDs in steps 4 and 5 are computed via `subresultant_gcd` from `resultant.rs`, followed by
+reduction mod p.
+
+### The ℤ[√2] example
+
+The polynomial f = x² − 2 has discriminant 8, so p = 2 is a bad prime. However, the Dedekind
+criterion gives T = 1 at p = 2:
+
+- f mod 2 = x² (since −2 ≡ 0 mod 2).
+- f' mod 2 = 0 (since 2x ≡ 0 mod 2).
+- gcd(x², 0) = x², so g = x²/x² = 1, h = x²/1 = x².
+- g·h − f_mod = x² − x² = 0, so t = 0.
+- T = gcd(1, gcd(x², 0)) = gcd(1, x²) = 1.
+
+The criterion returns false (T = 1), meaning p = 2 does not divide [ℤ_K : ℤ[√2]]. This is
+correct: ℤ[√2] is already the full ring of integers of ℚ(√2) — it is a PID, and the prime 2 is
+totally ramified (2 = −(√2)²) but ℤ[√2] is already maximal. The prime 2 is bad (it divides the
+discriminant) but the index is not divisible by 2.
+
+This distinction — **bad prime** (p | disc) vs. **index divisible** (p | [ℤ_K : ℤ[α]]) — is
+pedagogically important. A bad prime is a necessary but not sufficient condition for index
+divisibility.
+
+### The `DedekindResult` struct
+
+The extended function `dedekind_factor_extended` returns a `DedekindResult` that carries both the
+prime ideals and the bad-prime metadata:
+
+```rust
+pub struct DedekindResult<'a> {
+    pub ideals: Vec<Ideal<'a>>,
+    pub is_bad_prime: bool,
+    pub index_divisible: bool,
+}
+```
+
+The `index_divisible` flag is always false for good primes (p ∤ disc implies p ∤ [ℤ_K : ℤ[α]]
+automatically). For bad primes, it reflects the Dedekind criterion result.
+
+### The Round 2 / HNF algorithm
+
+When `index_divisible` is true — that is, when ℤ[α] is strictly smaller than ℤ_K at p — the
+correct factorisation of (p) requires the **Round 2 algorithm** (also called the HNF-basis
+algorithm or Zassenhaus's algorithm). This algorithm computes a ℤ-basis for the full ring of
+integers ℤ_K at p, expressed as an HNF (Hermite Normal Form) matrix, and then factors (p) using
+this basis.
+
+This algorithm is described but not implemented in this crate. The reason is engineering scale, not
+mathematical omission: the Round 2 algorithm requires HNF computation over ℤ-modules, which is a
+substantial implementation effort orthogonal to the core GNFS substrate. For the toy-scale
+polynomials used in this project, index-divisible bad primes are rare and can be excluded from the
+factor base without loss of correctness at demonstration fidelity.
+
+---
+
+## 10. Cross-Track Implications
+
+### How the contracts are consumed downstream
+
+The contracts frozen in G.A are consumed by multiple downstream sub-tracks:
+
+| Contract | Frozen at | Consumed by |
+|----------|-----------|-------------|
+| C-NF | G.A.1a | G.A.1b, G.A.2, G.A.3, G.B, G.C, D.A, E.D |
+| C-Ideal | G.A.1b | G.A.3, G.C, D.A |
+| C-Res | G.A.2 | G.A.1a (norm), G.B, D.A |
+| C-Dedekind | G.A.3 | G.C (factor-base construction) |
+
+**G.B (polynomial selection)** uses `IntPoly` and the resultant to compute discriminants and
+polynomial scores. The defining polynomial f is selected to have small coefficients and a large
+number of roots mod small primes — both properties that depend on the resultant and discriminant
+machinery.
+
+**G.C (sieving)** is the primary consumer of the algebraic substrate. For each sieve pair (a, b),
+it evaluates `NumberFieldElement::norm()` to obtain the algebraic norm, then factors it over the
+algebraic factor base using the prime ideals from `dedekind_factor`. The inert-prime sentinel
+convention directly affects which primes are included in the factor base: primes for which
+`dedekind_factor` returns only the sentinel are excluded.
+
+**D.A (NFS-DL)** uses the same algebraic substrate as G.C, adapted for the discrete logarithm
+setting. The norm and ideal machinery are identical; the difference is in the linear algebra step.
+
+**E.D (pairings)** uses `NumberField` and `NumberFieldElement` for extension field arithmetic.
+Pairing computations require arithmetic in degree-12 extensions (for BN curves) or degree-6
+extensions (for BLS12 curves), which are number fields in the sense of this crate. The element
+arithmetic and inversion via extended Euclidean are directly reused.
+
+### The C1 resolution: `Uint<4>` sufficiency
+
+A key question deferred from Phase α was whether the `shared::numth` crate's `Uint<4>` (256-bit
+integers) is sufficient for GNFS norms. The G.A.1a session resolved this:
+
+For a toy 60–80 bit semiprime N with factor base bound B ≤ 10⁴:
+- Polynomial degree d = 3–5, coefficients C ~ N^{1/d} ~ 2^{20–27}.
+- Sieve bound M ~ 10⁴ = 2^{13}.
+- Norm bound: |Norm| ≤ (d+1)^{(d+1)/2} · (M · C)^d ≈ 2^{120–150}.
+
+**256 bits suffices.** The `shared::numth` crate remains at `Uint<4>` with no widening needed.
+If a future sub-track targets larger N (e.g., 128-bit semiprimes), the norm bound would exceed 256
+bits and `Uint<4>` would need to be widened — but the `Fp` trait was designed at α.2 to support
+this widening without breaking downstream consumers.
+
+---
+
+## 11. KAT Summary
+
+The following table lists the key known-answer tests across the crate, with the mathematical fact
+each one verifies. All tests are in `shared/numfield/tests/`.
+
+| Test | File | Mathematical fact verified |
+|------|------|---------------------------|
+| `kat1_product_1_plus_alpha_times_1_minus_alpha` | `numfield_kat.rs` | (1+α)(1−α) = −1 in ℚ(√2); Mul canonicalisation and reduction mod f = x²−2 |
+| `kat2_norm_1_plus_alpha_in_sqrt2` | `numfield_kat.rs` | N_{ℚ(√2)/ℚ}(1+√2) = −1; Sylvester resultant for norm |
+| `kat3a_norm_alpha_cubic` | `numfield_kat.rs` | N(α) = 1 for f = x³−x−1; Norm(α) = (−1)^d · f(0) = (−1)³·(−1) = 1 |
+| `kat3b_norm_alpha_minus_1_cubic` | `numfield_kat.rs` | N(α−1) = 1 for f = x³−x−1; sign convention Norm(α−c) = (−1)^d · f(c) |
+| `alpha_squared_equals_2_in_sqrt2` | `numfield_kat.rs` | α² ≡ 2 mod (x²−2); eager reduction in `square` |
+| `inv_round_trip_in_sqrt2` | `numfield_kat.rs` | β · β⁻¹ = 1; extended Euclidean inversion in ℚ[x] |
+| `trace_of_alpha_is_zero_in_sqrt2` | `numfield_kat.rs` | Tr(√2) = 0; companion matrix trace computation |
+| `trace_of_one_is_degree_in_sqrt2` | `numfield_kat.rs` | Tr(1) = [K:ℚ] = 2; trace of the identity element |
+| `cubic_alpha_cubed_equals_alpha_plus_1` | `numfield_kat.rs` | α³ = α+1 in ℚ(α) for f = x³−x−1; `pow` via square-and-multiply |
+| `norm_kat_prime_ideal` | `ideal_kat.rs` | N((5, α−2)) = 5; ideal norm = p for residue degree 1 |
+| `norm_multiplicativity_kat` | `ideal_kat.rs` | N(IJ) = N(I)·N(J) = 35 for I=(5,α−2), J=(7,α−3) |
+| `crt_consistency_kat` | `ideal_kat.rs` | CRT: r ≡ 2 (mod 5), r ≡ 3 (mod 7) gives r = 17 in [0,35) |
+| `kat_resultant_1_shared_root` | `resultant_kat.rs` | Res(x²−1, x−1) = 0; shared root implies zero resultant |
+| `kat_resultant_2_coprime_quadratics` | `resultant_kat.rs` | Res(x²−2, x²−3) = 1; coprime polynomials have non-zero resultant |
+| `kat_resultant_3_norm_consistency` | `resultant_kat.rs` | Res(x²−2, x+1) = −1; cross-check with G.A.1a norm |
+| `kat_gcd_1_shared_factor` | `resultant_kat.rs` | gcd(x²−1, x−1) ∝ x−1; subresultant PRS finds shared factor |
+| `kat_gcd_2_coprime_polynomials` | `resultant_kat.rs` | gcd(x²−2, x²−3) is constant; coprime polynomials have trivial GCD |
+| `kat1_inert_prime` | `dedekind_kat.rs` | p=3 is inert in ℤ[√2]; sentinel ideal (3, α−0) returned |
+| `kat2_split_prime` | `dedekind_kat.rs` | p=7 splits in ℤ[√2]; ideals (7,α−3) and (7,α−4) |
+| `kat3_cubic_partial_split` | `dedekind_kat.rs` | p=5 partially splits in ℤ[α] for f=x³−x−1; linear factor at r=2 |
+| `kat4_norm_product` | `dedekind_kat.rs` | ∏ N(𝔭ᵢ) = p^d = 49 for totally split p=7 in degree-2 field |
+| `kat5_discriminant_quadratic` | `dedekind_kat.rs` | disc(x²−2) = 8; discriminant via resultant |
+| `kat6_discriminant_cubic` | `dedekind_kat.rs` | disc(x³−x−1) = −23; standard reference value |
+| `kat7_is_bad_prime` | `dedekind_kat.rs` | 2 | disc(x²−2) = 8 (bad); 3 ∤ 8 (good) |
+| `kat8_bad_prime_extended` | `dedekind_kat.rs` | p=2 is bad for x²−2 but index_divisible=false; ℤ[√2] is maximal order |
+| `kat9_good_prime_extended` | `dedekind_kat.rs` | p=7 is good for x²−2; extended interface agrees with basic interface |
+
+---
+
+## Further Reading
+
+1. **Cohen, H. (1993).** *A Course in Computational Algebraic Number Theory.* Springer GTM 138.
+   The standard reference for algorithmic number theory: polynomial arithmetic, resultants,
+   discriminants, Dedekind's theorem, and the Round 2 algorithm (§6.1).
+
+2. **Crandall, R., and Pomerance, C. (2005).** *Prime Numbers: A Computational Perspective.*
+   2nd ed. Springer. Chapter 6 covers the Number Field Sieve, including the algebraic side of the
+   sieve and the role of norms and ideals.
+
+3. **Lenstra, A. K., and Lenstra, H. W. Jr. (eds.) (1993).** *The Development of the Number Field
+   Sieve.* Springer LNM 1554. The original papers on GNFS, including Buhler, Lenstra, and Pomerance
+   on the algorithm and Lenstra on the algebraic side.
+
+4. **Pohst, M., and Zassenhaus, H. (1989).** *Algorithmic Algebraic Number Theory.* Cambridge
+   University Press. The Round 2 / HNF algorithm for computing the maximal order is described in
+   detail here.
+
+5. **Neukirch, J. (1999).** *Algebraic Number Theory.* Springer. The mathematical foundation:
+   Dedekind domains, ideal factorisation, discriminants, and ramification theory.
