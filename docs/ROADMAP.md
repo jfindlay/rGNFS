@@ -473,6 +473,32 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06 — Open question queued during G.C sharding (reference-oracle comparison tests)
+
+Surfaced while sharding G.C (sieving): the ROADMAP names four external reference implementations as
+dev-only correctness oracles, scattered across tracks — **CADO-NFS** (G.C relation counts, G.B
+Murphy-E), **msieve** (cross-check for G.E linear algebra / G.F square root), **msolve** (E.K
+Gröbner step), and **PARI** (D.B discrete-log cross-check). Principle 3 fixes their *role* (oracles,
+never on a build/production path) but the project has not yet decided *how* a contributor obtains
+them or how the oracle-gated tests behave when they are absent. The current G.C PLAN handles CADO
+locally (the comparison KAT is feature-gated / `#[ignore]`d and skips cleanly when CADO is absent;
+the deterministic relation-count KAT carries the reproducibility burden without it), but that is a
+per-test workaround, not a project policy.
+
+**Open — decide at the next sub-track boundary (G.C ◆ or the next inflection):** the project-wide
+oracle-comparison-test strategy. Candidate shapes, not yet chosen:
+- A single contributor-facing "dev oracles" doc section (README/CONTRIBUTING) listing each oracle,
+  what it cross-checks, and how to install it locally — with all oracle-gated tests behind a
+  uniform feature flag (`--features oracle-tests`) or `#[ignore]` convention that skips cleanly.
+- Whether "dynamic install" of any oracle is ever acceptable, and if so only in a contributor-local
+  dev step explicitly fenced off the build/CI path (principle 3 strongly disfavours this).
+- Whether further NFS-topic reference implementations beyond the four named will be wanted (e.g. for
+  filtering, square root), which would widen the same policy.
+
+This is a *static-frame* documentation/policy question, not a code contract; it does not block G.C
+(the per-test gating already works). Resolve it once, project-wide, rather than re-deciding per
+oracle.
+
 ### 2026-06 — End of sub-track G.B (polynomial selection, G.B ◆ boundary)
 
 G.B is complete: G.B.1 (2f43f99), G.B.2 (00aa32d), G.B.3 (3e2ba1b), G.B.4 (c115a1b), G.B.W
