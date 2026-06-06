@@ -264,7 +264,157 @@ column indexing)**. The rational factor base (primes ≤ `B_rat`), the algebraic
 (degree-1 prime ideals `(p, r)` with `f(r) ≡ 0 mod p`, ≤ `B_alg`), the rational/algebraic norm
 functions, and the signed-`BigInt` → `Uint<4>` bridge. *Over-specify for G.E:* carry a slot for the
 quadratic-character / free-relation (obstruction) columns even though G.C.2 doesn't fill them.
-**The juncture fork writes the resolved interface here at G.C.1 execution time.**
+
+**Resolved interface (juncture-designed at G.C.1):**
+
+```rust
+// ═══ gnfs/src/sieve/factor_base.rs ═══
+
+/// A degree-1 prime ideal (p, α − r) in the algebraic factor base.
+///
+/// Represents the prime ideal above p corresponding to the root r of f mod p.
+/// For good primes (p ∤ disc(f)), these are exactly the prime ideals above p
+/// with residue degree 1. For bad primes (p | disc(f)), these are the ideals
+/// from linear factors of f mod p; higher-degree factors may contribute
+/// additional ideals not captured here (see `is_bad_prime` flag).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AlgebraicPrime {
+    /// The rational prime p.
+    pub p: u64,
+    /// The root r ∈ [0, p) with f(r) ≡ 0 (mod p).
+    pub r: u64,
+    /// Index of this ideal in the algebraic factor base (for column mapping).
+    pub index: usize,
+    /// True if p | disc(f) (bad prime). Principle-4 annotation: bad primes are
+    /// over-exposed at toy scale relative to NFS-scale where their contribution
+    /// is marginal. The Dedekind criterion was applied; if `index_divisible` was
+    /// true for this p, higher-degree ideals may exist above p.
+    pub is_bad_prime: bool,
+}
+
+/// Two-sided factor base for NFS sieving.
+///
+/// The rational factor base is the set of primes p ≤ B_rat.
+/// The algebraic factor base is the set of degree-1 prime ideals (p, r) with
+/// p ≤ B_alg and f(r) ≡ 0 (mod p).
+///
+/// # Column indexing (for G.D/G.E)
+///
+/// The exponent vectors in `Relation` use indices into these factor bases:
+/// - Rational side: `rational_primes[i]` is the prime at column i.
+/// - Algebraic side: `algebraic_ideals[j].index == j` gives the column.
+///
+/// # Obstruction columns (over-specified for G.E)
+///
+/// G.E's linear algebra over GF(2) requires additional columns beyond the
+/// factor-base primes: the sign column (−1) and quadratic-character columns
+/// for ensuring the algebraic square root exists. The `obstruction_count` field
+/// reserves column indices for these; G.C.2 does not populate them, but the
+/// slot exists so G.E can extend without resharding.
+#[derive(Debug, Clone)]
+pub struct FactorBase {
+    /// Rational factor base: primes p ≤ B_rat, sorted ascending.
+    pub rational_primes: Vec<u64>,
+    /// Algebraic factor base: degree-1 prime ideals (p, r), sorted by (p, r).
+    pub algebraic_ideals: Vec<AlgebraicPrime>,
+    /// Rational smoothness bound B_rat.
+    pub b_rat: u64,
+    /// Algebraic smoothness bound B_alg.
+    pub b_alg: u64,
+    /// Number of obstruction columns reserved for G.E (sign + quadratic chars).
+    /// G.C.1 sets this to 1 (the sign column); G.E may increase it.
+    pub obstruction_count: usize,
+}
+
+impl FactorBase {
+    /// Construct the two-sided factor base for polynomial f with bounds (B_rat, B_alg).
+    ///
+    /// Uses `factor_base_up_to` for the rational side. For the algebraic side,
+    /// finds all roots of f mod p for each prime p ≤ B_alg. Bad primes (p | disc(f))
+    /// are included with the `is_bad_prime` flag set (principle-4: over-exposed at
+    /// toy scale).
+    ///
+    /// # Arguments
+    /// * `f` - The algebraic polynomial (from PolyPair).
+    /// * `b_rat` - Rational smoothness bound.
+    /// * `b_alg` - Algebraic smoothness bound.
+    pub fn new(f: &IntPoly, b_rat: u64, b_alg: u64) -> Self;
+
+    /// Number of rational factor-base primes.
+    pub fn rational_size(&self) -> usize;
+
+    /// Number of algebraic factor-base ideals.
+    pub fn algebraic_size(&self) -> usize;
+
+    /// Total matrix width for G.E: rational + algebraic + obstruction columns.
+    pub fn matrix_width(&self) -> usize {
+        self.rational_size() + self.algebraic_size() + self.obstruction_count
+    }
+
+    /// Look up the index of a rational prime in the factor base.
+    /// Returns None if p is not in the factor base.
+    pub fn rational_index(&self, p: u64) -> Option<usize>;
+
+    /// Look up the index of an algebraic ideal (p, r) in the factor base.
+    /// Returns None if (p, r) is not in the factor base.
+    pub fn algebraic_index(&self, p: u64, r: u64) -> Option<usize>;
+}
+
+// ═══ gnfs/src/sieve/norms.rs ═══
+
+/// Compute the rational norm N_rat(a, b) = a − b·m.
+///
+/// This is the value on the rational (g-side) of NFS: g(x) = x − m, so
+/// g(a/b) · b = a − b·m. The result is signed (can be negative).
+pub fn rational_norm(a: &BigInt, b: &BigInt, m: &BigInt) -> BigInt;
+
+/// Compute the algebraic norm N_alg(a, b) = b^d · f(a/b).
+///
+/// This is the homogeneous form of f evaluated at (a, b):
+///   N_alg(a, b) = Σ_{i=0}^{d} f.coeffs[i] · a^i · b^{d−i}
+///
+/// Computed directly from coefficients to avoid rational arithmetic.
+/// The result is signed (can be negative depending on f and (a, b)).
+///
+/// # Mathematical note
+/// This equals Res(f, a − b·x) up to sign and leading-coefficient factors.
+/// The resultant relationship is the pedagogical hook for G.C.W.
+pub fn algebraic_norm(a: &BigInt, b: &BigInt, f: &IntPoly) -> BigInt;
+
+/// Error type for norm-to-Uint conversion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NormBridgeError {
+    /// The absolute value of the norm exceeds 256 bits (Uint<4> capacity).
+    Overflow { bits_required: usize },
+}
+
+/// Convert a signed BigInt norm to Uint<4> for trial_smooth.
+///
+/// Returns the absolute value as Uint<4>, or an error if |norm| ≥ 2^256.
+/// The sign is tracked separately in the Relation (for the −1 column).
+///
+/// # Design note (C1 resolution)
+/// Toy-scale norms fit 256 bits per ROADMAP. If a chosen toy N/region
+/// overflows, shrink the region or widen via the documented Uint<L> path.
+pub fn norm_to_uint(norm: &BigInt) -> Result<Uint<4>, NormBridgeError>;
+
+/// Extract the sign of a norm: true if negative, false if non-negative.
+pub fn norm_sign(norm: &BigInt) -> bool;
+```
+
+**Design decisions resolved:**
+
+1. **Bad-prime handling:** Bad primes (p | disc(f)) are **included** in the algebraic factor base
+   with `is_bad_prime: true`. The existing `dedekind_factor_extended` surface finds roots of f mod p
+   for both good and bad primes; the `index_divisible` flag from that function is not stored per-ideal
+   (it's a per-prime property), but the `is_bad_prime` flag documents the principle-4 over-exposure.
+   This resolves on the G.C side without touching C-NF.
+
+2. **Obstruction columns:** `obstruction_count` is set to 1 at G.C.1 (the sign/−1 column). G.E will
+   add quadratic-character columns; the slot exists so the matrix-width calculation is stable.
+
+3. **Column indexing:** `AlgebraicPrime::index` and the lookup methods (`rational_index`,
+   `algebraic_index`) provide the mapping from factor-base elements to matrix columns that G.D needs.
 
 ### C-Relation — relation / exponent-vector format (compiler + KAT) — *to be frozen at G.C.1*
 **Defined:** G.C.1. **Consumed by:** G.C.2, G.C.3, G.C.4, **G.D (filtering), G.E (linear algebra)**,
@@ -273,8 +423,181 @@ pair `(a, b)`, the rational and algebraic exponent vectors (full `(prime/ideal, 
 *not* pre-reduced GF(2) parities, so D.A can read integer exponents over GF(ℓ)), the sign/unit
 column, and a `verify()` predicate. *Over-specify for D.A:* store integer exponents and the sign so
 the GF(2)→GF(ℓ) adaptation is a read, not a reshard. Per ROADMAP, do **not** pre-extract a shared
-relation crate — consolidate after D.A exists. **The juncture fork writes the resolved interface
-here at G.C.1 execution time.**
+relation crate — consolidate after D.A exists.
+
+**Resolved interface (juncture-designed at G.C.1):**
+
+```rust
+// ═══ gnfs/src/sieve/mod.rs ═══
+
+/// Exponent vector for one side of a relation (rational or algebraic).
+///
+/// Stores full integer exponents, not GF(2) parities. G.E reduces to parities
+/// for the nullspace computation; D.A reads the integer exponents directly
+/// for GF(ℓ) linear algebra.
+///
+/// # Representation
+/// Sparse: only non-zero exponents are stored. The `index` field refers to
+/// the factor-base index (column number in the matrix).
+///
+/// # Over-specification for D.A
+/// The exponent type is `u32`, not `u8` or `bool`. This accommodates:
+/// - NFS-factoring (G.E): exponents are small (typically 1–3), reduced mod 2.
+/// - NFS-DL (D.A): exponents are reduced mod ℓ where ℓ is the target group order;
+///   ℓ can be large, but exponents before reduction are still small integers.
+/// The `u32` type is the smallest that accommodates both without overflow risk.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExponentVector {
+    /// Sparse representation: (factor-base index, exponent) pairs.
+    /// Sorted by index. Exponents are always > 0 (zeros are not stored).
+    pub entries: Vec<(usize, u32)>,
+}
+
+impl ExponentVector {
+    /// Construct an empty exponent vector.
+    pub fn new() -> Self;
+
+    /// Construct from a SmoothWitness and a factor-base index lookup.
+    ///
+    /// The `index_fn` maps each prime p to its factor-base index.
+    /// Primes not in the factor base (cofactor > 1) cause this to return None.
+    pub fn from_witness<F>(witness: &SmoothWitness, index_fn: F) -> Option<Self>
+    where
+        F: Fn(u64) -> Option<usize>;
+
+    /// Get the exponent at a given factor-base index (0 if not present).
+    pub fn get(&self, index: usize) -> u32;
+
+    /// Iterate over (index, exponent) pairs.
+    pub fn iter(&self) -> impl Iterator<Item = (usize, u32)> + '_;
+
+    /// Number of non-zero entries.
+    pub fn len(&self) -> usize;
+
+    /// True if all exponents are zero (empty vector).
+    pub fn is_empty(&self) -> bool;
+}
+
+/// A relation: a coprime pair (a, b) with both norms smooth over the factor bases.
+///
+/// # Invariants (checked by `verify`)
+/// 1. gcd(a, b) = 1 (coprimality).
+/// 2. The rational exponent vector reconstructs |N_rat(a, b)| over the rational FB.
+/// 3. The algebraic exponent vector reconstructs |N_alg(a, b)| over the algebraic FB.
+/// 4. Both witnesses are fully smooth (cofactor = 1).
+///
+/// # Sign handling
+/// The `rational_sign` field is true iff N_rat(a, b) = a − b·m < 0. This is the
+/// "−1 column" for G.E's linear algebra: the product of all selected relations'
+/// rational norms must be a perfect square, which requires the sign product to be +1.
+///
+/// The algebraic norm's sign is not stored separately because the algebraic square
+/// root computation (G.F) handles sign via the embedding into ℝ, not via a matrix
+/// column. (The quadratic-character columns in G.E serve a different purpose:
+/// ensuring the algebraic square root exists in K, not sign correction.)
+///
+/// # Cross-track adaptation (D.A)
+/// NFS-DL uses the same relation structure but interprets exponents mod ℓ instead
+/// of mod 2. The integer exponents stored here support both interpretations without
+/// resharding. D.A may add Schirokauer-map columns; the `ExponentVector` structure
+/// accommodates additional entries.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Relation {
+    /// The a-coordinate of the relation (can be negative).
+    pub a: BigInt,
+    /// The b-coordinate of the relation (always positive: b ≥ 1).
+    pub b: BigInt,
+    /// Exponent vector over the rational factor base.
+    pub rational_exponents: ExponentVector,
+    /// Exponent vector over the algebraic factor base.
+    pub algebraic_exponents: ExponentVector,
+    /// True if the rational norm a − b·m is negative.
+    pub rational_sign: bool,
+}
+
+impl Relation {
+    /// Construct a relation from (a, b) and the smoothness witnesses.
+    ///
+    /// Returns None if either witness has cofactor > 1 (not fully smooth)
+    /// or if gcd(a, b) ≠ 1.
+    ///
+    /// # Arguments
+    /// * `a`, `b` - The coprime pair.
+    /// * `rational_witness` - Smoothness witness for |N_rat(a, b)|.
+    /// * `algebraic_witness` - Smoothness witness for |N_alg(a, b)|.
+    /// * `rational_sign` - True if N_rat(a, b) < 0.
+    /// * `fb` - The factor base (for index lookup).
+    pub fn new(
+        a: BigInt,
+        b: BigInt,
+        rational_witness: &SmoothWitness,
+        algebraic_witness: &SmoothWitness,
+        rational_sign: bool,
+        fb: &FactorBase,
+    ) -> Option<Self>;
+
+    /// Verify the relation's invariants against the polynomial pair and factor base.
+    ///
+    /// Checks:
+    /// 1. gcd(a, b) = 1.
+    /// 2. Rational exponents reconstruct |a − b·m| (via product of p^e).
+    /// 3. Algebraic exponents reconstruct |N_alg(a, b)| (via product of p^e).
+    /// 4. The sign matches: rational_sign == (a − b·m < 0).
+    ///
+    /// Returns Ok(()) if all checks pass, Err with a description otherwise.
+    pub fn verify(&self, poly: &PolyPair, fb: &FactorBase) -> Result<(), RelationError>;
+
+    /// Convert the rational exponents to a GF(2) row for G.E.
+    ///
+    /// Returns a bit vector where bit i is exponents[i] mod 2.
+    /// The sign column is prepended: bit 0 is 1 iff rational_sign is true.
+    pub fn rational_row_gf2(&self, fb: &FactorBase) -> Vec<bool>;
+
+    /// Convert the algebraic exponents to a GF(2) row for G.E.
+    ///
+    /// Returns a bit vector where bit i is exponents[i] mod 2.
+    /// Obstruction columns (quadratic characters) are appended as zeros;
+    /// G.E fills them in.
+    pub fn algebraic_row_gf2(&self, fb: &FactorBase) -> Vec<bool>;
+}
+
+/// Error type for relation verification.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RelationError {
+    /// gcd(a, b) ≠ 1.
+    NotCoprime { gcd: BigInt },
+    /// Rational exponents do not reconstruct the norm.
+    RationalMismatch { expected: BigInt, got: BigInt },
+    /// Algebraic exponents do not reconstruct the norm.
+    AlgebraicMismatch { expected: BigInt, got: BigInt },
+    /// Sign does not match the actual norm sign.
+    SignMismatch { expected: bool, actual: bool },
+    /// A prime in the witness is not in the factor base.
+    PrimeNotInBase { prime: u64, side: &'static str },
+}
+```
+
+**Design decisions resolved:**
+
+1. **Exponent-vector shape:** Full integer exponents (`u32`) in sparse `(index, exponent)` pairs.
+   G.E reduces mod 2 via `rational_row_gf2` / `algebraic_row_gf2`; D.A reads the integers directly
+   for GF(ℓ). The sparse representation is efficient for the typical case (few non-zero exponents
+   per relation).
+
+2. **Sign handling:** `rational_sign: bool` is stored explicitly in the `Relation`, not derived.
+   This freezes the representation so G.D/G.E don't disagree. The sign is the "−1 column" for G.E.
+   The algebraic sign is not stored (G.F handles it via real embeddings, not a matrix column).
+
+3. **Algebraic exponent indexing:** The algebraic exponent vector uses `AlgebraicPrime::index` as
+   the column number. For a prime p with multiple roots (multiple ideals above p), each (p, r) pair
+   has its own index and contributes separately to the exponent vector. The `from_witness` method
+   for the algebraic side must map each `(p, e)` from `SmoothWitness` to the correct ideal(s) —
+   this requires knowing which root r divides the norm, which is determined by `a ≡ r·b (mod p)`.
+   G.C.2 implements this mapping.
+
+4. **Cross-track over-specification:** The `ExponentVector` and `Relation` types are designed so
+   D.A can read them without modification. Schirokauer maps (D.A's addition) are additional columns
+   in the algebraic exponent vector; the sparse representation accommodates this.
 
 ---
 
