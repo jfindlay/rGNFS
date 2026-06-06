@@ -426,9 +426,9 @@ designed at α.2 to support widening.
 | G.A.2 | Resultants / subresultant GCD | done | bcd63cd | C-Res |
 | G.A.3 | Dedekind factorisation | done | 7844773 | C-Dedekind |
 | G.A.4 | Bad-prime handling | done | 2da009b | (extends C-Dedekind) |
-| G.A.W | Integrative writeup | pending | — | — |
+| G.A.W | Integrative writeup | done | 967e394 | — |
 
-Contracts frozen so far: C-Fp (α.1, completed α.5 cf00ed5), C-numth (α.2).
+Contracts frozen so far: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773). G.A ◆ boundary: still-on-intent (2026-06-06).
 
 ---
 
