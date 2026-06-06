@@ -33,4 +33,5 @@ pub use sieve::{
     AlgebraicPrime, FactorBase,
     algebraic_norm, norm_sign, norm_to_uint, rational_norm, NormBridgeError,
     ExponentVector, Relation, RelationError,
+    line_sieve, LineSieveConfig,
 };

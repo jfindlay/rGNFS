@@ -24,9 +24,11 @@
 //! a destructive reshard.
 
 pub mod factor_base;
+pub mod line;
 pub mod norms;
 
 pub use factor_base::{AlgebraicPrime, FactorBase};
+pub use line::{line_sieve, LineSieveConfig};
 pub use norms::{algebraic_norm, norm_sign, norm_to_uint, rational_norm, NormBridgeError};
 
 use num_bigint::BigInt;
