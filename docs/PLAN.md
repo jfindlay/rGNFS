@@ -611,7 +611,7 @@ pub enum RelationError {
 | G.C.1 | Sieve substrate: factor bases + Relation type | done | c1dc0b6 | C-Relation, C-FactorBase |
 | G.C.2 | Line-sieving baseline | done | c4e5fc4 | — |
 | G.C.3 | Special-q strategy | done | 0ef7231 | — |
-| G.C.4 | Lattice sieving | pending | — | — |
+| G.C.4 | Lattice sieving | done | a7f9551 | — |
 | G.C.W | Integrative writeup | pending | — | — |
 
 Contracts frozen before G.C: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
