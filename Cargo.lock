@@ -504,6 +504,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gnfs"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "num-bigint",
+ "num-traits",
+ "proptest",
+ "shared-numfield",
+ "shared-numth",
+]
+
+[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
