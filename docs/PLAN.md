@@ -425,7 +425,7 @@ designed at α.2 to support widening.
 | G.A.1b | Ideal representation | done | 05b27c8 | C-Ideal |
 | G.A.2 | Resultants / subresultant GCD | done | bcd63cd | C-Res |
 | G.A.3 | Dedekind factorisation | done | 7844773 | C-Dedekind |
-| G.A.4 | Bad-prime handling | pending | — | (extends C-Dedekind) |
+| G.A.4 | Bad-prime handling | done | 2da009b | (extends C-Dedekind) |
 | G.A.W | Integrative writeup | pending | — | — |
 
 Contracts frozen so far: C-Fp (α.1, completed α.5 cf00ed5), C-numth (α.2).
@@ -436,6 +436,12 @@ Contracts frozen so far: C-Fp (α.1, completed α.5 cf00ed5), C-numth (α.2).
 
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
 notable texture) for the juncture forks to consume. Empty at chain start.
+
+### G.A.4 — 2026-06-06
+Discovery/flex: Subagent wrote speculative Track τ (mathematical textbook) content to docs/ROADMAP.md — out of scope for G.A.4. Reverted before commit.
+Affected: none (ROADMAP.md reverted; no contract touched)
+Deferred: no
+Texture: The Dedekind criterion correctly distinguishes "bad prime" (p|disc) from "index divisible" (p|[ℤ_K:ℤ[α]]); ℤ[√2] is already the maximal order at p=2, so index_divisible=false even though is_bad_prime=true. Pedagogically important for G.A.W.
 
 ### G.A.1a — 2026-06-06
 Discovery/flex: C-NF KAT spec had a sign error: `Norm(α−1) = −1` should be `+1` for f = x³−x−1 (the (−1)^d factor was missing from the example). Implementation is mathematically correct; KAT test passes with +1.
