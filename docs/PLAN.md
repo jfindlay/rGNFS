@@ -400,7 +400,7 @@ designed at α.2 to support widening.
 1. **ℤ[α] arithmetic for f = x² − 2**: `(1 + α)(1 − α) = 1 − α² = 1 − 2 = −1`.
 2. **Norm for β = 1 + α in ℚ(√2)**: `Norm(1 + α) = (1 + √2)(1 − √2) = 1 − 2 = −1`.
 3. **Cubic from Crandall–Pomerance or LMFDB**: e.g., f = x³ − x − 1 (discriminant −23), verify
-   `Norm(α) = 1` and `Norm(α − 1) = −1`.
+   `Norm(α) = 1` and `Norm(α − 1) = 1`. (Norm(x−c) = (−1)^d · f(c); d=3, f(1)=−1, so (−1)³·(−1)=1.)
 
 ### C-Ideal — ideal representation + ideal norm (compiler + KAT) — *frozen at G.A.1b*
 **Defined:** G.A.1b. **Consumed by:** G.A.3, G.C, D.A. Two-element representation primary.
@@ -421,7 +421,7 @@ designed at α.2 to support widening.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | α.5 | `Fp` completion | done | cf00ed5 | C-Fp (+legendre/sqrt) |
-| G.A.1a | Number-field substrate | pending | — | C-NF |
+| G.A.1a | Number-field substrate | done | bdba6f5 | C-NF |
 | G.A.1b | Ideal representation | pending | — | C-Ideal |
 | G.A.2 | Resultants / subresultant GCD | pending | — | C-Res |
 | G.A.3 | Dedekind factorisation | pending | — | C-Dedekind |
@@ -437,7 +437,11 @@ Contracts frozen so far: C-Fp (α.1, completed α.5 cf00ed5), C-numth (α.2).
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
 notable texture) for the juncture forks to consume. Empty at chain start.
 
-*(none yet)*
+### G.A.1a — 2026-06-06
+Discovery/flex: C-NF KAT spec had a sign error: `Norm(α−1) = −1` should be `+1` for f = x³−x−1 (the (−1)^d factor was missing from the example). Implementation is mathematically correct; KAT test passes with +1.
+Affected: C-NF (documentary typo in KAT spec, corrected in PLAN; semantic contract intact)
+Deferred: no
+Texture: Norm formula is Norm(x−c) = (−1)^d · f(c) for monic f of degree d. Downstream sessions consuming norm() are unaffected — they consume the function, not the example value.
 
 ---
 
