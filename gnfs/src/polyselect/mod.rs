@@ -30,8 +30,11 @@
 //! - [`base_m`] — `select_base_m`, `optimal_degree`, `BaseMGenerator`.
 
 pub mod base_m;
+pub mod murphy;
+pub mod roots;
 
 pub use base_m::{select_base_m, select_base_m_with_m, optimal_degree, BaseMGenerator};
+pub use murphy::score;
 
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
