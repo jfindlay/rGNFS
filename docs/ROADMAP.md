@@ -473,6 +473,27 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06 — End of sub-track G.B (polynomial selection, G.B ◆ boundary)
+
+G.B is complete: G.B.1 (2f43f99), G.B.2 (00aa32d), G.B.3 (3e2ba1b), G.B.4 (c115a1b), G.B.W
+(7fa9ab9). Two implementation findings are logged for future sessions.
+
+- **`base_m_for_degree` requires `floor(N^{1/(d+1)}) + 1`, not `floor(...)`.** The floor of the
+  (d+1)-th root gives the largest `m` with `m^{d+1} ≤ N`, meaning N *overflows* d+1 base-m digits
+  (the leading digit `a_d` equals `m`, making the expansion d+2 digits). Adding 1 gives the
+  smallest `m` with `m^{d+1} > N`, guaranteeing N fits in exactly d+1 digits with `a_d < m`. This
+  is counterintuitive — "floor of the root" sounds right — and the bug is silent (the expansion
+  still satisfies `f(m) = N`, but the degree is wrong). Any future base-m implementation should
+  verify with a round-trip test that checks `f.degree() == d`, not just `f(m) == N`.
+
+- **Dickman ρ RK4 integration must pre-compute the full table; a rolling window silently corrupts
+  values for u > 2.** The recurrence `ρ(u) = (1/u) ∫_{u-1}^{u} ρ(t) dt` requires `ρ(t-1)` for
+  the lookback integral at each step. A rolling window that overwrites old values as it advances
+  destroys the lookback values before they are consumed, producing plausible-looking but wrong
+  results (the function remains positive and decreasing, so the error is not obvious). The fix is a
+  pre-allocated `Vec<f64>` covering the full range. Any future Dickman ρ or similar one-unit-
+  lookback recurrence should use a full table, not a sliding buffer.
+
 ### 2026-06 — End of sub-track G.A (Opus inflection-point review at the G.A ◆ boundary)
 
 G.A is complete: G.A.1a (bdba6f5), G.A.1b (05b27c8), G.A.2 (bcd63cd), G.A.3 (7844773), G.A.4
