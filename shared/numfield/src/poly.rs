@@ -125,6 +125,73 @@ impl IntPoly {
         Self::from_coeffs(self.coeffs.iter().map(|a| a * c).collect())
     }
 
+    /// Pseudo-division: compute `(lc(g)^(deg(f)−deg(g)+1) * f) = q * g + r`.
+    ///
+    /// Returns `(q, r)` where `deg(r) < deg(g)`. The multiplier `lc(g)^e` (with
+    /// `e = deg(f) − deg(g) + 1`) ensures all divisions in the long-division loop
+    /// are exact over ℤ.
+    ///
+    /// Panics if `g` is the zero polynomial.
+    pub fn pseudo_div_rem(&self, g: &Self) -> (Self, Self) {
+        let g_deg = g.degree().expect("pseudo_div_rem: divisor is zero");
+        let f_deg = match self.degree() {
+            None => {
+                // 0 = 0 * g + 0
+                return (Self::zero(), Self::zero());
+            }
+            Some(d) => d,
+        };
+
+        if f_deg < g_deg {
+            // Multiplier is lc(g)^0 = 1; quotient is 0, remainder is self.
+            return (Self::zero(), self.clone());
+        }
+
+        let e = f_deg - g_deg + 1; // exponent for lc(g)
+        let lc_g = g.leading_coeff().unwrap().clone();
+
+        // Compute lc(g)^e using repeated squaring.
+        let mut multiplier = BigInt::one();
+        let mut base = lc_g.clone();
+        let mut exp = e;
+        while exp > 0 {
+            if exp & 1 == 1 {
+                multiplier *= &base;
+            }
+            base = &base * &base;
+            exp >>= 1;
+        }
+
+        // Scale f by the multiplier.
+        let mut remainder = self.scale(&multiplier);
+        let mut quotient_coeffs: Vec<BigInt> = vec![BigInt::zero(); f_deg - g_deg + 1];
+
+        // Standard polynomial long division; all divisions are exact because we
+        // pre-multiplied by the right power of lc(g).
+        loop {
+            let rem_deg = match remainder.degree() {
+                None => break,
+                Some(d) => d,
+            };
+            if rem_deg < g_deg {
+                break;
+            }
+            let shift = rem_deg - g_deg;
+            let lc_rem = remainder.leading_coeff().unwrap().clone();
+            // lc_rem is exactly divisible by lc_g by the pseudo-division invariant.
+            let factor = &lc_rem / &lc_g;
+            quotient_coeffs[shift] = factor.clone();
+
+            // Subtract factor * x^shift * g from remainder.
+            for (i, c) in g.coeffs.iter().enumerate() {
+                remainder.coeffs[i + shift] -= &factor * c;
+            }
+            trim_bigint(&mut remainder.coeffs);
+        }
+
+        (Self::from_coeffs(quotient_coeffs), remainder)
+    }
+
     /// Embed into ℚ[x] by converting each coefficient to a rational.
     pub fn to_rat_poly(&self) -> RatPoly {
         RatPoly::from_coeffs(

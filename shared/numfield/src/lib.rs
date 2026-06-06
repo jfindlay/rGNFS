@@ -23,7 +23,9 @@
 pub mod element;
 pub mod ideal;
 pub mod poly;
+pub mod resultant;
 
 pub use element::{NumberField, NumberFieldElement};
 pub use ideal::Ideal;
 pub use poly::{IntPoly, RatPoly};
+pub use resultant::{resultant, subresultant_gcd};
