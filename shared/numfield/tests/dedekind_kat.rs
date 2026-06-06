@@ -1,6 +1,8 @@
-//! Known-answer tests for `dedekind_factor`: Dedekind factorisation of (p) in ℤ[α].
+//! Known-answer tests for `dedekind_factor` and `dedekind_factor_extended`:
+//! Dedekind factorisation of (p) in ℤ[α], including bad-prime handling.
 //!
-//! Tests cover inert primes, split primes, cubic fields, and norm-product verification.
+//! Tests cover inert primes, split primes, cubic fields, norm-product verification,
+//! discriminant computation, bad-prime detection, and the Dedekind criterion.
 //!
 //! # Inert-prime convention
 //!
@@ -10,7 +12,9 @@
 //! (p, α − 0) = (p, α) generates the same ideal as (p) when f is irreducible mod p.
 
 use num_bigint::BigInt;
-use shared_numfield::{dedekind_factor, IntPoly, NumberField};
+use shared_numfield::{
+    dedekind_factor, dedekind_factor_extended, discriminant, is_bad_prime, IntPoly, NumberField,
+};
 
 fn bi(n: i64) -> BigInt {
     BigInt::from(n)
@@ -136,6 +140,143 @@ fn kat4_norm_product() {
         norm_product, expected,
         "product of norms should equal p^d = 7^2 = 49, got {norm_product}"
     );
+}
+
+// ─── KAT 5 — Discriminant of x² − 2 ─────────────────────────────────────────
+
+/// disc(x² − 2) = 8.
+///
+/// Derivation: f = x² − 2, f' = 2x.
+/// Res(f, f') = Res(x² − 2, 2x).
+/// Sylvester matrix (3×3):
+///   [ 1   0  −2 ]
+///   [ 2   0   0 ]
+///   [ 0   2   0 ]
+/// det = 1·(0·0 − 0·2) − 0·(2·0 − 0·0) + (−2)·(2·2 − 0·0) = −8.
+/// Sign factor: d=2, d(d−1)/2 = 1 (odd) → disc = −(−8) = 8.
+#[test]
+fn kat5_discriminant_quadratic() {
+    let f = IntPoly::from_coeffs(vec![bi(-2), bi(0), bi(1)]);
+    let disc = discriminant(&f);
+    assert_eq!(disc, bi(8), "disc(x²−2) should be 8, got {disc}");
+}
+
+// ─── KAT 6 — Discriminant of x³ − x − 1 ─────────────────────────────────────
+
+/// disc(x³ − x − 1) = −23.
+///
+/// This is a standard reference value: the splitting field of x³ − x − 1 has discriminant
+/// −23, which is also the discriminant of the cubic number field ℚ(α) where α³ − α − 1 = 0.
+/// The field has class number 1 and is the unique cubic field of discriminant −23.
+#[test]
+fn kat6_discriminant_cubic() {
+    let f = IntPoly::from_coeffs(vec![bi(-1), bi(-1), bi(0), bi(1)]);
+    let disc = discriminant(&f);
+    assert_eq!(disc, bi(-23), "disc(x³−x−1) should be −23, got {disc}");
+}
+
+// ─── KAT 7 — Bad-prime detection ─────────────────────────────────────────────
+
+/// `is_bad_prime(x² − 2, 2)` is true (2 | disc = 8).
+/// `is_bad_prime(x² − 2, 3)` is false (3 ∤ disc = 8).
+///
+/// The prime 2 is the unique bad prime for x² − 2: it divides the discriminant 8 = 2³.
+/// All odd primes are good primes for x² − 2.
+#[test]
+fn kat7_is_bad_prime() {
+    let f = IntPoly::from_coeffs(vec![bi(-2), bi(0), bi(1)]);
+
+    assert!(
+        is_bad_prime(&f, &bi(2)),
+        "p=2 should be a bad prime for x²−2 (2 | disc=8)"
+    );
+    assert!(
+        !is_bad_prime(&f, &bi(3)),
+        "p=3 should not be a bad prime for x²−2 (3 ∤ disc=8)"
+    );
+    assert!(
+        !is_bad_prime(&f, &bi(5)),
+        "p=5 should not be a bad prime for x²−2 (5 ∤ disc=8)"
+    );
+    assert!(
+        !is_bad_prime(&f, &bi(7)),
+        "p=7 should not be a bad prime for x²−2 (7 ∤ disc=8)"
+    );
+}
+
+// ─── KAT 8 — Bad prime extended: f = x² − 2, p = 2 ──────────────────────────
+
+/// For f = x² − 2, p = 2: `dedekind_factor_extended` returns `is_bad_prime = true`.
+///
+/// Analysis:
+/// - disc(x² − 2) = 8, and 2 | 8, so p = 2 is a bad prime.
+/// - f mod 2 = x² (since −2 ≡ 0 mod 2), f' mod 2 = 0 (since 2x ≡ 0 mod 2).
+/// - Dedekind criterion: gcd(x², 0) = x², g = x²/x² = 1, h = x²/1 = x².
+///   g·h − f_mod = x² − x² = 0, t = 0. T = gcd(1, gcd(x², 0)) = 1.
+///   So index_divisible = false: ℤ[√2] IS the full ring of integers at p = 2.
+/// - Root of f mod 2: f(0) = −2 ≡ 0 (mod 2), f(1) = −1 ≡ 1 (mod 2). Root: r = 0.
+/// - One ideal: (2, α − 0) = (2, α), representing the unique prime above 2 in ℤ[√2].
+///
+/// The prime ideal (2, α) = (√2) satisfies (2, α)² = (2) in ℤ[√2], confirming that 2
+/// is totally ramified in ℚ(√2).
+#[test]
+fn kat8_bad_prime_extended() {
+    let k = field_sqrt2();
+    let result = dedekind_factor_extended(&k, &bi(2));
+
+    assert!(result.is_bad_prime, "p=2 should be flagged as a bad prime for x²−2");
+    // ℤ[√2] is the maximal order, so the Dedekind criterion gives T=1 (index not divisible).
+    assert!(
+        !result.index_divisible,
+        "index should not be divisible by p=2 for x²−2 (ℤ[√2] is the maximal order)"
+    );
+
+    // One ideal with r = 0 (the unique prime above 2 in ℤ[√2]).
+    assert_eq!(
+        result.ideals.len(),
+        1,
+        "p=2 should give one prime ideal above 2 in ℤ[√2], got {}",
+        result.ideals.len()
+    );
+    assert_eq!(result.ideals[0].p, bi(2), "ideal should have p = 2");
+    assert_eq!(result.ideals[0].r, bi(0), "ideal above 2 in ℤ[√2] should have r = 0");
+}
+
+// ─── KAT 9 — Good prime extended: f = x² − 2, p = 7 ─────────────────────────
+
+/// For f = x² − 2, p = 7: `dedekind_factor_extended` returns `is_bad_prime = false`,
+/// `index_divisible = false`, and two ideals with r ∈ {3, 4}.
+///
+/// This is the same split as KAT 2, now verified through the extended interface.
+/// Since 7 ∤ disc(x²−2) = 8, p = 7 is a good prime and the Dedekind criterion is
+/// not applied (index_divisible is always false for good primes).
+#[test]
+fn kat9_good_prime_extended() {
+    let k = field_sqrt2();
+    let result = dedekind_factor_extended(&k, &bi(7));
+
+    assert!(!result.is_bad_prime, "p=7 should not be a bad prime for x²−2");
+    assert!(
+        !result.index_divisible,
+        "index should not be divisible by p=7 (good prime)"
+    );
+
+    assert_eq!(
+        result.ideals.len(),
+        2,
+        "p=7 should split into 2 prime ideals in ℚ(√2), got {}",
+        result.ideals.len()
+    );
+
+    // Both ideals should have p = 7
+    for ideal in &result.ideals {
+        assert_eq!(ideal.p, bi(7), "each ideal above 7 should have p = 7");
+    }
+
+    // The r values should be 3 and 4 (in some order) — same as KAT 2.
+    let mut rs: Vec<BigInt> = result.ideals.iter().map(|i| i.r.clone()).collect();
+    rs.sort();
+    assert_eq!(rs, vec![bi(3), bi(4)], "roots of x²−2 mod 7 should be 3 and 4");
 }
 
 // ─── Panic test ───────────────────────────────────────────────────────────────

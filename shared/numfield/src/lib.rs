@@ -7,6 +7,10 @@
 //! - [`NumberFieldElement`] — an element of K, represented as a reduced polynomial in α.
 //! - [`Ideal`] — a fractional ideal of ℤ[α] in two-element primary representation `(p, α − r)`.
 //! - [`dedekind_factor`] — Dedekind factorisation of the ideal (p) in ℤ[α].
+//! - [`dedekind_factor_extended`] — Dedekind factorisation with bad-prime handling.
+//! - [`DedekindResult`] — result type for `dedekind_factor_extended`.
+//! - [`discriminant`] — discriminant of a monic polynomial f ∈ ℤ[x].
+//! - [`is_bad_prime`] — test whether p | disc(f).
 //!
 //! # Design
 //!
@@ -27,7 +31,9 @@ pub mod ideal;
 pub mod poly;
 pub mod resultant;
 
-pub use dedekind::dedekind_factor;
+pub use dedekind::{
+    dedekind_factor, dedekind_factor_extended, discriminant, is_bad_prime, DedekindResult,
+};
 pub use element::{NumberField, NumberFieldElement};
 pub use ideal::Ideal;
 pub use poly::{IntPoly, RatPoly};
