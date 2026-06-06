@@ -236,7 +236,190 @@ C1 resolved at G.A.1a (256 bits suffice for toy norms — see ROADMAP). Stable f
 adapted by **D.A (NFS-DL)**. The polynomial-pair type `(f, g, m, n)` with the `f(m) ≡ 0 mod N`
 invariant, the `number_field()` constructor (resolving the non-monic seam with C-NF), and the
 common select/score/rank entry surface. *Over-specify for G.C* (skew, degree, factor-base-bound
-slot). **The juncture fork writes the resolved interface here at execution time.**
+slot).
+
+**Resolved interface (juncture adjudicator, G.B.1 inflection):**
+
+```rust
+// gnfs/src/polyselect/mod.rs — re-exports from submodules
+
+use num_bigint::BigInt;
+use shared_numfield::{IntPoly, NumberField};
+
+/// NFS polynomial pair: algebraic-side f, rational-side g = x − m, shared root m mod n.
+///
+/// Invariants (checked by `verify()`):
+/// - `f.eval(&m) % &n == 0` (f has m as a root mod n)
+/// - `g = x − m` (rational side is always linear)
+/// - `f.degree() == Some(degree)` (degree field matches polynomial)
+///
+/// The algebraic polynomial `f` is stored in its *original* form (generally non-monic for
+/// base-m expansion). The `number_field()` method performs the standard homogenisation
+/// `f(x) → a_d^{d−1} f(x/a_d)` to produce a monic polynomial suitable for `NumberField::new`.
+#[derive(Debug, Clone)]
+pub struct PolyPair {
+    /// Algebraic-side polynomial f ∈ ℤ[x]. Generally non-monic for base-m; stored as-is.
+    pub f: IntPoly,
+    /// Rational-side polynomial g = x − m ∈ ℤ[x].
+    pub g: IntPoly,
+    /// The shared root: f(m) ≡ 0 (mod n) and g(m) = 0.
+    pub m: BigInt,
+    /// The integer to factor.
+    pub n: BigInt,
+    /// Polynomial degree (redundant with f.degree() but convenient for pattern matching).
+    pub degree: usize,
+    /// Skew parameter s: the ratio (sieve-region width)/(sieve-region height) that balances
+    /// algebraic and rational norm sizes. `None` until scoring (G.B.2) computes it.
+    pub skew: Option<f64>,
+    /// Factor-base bounds (rational_bound, algebraic_bound). `None` until sieving (G.C) sets them.
+    pub factor_base_bounds: Option<(u64, u64)>,
+}
+
+impl PolyPair {
+    /// Construct a new polynomial pair. Does NOT verify invariants; call `verify()` after.
+    pub fn new(f: IntPoly, g: IntPoly, m: BigInt, n: BigInt) -> Self;
+
+    /// Verify the polynomial-pair invariants. Returns `Ok(())` if valid, `Err(reason)` otherwise.
+    ///
+    /// Checks:
+    /// 1. `f(m) ≡ 0 (mod n)` — the algebraic polynomial has m as a root mod n.
+    /// 2. `g = x − m` — the rational polynomial is the expected linear form.
+    /// 3. `f.degree() == Some(self.degree)` — degree field is consistent.
+    /// 4. `f` is non-zero and has degree ≥ 1.
+    pub fn verify(&self) -> Result<(), PolyPairError>;
+
+    /// Construct the number field K = ℚ(α) where α is a root of the *monic* form of f.
+    ///
+    /// For non-monic f with leading coefficient a_d, this performs the standard homogenisation:
+    /// `f_monic(x) = a_d^{d−1} · f(x / a_d)`, which is monic and has roots a_d · α_i where α_i
+    /// are the roots of f. The resulting `NumberField` uses this monic polynomial.
+    ///
+    /// This is the seam between poly selection (which produces non-monic f) and number-field
+    /// arithmetic (which requires monic f). Sieving uses the original f for norm computation;
+    /// element arithmetic in K uses the monic form via this method.
+    pub fn number_field(&self) -> NumberField;
+
+    /// Return the monic form of f via homogenisation, without constructing the full NumberField.
+    ///
+    /// `f_monic(x) = a_d^{d−1} · f(x / a_d)` where a_d = f.leading_coeff().
+    /// If f is already monic, returns a clone of f.
+    pub fn monic_f(&self) -> IntPoly;
+}
+
+/// Error type for `PolyPair::verify()`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PolyPairError {
+    /// f(m) is not divisible by n.
+    RootCheckFailed { f_of_m: BigInt, n: BigInt },
+    /// g is not the expected x − m form.
+    RationalPolyMismatch { expected_g: IntPoly, actual_g: IntPoly },
+    /// Degree field does not match f.degree().
+    DegreeMismatch { field_degree: usize, poly_degree: Option<usize> },
+    /// f is zero or constant.
+    InvalidAlgebraicPoly,
+}
+
+// ─── Entry surfaces ──────────────────────────────────────────────────────────
+
+/// Compute the optimal degree d for NFS polynomial selection given n.
+///
+/// Uses the heuristic `d ≈ (3 ln N / ln ln N)^{1/3}`, clamped to [3, 6] for toy-scale N.
+/// At cryptographic scale (RSA-768+), this would return 5–6; at toy scale (60–100 bit),
+/// returns 3–4.
+pub fn optimal_degree(n: &BigInt) -> usize;
+
+/// Generate a polynomial pair via base-m expansion.
+///
+/// Given n and degree d, computes `m = floor(n^{1/(d+1)})` and writes n in base m:
+/// `n = a_0 + a_1·m + a_2·m² + ... + a_d·m^d`, yielding `f(x) = Σ a_i x^i` with `f(m) = n`.
+/// The rational side is `g(x) = x − m`.
+///
+/// The resulting f is generally non-monic (a_d < m). This is the simplest polynomial
+/// generator; Murphy-E scoring (G.B.2) and root sieving (G.B.3) improve upon it.
+pub fn select_base_m(n: &BigInt, degree: usize) -> PolyPair;
+
+/// Generate a polynomial pair via base-m expansion with a specified m.
+///
+/// Used for reproducibility testing (e.g., matching CADO-NFS published polynomials where
+/// the exact m is known). The caller is responsible for ensuring m is appropriate for the
+/// given n and degree.
+pub fn select_base_m_with_m(n: &BigInt, m: &BigInt, degree: usize) -> PolyPair;
+
+// ─── Generator trait (common pipeline for G.B.3, G.B.4) ──────────────────────
+
+/// A polynomial generator produces candidate `PolyPair`s for scoring and ranking.
+///
+/// All generators (base-m, root sieve, Coppersmith) implement this trait, feeding a common
+/// `score`-and-rank pipeline. The generator is responsible for producing candidates; the
+/// scorer (C-Score, G.B.2) ranks them.
+pub trait PolyGenerator {
+    /// Generate polynomial-pair candidates.
+    ///
+    /// Returns an iterator of `PolyPair` values. The iterator may be finite (base-m produces
+    /// exactly one candidate per (n, d) pair) or unbounded (root sieve searches a grid).
+    /// Callers should use `.take(limit)` or score-based early termination.
+    fn generate(&self) -> impl Iterator<Item = PolyPair>;
+}
+
+/// Base-m generator: produces a single polynomial pair via base-m expansion.
+pub struct BaseMGenerator {
+    pub n: BigInt,
+    pub degree: usize,
+}
+
+impl PolyGenerator for BaseMGenerator {
+    fn generate(&self) -> impl Iterator<Item = PolyPair> {
+        std::iter::once(select_base_m(&self.n, self.degree))
+    }
+}
+
+// ─── Module layout ───────────────────────────────────────────────────────────
+//
+// gnfs/
+// ├── Cargo.toml
+// ├── src/
+// │   ├── lib.rs              — crate root, re-exports polyselect
+// │   └── polyselect/
+// │       ├── mod.rs          — PolyPair, PolyGenerator, entry surfaces, re-exports
+// │       └── base_m.rs       — select_base_m, optimal_degree, BaseMGenerator
+// └── tests/
+//     └── base_m_kat.rs       — KAT: toy round-trip, RSA-100 deterministic, optimal_degree
+//
+// G.B.2 adds: polyselect/murphy.rs, polyselect/roots.rs
+// G.B.3 adds: polyselect/root_sieve.rs
+// G.B.4 adds: polyselect/coppersmith.rs
+```
+
+**Non-monic seam resolution (design decision):**
+
+`PolyPair` stores the *original* non-monic `f` as produced by base-m expansion. The `number_field()`
+method performs the standard homogenisation `f(x) → a_d^{d−1} f(x/a_d)` to produce a monic polynomial
+for `NumberField::new`. This is the correct direction because:
+
+1. **Sieving uses the original f.** Norm computation in G.C uses the original polynomial coefficients;
+   the monic transformation would change the norms.
+2. **The transformation is internal to `number_field()`.** Consumers that need `NumberField` element
+   arithmetic call `poly_pair.number_field()`; consumers that need the original f (sieving, scoring)
+   access `poly_pair.f` directly.
+3. **The homogenisation is reversible and well-understood.** The roots of `f_monic` are `a_d · α_i`
+   where `α_i` are the roots of `f`. This is standard NFS practice (CADO-NFS, msieve).
+
+**Tradeoff acknowledged:** Carrying both the original f and exposing `monic_f()` / `number_field()`
+adds a small API surface. The alternative — storing only the monic form and reverse-transforming for
+sieving — would complicate norm computation and obscure the base-m construction's direct relationship
+to N. The chosen design keeps the pedagogically clear path (base-m digits → f → sieving) while
+providing the monic form when needed.
+
+**Over-specification for G.C:** The `skew` and `factor_base_bounds` fields are `Option` types, set to
+`None` at construction and populated by later stages (G.B.2 scoring, G.C sieving). This follows the
+substrate-over-specifies rule: adding them now is cheaper than amending C-PolyPair after G.C consumes
+it.
+
+**Generator trait rationale:** The `PolyGenerator` trait provides a common interface for all
+polynomial generators (base-m, root sieve, Coppersmith). This avoids three parallel APIs and enables
+a unified score-and-rank pipeline. The trait uses `impl Iterator<Item = PolyPair>` (RPITIT) for
+ergonomic iteration without boxing overhead. G.B.3 and G.B.4 will implement this trait for their
+respective generators.
 
 ### C-Score — Murphy-E scoring contract (compiler + KAT) — *to be frozen at G.B.2*
 **Defined:** G.B.2. **Consumed by:** G.B.3 (root sieve ranks by score), G.B.4, and **cross-track
