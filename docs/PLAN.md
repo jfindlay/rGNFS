@@ -608,7 +608,7 @@ pub enum RelationError {
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.C.1 | Sieve substrate: factor bases + Relation type | pending | — | C-Relation, C-FactorBase |
+| G.C.1 | Sieve substrate: factor bases + Relation type | done | c1dc0b6 | C-Relation, C-FactorBase |
 | G.C.2 | Line-sieving baseline | pending | — | — |
 | G.C.3 | Special-q strategy | pending | — | — |
 | G.C.4 | Lattice sieving | pending | — | — |
@@ -625,7 +625,11 @@ frozen G.A substrate and G.B polynomial-selection layer.
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
 notable texture) for the juncture forks to consume.
 
-*(none yet)*
+### G.C.1 — 2026-06-06
+Discovery/flex: Inflection-point design completed; C-FactorBase and C-Relation frozen as designed. gnfs/Cargo.toml and Cargo.lock added as allowed extras (crypto-bigint dependency for Uint<4> norm bridge).
+Affected: C-FactorBase (frozen at c1dc0b6), C-Relation (frozen at c1dc0b6)
+Deferred: no
+Texture: AlgebraicPrime::index provides G.D column mapping; obstruction_count=1 (sign column) reserved for G.E quadratic characters. ExponentVector uses u32 exponents for GF(ℓ) D.A compatibility. Bad primes included with is_bad_prime flag (principle-4 annotation).
 
 ---
 
