@@ -16,6 +16,19 @@
 //! Callers that want the 256-bit (4-limb) field used throughout ``rho`` can
 //! write ``F: Fp<4>`` or use the type aliases ``FpNaive4`` / ``FpMonty4``
 //! exported from this crate.
+//!
+//! # Square roots and the Legendre symbol
+//!
+//! The [`Fp`] trait provides default implementations of [`Fp::legendre`] (via
+//! Euler's criterion) and [`Fp::sqrt`] (via Tonelli–Shanks).  Both assume ``p``
+//! is an odd prime; behaviour is unspecified for composite moduli.
+//!
+//! ## Tonelli–Shanks algorithm
+//!
+//! For `p ≡ 3 (mod 4)` the shortcut `a^((p+1)/4)` is used.  For `p ≡ 1 (mod 4)`
+//! the full Tonelli–Shanks loop is used.  A quadratic non-residue (QNR) is found
+//! by trial starting at `n = 2, 3, 5, …`; this converges within ~10 trials for
+//! all project primes.
 
 pub mod monty;
 pub mod naive;
@@ -44,13 +57,12 @@ use crypto_bigint::Uint;
 /// ``L * 64 >= bit-width(p)``.  For example, ``L = 4`` covers 256-bit primes
 /// (secp256k1, P-256, etc.).
 ///
-/// # Deferred methods
+/// # Square roots and the Legendre symbol
 ///
-/// ``legendre(p) -> i8`` and ``sqrt(p) -> Option<Self>`` (Tonelli–Shanks) are
-/// not included here because they require knowing the prime is prime and are
-/// non-trivial to implement generically without additional trait bounds.  They
-/// will be added in a later session once the ``shared::numth`` crate provides
-/// the necessary primality infrastructure.
+/// Default implementations of [`legendre`] and [`sqrt`] are provided.  Both
+/// assume ``p`` is an odd prime; behaviour is unspecified for composite moduli.
+/// Implementations may override these defaults for performance, but the
+/// mathematical contract must be preserved.
 pub trait Fp<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send + Sync + 'static {
     /// Additive identity: 0 mod p.
     fn zero(p: &Uint<L>) -> Self;
@@ -116,5 +128,110 @@ pub trait Fp<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send + 
     /// Implementations may override with a faster shift-based path.
     fn double(&self, p: &Uint<L>) -> Self {
         self.add(self, p)
+    }
+
+    /// Legendre symbol ``(self / p)`` via Euler's criterion.
+    ///
+    /// Returns ``0`` if ``self ≡ 0 (mod p)``, ``1`` if ``self`` is a quadratic
+    /// residue mod ``p``, or ``-1`` if ``self`` is a quadratic non-residue.
+    ///
+    /// Assumes ``p`` is an odd prime.  Behaviour is unspecified for composite
+    /// moduli.
+    fn legendre(&self, p: &Uint<L>) -> i8 {
+        if self.is_zero(p) {
+            return 0;
+        }
+        // Euler's criterion: a^((p-1)/2) mod p is 1 (QR) or p-1 (QNR).
+        let exp = p.wrapping_sub(&Uint::<L>::ONE) >> 1;
+        let r = self.pow(&exp, p).to_uint();
+        if r == Uint::<L>::ONE {
+            1
+        } else {
+            // r == p - 1 for a QNR (since p is prime and r^2 ≡ 1 mod p).
+            -1
+        }
+    }
+
+    /// Modular square root via Tonelli–Shanks.
+    ///
+    /// Returns ``Some(r)`` where ``r^2 ≡ self (mod p)`` if ``self`` is a
+    /// quadratic residue mod ``p``, or ``None`` if it is a non-residue.
+    /// Returns ``Some(0)`` for ``self ≡ 0``.
+    ///
+    /// Uses the ``p ≡ 3 (mod 4)`` shortcut ``a^((p+1)/4)`` when applicable;
+    /// falls back to the full Tonelli–Shanks loop for ``p ≡ 1 (mod 4)``.
+    ///
+    /// Assumes ``p`` is an odd prime.  Behaviour is unspecified for composite
+    /// moduli.
+    fn sqrt(&self, p: &Uint<L>) -> Option<Self> {
+        if self.is_zero(p) {
+            return Some(Self::zero(p));
+        }
+        if self.legendre(p) != 1 {
+            return None;
+        }
+
+        // p mod 4: check the two low bits of p.
+        let p_mod4 = p.as_words()[0] & 3;
+
+        if p_mod4 == 3 {
+            // Shortcut: p ≡ 3 (mod 4) → sqrt = a^((p+1)/4).
+            let exp = p.wrapping_add(&Uint::<L>::ONE) >> 2;
+            return Some(self.pow(&exp, p));
+        }
+
+        // General Tonelli–Shanks for p ≡ 1 (mod 4).
+        //
+        // Factor p-1 = Q * 2^S with Q odd.
+        let pm1 = p.wrapping_sub(&Uint::<L>::ONE);
+        let s = pm1.trailing_zeros(); // usize
+        let q = pm1 >> s; // Q = (p-1) / 2^S, odd
+
+        // Find a quadratic non-residue z by trial: try 2, 3, 5, ...
+        // For all project primes this converges within ~10 trials.
+        let z = {
+            let mut candidate = 2u64;
+            loop {
+                let c = Self::from_u64(candidate, p);
+                if c.legendre(p) == -1 {
+                    break c;
+                }
+                candidate += 1;
+            }
+        };
+
+        // Initialise the Tonelli–Shanks state.
+        let mut m: usize = s;
+        let mut c = z.pow(&q, p);
+        let mut t = self.pow(&q, p);
+        // r = a^((Q+1)/2): Q is odd so (Q+1)/2 is exact.
+        let mut r = self.pow(&q.wrapping_add(&Uint::<L>::ONE).shr_vartime(1), p);
+
+        let one = Self::one(p);
+
+        loop {
+            if t == one {
+                return Some(r);
+            }
+
+            // Find the least i (1 ≤ i < m) such that t^(2^i) ≡ 1.
+            let mut i: usize = 1;
+            let mut tmp = t.square(p);
+            while tmp != one {
+                tmp = tmp.square(p);
+                i += 1;
+            }
+
+            // b = c^(2^(m-i-1))
+            let mut b = c.clone();
+            for _ in 0..(m - i - 1) {
+                b = b.square(p);
+            }
+
+            m = i;
+            c = b.square(p);
+            t = t.mul(&c, p);
+            r = r.mul(&b, p);
+        }
     }
 }

@@ -6,3 +6,6 @@ description = "Prime-field arithmetic generic over limb count: Fp trait, FpNaive
 
 [dependencies]
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
+
+[dev-dependencies]
+proptest = "1"

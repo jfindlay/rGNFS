@@ -1114,6 +1114,7 @@ name = "shared-field"
 version = "0.1.0"
 dependencies = [
  "crypto-bigint",
+ "proptest",
 ]
 
 [[package]]
