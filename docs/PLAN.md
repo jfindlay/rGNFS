@@ -421,7 +421,7 @@ a unified score-and-rank pipeline. The trait uses `impl Iterator<Item = PolyPair
 ergonomic iteration without boxing overhead. G.B.3 and G.B.4 will implement this trait for their
 respective generators.
 
-### C-Score — Murphy-E scoring contract (compiler + KAT) — *to be frozen at G.B.2*
+### C-Score — Murphy-E scoring contract (compiler + KAT) — *frozen at G.B.2 (00aa32d)*
 **Defined:** G.B.2. **Consumed by:** G.B.3 (root sieve ranks by score), G.B.4, and **cross-track
 C3**: D.A (NFS-DL poly selection) and possibly E.K (factor-base balancing in index calculus). Per
 ROADMAP C3, this is *not* extracted to `shared::polysel` in advance — premature abstraction is the
@@ -438,7 +438,7 @@ signature is the contract; the float value is heuristic (KAT enforces ordering, 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | G.B.1 | `gnfs` crate + base-m generation | done | 2f43f99 | C-PolyPair |
-| G.B.2 | Murphy-E scoring | pending | — | C-Score |
+| G.B.2 | Murphy-E scoring | done | 00aa32d | C-Score |
 | G.B.3 | Root sieve | pending | — | — |
 | G.B.4 | Coppersmith multi-poly | pending | — | — |
 | G.B.W | Integrative writeup | pending | — | — |
