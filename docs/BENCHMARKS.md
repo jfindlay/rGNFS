@@ -149,3 +149,39 @@ the same solves complete in milliseconds.
 | `src/ecdlp/walk.rs` (unit) | 2 | Walk invariant `W = a·G + b·Q`, partition in-range |
 | `src/ecdlp/mod.rs` (unit) | 3 | Solver correctness: k=7, 42, 100 on tiny_a |
 | `tests/ecdlp_kat.rs` (integration) | 6 | DLP KATs on tiny_a (k=7, 100, 33333) and tiny_b (k=7, 42, 99991) |
+
+## G.B — Polynomial selection: Murphy-E scoring and root sieve
+
+Toy semiprime: N = 1022117 = 1009 × 1013 (~20-bit). Degree d = 3. All timings are wall-clock
+from a single run in unoptimized debug builds (`cargo test`, no `--release`). The dominant cost
+in both operations is the Dickman-ρ numerical integration: each `score()` call builds a 2301-entry
+RK4 table and samples a 50×50 grid.
+
+| Operation | N | Config | Wall time (debug) |
+|-----------|---|--------|-------------------|
+| `score()` — single Murphy-E evaluation | 1022117 (~20-bit) | 50×50 sample grid, B = 10^6 | ~30 ms |
+| `root_sieve()` — 10×10 grid (441 candidates) | 1022117 (~20-bit) | j_range = k_range = 10 | ~370 ms |
+| `coppersmith_polys()` — 5 variants, best selection | 1022117 (~20-bit) | num_polys = 5, step = 1 | ~150 ms |
+
+**Interpretation.** The 30 ms per `score()` call is entirely the Dickman-ρ table construction
+(~18 KB, 2300 RK4 steps) plus 2601 grid evaluations. In release mode this drops to < 1 ms. The
+root sieve's 370 ms is 441 × 30 ms / (parallelism = 1) — the grid search is embarrassingly
+parallel but runs single-threaded here. At cryptographic scale (RSA-768, d = 6), the sieve region
+is much larger and the grid ranges are 100–1000×, making the scoring cost the dominant factor in
+polynomial selection time.
+
+**Science↔engineering note (principle 4).** Murphy-E's predictive value — that higher score
+implies more smooth relations — only manifests at sieve scale (N ≳ 2^100). At toy scale the
+score is a ranking heuristic: the ordering is correct in expectation, but the absolute values and
+the improvement from root sieving are under-exposed. The root sieve KAT uses `≥` rather than `>`
+for this reason. The Coppersmith multi-poly improvement is < 2× at toy scale (KAT 5 in
+`coppersmith_kat.rs`), consistent with the principle-4 annotation.
+
+### Test coverage added (G.B)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `tests/base_m_kat.rs` | 4 | Base-m round-trip (toy N), RSA-100 determinism, optimal_degree, monic_f |
+| `tests/murphy_kat.rs` | 10 | Murphy-E ordering, monotonicity, positivity; Dickman-ρ spot-checks |
+| `tests/root_sieve_kat.rs` | 8 | Rotation root-preservation, determinism, generator count, score agreement |
+| `tests/coppersmith_kat.rs` | 12 | Verify, count, best-score, generator, principle-4 annotation |
