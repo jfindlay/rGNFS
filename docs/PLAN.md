@@ -197,9 +197,210 @@ interface into this section before implementation is dispatched.
 **Defined:** α.2. **Consumed by:** G.A.1a (norm bit-width), G.A.3, and (per ROADMAP C1) G.C, D.A,
 E.K. Currently hardcoded to `Uint<4>`; widening deferred (see Discoveries & risks / ROADMAP C1).
 
-### C-NF — number-field element arithmetic + norm (compiler + KAT) — *to be frozen at G.A.1a*
-**Defined:** G.A.1a (juncture fork writes the interface here). **Consumed by:** G.A.1b, G.A.2,
-G.A.3, G.B, G.C, D.A, E.D. Element representation, `Mul` canonicalisation contract, norm signature.
+### C-NF — number-field element arithmetic + norm (compiler + KAT) — *frozen at G.A.1a*
+
+**Defined:** G.A.1a. **Consumed by:** G.A.1b, G.A.2, G.A.3, G.B, G.C, D.A, E.D.
+
+#### Coefficient type
+
+`num_bigint::BigInt` for integer polynomials; `num_rational::BigRational` for rational polynomials
+and number-field elements. This is a correctness-oracle dependency (like CADO-NFS): the underlying
+integer/rational arithmetic is third-party; the number-field abstraction and all algorithms above it
+are first-party. Document in PEDAGOGY.
+
+#### Polynomial types
+
+```rust
+/// Polynomial over ℤ with BigInt coefficients.
+/// Coefficients stored least-significant first: coeffs[i] is the coefficient of x^i.
+/// Invariant: trailing zeros are trimmed (degree is coeffs.len() - 1, or -∞ for zero poly).
+pub struct IntPoly {
+    pub coeffs: Vec<BigInt>,
+}
+
+impl IntPoly {
+    pub fn zero() -> Self;
+    pub fn one() -> Self;
+    pub fn from_coeffs(coeffs: Vec<BigInt>) -> Self;  // trims trailing zeros
+    pub fn degree(&self) -> Option<usize>;            // None for zero poly
+    pub fn leading_coeff(&self) -> Option<&BigInt>;
+    pub fn eval(&self, x: &BigInt) -> BigInt;
+    pub fn is_monic(&self) -> bool;
+
+    // Arithmetic (returns new poly; does not mutate)
+    pub fn add(&self, rhs: &Self) -> Self;
+    pub fn sub(&self, rhs: &Self) -> Self;
+    pub fn neg(&self) -> Self;
+    pub fn mul(&self, rhs: &Self) -> Self;
+    pub fn scale(&self, c: &BigInt) -> Self;          // multiply all coeffs by c
+
+    // Conversion
+    pub fn to_rat_poly(&self) -> RatPoly;             // embed ℤ[x] ↪ ℚ[x]
+}
+
+/// Polynomial over ℚ with BigRational coefficients.
+/// Same storage convention as IntPoly.
+pub struct RatPoly {
+    pub coeffs: Vec<BigRational>,
+}
+
+impl RatPoly {
+    pub fn zero() -> Self;
+    pub fn one() -> Self;
+    pub fn from_coeffs(coeffs: Vec<BigRational>) -> Self;
+    pub fn degree(&self) -> Option<usize>;
+    pub fn leading_coeff(&self) -> Option<&BigRational>;
+    pub fn eval(&self, x: &BigRational) -> BigRational;
+    pub fn is_monic(&self) -> bool;
+
+    // Arithmetic
+    pub fn add(&self, rhs: &Self) -> Self;
+    pub fn sub(&self, rhs: &Self) -> Self;
+    pub fn neg(&self) -> Self;
+    pub fn mul(&self, rhs: &Self) -> Self;
+    pub fn scale(&self, c: &BigRational) -> Self;
+
+    // Division with remainder: self = q * divisor + r, deg(r) < deg(divisor).
+    // Panics if divisor is zero.
+    pub fn div_rem(&self, divisor: &Self) -> (Self, Self);
+    pub fn rem(&self, divisor: &Self) -> Self;        // convenience: div_rem(...).1
+}
+```
+
+#### Number field and element types
+
+```rust
+/// A number field K = ℚ(α) where α is a root of the monic irreducible polynomial f ∈ ℤ[x].
+pub struct NumberField {
+    /// The defining polynomial f(x). Must be monic and irreducible over ℚ.
+    /// Degree d = f.degree().unwrap() is the field extension degree [K : ℚ].
+    pub f: IntPoly,
+}
+
+impl NumberField {
+    /// Construct a number field from a monic irreducible polynomial.
+    /// Panics if f is not monic or has degree < 1.
+    /// Does NOT verify irreducibility (caller's responsibility; KAT coverage).
+    pub fn new(f: IntPoly) -> Self;
+
+    /// Extension degree [K : ℚ] = deg(f).
+    pub fn degree(&self) -> usize;
+
+    /// Construct the element α (the primitive element, i.e., the polynomial x mod f).
+    pub fn alpha(&self) -> NumberFieldElement;
+
+    /// Construct a rational element (embedding ℚ ↪ K).
+    pub fn from_rational(&self, r: BigRational) -> NumberFieldElement;
+
+    /// Construct an integer element (embedding ℤ ↪ K).
+    pub fn from_int(&self, n: BigInt) -> NumberFieldElement;
+}
+
+/// An element of a number field K = ℚ(α), represented as a polynomial in α
+/// of degree < [K : ℚ] with rational coefficients.
+///
+/// Invariant: self.poly.degree() < self.field.degree() (enforced by Mul).
+pub struct NumberFieldElement<'a> {
+    /// Reference to the ambient number field.
+    pub field: &'a NumberField,
+    /// The element as a polynomial in α. Degree < field.degree().
+    pub poly: RatPoly,
+}
+
+impl<'a> NumberFieldElement<'a> {
+    // Arithmetic: all operations reduce mod f eagerly.
+    pub fn add(&self, rhs: &Self) -> Self;
+    pub fn sub(&self, rhs: &Self) -> Self;
+    pub fn neg(&self) -> Self;
+    pub fn mul(&self, rhs: &Self) -> Self;            // reduces mod f
+    pub fn square(&self) -> Self;                     // reduces mod f
+    pub fn pow(&self, exp: u64) -> Self;              // square-and-multiply
+
+    /// Multiplicative inverse via extended Euclidean algorithm in ℚ[x] mod f.
+    /// Panics if self is zero.
+    pub fn inv(&self) -> Self;
+
+    /// Field norm N_{K/ℚ}(self) = Res_x(f, self.poly) for monic f.
+    /// Returns a BigRational (always an integer for algebraic integers).
+    pub fn norm(&self) -> BigRational;
+
+    /// Trace Tr_{K/ℚ}(self) = sum of conjugates.
+    /// (Optional for G.A.1a; may defer to G.A.W if not needed by G.A.1b.)
+    pub fn trace(&self) -> BigRational;
+
+    // Predicates
+    pub fn is_zero(&self) -> bool;
+    pub fn is_one(&self) -> bool;
+    pub fn is_rational(&self) -> bool;                // degree 0
+
+    // Equality: compares poly coefficients directly (no re-reduction needed).
+}
+
+impl PartialEq for NumberFieldElement<'_> { ... }
+impl Eq for NumberFieldElement<'_> { ... }
+```
+
+#### Mul canonicalisation contract
+
+`NumberFieldElement::mul` (and `square`, `pow`) **eagerly reduces mod f** after polynomial
+multiplication. This ensures:
+1. The invariant `poly.degree() < field.degree()` is always satisfied.
+2. Equality comparison is coefficient-wise: two elements are equal iff their `poly` fields are
+   equal. No re-reduction is needed before comparison.
+
+#### Norm implementation
+
+G.A.1a inlines a minimal resultant via the Sylvester matrix determinant:
+
+```rust
+impl NumberFieldElement<'_> {
+    /// Compute Res_x(f, g) via the Sylvester matrix determinant.
+    /// For monic f, this equals N_{K/ℚ}(g(α)).
+    fn sylvester_resultant(f: &IntPoly, g: &RatPoly) -> BigRational;
+
+    pub fn norm(&self) -> BigRational {
+        // For monic f: Norm(β) = Res_x(f, β) where β = self.poly.
+        // The resultant of f (degree d) and g (degree < d) is the determinant
+        // of the (2d-1) × (2d-1) Sylvester matrix... but since deg(g) < deg(f),
+        // the matrix simplifies to d × d.
+        Self::sylvester_resultant(&self.field.f, &self.poly)
+    }
+}
+```
+
+This is a complete implementation for the norm use case. G.A.2 provides a general-purpose
+`resultant(f: &IntPoly, g: &IntPoly) -> BigInt` via the subresultant PRS algorithm; the two
+coexist (G.A.1a's inline version is not replaced).
+
+#### C1 resolution (norm bit-width)
+
+For a toy 60–80 bit semiprime N with factor base B ≤ 10^4:
+- Polynomial degree d = 3–5, coefficients C ~ N^{1/d} ~ 2^{20–27}.
+- Sieve bound M ~ 10^4 = 2^{13}.
+- Norm bound: |Norm| ≤ (d+1)^{(d+1)/2} · (M · C)^d ≈ 2^{120–150}.
+
+**256 bits (Uint<4>) suffices.** Leave `shared::numth` at `Uint<4>`; no widening needed. This
+resolves the α.4 C1 deferral. If a future sub-track targets larger N, revisit — but the trait was
+designed at α.2 to support widening.
+
+#### Downstream consumption summary
+
+| Consumer | Consumes from C-NF |
+|----------|-------------------|
+| G.A.1b (Ideals) | `NumberField`, `NumberFieldElement`, `IntPoly`; element arithmetic, `norm()` |
+| G.A.2 (Resultants) | `IntPoly`, `RatPoly`; polynomial arithmetic (no element types) |
+| G.A.3 (Dedekind) | `NumberField`, `IntPoly`; polynomial reduction mod p (new in G.A.3) |
+| G.B (Poly selection) | `IntPoly`; resultant (from G.A.2), discriminant |
+| G.C (Sieving) | `NumberFieldElement::norm()`, ideal representation (from C-Ideal) |
+| D.A (NFS-DL) | Same as G.C |
+| E.D (Pairings) | `NumberField`, `NumberFieldElement`; extension field arithmetic |
+
+#### KAT requirements (G.A.1a must pass)
+
+1. **ℤ[α] arithmetic for f = x² − 2**: `(1 + α)(1 − α) = 1 − α² = 1 − 2 = −1`.
+2. **Norm for β = 1 + α in ℚ(√2)**: `Norm(1 + α) = (1 + √2)(1 − √2) = 1 − 2 = −1`.
+3. **Cubic from Crandall–Pomerance or LMFDB**: e.g., f = x³ − x − 1 (discriminant −23), verify
+   `Norm(α) = 1` and `Norm(α − 1) = −1`.
 
 ### C-Ideal — ideal representation + ideal norm (compiler + KAT) — *frozen at G.A.1b*
 **Defined:** G.A.1b. **Consumed by:** G.A.3, G.C, D.A. Two-element representation primary.
