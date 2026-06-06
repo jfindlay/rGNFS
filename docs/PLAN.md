@@ -423,7 +423,7 @@ designed at α.2 to support widening.
 | α.5 | `Fp` completion | done | cf00ed5 | C-Fp (+legendre/sqrt) |
 | G.A.1a | Number-field substrate | done | bdba6f5 | C-NF |
 | G.A.1b | Ideal representation | done | 05b27c8 | C-Ideal |
-| G.A.2 | Resultants / subresultant GCD | pending | — | C-Res |
+| G.A.2 | Resultants / subresultant GCD | done | bcd63cd | C-Res |
 | G.A.3 | Dedekind factorisation | pending | — | C-Dedekind |
 | G.A.4 | Bad-prime handling | pending | — | (extends C-Dedekind) |
 | G.A.W | Integrative writeup | pending | — | — |
