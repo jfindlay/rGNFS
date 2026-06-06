@@ -29,13 +29,17 @@
 //! - [`mod.rs`](self) — `PolyPair`, `PolyPairError`, `PolyGenerator`, re-exports.
 //! - [`base_m`] — `select_base_m`, `optimal_degree`, `BaseMGenerator`.
 //! - [`root_sieve`] — `root_sieve`, `RootSieveConfig`, `RootSieveGenerator`.
+//! - [`coppersmith`] — `coppersmith_polys`, `coppersmith_best`, `CoppersmithConfig`,
+//!   `CoppersmithGenerator`.
 
 pub mod base_m;
+pub mod coppersmith;
 pub mod murphy;
 pub mod root_sieve;
 pub mod roots;
 
 pub use base_m::{select_base_m, select_base_m_with_m, optimal_degree, BaseMGenerator};
+pub use coppersmith::{coppersmith_polys, coppersmith_best, CoppersmithConfig, CoppersmithGenerator};
 pub use murphy::score;
 pub use root_sieve::{root_sieve, rotate, RootSieveConfig, RootSieveGenerator};
 

@@ -23,4 +23,5 @@ pub use polyselect::{
     BaseMGenerator, PolyGenerator, PolyPair, PolyPairError,
     score,
     root_sieve, rotate, RootSieveConfig, RootSieveGenerator,
+    coppersmith_polys, coppersmith_best, CoppersmithConfig, CoppersmithGenerator,
 };
