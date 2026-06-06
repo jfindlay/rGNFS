@@ -6,6 +6,7 @@
 //! - [`NumberField`] — a number field K = ℚ(α) defined by a monic irreducible f ∈ ℤ[x].
 //! - [`NumberFieldElement`] — an element of K, represented as a reduced polynomial in α.
 //! - [`Ideal`] — a fractional ideal of ℤ[α] in two-element primary representation `(p, α − r)`.
+//! - [`dedekind_factor`] — Dedekind factorisation of the ideal (p) in ℤ[α].
 //!
 //! # Design
 //!
@@ -20,11 +21,13 @@
 //!   Multiplication eagerly reduces mod f to maintain this invariant.
 //! - `Ideal::p` is always positive.
 
+pub mod dedekind;
 pub mod element;
 pub mod ideal;
 pub mod poly;
 pub mod resultant;
 
+pub use dedekind::dedekind_factor;
 pub use element::{NumberField, NumberFieldElement};
 pub use ideal::Ideal;
 pub use poly::{IntPoly, RatPoly};
