@@ -618,6 +618,8 @@ Contracts frozen before G.C: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-I
 C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d). G.C opens over the
 frozen G.A substrate and G.B polynomial-selection layer.
 
+G.C ◆ boundary: still-on-intent (2026-06-06). All G.C sessions complete. C-FactorBase and C-Relation frozen and ready for G.D filtering. G.C.4 lattice sieving resolved as own session (741 LOC) — consistent with G.B.4 Coppersmith precedent.
+
 ---
 
 ## Action-frame digest
