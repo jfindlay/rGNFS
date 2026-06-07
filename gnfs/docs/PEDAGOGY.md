@@ -1958,3 +1958,935 @@ the algebraic square root).
 5. **Wiedemann, D. (1986).** *Solving sparse linear equations over finite fields.* IEEE
    Transactions on Information Theory, 32(1), 54–62. The Wiedemann algorithm used in G.E for
    the null-space computation — the downstream consumer of the filtered `SparseMatrix`.
+
+---
+
+# Linear Algebra: A Code-Tour Chapter
+
+This chapter explains the `gnfs/src/linalg` module — the linear algebra stage of the General
+Number Field Sieve. It is organised by the implementation, not by mathematical abstraction: each
+section introduces the mathematics, then shows how it is realised in code. A reader who has read
+the filtering chapter (§21–§30 above) can read this one without consulting the source.
+
+The chapter covers the filtered matrix as a GF(2) linear system, the nullspace as a congruence
+of squares, the role of sign and quadratic-character columns, block Lanczos, block Wiedemann,
+the kernel-vector → provenance → original-relations thread, and the C-LinAlg contract.
+
+---
+
+## 31. The Filtered Matrix as a GF(2) Linear System
+
+### From filtering to linear algebra
+
+The output of G.D filtering is a `SparseMatrix` — a sparse GF(2) matrix A with m rows and n
+columns. Each row corresponds to a filtered relation (or a merged aggregate of relations), and
+each column corresponds to a prime or obstruction entry in the factor base. The entry A[i][j]
+is 1 if the j-th prime appears to an odd total exponent in the i-th relation's norm product,
+and 0 otherwise.
+
+The goal of G.E is to find vectors in the **left nullspace** of A: subsets of rows whose GF(2)
+column-sum is the zero vector. Formally, we seek non-zero vectors v ∈ GF(2)^m such that:
+
+$$
+v^T A = 0 \pmod{2}
+$$
+
+Equivalently, we seek vectors in the nullspace of A^T (the right nullspace of the transpose).
+
+### Why the left nullspace
+
+A left nullspace vector v is a 0/1 indicator over rows. The rows it selects are a subset S of
+filtered relations. The GF(2) column-sum being zero means: for every prime p in the factor
+base, the total exponent of p across all relations in S is even. This is exactly the condition
+for the product of the corresponding norms to be a perfect square.
+
+### The `SparseMatrix` contract (C-Matrix)
+
+G.E inherits the `SparseMatrix` from G.D unchanged:
+
+```rust
+pub struct SparseMatrix {
+    /// The rows of the matrix, each with its column set and provenance.
+    pub rows: Vec<MatrixRow>,
+    /// Total number of columns = FactorBase::matrix_width().
+    pub num_cols: usize,
+    /// Index of the first obstruction column = rational_size + algebraic_size.
+    pub obstruction_col_start: usize,
+    /// Number of obstruction columns = FactorBase::obstruction_count.
+    pub obstruction_count: usize,
+    /// col_weights[c] = number of rows with a 1 in column c.
+    pub col_weights: Vec<u32>,
+}
+```
+
+The column layout is:
+
+```text
+[  rational primes  |  algebraic ideals  |  sign  |  QC columns  ]
+ 0 .. rational_size   rational_size ..      obs_start  obs_start+1 ..
+                       obs_start            (col 0)    (cols 1..num_qc)
+```
+
+G.D populates the rational and algebraic columns and the sign column. G.E fills in the
+quadratic-character (QC) columns before running the nullspace solver.
+
+### Toy-scale matrix dimensions
+
+The KAT matrices in `gnfs/tests/lanczos_kat.rs` and `gnfs/tests/wiedemann_kat.rs` use a
+hand-built 6 × 4 matrix:
+
+```text
+    col: 0 1 2 3
+row 0:   1 1 0 0   ← provenance [0]
+row 1:   0 1 1 0   ← provenance [1]
+row 2:   1 0 1 0   ← provenance [2]
+row 3:   1 1 0 0   ← provenance [3]  (duplicate of row 0)
+row 4:   0 0 0 1   ← provenance [4]
+row 5:   0 0 0 1   ← provenance [5]  (duplicate of row 4)
+```
+
+Known left nullspace vectors: `{0, 3}` (rows 0 and 3 are identical), `{4, 5}` (rows 4 and 5
+are identical), and `{0, 1, 2}` (the XOR of rows 0, 1, 2 is zero). The kernel dimension is 3.
+
+---
+
+## 32. The Nullspace as a Congruence of Squares
+
+### From nullspace vector to congruence
+
+A left nullspace vector v — a subset S of filtered-matrix rows — has a precise algebraic
+meaning. Let the rows in S correspond to relations with rational norms N_rat(aᵢ, bᵢ) and
+algebraic norms N_alg(aᵢ, bᵢ). The GF(2) column-sum being zero means:
+
+$$
+\prod_{i \in S} N_{\mathrm{rat}}(a_i, b_i) = X^2 \quad \text{for some } X \in \mathbb{Z}
+$$
+
+$$
+\prod_{i \in S} N_{\mathrm{alg}}(a_i, b_i) = Y^2 \quad \text{for some } Y \in K = \mathbb{Q}(\alpha)
+$$
+
+The first equation holds because the rational exponent parities all cancel (every prime appears
+to an even total exponent). The second holds for the same reason on the algebraic side — with
+the additional guarantee provided by the sign and QC columns (§33).
+
+### The congruence of squares
+
+The rational norm N_rat(a, b) = a − b·m is a linear form in (a, b). The product of the
+rational norms over S is:
+
+$$
+\prod_{i \in S} (a_i - b_i \cdot m) = X^2 \pmod{N}
+$$
+
+The algebraic norm N_alg(a, b) = b^d · f(a/b) is the norm of the ideal (a − b·α) in ℤ[α].
+The product of the algebraic norms over S is the norm of the product ideal:
+
+$$
+\prod_{i \in S} (a_i - b_i \cdot \alpha) = \beta^2 \quad \text{in } K = \mathbb{Q}(\alpha)
+$$
+
+Taking the norm of both sides: Norm(β²) = Norm(β)² = Y² where Y = Norm(β) ∈ ℤ. Setting
+x = X mod N and y = Y mod N gives x² ≡ y² (mod N). If x ≢ ±y (mod N), then gcd(x − y, N)
+is a non-trivial factor of N.
+
+### Why the matrix encodes the right thing
+
+Each row of the matrix is the GF(2) exponent vector of a relation: the parity of each prime's
+exponent in the norm factorisation. The GF(2) column-sum of a subset S being zero is exactly
+the condition that every prime appears to an even total exponent — i.e., the product of norms
+is a perfect square. The linear algebra step is the bridge between the sieve output (individual
+smooth pairs) and the factoring step (a congruence of squares).
+
+---
+
+## 33. Why the Sign and Quadratic-Character Columns Are Needed
+
+### The sign column
+
+The rational norm N_rat(a, b) = a − b·m can be negative (when a < b·m). A perfect square must
+be positive, so the product of the rational norms over S must be positive. The sign column
+(at `obstruction_col_start`) records the parity of the sign: it is 1 if the rational norm is
+negative, 0 if positive. For the product to be a positive perfect square, the total number of
+negative norms in S must be even — i.e., the sign column must sum to zero over S.
+
+The `Relation` type records this directly:
+
+```rust
+pub struct Relation {
+    // ...
+    /// True if the rational norm a − b·m is negative.
+    pub rational_sign: bool,
+}
+```
+
+`build_matrix` populates the sign column from `relation.rational_sign`. A nullspace vector
+that satisfies the sign column constraint has an even number of negative rational norms, so
+their product is positive.
+
+### The quadratic-character columns
+
+The algebraic side requires more care. Even if the product of algebraic norms is a perfect
+square integer, the algebraic square root β (satisfying Norm(β) = Y) might not exist in K.
+The issue is that the product of the ideals (aᵢ − bᵢ·α) might be a square in the ideal group
+of ℤ[α] without being a square of a principal ideal — i.e., the product might not be a
+principal ideal generated by a square element.
+
+The quadratic-character (QC) columns resolve this. For each auxiliary prime q that splits
+completely in K = ℚ[x]/(f), the QC column records the Legendre-symbol parity of the algebraic
+norm at q:
+
+$$
+\text{QC}_{q}(a, b) = \left(\frac{N_{\mathrm{alg}}(a, b)}{q}\right) \bmod 2
+$$
+
+where (·/q) is the Legendre symbol. A nullspace vector that satisfies all QC column constraints
+guarantees that the product of the algebraic norms is a square in K, not merely a square
+integer. Without QC columns, the algebraic square root might not exist in K even if the norm
+is a square.
+
+### The `populate_qc_columns` function
+
+G.E fills in the QC columns before running the nullspace solver:
+
+```rust
+pub fn populate_qc_columns(
+    matrix: &mut SparseMatrix,
+    relations: &[Relation],
+    fb: &FactorBase,
+    poly: &PolyPair,
+    qc_primes: &[u64],
+) {
+    for row in matrix.rows.iter_mut() {
+        for (k, &q) in qc_primes.iter().enumerate() {
+            let col = matrix.obstruction_col_start + 1 + k;
+            let mut parity = false;
+            for &rel_idx in &row.provenance {
+                let rel = &relations[rel_idx];
+                let norm = algebraic_norm_mod_q(&rel.a, &rel.b, &poly.f, q);
+                parity ^= legendre_parity(norm, q);
+            }
+            if parity {
+                // Insert col into row.cols (maintaining sorted order).
+                match row.cols.binary_search(&col) {
+                    Ok(_) => {}
+                    Err(pos) => { row.cols.insert(pos, col); }
+                }
+            }
+        }
+    }
+}
+```
+
+The QC primes are selected by `select_qc_primes`: the first `num_qc` primes q > B_alg such
+that f splits completely mod q (i.e., f has deg(f) distinct roots mod q). Splitting completely
+ensures the Legendre symbol is well-defined and non-degenerate.
+
+The Legendre symbol is computed via Euler's criterion: (a/q) ≡ a^((q−1)/2) (mod q). The
+parity is 1 iff the symbol is −1 (a is a quadratic non-residue mod q):
+
+```rust
+fn legendre_parity(norm: u64, q: u64) -> bool {
+    if norm == 0 { return false; }
+    let exp = (q - 1) / 2;
+    let result = pow_mod(norm, exp, q);
+    result == q - 1
+}
+```
+
+**Principle-4 annotation.** At toy scale, `DEFAULT_NUM_QC = 10` QC columns suffice. At NFS
+scale, 20–50 QC columns are typical. The number of QC columns is a scale knob: more columns
+give a stronger guarantee that the algebraic square root exists, at the cost of a wider matrix.
+
+---
+
+## 34. The C-LinAlg Substrate
+
+### The three frozen types
+
+The C-LinAlg contract (frozen at G.E.1) defines three types that all downstream consumers
+(G.E.2, G.E.3, G.F, D.B) use:
+
+**`BlockVec`** — a block of `BLOCK_WIDTH = 64` GF(2) vectors, each of length `num_rows`,
+packed into a `Vec<u64>`. The layout is "row of words": `data[i]` is a `u64` whose bit j is
+the j-th vector's value at row i. This makes iterating over rows contiguous in memory and
+keeps the 64 vectors interleaved bit-by-bit within each word.
+
+```rust
+pub struct BlockVec {
+    /// Packed row data: `data[row]` bit `j` = vector `j`'s value at `row`.
+    pub data: Vec<u64>,
+    /// Number of rows (the vector dimension).
+    pub num_rows: usize,
+}
+```
+
+**`MatrixOperator`** — a view of a `SparseMatrix` as a linear operator over GF(2). Provides
+`apply` (A·V) and `apply_transpose` (Aᵀ·V) for block vectors. Both solvers consume this
+interface exclusively; they never read `SparseMatrix` fields directly.
+
+```rust
+pub struct MatrixOperator<'a> {
+    matrix: &'a SparseMatrix,
+}
+```
+
+**`KernelVector`** — a vector in the left nullspace of the matrix, represented as a sorted,
+deduplicated `Vec<usize>` of filtered-matrix row indices.
+
+```rust
+pub struct KernelVector {
+    /// Sorted, deduplicated row indices into the filtered matrix.
+    pub row_indices: Vec<usize>,
+}
+```
+
+### The `MatrixOperator` apply operations
+
+The `apply` operation (A·V) computes the GF(2) matrix-vector product for all 64 block vectors
+simultaneously. For each row i of the matrix, the result is the XOR of `v.data[c]` for each
+column c in that row:
+
+```rust
+pub fn apply(&self, v: &BlockVec) -> BlockVec {
+    let mut result = BlockVec::zeros(self.num_rows());
+    for (i, row) in self.matrix.rows.iter().enumerate() {
+        let mut word = 0u64;
+        for &c in &row.cols {
+            word ^= v.data[c];
+        }
+        result.data[i] = word;
+    }
+    result
+}
+```
+
+The key insight: `v.data[c]` is a `u64` whose bit j is vector j's value at column c. XOR-ing
+all `v.data[c]` for c in the row gives a `u64` whose bit j is the GF(2) dot product of the
+row with vector j. All 64 dot products are computed in a single XOR loop.
+
+The `apply_transpose` operation (Aᵀ·V) scatters contributions on-the-fly: for each row i,
+for each column c in that row, XOR `v.data[i]` into `result.data[c]`:
+
+```rust
+pub fn apply_transpose(&self, v: &BlockVec) -> BlockVec {
+    let mut result = BlockVec::zeros(self.num_cols());
+    for (i, row) in self.matrix.rows.iter().enumerate() {
+        let vi = v.data[i];
+        if vi == 0 { continue; }
+        for &c in &row.cols {
+            result.data[c] ^= vi;
+        }
+    }
+    result
+}
+```
+
+### The `BLOCK_WIDTH` scale knob
+
+```rust
+/// Block width: 64 vectors packed into machine words.
+///
+/// Principle-4 annotation: at toy scale a single word suffices and the blocking overhead
+/// is invisible; at NFS scale the word-wide block is the inner loop's cache-friendly unit.
+/// The width is the scale knob — D.B may widen to 128 or parameterise over block width.
+pub const BLOCK_WIDTH: usize = 64;
+```
+
+At toy scale (6 × 4 matrix), a single 64-bit word is more than enough to represent the entire
+block. The blocking overhead is invisible. At NFS scale (millions of rows), the 64-wide block
+is the cache-friendly inner loop unit: each `apply` call processes 64 vectors in a single pass
+over the matrix, amortising the memory-bandwidth cost of loading each row once.
+
+---
+
+## 35. Block Lanczos: Krylov Subspaces over GF(2)
+
+### The symmetric reduction
+
+Both solvers work with the symmetric matrix B = A · Aᵀ (m × m), whose left nullspace equals
+the left nullspace of A. This is because:
+
+$$
+A^T v = 0 \implies A A^T v = 0
+$$
+
+and conversely, if B·v = 0 then A·Aᵀ·v = 0, so Aᵀ·v is in the nullspace of A, and if A has
+full column rank then Aᵀ·v = 0. Working with B avoids the need to handle the non-square
+structure of A directly.
+
+The B·v product is computed as two operator applications:
+
+```rust
+// w_cur = B * v_cur = A * (A^T * v_cur).
+let at_v = op.apply_transpose(&v_cur);
+let w_cur = op.apply(&at_v);
+```
+
+### The Krylov subspace
+
+The block Lanczos algorithm builds a Krylov basis for B. Starting from a random block vector
+V₀ ∈ GF(2)^{m × 64}, the Krylov sequence is:
+
+$$
+V_0,\; B V_0,\; B^2 V_0,\; \ldots
+$$
+
+The algorithm constructs an orthogonal basis for the Krylov subspace span{V₀, BV₀, B²V₀, …}
+using a three-term recurrence. At each step, the recurrence advances the block vector using
+the A-orthogonality condition.
+
+### The A-orthogonality condition and the three-term recurrence
+
+The block Lanczos recurrence is:
+
+$$
+V_{k+1} = B V_k - V_k \alpha_k - V_{k-1} \beta_k
+$$
+
+where the coefficient matrices α_k and β_k are chosen so that V_{k+1} is A-orthogonal to all
+previous block vectors. The A-orthogonality condition is:
+
+$$
+V_i^T B V_j = 0 \quad \text{for } i \neq j
+$$
+
+The coefficients are:
+
+$$
+\alpha_k = S_k^{-1} (V_k^T B^2 V_k), \quad \beta_k = S_{k-1}^{-1} (V_{k-1}^T B V_k)
+$$
+
+where S_k = V_k^T B V_k is the BLOCK_WIDTH × BLOCK_WIDTH inner product matrix. The inverse
+S_k^{-1} is computed by GF(2) Gaussian elimination.
+
+In the implementation:
+
+```rust
+// alpha_raw = v_cur^T * B * w_cur (BLOCK_WIDTH × BLOCK_WIDTH).
+let alpha_raw = v_cur.inner_product_matrix(&bw_cur);
+// alpha = s_inv * alpha_raw (restricted to active columns).
+let alpha = gf2_matmul_block(s_inv, alpha_raw, active_mask);
+
+// beta_raw = v_prev^T * w_cur (BLOCK_WIDTH × BLOCK_WIDTH).
+let beta_raw = v_prev.inner_product_matrix(&w_cur);
+// beta = s_prev_inv * beta_raw (restricted to previously active columns).
+let beta = gf2_matmul_block(s_prev_inv, beta_raw, active_mask_prev);
+
+// v_next = w_cur - v_cur * alpha - v_prev * beta (over GF(2), - = +).
+let mut v_next = w_cur.clone();
+block_vec_sub_matmul(&mut v_next, &v_cur, alpha);
+block_vec_sub_matmul(&mut v_next, &v_prev, beta);
+```
+
+### The GF(2) self-orthogonality problem and winnowing
+
+Over ℝ, the Lanczos recurrence is guaranteed to produce orthogonal vectors because the inner
+product is positive-definite. Over GF(2), this guarantee fails: a **nonzero** vector v can
+satisfy v^T B v = 0. This is the self-orthogonality problem.
+
+Self-orthogonality occurs exactly when B·v = 0, i.e., when v is already in the nullspace of B
+(and hence in the left nullspace of A). When the inner product matrix S_k = V_k^T B V_k has
+a zero column, the corresponding block column of V_k is self-orthogonal — it is already a
+nullspace vector.
+
+The **winnowing** step handles this: at each iteration, the algorithm identifies which block
+columns are "active" (those where S_k has a non-zero pivot) and which are "inactive" (those
+where S_k has a zero column). Inactive columns are checked for nullspace membership:
+
+```rust
+// Find active columns via GF(2) Gaussian elimination on s.
+let (active_mask, s_inv) = gf2_block_pivot(s);
+
+// Collect kernel candidates from inactive columns.
+let inactive_mask = !active_mask;
+let mut bits = inactive_mask;
+while bits != 0 {
+    let j = bits.trailing_zeros() as usize;
+    bits &= bits - 1;
+
+    let col = v_cur.column(j);
+    if col.iter().any(|&b| b) {
+        let col_bv = BlockVec::from_columns(&[col.clone()]);
+        let at_col = op.apply_transpose(&col_bv);
+        let is_zero = at_col.data.iter().all(|&x| x == 0);
+        if is_zero {
+            let kv = KernelVector::from_mask(&col);
+            if !kv.is_empty() {
+                results.push(kv);
+            }
+        }
+    }
+}
+```
+
+The `gf2_block_pivot` function performs GF(2) Gaussian elimination on the 64 × 64 inner
+product matrix S, returning the pivot column mask (active columns) and the inverse of the
+pivot submatrix (used in the recurrence):
+
+```rust
+fn gf2_block_pivot(s: [u64; BLOCK_WIDTH]) -> (u64, [u64; BLOCK_WIDTH]) {
+    let mut s_work = s;
+    let mut inv = [0u64; BLOCK_WIDTH];
+    for i in 0..BLOCK_WIDTH { inv[i] = 1u64 << i; } // identity
+    let mut pivot_mask = 0u64;
+    for col in 0..BLOCK_WIDTH {
+        // Find pivot row for this column.
+        let mut found = BLOCK_WIDTH;
+        for row in col..BLOCK_WIDTH {
+            if (s_work[row] >> col) & 1 == 1 { found = row; break; }
+        }
+        if found == BLOCK_WIDTH { continue; } // no pivot — inactive column
+        s_work.swap(col, found);
+        inv.swap(col, found);
+        pivot_mask |= 1u64 << col;
+        // Full reduced row echelon form.
+        for row in 0..BLOCK_WIDTH {
+            if row != col && (s_work[row] >> col) & 1 == 1 {
+                s_work[row] ^= s_work[col];
+                inv[row] ^= inv[col];
+            }
+        }
+    }
+    // ...
+    (pivot_mask, s_inv)
+}
+```
+
+**Principle-4 annotation (self-orthogonality).** Self-orthogonality is a phenomenon that IS
+exposed at toy scale. The KAT matrix in `lanczos_kat.rs` is deliberately constructed with
+duplicate rows (rows 0 and 3 are identical; rows 4 and 5 are identical). Duplicate rows
+produce self-orthogonal block columns in the starting vector, exercising the winnowing path.
+The KAT comment explains this explicitly:
+
+> To force this path in a KAT, we use a matrix with duplicate rows. If rows i and j are
+> identical, then e_i XOR e_j is in the left nullspace of A. When the random starting block
+> vector has a component along e_i XOR e_j, that component is self-orthogonal under B and
+> triggers the winnowing.
+
+**Principle-4 annotation (block width).** The block width `BLOCK_WIDTH = 64` is the scale
+knob. At toy scale (6 × 4 matrix), the entire matrix fits in a handful of words and the
+blocking overhead is invisible — a single-vector Lanczos would be equally fast. At NFS scale
+(millions of rows), the 64-wide block amortises the cost of loading each matrix row once
+across 64 simultaneous vector operations, giving a ~64× speedup over the single-vector variant.
+
+---
+
+## 36. Block Wiedemann: Krylov Sequences and Berlekamp-Massey
+
+### The Wiedemann approach
+
+Block Wiedemann takes a different route to the same destination. Instead of building an
+orthogonal Krylov basis (Lanczos), it computes a scalar Krylov sequence and uses
+Berlekamp-Massey to find the minimal polynomial of B restricted to a random direction.
+
+For a random pair (x, y) ∈ GF(2)^m × GF(2)^m, the scalar Krylov sequence is:
+
+$$
+s_i = x^T B^i y, \quad i = 0, 1, 2, \ldots, 2m + 10
+$$
+
+The Berlekamp-Massey algorithm finds the shortest LFSR that generates this sequence — the
+minimal polynomial f(z) of B in the direction (x, y). Then the kernel vector is extracted by
+evaluating f(B)·y:
+
+$$
+w = f(B) \cdot y = \sum_{k=0}^{d} f_k \cdot B^k \cdot y
+$$
+
+If A^T·w = 0 and w ≠ 0, then w is a left nullspace vector of A.
+
+### The Krylov sequence computation
+
+```rust
+fn krylov_sequence(
+    op: &MatrixOperator<'_>,
+    m: usize,
+    x: &[bool],
+    y: &[bool],
+    seq_len: usize,
+) -> Vec<bool> {
+    let y_bv = bool_vec_to_blockvec(y, m);
+    let mut v = y_bv;
+    let mut sequence = Vec::with_capacity(seq_len);
+
+    for _ in 0..seq_len {
+        // s_i = x^T * v = XOR of v[j] for j where x[j] = true.
+        let s = inner_product_scalar(x, &v);
+        sequence.push(s);
+
+        // v = B * v = apply(apply_transpose(v)).
+        let at_v = op.apply_transpose(&v);
+        v = op.apply(&at_v);
+    }
+    sequence
+}
+```
+
+Each step applies B = A·Aᵀ to the current vector, then takes the scalar inner product with x.
+The sequence length 2m + 10 is sufficient for Berlekamp-Massey to find the minimal polynomial
+of degree at most m.
+
+### The Berlekamp-Massey algorithm
+
+Berlekamp-Massey finds the shortest LFSR (linear feedback shift register) that generates a
+given GF(2) sequence. The output is the minimal polynomial f(z) = 1 + f₁z + … + f_d z^d such
+that:
+
+$$
+\sum_{k=0}^{d} f_k \cdot s_{n-k} = 0 \quad \text{for all } n \geq d
+$$
+
+The implementation follows the standard GF(2) Berlekamp-Massey algorithm:
+
+```rust
+pub fn berlekamp_massey(s: &[bool]) -> Vec<bool> {
+    let n = s.len();
+    let mut c = vec![true]; // current LFSR polynomial C = 1
+    let mut b = vec![true]; // previous polynomial B = 1
+    let mut l: usize = 0;   // current LFSR length
+    let mut m: usize = 1;   // steps since last length change
+
+    for n_idx in 0..n {
+        // Compute discrepancy d = s[n_idx] XOR sum_{i=1}^{L} C[i] * s[n_idx - i].
+        let mut d = s[n_idx];
+        for i in 1..=l {
+            if n_idx >= i && c.len() > i && c[i] { d ^= s[n_idx - i]; }
+        }
+
+        if !d {
+            m += 1; // no update needed
+        } else if 2 * l <= n_idx {
+            // Length must increase.
+            let t = c.clone();
+            xor_shifted(&mut c, &b, m); // C = C XOR z^m * B
+            l = n_idx + 1 - l;
+            b = t;
+            m = 1;
+        } else {
+            xor_shifted(&mut c, &b, m); // C = C XOR z^m * B
+            m += 1;
+        }
+    }
+    c
+}
+```
+
+The KAT in `wiedemann_kat.rs` verifies this on the Fibonacci sequence mod 2 (0, 1, 1, 0, 1,
+1, …), which has minimal polynomial f(z) = 1 + z + z² (degree 2):
+
+```rust
+let s: Vec<bool> = vec![false, true, true, false, true, true, false, true, true, false];
+let f = berlekamp_massey(&s);
+assert_eq!(f.len(), 3); // degree 2
+assert!(f[0] && f[1] && f[2]); // f(z) = 1 + z + z^2
+```
+
+### Kernel extraction via Horner's method
+
+Once the minimal polynomial f(z) is known, the kernel vector is extracted by evaluating
+f(B)·y via Horner's method:
+
+$$
+f(B) \cdot y = f_d \cdot y + B \cdot (f_{d-1} \cdot y + B \cdot (\ldots + B \cdot (f_1 \cdot y + B \cdot (f_0 \cdot y)) \ldots))
+$$
+
+```rust
+fn eval_poly_on_krylov(op: &MatrixOperator<'_>, m: usize, y: &[bool], f: &[bool]) -> BlockVec {
+    let d = f.len() - 1;
+    let y_bv = bool_vec_to_blockvec(y, m);
+    let mut w = if f[d] { y_bv.clone() } else { BlockVec::zeros(m) };
+
+    for k in (0..d).rev() {
+        // w = B * w.
+        let at_w = op.apply_transpose(&w);
+        w = op.apply(&at_w);
+        // w = w XOR (f_k * y).
+        if f[k] { w.xor_assign(&y_bv); }
+    }
+    w
+}
+```
+
+The result w = f(B)·y satisfies B·w = 0 (since f is the minimal polynomial of B in the
+direction (x, y)), and hence A^T·w = 0 — w is in the left nullspace of A.
+
+### The parallelism payoff
+
+The key architectural difference between Wiedemann and Lanczos is where the parallelism lives.
+In block Lanczos, each iteration requires a global inner product (S_k = V_k^T B V_k) that
+synchronises all 64 block columns. In block Wiedemann, the Krylov sequence computation for
+each (x, y) pair is independent: the sequence {x^T B^i y} can be computed in parallel across
+multiple (x, y) pairs with no global synchronisation per step.
+
+At production NFS scale, the block Wiedemann algorithm uses `BLOCK_WIDTH` (x, y) pairs
+simultaneously, distributing the Krylov sequence computation across multiple machines. Each
+machine computes a subset of the sequences independently; the Berlekamp-Massey step is then
+run on the combined sequences. This is the architecture used in the RSA-768 factorisation
+(Kleinjung et al., 2010).
+
+**Principle-4 annotation (Wiedemann parallelism).** At toy scale, the parallelism payoff is
+invisible. The implementation uses a single (x, y) pair (the scalar Wiedemann variant) at
+demonstration fidelity; the block variant would use `BLOCK_WIDTH` pairs simultaneously. The
+module docstring annotates this explicitly:
+
+> Block Wiedemann's payoff is distributed/parallel: the Krylov sequence {x^T A^i y} can be
+> computed in parallel across multiple (x, y) pairs, with no global synchronisation per step
+> (unlike block Lanczos, which requires a global inner product at each step). At toy scale,
+> this parallelism is invisible — Lanczos is simpler and just as fast.
+
+The implementation runs 4 independent (x, y) attempts to improve the probability of finding
+a kernel vector:
+
+```rust
+let num_attempts = 4;
+for attempt in 0..num_attempts {
+    // ...
+    let x = random_gf2_vec(m, rng_state);
+    let y = random_gf2_vec(m, rng_state);
+    if let Some(kv) = wiedemann_attempt(op, m, &x, &y) {
+        if !results.iter().any(|r| r.row_indices == kv.row_indices) {
+            results.push(kv);
+        }
+    }
+}
+```
+
+---
+
+## 37. The Kernel-Vector → Provenance → Original-Relations Thread
+
+### What G.F consumes
+
+G.F (the square-root step) needs the original (a, b) pairs — not the filtered-matrix row
+indices. The bridge is the provenance map: each `MatrixRow` carries a sorted, deduplicated
+list of original relation indices that merged into it during G.D filtering.
+
+The `KernelVector` type provides the `expand_provenance` method that performs this expansion:
+
+```rust
+pub fn expand_provenance(&self, matrix: &SparseMatrix) -> Vec<usize> {
+    let mut result: Vec<usize> = Vec::new();
+    for &i in &self.row_indices {
+        let prov = &matrix.rows[i].provenance;
+        // Symmetric difference of result and prov (both sorted).
+        let mut merged = Vec::with_capacity(result.len() + prov.len());
+        let mut ri = 0;
+        let mut pi = 0;
+        while ri < result.len() && pi < prov.len() {
+            match result[ri].cmp(&prov[pi]) {
+                std::cmp::Ordering::Less    => { merged.push(result[ri]); ri += 1; }
+                std::cmp::Ordering::Greater => { merged.push(prov[pi]); pi += 1; }
+                std::cmp::Ordering::Equal   => { ri += 1; pi += 1; } // cancel
+            }
+        }
+        merged.extend_from_slice(&result[ri..]);
+        merged.extend_from_slice(&prov[pi..]);
+        result = merged;
+    }
+    result
+}
+```
+
+The symmetric difference (XOR union) is the correct operation: if a relation index appears in
+two provenance sets, it means the relation was merged into two different filtered rows, and
+those two rows' contributions cancel in the GF(2) sum. The symmetric difference removes
+cancelled indices, leaving only the original relations that contribute a net odd number of
+times.
+
+### The full thread
+
+The complete kernel-vector → original-relations thread:
+
+1. **G.E** runs `block_lanczos` or `block_wiedemann` on the filtered matrix, returning a
+   `Vec<KernelVector>`. Each `KernelVector` is a sorted list of filtered-matrix row indices.
+
+2. **G.F** calls `kv.expand_provenance(&matrix)` to get the set of original relation indices.
+   This is the symmetric difference of the provenance sets of all selected rows.
+
+3. **G.F** looks up the original `Relation` objects by index to recover the (a, b) pairs.
+
+4. **G.F** computes the product of all rational norms (a perfect square in ℤ) and the product
+   of all algebraic norms (a perfect square in K = ℚ(α)), and extracts the square roots to
+   form the congruence x² ≡ y² (mod N).
+
+The KAT `kat_3_round_trip_provenance` in `linalg_substrate_kat.rs` verifies this thread end-
+to-end before G.F exists. For a matrix with hand-crafted provenance:
+
+```rust
+// Row 0: provenance = [0, 1], Row 1: provenance = [2], Row 2: provenance = [1, 3].
+// Kernel vector {0, 2}: sym_diff([0,1], [1,3]) = [0, 3] (1 cancels).
+let kv_02 = KernelVector::new(vec![0, 2]);
+let expanded = kv_02.expand_provenance(&matrix);
+assert_eq!(expanded, vec![0, 3]);
+
+// Kernel vector {0, 1, 2} (valid nullspace vector):
+// sym_diff([0,1], [2], [1,3]) = [0, 2, 3] (1 cancels from rows 0 and 2).
+let kv_012 = KernelVector::new(vec![0, 1, 2]);
+assert!(kv_012.verify(&matrix));
+let expanded = kv_012.expand_provenance(&matrix);
+assert_eq!(expanded, vec![0, 2, 3]);
+```
+
+### Why row indices, not a bit-mask
+
+The `KernelVector` stores row indices rather than a bit-mask for three reasons:
+
+1. G.F needs row indices to look up provenance; a bit-mask would require a scan.
+2. Kernel vectors are sparse (typically a small fraction of rows); a bit-mask wastes space.
+3. Solvers internally work with bit-packed block vectors, but convert to `KernelVector` on
+   output — the conversion is O(rows) and happens once per kernel vector, not in the inner
+   loop.
+
+---
+
+## 38. The C-LinAlg Contract and D.B Generalisation
+
+### The frozen seam
+
+The C-LinAlg contract (frozen at G.E.1) defines the interface that all downstream consumers
+use. The three types — `BlockVec`, `MatrixOperator`, and `KernelVector` — are the frozen seam.
+G.E.2 (block Lanczos), G.E.3 (block Wiedemann), G.F (square root), and D.B (NFS-DL linear
+algebra over F_ℓ) all consume this interface directly.
+
+The module docstring in `gnfs/src/linalg/mod.rs` states the contract explicitly:
+
+```rust
+//! # C-LinAlg contract
+//!
+//! The types and functions in this module implement the C-LinAlg contract frozen at G.E.1.
+//! G.E.2 (block Lanczos), G.E.3 (Wiedemann), G.F (square root), and D.B (GF(ℓ) extension)
+//! consume this interface directly.
+```
+
+### The D.B generalisation
+
+D.B (NFS-DL linear algebra) generalises the G.E linear algebra from GF(2) to F_ℓ (the field
+with ℓ elements, where ℓ is a prime). The generalisation touches three points:
+
+**`BlockVec` generalisation.** The GF(2)-specific packing (64 scalars per `u64`) is the scale
+knob. For F_ℓ, the natural generalisation is `data: Vec<[Scalar; BLOCK_WIDTH]>` where `Scalar`
+is the field element type. The `BlockVec` docstring annotates this:
+
+> For F_ℓ (ℓ > 2), the natural generalisation is `data: Vec<[Scalar; BLOCK_WIDTH]>` where
+> `Scalar` is the field element type. The GF(2) specialisation packs 64 scalars into one
+> `u64`. D.B may introduce a `BlockVec<S>` generic or a parallel `BlockVecFl` type; the
+> *interface* (inner products, apply, apply_transpose) is the stable seam.
+
+**`MatrixOperator` generalisation.** The operator interface is already abstract: `apply` and
+`apply_transpose` take and return `BlockVec`. For F_ℓ, the same interface shape applies with
+scalar multiplication replacing the GF(2) XOR. The `MatrixOperator` docstring annotates:
+
+> For F_ℓ, the operator needs the same shape but with scalar multiplication. The natural
+> generalisation is a trait `LinearOperator<V>` with `apply(&self, v: &V) -> V` and
+> `apply_transpose(&self, v: &V) -> V`. G.E implements the concrete GF(2) version; D.B
+> may introduce the trait and have `MatrixOperator` implement it.
+
+**`KernelVector` generalisation.** For F_ℓ, a kernel vector is still a subset of rows (those
+with nonzero coefficient in the nullspace vector). The row-index spine is stable; D.B may add
+a `coefficients` field (`Vec<Scalar>`) for the non-GF(2) case.
+
+### The interface shape is stable
+
+The key design decision is that the GF(2)-specific packing is isolated in `BlockVec::data`
+(the `Vec<u64>` representation) and the inner-loop operations (`xor_assign`,
+`inner_product_matrix`). The interface shape — `apply`, `apply_transpose`, `KernelVector`,
+`expand_provenance` — is stable across the GF(2) → F_ℓ generalisation. D.B can reuse the
+`MatrixOperator` and `KernelVector` types directly, or introduce a thin generic wrapper, without
+changing the solver structure.
+
+---
+
+## 39. Principle-4 Annotations Summary (G.E)
+
+The following table collects all principle-4 annotations from the G.E module — phenomena that
+are scale-dependent and either under-exposed or over-exposed at toy scale.
+
+| Phenomenon | Toy-scale behaviour | NFS-scale behaviour | Scale knob |
+|------------|--------------------|--------------------|------------|
+| **Block width** | Single 64-bit word suffices; blocking overhead invisible | 64-wide block amortises memory bandwidth; ~64× speedup over single-vector | `BLOCK_WIDTH = 64` |
+| **Self-orthogonality** | Exposed by duplicate rows in KAT matrices; winnowing path exercised | Same algorithm; more frequent at scale due to larger nullspace | — (algorithm feature) |
+| **Wiedemann parallelism** | Invisible; 4 sequential attempts, no distributed computation | Krylov sequences computed in parallel across machines; no per-step sync | `num_attempts` / block width |
+| **QC column count** | `DEFAULT_NUM_QC = 10` suffices | 20–50 QC columns typical | `DEFAULT_NUM_QC` |
+| **Excess floor** | `EXCESS_FLOOR = 20` never approached in practice | Floor is a tuning parameter: too low → few null-space vectors; too high → denser matrix | `EXCESS_FLOOR` |
+
+The self-orthogonality phenomenon is the one that IS fully exposed at toy scale: the KAT
+matrices are deliberately constructed to trigger the winnowing path, and the algorithm handles
+it correctly. The block-width and Wiedemann-parallelism phenomena are the ones most
+under-exposed: at toy scale, both solvers are instantaneous and the performance difference
+between them is invisible.
+
+---
+
+## 40. KAT Summary (G.E)
+
+The following table lists the key known-answer tests across the linalg module, with the
+mathematical fact each one verifies.
+
+| Test file | Test | Mathematical fact verified |
+|-----------|------|---------------------------|
+| `linalg_substrate_kat.rs` | `kat_1_operator_correctness` | `A·V` and `Aᵀ·V` match hand-computed GF(2) products for a 3×4 matrix |
+| `linalg_substrate_kat.rs` | `kat_2_qc_column_construction` | QC column parities match hand-computed Legendre symbols for toy relations |
+| `linalg_substrate_kat.rs` | `kat_3_round_trip_provenance` | `expand_provenance` returns the correct symmetric difference of provenance sets |
+| `linalg_substrate_kat.rs` | `kat_4_determinism` | Operator products and QC columns are deterministic for a fixed matrix |
+| `lanczos_kat.rs` | `kat_a_correctness_with_self_orthogonality` | Block Lanczos finds valid kernel vectors for a 6×4 matrix with duplicate rows (self-orthogonality path exercised) |
+| `lanczos_kat.rs` | `kat_a2_single_dependency` | Block Lanczos finds the single dependency `{0,3}` for a 4×3 matrix |
+| `lanczos_kat.rs` | `kat_a3_full_rank_no_nullspace` | Block Lanczos returns only valid vectors for a full-rank 3×3 identity matrix |
+| `lanczos_kat.rs` | `kat_b_determinism` | Block Lanczos is deterministic for a fixed matrix and seed |
+| `lanczos_kat.rs` | `kat_c_cado_oracle_n35` | (Ignored) CADO oracle for N=35 — gated when CADO absent |
+| `lanczos_kat.rs` | `kat_multiple_dependencies` | Block Lanczos finds at least one of three known dependencies in an 8×6 matrix |
+| `wiedemann_kat.rs` | `kat_a_cross_validation_with_lanczos` | Wiedemann and Lanczos cross-validate: both find valid kernel vectors for the shared 6×4 matrix |
+| `wiedemann_kat.rs` | `kat_a4_single_dependency` | Wiedemann finds the single dependency `{0,3}` for a 4×3 matrix |
+| `wiedemann_kat.rs` | `kat_b_determinism` | Wiedemann is deterministic for a fixed matrix and seed |
+| `wiedemann_kat.rs` | `kat_c_bm_fibonacci_degree` | Berlekamp-Massey returns degree-2 polynomial `1 + z + z²` for the Fibonacci mod 2 sequence |
+| `wiedemann_kat.rs` | `kat_c2_bm_period4_sequence` | Berlekamp-Massey returns degree-4 polynomial `1 + z⁴` for a period-4 sequence |
+
+---
+
+## 41. What Comes Next
+
+Linear algebra is the fifth stage of the GNFS pipeline. The output — a `Vec<KernelVector>`,
+each with its provenance expansion thread back to the original relations — is the input to the
+square-root stage.
+
+**G.F (square root)** takes a `KernelVector` from G.E and expands it through the provenance
+map to recover the original (a, b) pairs. It then computes the product of all rational norms
+(a perfect square in ℤ) and the product of all algebraic norms (a perfect square in K = ℚ(α)),
+and extracts the square roots to form the congruence x² ≡ y² (mod N). A non-trivial GCD of
+x − y and N yields a factor.
+
+**D.B (NFS-DL linear algebra)** generalises the G.E linear algebra from GF(2) to F_ℓ. The
+`BlockVec`, `MatrixOperator`, and `KernelVector` types are the frozen seam; D.B may introduce
+a generic wrapper or a parallel `BlockVecFl` type for the F_ℓ case. The solver structure
+(block Lanczos or block Wiedemann) is unchanged; only the field arithmetic differs.
+
+---
+
+## Further Reading (G.E)
+
+1. **Montgomery, P. L. (1995).** *A block Lanczos algorithm for finding dependencies over
+   GF(2).* In: Guillou, L. C., and Quisquater, J.-J. (eds.) Advances in Cryptology —
+   EUROCRYPT '95, LNCS 921. Springer. The original source for the block Lanczos algorithm
+   used in G.E.2, including the self-orthogonality winnowing and the three-term recurrence.
+
+2. **Coppersmith, D. (1994).** *Solving homogeneous linear equations over GF(2) via block
+   Wiedemann algorithm.* Mathematics of Computation, 62(205), 333–350. The original source
+   for the block Wiedemann algorithm used in G.E.3, including the Berlekamp-Massey step and
+   the parallelism analysis.
+
+3. **Wiedemann, D. (1986).** *Solving sparse linear equations over finite fields.* IEEE
+   Transactions on Information Theory, 32(1), 54–62. The scalar Wiedemann algorithm that
+   block Wiedemann generalises.
+
+4. **Kleinjung, T., Aoki, K., Franke, J., Lenstra, A. K., Thomé, E., Bos, J. W., Gaudry, P.,
+   Kruppa, A., Montgomery, P. L., Osvik, D. A., te Riele, H., Timofeev, A., and Zimmermann,
+   P. (2010).** *Factorization of a 768-bit RSA modulus.* In: Rabin, T. (ed.) Advances in
+   Cryptology — CRYPTO 2010, LNCS 6223. Springer. The RSA-768 factorisation, which used
+   block Wiedemann for the linear algebra step across a distributed cluster.
+
+5. **Berlekamp, E. R. (1968).** *Algebraic Coding Theory.* McGraw-Hill. The original source
+   for the Berlekamp-Massey algorithm used in the Wiedemann step.
+
+6. **Massey, J. L. (1969).** *Shift-register synthesis and BCH decoding.* IEEE Transactions
+   on Information Theory, 15(1), 122–127. The Massey formulation of the LFSR synthesis
+   problem, which is the GF(2) Berlekamp-Massey algorithm used in `wiedemann.rs`.

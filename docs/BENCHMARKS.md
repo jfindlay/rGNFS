@@ -299,3 +299,55 @@ at toy scale:
 | Test file | Tests | Scope |
 |-----------|-------|-------|
 | `tests/merge_kat.rs` | 4 (+1 ignored) | 2-way merge correctness, determinism, CADO oracle (ignored), end-to-end provenance, excess-floor enforcement |
+
+## G.E — Linear algebra: block Lanczos and block Wiedemann
+
+Toy setup: the shared 6 × 4 KAT matrix (from `gnfs/tests/lanczos_kat.rs` and
+`gnfs/tests/wiedemann_kat.rs`). Matrix dimensions: 6 rows × 4 columns. Kernel dimension: 3
+(known nullspace vectors: `{0,3}`, `{4,5}`, `{0,1,2}`). All timings are wall-clock from a
+single run in unoptimized debug builds (`cargo test`, no `--release`). The dominant cost at
+toy scale is the GF(2) Gaussian elimination in `gf2_block_pivot` (64 × 64 matrix) and the
+Berlekamp-Massey step (sequence length 2m + 10 = 22).
+
+**Toy-scale solver results (6 × 4 matrix, kernel dimension 3):**
+
+| Solver | Matrix dimensions | Kernel dimension found | Wall time (debug) | Notes |
+|--------|------------------|----------------------|-------------------|-------|
+| Block Lanczos | 6 rows × 4 cols | ≥ 1 (varies by seed) | < 1 ms | Instantaneous at toy scale |
+| Block Wiedemann | 6 rows × 4 cols | ≥ 1 (varies by seed) | < 1 ms | Instantaneous at toy scale |
+
+**Interpretation.** At toy scale (6 × 4 matrix), both solvers complete in under 1 ms — the
+timing difference between them is invisible. The dominant cost is not the matrix-vector
+products (trivial for a 6 × 4 matrix) but the fixed overhead of the GF(2) Gaussian
+elimination (64 × 64 matrix in `gf2_block_pivot`) and the Berlekamp-Massey step (sequence
+length 22). In release mode both solvers complete in microseconds.
+
+**Science↔engineering note (principle 4).** Two scale-dependent phenomena are under-exposed
+at toy scale:
+
+1. **Block-width amortisation.** At toy scale, the 64-wide block vector is wider than the
+   matrix itself (4 columns). The blocking overhead is invisible — a single-vector solver
+   would be equally fast. At NFS scale (millions of rows), the 64-wide block amortises the
+   memory-bandwidth cost of loading each matrix row once across 64 simultaneous vector
+   operations, giving a ~64× speedup over the single-vector variant.
+
+2. **Wiedemann parallelism.** At toy scale, the 4 sequential (x, y) attempts in the scalar
+   Wiedemann implementation are indistinguishable from a parallel implementation. At NFS
+   scale, the block Wiedemann algorithm distributes the Krylov sequence computation across
+   multiple machines with no per-step synchronisation — the architecture used in the RSA-768
+   factorisation (Kleinjung et al., 2010). Block Lanczos requires a global inner product at
+   each step, which limits distributed scalability.
+
+**Self-orthogonality (exposed at toy scale).** The KAT matrix is deliberately constructed
+with duplicate rows (rows 0 and 3 are identical; rows 4 and 5 are identical). This forces the
+block Lanczos self-orthogonality winnowing path: the corresponding block columns of the
+starting vector satisfy A^T·v = 0 and are detected as inactive. The winnowing correctly
+identifies them as kernel candidates. This phenomenon is fully exposed at toy scale.
+
+### Test coverage added (G.E)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `tests/linalg_substrate_kat.rs` | 4 | Operator correctness (A·V, Aᵀ·V), QC column construction, provenance round-trip, determinism |
+| `tests/lanczos_kat.rs` | 6 (+1 ignored) | Self-orthogonality path, single dependency, full-rank, determinism, multiple dependencies; CADO oracle (ignored) |
+| `tests/wiedemann_kat.rs` | 9 | Cross-validation with Lanczos, full-rank, empty matrix, single dependency, determinism, BM Fibonacci, BM period-4, BM all-ones, all-zero rows, multiple dependencies |
