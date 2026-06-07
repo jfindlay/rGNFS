@@ -1,5 +1,5 @@
 //! Linear algebra substrate for GNFS: blocked GF(2) vectors, matrix operator, kernel
-//! vectors, and quadratic-character columns.
+//! vectors, quadratic-character columns, and the block Lanczos nullspace solver.
 //!
 //! This module is the entry point for the `gnfs::linalg` sub-crate. It provides:
 //!
@@ -9,6 +9,7 @@
 //! - [`kernel`] — `KernelVector`: nullspace vector representation (the G.F seam).
 //! - [`qc`] — `populate_qc_columns`, `select_qc_primes`, `DEFAULT_NUM_QC`: quadratic-
 //!   character column construction.
+//! - [`lanczos`] — `block_lanczos`: Montgomery's block Lanczos nullspace solver (G.E.2).
 //!
 //! # Background
 //!
@@ -25,6 +26,7 @@
 
 pub mod blockvec;
 pub mod operator;
+pub mod lanczos;
 mod kernel;
 mod qc;
 
@@ -32,3 +34,4 @@ pub use blockvec::{BlockVec, BLOCK_WIDTH};
 pub use operator::MatrixOperator;
 pub use kernel::KernelVector;
 pub use qc::{populate_qc_columns, select_qc_primes, DEFAULT_NUM_QC};
+pub use lanczos::block_lanczos;
