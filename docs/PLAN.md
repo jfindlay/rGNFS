@@ -479,7 +479,7 @@ pub fn remove_singletons(matrix: SparseMatrix) -> SparseMatrix { ... }
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | G.D.1 | Filter substrate: sparse GF(2) matrix + provenance + singletons | done | a0e854b | C-Matrix |
-| G.D.2 | Clique/excess pruning + merging | pending | — | — |
+| G.D.2 | Clique/excess pruning + merging | done | d424f53 | — |
 | G.D.W | Integrative writeup (filtering chapter) | pending | — | — |
 
 Contracts frozen before G.D: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
