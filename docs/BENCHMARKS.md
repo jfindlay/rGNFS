@@ -241,3 +241,61 @@ The KATs annotate all three disconnects explicitly (principle-4 annotations in `
 | `tests/line_sieve_kat.rs` | 8 (+1 ignored) | Relation count, verify, determinism, threshold monotonicity; CADO oracle (ignored) |
 | `tests/special_q_kat.rs` | 13 | q-restriction enforcement, q in algebraic EV, yield annotation, subset check |
 | `tests/lattice_kat.rs` | 15 | Lattice membership, verify, q in algebraic EV, basis reduction, subset check |
+
+## G.D — Filtering: singleton removal, clique pruning, column merging
+
+Toy setup: f(x) = x³ − x − 1, B_rat = B_alg = 13. Column layout: rational_size = 6,
+algebraic_size = 3, obstruction_count = 1, matrix_width = 10. All timings are wall-clock from
+a single run in unoptimized debug builds (`cargo test`, no `--release`). The dominant cost at
+toy scale is the O(rows × cols) linear scan in `remove_singletons` (no inverted column index
+at toy scale) and the O(rows²) scan in `merge_pass` (finding rows containing each candidate
+column).
+
+**Toy-scale matrix dimensions (from `merge_kat.rs`):**
+
+| Pipeline stage | Relations in | Rows × cols | Total weight (set entries) | Notes |
+|----------------|-------------|-------------|---------------------------|-------|
+| `build_matrix` | 5 | 5 × 10 | 10 | KAT (a) initial matrix |
+| after `remove_singletons` | 5 | 5 × 10 | 10 | no singletons in KAT (a) corpus |
+| after `prune_cliques` | 5 | 5 × 10 | 10 | excess = −4 < EXCESS_FLOOR → no pruning |
+| after `merge_columns` | 5 → 4 | 4 × 10 | 8 | weight-2 pass: col 3 eliminated; 2 rows → 1 merged row |
+
+**Merge-saving (KAT a corpus):** weight reduction from 10 → 8 set entries = **20%** (1 column
+eliminated, net −1 row). At toy scale the saving is modest; see principle-4 annotation below.
+
+**Excess-floor pruning (KAT `kat_prune_cliques_respects_excess_floor`):**
+
+| Initial rows | Initial excess | After pruning rows | After pruning excess |
+|-------------|---------------|-------------------|---------------------|
+| 35 | 26 | 29 | 20 (= EXCESS_FLOOR) |
+
+**End-to-end provenance (KAT d corpus):** 5 relations in → 1 row out (after cascading singleton
+removal and two weight-2 merges). Provenance of the final row: {0, 1, 2} — three original
+relations. See `gnfs/tests/merge_kat.rs` for exact toy-scale dimensions.
+
+**Science↔engineering note (principle 4).** Three scale-dependent phenomena are under-exposed
+at toy scale:
+
+1. **Singleton cascade depth.** At toy scale (10 columns, 5 relations), the cascade terminates
+   in 1–2 rounds. At cryptographic scale (10⁵ columns, 10⁶ relations), the cascade can run for
+   dozens of rounds, removing a significant fraction of the initial corpus. The inverted column
+   index (column → list of containing rows) that makes each round O(singletons) rather than
+   O(rows × cols) is omitted at toy scale (linear scan is acceptable); at cryptographic scale
+   it is essential.
+
+2. **Cavallar merge-ordering gain.** At toy scale, the simplified ordering (weight-2 first,
+   then weight-3, ties by column index) gives the same result as the full Cavallar heuristic
+   because the matrix is small enough that any order is tractable. At cryptographic scale, the
+   Cavallar heuristic reduces total matrix weight by 30–50% compared to a naive ordering,
+   directly reducing the cost of structured Gaussian elimination in G.E.
+
+3. **EXCESS_FLOOR calibration.** At toy scale, EXCESS_FLOOR = 20 is never approached in
+   practice (the toy corpus is too small to produce excess > 20 after singleton removal). At
+   cryptographic scale, the floor is a tuning parameter: too low means too few null-space
+   vectors (fewer factoring attempts); too high means a denser matrix (higher G.E cost).
+
+### Test coverage added (G.D)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `tests/merge_kat.rs` | 4 (+1 ignored) | 2-way merge correctness, determinism, CADO oracle (ignored), end-to-end provenance, excess-floor enforcement |

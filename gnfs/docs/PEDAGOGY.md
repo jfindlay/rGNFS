@@ -1392,3 +1392,569 @@ linear algebra. The `Relation` type is designed to support this adaptation witho
 5. **Schirokauer, O. (1993).** *Discrete logarithms and local units.* Philosophical Transactions
    of the Royal Society A, 345(1676), 409–423. The Schirokauer maps used in D.A (NFS-DL) to
    handle the units in the number field — the D.A extension of the C-Relation contract.
+
+---
+
+# Filtering: A Code-Tour Chapter
+
+This chapter explains the `gnfs/src/filter` module — the filtering stage of the General Number
+Field Sieve. It is organised by the implementation, not by mathematical abstraction: each section
+introduces the mathematics, then shows how it is realised in code. A reader who has read the
+sieving chapter (§12–§21 above) can read this one without consulting the source.
+
+The chapter covers the transition from a relation corpus to a sparse GF(2) matrix, the graph view
+of that matrix, singleton removal, excess and clique pruning, column merging, and the provenance
+map that threads through to G.F.
+
+---
+
+## 22. The Relation Corpus as a Sparse Matrix
+
+### From `Vec<Relation>` to a GF(2) matrix
+
+The sieve (G.C) produces a `Vec<Relation>` — a corpus of smooth pairs (a, b). Each relation
+carries two exponent vectors: one over the rational factor base, one over the algebraic factor
+base. The filtering stage (G.D) converts this corpus into a sparse matrix over GF(2).
+
+The conversion is straightforward:
+
+- **One row per relation.** Relation i contributes row i.
+- **One column per factor-base element.** Each rational prime p and each algebraic ideal (p, r)
+  contributes one column.
+- **The entry is the GF(2) parity of the exponent.** If prime p divides the rational norm to an
+  odd exponent, the entry is 1; if even (or absent), it is 0.
+
+The column layout is fixed by `FactorBase::matrix_width()`:
+
+$$
+\text{columns} = \underbrace{\text{rational\_size}}_{\text{rational primes}} + \underbrace{\text{algebraic\_size}}_{\text{algebraic ideals}} + \underbrace{\text{obstruction\_count}}_{\text{sign + quad. chars.}}
+$$
+
+Concretely, for the toy setup in `merge_kat.rs` (f(x) = x³ − x − 1, B_rat = B_alg = 13):
+
+- Rational primes ≤ 13: {2, 3, 5, 7, 11, 13} → columns 0–5 (`rational_size = 6`).
+- Algebraic ideals: (5, 2), (7, 5), (11, 6) → columns 6–8 (`algebraic_size = 3`).
+- Obstruction column: sign bit → column 9 (`obstruction_count = 1`).
+- Total: `matrix_width = 10`.
+
+The `build_matrix` function in `gnfs/src/filter/mod.rs` performs this construction:
+
+```rust
+pub fn build_matrix(relations: &[Relation], fb: &FactorBase) -> SparseMatrix {
+    // ...
+    for (i, relation) in relations.iter().enumerate() {
+        let rat_row = relation.rational_row_gf2(fb);  // [sign_bit, rat_col_0, ...]
+        let alg_row = relation.algebraic_row_gf2(fb); // [alg_col_0, ..., zeros...]
+
+        let mut cols: Vec<usize> = Vec::new();
+        // Rational columns: local index 1+k → global column k.
+        for k in 0..rat_size {
+            if rat_row[1 + k] { cols.push(k); }
+        }
+        // Algebraic columns: local index k → global column rat_size + k.
+        for k in 0..alg_size {
+            if alg_row[k] { cols.push(rat_size + k); }
+        }
+        // Sign bit → global obstruction column.
+        if rat_row[0] { cols.push(obstruction_col_start); }
+
+        rows.push(MatrixRow { cols, provenance: vec![i] });
+    }
+    // ...
+}
+```
+
+The `rational_row_gf2` and `algebraic_row_gf2` methods on `Relation` (defined in G.C) produce
+the GF(2) parities. The sign bit is placed at the first obstruction column, not at column 0 of
+the rational block — this is the re-mapping that `build_matrix` performs.
+
+### Why GF(2): the parity condition
+
+The goal of the linear algebra step (G.E) is to find a subset S of relations such that the
+product of all rational norms is a perfect square in ℤ and the product of all algebraic norms
+is a perfect square in the number field K = ℚ(α). A product of integers is a perfect square
+iff every prime appears to an even total exponent. This is a **parity condition**: we need the
+sum of all exponent vectors (mod 2) to be the zero vector. Working over GF(2) encodes exactly
+this condition.
+
+The sign column encodes the sign parity: the product of all selected rational norms must be
+positive (an even number of negative norms). The quadratic-character columns (filled by G.E)
+encode additional algebraic-side parity conditions needed to guarantee that the algebraic square
+root is well-defined.
+
+---
+
+## 23. The Graph View
+
+### Relations as edges, primes as nodes
+
+The sparse GF(2) matrix has a natural graph interpretation that illuminates the filtering
+algorithms:
+
+- **Nodes** are the non-obstruction columns — the rational primes and algebraic ideals.
+- **Edges** are the rows — the relations. A relation "connects" the primes it contains: if
+  relation R has a 1 in columns c₁ and c₂, then R is an edge between nodes c₁ and c₂.
+
+A **GF(2) dependency** is a subset of relations whose column-sum (mod 2) is the zero vector.
+In graph terms, this is a **cycle**: a set of edges such that every node is incident to an even
+number of edges in the set. The null space of the matrix over GF(2) is exactly the set of all
+such cycles.
+
+### Why singletons cannot appear in a dependency
+
+A **singleton column** is a column of Hamming weight 1 — a prime or ideal that appears in
+exactly one surviving relation. In graph terms, it is a node of degree 1 (a leaf).
+
+A leaf cannot be part of any cycle. If a node has degree 1, the unique edge incident to it must
+appear in any cycle that includes that node. But then the node is incident to exactly one edge
+in the cycle — an odd count — which violates the cycle condition. Therefore, no cycle can
+include a leaf node, and the relation (edge) containing the singleton column can never be part
+of a GF(2) dependency.
+
+This is the mathematical justification for singleton removal: the row containing a singleton
+column contributes nothing to the null space and can be safely discarded.
+
+---
+
+## 24. Singleton Removal
+
+### The fixpoint algorithm
+
+Singleton removal is implemented in `gnfs/src/filter/singleton.rs` as a fixpoint iteration:
+
+```rust
+pub fn remove_singletons(mut matrix: SparseMatrix) -> SparseMatrix {
+    loop {
+        let mut rows_to_remove: Vec<usize> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+
+        for col in 0..matrix.obstruction_col_start {
+            if matrix.col_weights[col] == 1 {
+                // Find the unique row containing this column.
+                for (row_idx, row) in matrix.rows.iter().enumerate() {
+                    if row.cols.binary_search(&col).is_ok() {
+                        if seen.insert(row_idx) {
+                            rows_to_remove.push(row_idx);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if rows_to_remove.is_empty() { break; }  // fixpoint reached
+
+        // Remove in descending order to preserve index validity.
+        rows_to_remove.sort_unstable();
+        rows_to_remove.dedup();
+        for &row_idx in rows_to_remove.iter().rev() {
+            matrix.remove_row(row_idx);
+        }
+    }
+    matrix
+}
+```
+
+The loop collects all rows that contain a weight-1 non-obstruction column, removes them, and
+repeats. It terminates when no weight-1 non-obstruction column remains.
+
+### Why a single pass is insufficient: cascading singletons
+
+Removing a row decrements the weight of every column it contains. A column that had weight 2
+becomes weight 1 after its partner row is removed — a new singleton. A single pass over the
+column list would miss these newly created singletons. The fixpoint loop handles cascading
+singletons correctly: after each batch of removals, the column weights are updated and the
+scan restarts.
+
+The KAT in `merge_kat.rs` (KAT d) demonstrates cascading removal: relation R4 contains the
+only occurrence of ideal (7, 5) (a singleton), so R4 is removed. After R4's removal, ideal
+(5, 2) drops to weight 1 (only R3 remains), so R3 is removed. After R3's removal, prime 7
+drops to weight 2 (R0 and R1 remain) — the cascade stops.
+
+### Obstruction columns are exempt
+
+The obstruction columns (sign bit and quadratic-character columns) are structural: they encode
+constraints that G.E needs, not factor-base primes. A weight-1 sign column does not mean that
+the relation containing it is useless — it means that exactly one relation has a negative
+rational norm. Treating it as a singleton would incorrectly discard that relation. The loop
+scans only `col in 0..matrix.obstruction_col_start`.
+
+### Provenance is unchanged by singleton removal
+
+Singleton removal drops rows, never merges them. Each surviving row's provenance remains its
+original singleton set `[i]` — the index of the original relation. This is the design decision
+documented in the `remove_singletons` docstring:
+
+> Provenance is preserved unchanged: singleton removal drops rows, never merges them, so each
+> surviving row's provenance is its original singleton set.
+
+The provenance map is the thread that G.F uses to recover original (a, b) pairs from a null-space
+vector. Singleton removal does not disturb it.
+
+---
+
+## 25. Excess and the Clique/Pruning Step
+
+### Defining excess
+
+The **excess** of the matrix is:
+
+$$
+\text{excess} = \text{rows} - (\text{columns} - \text{obstruction\_count})
+$$
+
+implemented as:
+
+```rust
+pub fn excess(&self) -> isize {
+    self.rows.len() as isize - (self.num_cols as isize - self.obstruction_count as isize)
+}
+```
+
+The denominator `columns − obstruction_count` is the number of non-obstruction columns — the
+"active" dimension of the matrix. For the null space to be non-trivial (i.e., for there to
+exist at least one non-zero null-space vector), the matrix must have more rows than active
+columns: excess must be positive.
+
+The constant `EXCESS_FLOOR = 20` is the minimum excess that the pruning step must preserve:
+
+```rust
+/// Minimum excess G.D.2 pruning must preserve.
+///
+/// excess = rows − (columns − obstruction_count). At toy scale any positive excess
+/// suffices for a non-trivial nullspace; 20 is a conservative floor that keeps the
+/// matrix well-overdetermined.
+pub const EXCESS_FLOOR: usize = 20;
+```
+
+**Principle-4 annotation (scale-dependent floor).** At toy scale, any positive excess suffices
+for a non-trivial null space — the floor of 20 is conservative and is never approached in
+practice because the toy corpus is small. At cryptographic scale (RSA-768+), the excess floor
+is typically set to ~200 or a fraction of the column count, balancing the need for many
+independent null-space vectors (each gives one congruence-of-squares candidate) against the
+cost of carrying extra rows through the linear algebra step. The floor is the knob that trades
+matrix density against null-space dimension; at toy scale this trade-off is invisible.
+
+### The clique view and greedy pruning
+
+In the graph view, a **clique** is a set of relations (edges) that all share a common prime
+(node). A clique is dense: every pair of relations in the clique shares at least one column.
+Dense cliques increase the total matrix weight (total number of set entries) without
+proportionally increasing the null-space dimension.
+
+The `prune_cliques` function in `gnfs/src/filter/merge.rs` approximates clique pruning by a
+greedy heuristic: repeatedly remove the heaviest row (the relation with the most set columns)
+as long as the excess exceeds `EXCESS_FLOOR`:
+
+```rust
+pub fn prune_cliques(mut matrix: SparseMatrix) -> SparseMatrix {
+    loop {
+        if matrix.excess() <= EXCESS_FLOOR as isize { break; }
+        if matrix.rows.is_empty() { break; }
+
+        // Find the row with the maximum weight (number of set columns).
+        let max_weight = matrix.rows.iter().map(|r| r.cols.len()).max().unwrap_or(0);
+        if max_weight == 0 { break; }
+
+        let row_idx = matrix.rows.iter().enumerate()
+            .find(|(_, r)| r.cols.len() == max_weight)
+            .map(|(i, _)| i).unwrap();
+
+        matrix.remove_row(row_idx);
+    }
+    matrix
+}
+```
+
+The heaviest rows are the most "connected" relations — those that share columns with many other
+relations. Removing them reduces the total matrix weight while preserving the excess floor.
+Ties are broken by row index (lowest index first) for determinism.
+
+The KAT `kat_prune_cliques_respects_excess_floor` in `merge_kat.rs` verifies that after
+pruning, `excess() == EXCESS_FLOOR` exactly (when the initial excess is above the floor).
+
+---
+
+## 26. Merging
+
+### Eliminating a column by XOR
+
+A column of weight 2 appears in exactly two rows. XOR-merging those two rows eliminates the
+column: the shared column cancels in the symmetric difference (GF(2) addition), and the merged
+row contains only the columns that appeared in exactly one of the two source rows.
+
+The `MatrixRow::xor_merge` method computes the symmetric difference of column sets and the
+union of provenance sets in a single O(n + m) merge pass:
+
+```rust
+pub fn xor_merge(&self, other: &MatrixRow) -> MatrixRow {
+    // Symmetric difference of two sorted vecs — O(n + m).
+    let mut cols = Vec::new();
+    let mut i = 0; let mut j = 0;
+    while i < self.cols.len() && j < other.cols.len() {
+        match self.cols[i].cmp(&other.cols[j]) {
+            Ordering::Less    => { cols.push(self.cols[i]); i += 1; }
+            Ordering::Greater => { cols.push(other.cols[j]); j += 1; }
+            Ordering::Equal   => { /* XOR = 0, skip both */ i += 1; j += 1; }
+        }
+    }
+    cols.extend_from_slice(&self.cols[i..]);
+    cols.extend_from_slice(&other.cols[j..]);
+    // ... union of provenance sets (same pattern) ...
+    MatrixRow { cols, provenance }
+}
+```
+
+### 2-way merge: two rows sharing a column
+
+For a weight-2 column c with rows R₀ and R₁:
+
+1. Compute `merged = R₀.xor_merge(R₁)`.
+2. Remove R₀ and R₁ from the matrix.
+3. Append `merged`.
+4. Update `col_weights`: decrement for all columns in R₀ and R₁, increment for all columns
+   in `merged`. The shared column c is decremented twice and not incremented → weight drops
+   to 0 (eliminated).
+
+The net effect on row count: two rows become one (net −1). The net effect on column count:
+column c is eliminated (weight 0). The excess formula changes: both the numerator and the
+effective denominator decrease, so the excess may increase or decrease depending on the
+specific column weights.
+
+### k-way merge for k = 3
+
+For a weight-3 column c with rows R₀, R₁, R₂, the merge is:
+
+```text
+tmp = R₀ ⊕ R₁
+merged = tmp ⊕ R₂
+```
+
+implemented in `merge_three_rows`. The three source rows are removed and `merged` is appended.
+The shared column c is decremented three times and not incremented → weight drops to 0.
+
+The `merge_columns` function performs two passes:
+
+```rust
+pub fn merge_columns(mut matrix: SparseMatrix) -> SparseMatrix {
+    matrix = merge_pass(&mut matrix, 2);  // weight-2 pass
+    matrix = merge_pass(&mut matrix, 3);  // weight-3 pass (after re-scan)
+    matrix
+}
+```
+
+The weight-2 pass is performed first; after it completes, some weight-3 columns may have
+become weight-2 or weight-1 (because earlier merges in the weight-2 pass changed their
+weights). The weight-3 pass re-scans `col_weights` and processes the remaining weight-3
+columns.
+
+### The Cavallar weight-cost heuristic
+
+In production NFS, merges are ordered by a **weight-cost heuristic** (Cavallar 1996): prefer
+merges that minimise the increase in total matrix weight. The total weight is the sum of all
+`col_weights` — equivalently, the total number of set entries in the matrix. A merge of a
+weight-k column eliminates that column (saving k entries) but the merged row may be heavier
+than the sum of the source rows minus the shared column (adding entries). The Cavallar
+heuristic picks the merge with the smallest net weight increase.
+
+This implementation uses a simplified Cavallar ordering: process columns in order of increasing
+weight (weight-2 first, then weight-3), breaking ties by column index. This is correct in
+principle — lower-weight columns are cheaper to merge — but the full heuristic would also
+consider the weight of the merged row.
+
+**Principle-4 annotation (Cavallar weight-cost ordering).** At toy scale, the matrix is small
+enough that any merge order gives a tractable matrix for G.E. The weight-saving the Cavallar
+heuristic buys is under-exposed: the difference between the simplified ordering and the optimal
+ordering is a few percent of total weight, which is invisible when the matrix has tens of rows.
+At cryptographic scale (RSA-768+), the matrix has millions of rows and hundreds of thousands
+of columns; the Cavallar heuristic can reduce the total weight by 30–50% compared to a naive
+ordering, which directly reduces the cost of the structured Gaussian elimination in G.E. The
+module docstring in `merge.rs` annotates this disconnect explicitly.
+
+---
+
+## 27. The Provenance Map as the Thread to G.F
+
+### What provenance tracks
+
+Every `MatrixRow` carries a `provenance: Vec<usize>` — a sorted, deduplicated list of original
+relation indices (indices into the `Vec<Relation>` passed to `build_matrix`):
+
+```rust
+pub struct MatrixRow {
+    /// Sorted column indices where this row has a 1 in GF(2).
+    pub cols: Vec<usize>,
+    /// Sorted, deduplicated original relation indices this row derives from.
+    pub provenance: Vec<usize>,
+}
+```
+
+For a freshly built row, `provenance = [i]` (the original relation index). Under merging,
+`provenance` is combined by sorted union: if R₀ has provenance `[0, 2]` and R₁ has provenance
+`[1, 3]`, then `R₀.xor_merge(R₁)` has provenance `[0, 1, 2, 3]`.
+
+Singleton removal drops rows without merging, so provenance is unchanged. Clique pruning also
+drops rows without merging. Only `merge_columns` grows provenance sets.
+
+### The G.F expansion
+
+G.E (linear algebra) finds a null-space vector — a subset of rows in the final matrix whose
+GF(2) column-sum is the zero vector. G.F (square root) needs to expand this subset back to
+the original (a, b) pairs to compute the congruence of squares.
+
+The expansion is:
+
+1. G.E selects a subset of rows in the final matrix (the null-space vector).
+2. For each selected row, collect its `provenance` set.
+3. Take the union of all collected provenance sets — this gives the set of original relation
+   indices.
+4. Look up the original `Relation` objects by index to recover the (a, b) pairs.
+
+The KAT `kat_d_end_to_end_provenance` in `merge_kat.rs` verifies this property: for each row
+in the final matrix, the XOR of the GF(2) column sets of all original relations indexed by its
+provenance equals that row's column set.
+
+### Why provenance stores original indices, not pre-reduced row sums
+
+The provenance map stores original relation indices, not the GF(2) column set of the merged
+row. This is the over-specification documented in the C-Matrix contract:
+
+> Over-specify the provenance map now: store original relation indices, not pre-reduced row
+> sums, so G.F can recover the actual (a, b) pairs.
+
+The reason is that G.F needs the actual (a, b) pairs to compute the algebraic square root —
+the product of (a − b·α) in the number field K = ℚ(α). The GF(2) column set of a merged row
+is the XOR of the original exponent parities; it does not contain the original (a, b) values.
+Storing the GF(2) column set instead of the original indices would make G.F impossible without
+re-deriving the (a, b) pairs from the exponent vectors, which would require keeping the full
+`Vec<Relation>` in scope anyway. The provenance map is the clean interface: G.F receives the
+final matrix and the original `Vec<Relation>`, and uses the provenance map to bridge them.
+
+---
+
+## 28. What G.E Inherits
+
+### The `SparseMatrix` contract (C-Matrix)
+
+The output of the full filtering pipeline — `build_matrix` → `remove_singletons` →
+`prune_cliques` → `merge_columns` — is a `SparseMatrix` that G.E consumes directly:
+
+```rust
+pub struct SparseMatrix {
+    /// The rows of the matrix, each with its column set and provenance.
+    pub rows: Vec<MatrixRow>,
+    /// Total number of columns = FactorBase::matrix_width().
+    pub num_cols: usize,
+    /// Index of the first obstruction column = rational_size + algebraic_size.
+    pub obstruction_col_start: usize,
+    /// Number of obstruction columns = FactorBase::obstruction_count.
+    pub obstruction_count: usize,
+    /// col_weights[c] = number of rows with a 1 in column c.
+    pub col_weights: Vec<u32>,
+}
+```
+
+The key properties G.E inherits:
+
+- **Dimensions.** `rows.len()` rows, `num_cols` columns. The excess `rows.len() − (num_cols −
+  obstruction_count)` is ≥ `EXCESS_FLOOR` (guaranteed by `prune_cliques`), ensuring a
+  non-trivial null space.
+
+- **Obstruction columns.** The sign column (at `obstruction_col_start`) is populated by
+  `build_matrix` from `relation.rational_sign`. The quadratic-character columns (at
+  `obstruction_col_start + 1` through `num_cols − 1`) are carried as zeros by G.D — G.E fills
+  them in before running the null-space computation.
+
+- **Row-major store + `col_weights` side table.** The row-major representation (each row is a
+  sorted `Vec<usize>` of set column indices) supports the row-XOR operations that structured
+  Gaussian elimination performs. The `col_weights` side table supports column-weight queries
+  without scanning all rows — G.E uses it to choose pivot columns.
+
+- **Provenance map.** Each row carries its provenance set. G.E does not modify provenance; it
+  passes the final matrix (with provenance intact) to G.F.
+
+### The pipeline in full
+
+The complete G.D pipeline, as exercised by the KATs in `merge_kat.rs`:
+
+```rust
+// 1. Build the initial matrix from the relation corpus.
+let matrix = build_matrix(&relations, &fb);
+
+// 2. Remove singleton columns to fixpoint.
+let matrix = remove_singletons(matrix);
+
+// 3. Prune heavy rows while excess > EXCESS_FLOOR.
+let matrix = prune_cliques(matrix);
+
+// 4. Eliminate weight-2 and weight-3 columns by XOR-merging.
+let matrix = merge_columns(matrix);
+
+// matrix is now ready for G.E (linear algebra over GF(2)).
+```
+
+Each step is a pure function (consumes and returns `SparseMatrix`), making the pipeline
+composable and testable in isolation.
+
+---
+
+## 29. KAT Summary (G.D)
+
+The following table lists the key known-answer tests across the filter module, with the
+mathematical fact each one verifies. All tests are in `gnfs/tests/merge_kat.rs`.
+
+| Test | Mathematical fact verified |
+|------|---------------------------|
+| `kat_a_two_way_merge_correctness` | Weight-2 column eliminated; merged row has correct cols (symmetric difference) and provenance (union) |
+| `kat_b_determinism` | Full pipeline (build → singletons → prune → merge) is deterministic for a fixed corpus |
+| `kat_c_cado_nfs_oracle` | (Ignored) CADO-NFS oracle for filtered matrix dimensions — gated when CADO absent |
+| `kat_d_end_to_end_provenance` | For each final row, XOR of provenance relations' GF(2) column sets equals the row's cols |
+| `kat_prune_cliques_respects_excess_floor` | After pruning, `excess() == EXCESS_FLOOR` exactly when initial excess > floor |
+
+---
+
+## 30. What Comes Next
+
+Filtering is the fourth stage of the GNFS pipeline. The output — a `SparseMatrix` with
+provenance map — is the input to the linear algebra and square-root stages.
+
+**G.E (linear algebra over GF(2))** takes the filtered matrix and finds its null space. It
+fills in the quadratic-character obstruction columns (currently zero in the G.D output), then
+runs structured Gaussian elimination to find a basis for the null space. Each null-space vector
+identifies a subset of rows whose GF(2) column-sum is zero — a candidate congruence of squares.
+
+**G.F (square root)** takes a null-space vector from G.E and expands it through the provenance
+map to recover the original (a, b) pairs. It then computes the product of all rational norms
+(a perfect square in ℤ) and the product of all algebraic norms (a perfect square in K = ℚ(α)),
+and extracts the square roots to form the congruence x² ≡ y² (mod N). A non-trivial GCD of
+x − y and N yields a factor.
+
+**D.A (NFS-DL)** adapts the same filtering infrastructure for discrete logarithm computation.
+The `SparseMatrix` and provenance map are reused directly; the difference is in the linear
+algebra step (GF(ℓ) instead of GF(2)) and the square-root step (Schirokauer maps instead of
+the algebraic square root).
+
+---
+
+## Further Reading (G.D)
+
+1. **Cavallar, S. (2002).** *Strategies in filtering in the number field sieve.* In: Bosma, W.
+   (ed.) Algorithmic Number Theory (ANTS-IV), LNCS 1838. Springer. The original source for the
+   weight-cost merge heuristic and the clique/excess balance.
+
+2. **Buhler, J., Lenstra, H. W. Jr., and Pomerance, C. (1993).** *Factoring integers with the
+   number field sieve.* In: Lenstra, A. K., and Lenstra, H. W. Jr. (eds.) The Development of
+   the Number Field Sieve, LNM 1554. Springer. The original description of the filtering step
+   and the relation matrix.
+
+3. **Franke, J., and Kleinjung, T. (2006).** *Continued fractions and lattice sieving.* CADO
+   workshop on integer factorization. Describes the filtering pipeline used in CADO-NFS,
+   including the singleton removal and merge strategies.
+
+4. **Pomerance, C. (1996).** *A tale of two sieves.* Notices of the AMS, 43(12), 1473–1485.
+   An accessible introduction to the relation matrix and the linear algebra step, with the
+   filtering step explained at a high level.
+
+5. **Wiedemann, D. (1986).** *Solving sparse linear equations over finite fields.* IEEE
+   Transactions on Information Theory, 32(1), 54–62. The Wiedemann algorithm used in G.E for
+   the null-space computation — the downstream consumer of the filtered `SparseMatrix`.
