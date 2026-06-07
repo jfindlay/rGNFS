@@ -11,6 +11,9 @@
 //!   Coppersmith multi-poly. Entry point: [`polyselect::select_base_m`].
 //! - [`sieve`] — sieving substrate: two-sided factor bases, rational/algebraic norms, the
 //!   norm bridge to `Uint<4>`, and the `Relation` type (C-Relation contract).
+//! - [`filter`] — filtering substrate: sparse GF(2) matrix construction, relation-provenance
+//!   map, and singleton removal (C-Matrix contract). Entry points: [`filter::build_matrix`],
+//!   [`filter::remove_singletons`].
 //!
 //! # Pedagogical intent
 //!
@@ -20,6 +23,7 @@
 
 pub mod polyselect;
 pub mod sieve;
+pub mod filter;
 
 pub use polyselect::{
     select_base_m, select_base_m_with_m, optimal_degree,
@@ -36,4 +40,9 @@ pub use sieve::{
     line_sieve, LineSieveConfig,
     special_q_sieve, SpecialQConfig, SpecialQResult,
     lattice_sieve, LatticeBasis, LatticeSieveConfig, LatticeSieveResult,
+};
+
+pub use filter::{
+    MatrixRow, SparseMatrix, EXCESS_FLOOR,
+    build_matrix, remove_singletons,
 };
