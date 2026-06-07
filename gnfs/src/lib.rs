@@ -24,6 +24,7 @@
 pub mod polyselect;
 pub mod sieve;
 pub mod filter;
+pub mod linalg;
 
 pub use polyselect::{
     select_base_m, select_base_m_with_m, optimal_degree,
