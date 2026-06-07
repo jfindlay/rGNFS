@@ -693,7 +693,7 @@ fork with no commit-shaped deliverable); its outcome is recorded in the Action-f
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | done | 416f6db | C-LinAlg (frozen); C-FactorBase obstruction_count widened (additive, confirmed). Extra files: kernel.rs, qc.rs (plainly part of unit — juncture fork split KernelVector and QC into separate files). |
-| G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | pending | — | — |
+| G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | done | 5145d4c | — (T0 review juncture: review-passed — see digest) |
 | G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | pending | — | — |
 | G.E.W | Integrative writeup (linear-algebra chapter) | pending | — | — |
 
@@ -715,6 +715,12 @@ Discovery/flex: G.E.1 inflection fork returned `design-confident`; C-LinAlg froz
 Affected: C-LinAlg (frozen at 416f6db); C-FactorBase obstruction_count widened (additive, not destructive).
 Deferred: no — all four design decisions resolved; D.B generalisation paths documented in contract.
 Texture: The juncture fork split KernelVector and QC into separate files (kernel.rs, qc.rs) beyond the session list's three-file expectation — plainly part of the unit, allowed and noted. The on-the-fly transpose decision (no CSC companion) is frozen; D.B may introduce a LinearOperator trait.
+
+### G.E.2 — 2026-06-07
+Discovery/flex: T0 correctness-review juncture returned `review-passed` on all six review points. Self-orthogonality winnowing correct (inactive columns checked for nullspace membership, not silently dropped). Recovered vectors verified via KernelVector::verify in all KATs. C-LinAlg contracts honoured (matrix access exclusively through MatrixOperator, returns KernelVector). Principle-4 annotations present and honest. KAT forces self-orthogonality path via duplicate-row matrix. Three-term recurrence follows Montgomery's standard form correctly.
+Affected: none — no contract flex; C-LinAlg consumed correctly.
+Deferred: no — review-passed, G.E.3 may proceed.
+Texture: Minor observation: dedup_by at end of block_lanczos relies on adjacent duplicates; non-adjacent duplicates possible in theory but not a correctness issue at toy scale. The CADO oracle KAT is present but ignored (CADO not installed); deterministic-kernel KAT carries reproducibility.
 
 ---
 
