@@ -612,7 +612,7 @@ pub enum RelationError {
 | G.C.2 | Line-sieving baseline | done | c4e5fc4 | — |
 | G.C.3 | Special-q strategy | done | 0ef7231 | — |
 | G.C.4 | Lattice sieving | done | a7f9551 | — |
-| G.C.W | Integrative writeup | pending | — | — |
+| G.C.W | Integrative writeup | done | 23a5222 | — |
 
 Contracts frozen before G.C: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d). G.C opens over the
