@@ -694,7 +694,7 @@ fork with no commit-shaped deliverable); its outcome is recorded in the Action-f
 |---|---------|--------|--------|-------|
 | G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | done | 416f6db | C-LinAlg (frozen); C-FactorBase obstruction_count widened (additive, confirmed). Extra files: kernel.rs, qc.rs (plainly part of unit — juncture fork split KernelVector and QC into separate files). |
 | G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | done | 5145d4c | — (T0 review juncture: review-passed — see digest) |
-| G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | pending | — | — |
+| G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | done | 19936a7 | — |
 | G.E.W | Integrative writeup (linear-algebra chapter) | pending | — | — |
 
 Contracts frozen before G.E: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
