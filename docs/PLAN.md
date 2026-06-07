@@ -480,12 +480,14 @@ pub fn remove_singletons(matrix: SparseMatrix) -> SparseMatrix { ... }
 |---|---------|--------|--------|-------|
 | G.D.1 | Filter substrate: sparse GF(2) matrix + provenance + singletons | done | a0e854b | C-Matrix |
 | G.D.2 | Clique/excess pruning + merging | done | d424f53 | — |
-| G.D.W | Integrative writeup (filtering chapter) | pending | — | — |
+| G.D.W | Integrative writeup (filtering chapter) | done | 7762339 | — |
 
 Contracts frozen before G.D: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d), C-FactorBase
 (c1dc0b6), C-Relation (c1dc0b6). G.D opens over the frozen G.A substrate, G.B polynomial-selection
 layer, and G.C sieve layer.
+
+G.D ◆ boundary: still-on-intent (2026-06-07). All G.D sessions complete. C-Matrix frozen and ready for G.E linear algebra. No reach-back into C-FactorBase (obstruction_count=1 unchanged). Cavallar principle-4 annotation present in code, PEDAGOGY.md, and BENCHMARKS.md.
 
 ---
 
