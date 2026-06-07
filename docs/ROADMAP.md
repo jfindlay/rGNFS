@@ -499,6 +499,32 @@ This is a *static-frame* documentation/policy question, not a code contract; it 
 (the per-test gating already works). Resolve it once, project-wide, rather than re-deciding per
 oracle.
 
+### 2026-06 — End of sub-track G.C (sieving, G.C ◆ boundary)
+
+G.C is complete: G.C.1 (c1dc0b6), G.C.2 (c4e5fc4), G.C.3 (0ef7231), G.C.4 (a7f9551), G.C.W
+(23a5222). Two implementation findings are logged for future sessions.
+
+- **Demonstration-fidelity "merge/fold" sessions tend to run 400–800 LOC, not <150.** The G.C.4
+  lattice-sieving conditionality ("decide at G.C.3 close whether to merge into G.C.3 or fold into
+  G.C.W if it lands under ~150 LOC") resolved to "own session" at 741 LOC — the same outcome as
+  G.B.4 Coppersmith (also its own session). The ~150 LOC threshold in the PLAN was calibrated for
+  a *trivial* demonstration (a few lines of construction + a KAT), but demonstration-fidelity
+  lattice/Coppersmith sessions include: the mathematical construction, Gauss/LLL reduction, lattice
+  enumeration, principle-4 annotations, and a full KAT suite. Future sub-track plans should treat
+  demonstration-fidelity sessions as full sessions (150–400 LOC floor) rather than merge candidates
+  unless the algorithm genuinely reduces to a wrapper over an existing primitive.
+
+- **Log-sieve threshold calibration at toy scale: use `threshold_scale × log₂(B_alg)`, not
+  sum-of-all-logs.** The natural threshold for the log-sieve (sum of log contributions for a fully
+  smooth number) is approximately `Σ log p` over the factor base — but at toy scale, individual
+  norms are small (e.g. `|N_rat| = 3`, contributing only `log₂(3) ≈ 1.58`), so the sum-of-all-logs
+  threshold is far too high and admits no candidates. The working threshold is a fraction of
+  `log₂(B_alg)` (the algebraic smoothness bound alone), scaled by a `threshold_scale` parameter
+  (default 0.5–1.0). This is a recurring toy-scale calibration issue: the sieve's asymptotic
+  threshold derivation assumes norms of size `exp(B^{1/u})`, which does not hold at toy scale.
+  Future sieve sessions (G.D, any sieve-adjacent work) should document this calibration explicitly
+  and expose `threshold_scale` as a tunable parameter rather than hardcoding the asymptotic formula.
+
 ### 2026-06 — End of sub-track G.B (polynomial selection, G.B ◆ boundary)
 
 G.B is complete: G.B.1 (2f43f99), G.B.2 (00aa32d), G.B.3 (3e2ba1b), G.B.4 (c115a1b), G.B.W
