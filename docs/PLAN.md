@@ -695,7 +695,7 @@ fork with no commit-shaped deliverable); its outcome is recorded in the Action-f
 | G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | done | 416f6db | C-LinAlg (frozen); C-FactorBase obstruction_count widened (additive, confirmed). Extra files: kernel.rs, qc.rs (plainly part of unit — juncture fork split KernelVector and QC into separate files). |
 | G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | done | 5145d4c | — (T0 review juncture: review-passed — see digest) |
 | G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | done | 19936a7 | — |
-| G.E.W | Integrative writeup (linear-algebra chapter) | pending | — | — |
+| G.E.W | Integrative writeup (linear-algebra chapter) | done | a985965 | — |
 
 Contracts frozen before G.E: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d), C-FactorBase
@@ -721,6 +721,12 @@ Discovery/flex: T0 correctness-review juncture returned `review-passed` on all s
 Affected: none — no contract flex; C-LinAlg consumed correctly.
 Deferred: no — review-passed, G.E.3 may proceed.
 Texture: Minor observation: dedup_by at end of block_lanczos relies on adjacent duplicates; non-adjacent duplicates possible in theory but not a correctness issue at toy scale. The CADO oracle KAT is present but ignored (CADO not installed); deterministic-kernel KAT carries reproducibility.
+
+### G.E.W ◆ — 2026-06-07
+Discovery/flex: G.E.W ◆ boundary fork returned `still-on-intent`. All three algorithmic components delivered (G.E.1 substrate, G.E.2 block Lanczos, G.E.3 block Wiedemann). C-LinAlg frozen in D.B-consumable form (D.B generalisation paths documented in contract and code docstrings). QC widen stayed additive (sign column at obstruction_col_start, QC at +1..+10). Principle-4 annotations present and honest (block-width scale knob, Wiedemann parallelism payoff, self-orthogonality as toy-scale phenomenon). PEDAGOGY chapter §31–§41 (929 lines) at expected quality with MathJax display math. No defocus or rigidity detected.
+Affected: none — no contract flex; G.E sub-track complete.
+Deferred: no — still-on-intent, G.F may proceed over frozen C-LinAlg + C-Matrix.
+Texture: On-the-fly transpose tradeoff (memory vs compute) documented in contract and code; D.B may revisit for F_ℓ sparsity patterns. CADO oracle KAT gated with established #[ignore] pattern.
 
 ---
 
