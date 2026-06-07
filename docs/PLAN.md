@@ -290,7 +290,184 @@ provenance map now: store original relation indices, not pre-reduced row sums, s
 the actual `(a, b)` pairs. The juncture fork at G.D.1 writes the resolved interface here before
 G.D.2 is dispatched.
 
-**Resolved interface (juncture-designed at G.D.1): _to be filled by the G.D.1 inflection fork._**
+**Resolved interface (juncture-designed at G.D.1):**
+
+```rust
+// ── gnfs/src/filter/matrix.rs ────────────────────────────────────────────────
+
+/// Minimum excess G.D.2 pruning must preserve.
+///
+/// `excess = rows − (columns − obstruction_count)`. At toy scale any positive excess
+/// suffices for a non-trivial nullspace; 20 is a conservative floor that keeps the
+/// matrix well-overdetermined. Annotated as scale-dependent (principle-4): at
+/// cryptographic scale the floor is typically set to ~200 or a fraction of the column
+/// count. G.D.1 defines the constant; G.D.2 enforces it during clique pruning.
+pub const EXCESS_FLOOR: usize = 20;
+
+/// One row of the sparse GF(2) matrix, with its relation-provenance record.
+///
+/// # Representation
+///
+/// `cols` is a sorted `Vec<usize>` of column indices where this row has a 1 (GF(2)).
+/// The column layout matches `FactorBase::matrix_width()`:
+///   - `[0, rational_size())` — rational factor-base columns
+///   - `[rational_size(), rational_size() + algebraic_size())` — algebraic columns
+///   - `[rational_size() + algebraic_size(), matrix_width())` — obstruction columns
+///     (sign at `rational_size() + algebraic_size()`; quadratic-character columns, if
+///     any, follow — G.E fills those; G.D carries them as zeros)
+///
+/// # Provenance
+///
+/// `provenance` is a sorted, deduplicated `Vec<usize>` of *original* relation indices
+/// (indices into the `Vec<Relation>` passed to `build_matrix`). For a freshly built
+/// row, `provenance = [original_index]`. Under merge (G.D.2), provenance is combined
+/// by sorted union. G.F expands a nullspace vector by collecting `row.provenance` for
+/// each selected row and recovering the original `(a, b)` pairs.
+///
+/// Provenance stores original indices, not pre-reduced row sums — over-specified per
+/// the Discoveries & risks note so G.F can recover actual `(a, b)` pairs without
+/// re-deriving anything.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MatrixRow {
+    /// Sorted column indices where this GF(2) row has a 1.
+    pub cols: Vec<usize>,
+    /// Original relation indices this row derives from (sorted, deduplicated).
+    pub provenance: Vec<usize>,
+}
+
+impl MatrixRow {
+    /// XOR this row with `other` in GF(2), unioning their provenance sets.
+    ///
+    /// Used by G.D.2 merging: combining two rows that share a column eliminates
+    /// that column (symmetric difference of `cols`) and unions their provenance.
+    ///
+    /// :param other: The row to XOR with.
+    /// :returns: A new `MatrixRow` with the symmetric-difference column set and
+    ///           the union of both provenance sets.
+    pub fn xor_merge(&self, other: &MatrixRow) -> MatrixRow { ... }
+}
+
+/// Sparse GF(2) matrix over a factor base, with relation-provenance map.
+///
+/// # Column layout
+///
+/// Total columns = `FactorBase::matrix_width()` = `rational_size() + algebraic_size()
+/// + obstruction_count`. The obstruction block starts at `obstruction_col_start` =
+/// `rational_size() + algebraic_size()`. Singleton removal and merging (G.D.2) skip
+/// any column `>= obstruction_col_start` — obstruction columns are structural and are
+/// never pruned.
+///
+/// # Column-weight index
+///
+/// `col_weights[c]` = number of rows with a 1 in column `c`. Maintained in sync with
+/// `rows` by all mutating operations (`remove_row`, `xor_merge_rows`). G.D.1's
+/// singleton removal reads `col_weights` to find weight-≤1 columns without scanning
+/// all rows. G.D.2's merge step reads `col_weights` to find low-weight columns to
+/// eliminate.
+///
+/// # Excess
+///
+/// `excess()` = `rows.len() − (num_cols − obstruction_count)`. G.D.1 reports it;
+/// G.D.2 enforces `excess() >= EXCESS_FLOOR` during clique pruning.
+#[derive(Debug, Clone)]
+pub struct SparseMatrix {
+    /// The rows of the matrix (row-major sparse GF(2) store).
+    pub rows: Vec<MatrixRow>,
+    /// Total number of columns (= `FactorBase::matrix_width()`).
+    pub num_cols: usize,
+    /// Column index at which the obstruction block begins
+    /// (= `rational_size() + algebraic_size()`).
+    pub obstruction_col_start: usize,
+    /// Number of obstruction columns (= `FactorBase::obstruction_count`).
+    pub obstruction_count: usize,
+    /// Per-column Hamming weight (length = `num_cols`), kept in sync with `rows`.
+    pub col_weights: Vec<u32>,
+}
+
+impl SparseMatrix {
+    /// Current excess: `rows.len() − (num_cols − obstruction_count)`.
+    ///
+    /// A positive excess means the system is overdetermined (more relations than
+    /// independent columns), which is required for a non-trivial GF(2) nullspace.
+    /// G.D.2 must not drive this below `EXCESS_FLOOR`.
+    pub fn excess(&self) -> isize { ... }
+
+    /// Remove a row by index, updating `col_weights`.
+    ///
+    /// Used by singleton removal (G.D.1) and clique pruning (G.D.2).
+    /// Panics if `row_idx` is out of bounds.
+    ///
+    /// :param row_idx: Index of the row to remove.
+    pub fn remove_row(&mut self, row_idx: usize) { ... }
+}
+
+// ── gnfs/src/filter/mod.rs ───────────────────────────────────────────────────
+
+/// Build the initial sparse GF(2) matrix from a relation corpus and factor base.
+///
+/// Each relation in `relations` contributes one row. Column layout:
+///   - Rational columns `[0, fb.rational_size())`: GF(2) parities of rational exponents.
+///   - Algebraic columns `[fb.rational_size(), fb.rational_size() + fb.algebraic_size())`:
+///     GF(2) parities of algebraic exponents.
+///   - Obstruction columns `[fb.rational_size() + fb.algebraic_size(), fb.matrix_width())`:
+///     sign bit at `fb.rational_size() + fb.algebraic_size()` (from `relation.rational_sign`);
+///     remaining obstruction columns (quadratic characters) set to 0 — G.E fills them.
+///
+/// Note: `Relation::rational_row_gf2` places the sign at local index 0 of its return
+/// value; `build_matrix` re-maps it to the global obstruction column index.
+///
+/// Provenance for row `i` is `[i]` (the original relation index).
+///
+/// :param relations: The relation corpus (indices are preserved as provenance).
+/// :param fb: The factor base (column layout source).
+/// :returns: A `SparseMatrix` with `relations.len()` rows and `fb.matrix_width()` columns.
+pub fn build_matrix(relations: &[Relation], fb: &FactorBase) -> SparseMatrix { ... }
+
+// ── gnfs/src/filter/singleton.rs ─────────────────────────────────────────────
+
+/// Remove singleton columns to a fixpoint, returning the reduced matrix.
+///
+/// A column of Hamming weight ≤ 1 (a prime/ideal appearing in at most one surviving
+/// relation) cannot be part of any GF(2) dependency. The row containing it is removed,
+/// which may reduce other columns to weight 1, creating new singletons. This iterates
+/// until no weight-≤1 column remains among the non-obstruction columns.
+///
+/// Obstruction columns (`>= matrix.obstruction_col_start`) are exempt: they are
+/// structural and are never treated as singletons regardless of their weight.
+///
+/// Provenance is preserved unchanged: singleton removal drops rows, never merges them,
+/// so each surviving row's `provenance` is its original singleton set.
+///
+/// :param matrix: The matrix to reduce (consumed; returns the reduced matrix).
+/// :returns: The singleton-removed `SparseMatrix`.
+pub fn remove_singletons(matrix: SparseMatrix) -> SparseMatrix { ... }
+```
+
+**Design decisions frozen:**
+
+1. **Matrix representation:** Row-major (`rows: Vec<MatrixRow>`, each row a sorted `Vec<usize>` of
+   set-column indices) + maintained column-weight side table (`col_weights: Vec<u32>`, length =
+   `num_cols`, kept in sync by all mutating operations). G.E reads the row-major store directly for
+   block Lanczos/Wiedemann matrix-vector products; singleton removal and G.D.2 merging read
+   `col_weights` for O(1) weight lookup.
+
+2. **Provenance representation:** Inline in `MatrixRow` as `provenance: Vec<usize>` (sorted,
+   deduplicated original relation indices). Co-located with the row data so row operations keep
+   provenance in sync. Under merge (G.D.2), combined by sorted union via `xor_merge`. G.F expands
+   a nullspace vector by collecting `row.provenance` for each selected row. Stores original indices,
+   not pre-reduced row sums — over-specified per Discoveries & risks.
+
+3. **Obstruction/sign columns:** Obstruction columns occupy `[obstruction_col_start, num_cols)` where
+   `obstruction_col_start = rational_size() + algebraic_size()`. Sign bit from `rational_sign` is
+   placed at column `obstruction_col_start` (re-mapped from `rational_row_gf2`'s local index-0
+   layout). Singleton removal and G.D.2 merging skip all columns `>= obstruction_col_start`. G.E
+   inherits a stable obstruction block; quadratic-character columns within the block are zero until
+   G.E fills them.
+
+4. **Excess accounting:** `excess() = rows.len() as isize − (num_cols − obstruction_count) as isize`.
+   G.D.1 exposes `SparseMatrix::excess()` and reports it; it does **not** enforce a floor. The floor
+   invariant is `EXCESS_FLOOR = 20` (named constant, annotated as scale-dependent). G.D.2's clique
+   pruning must not drive `excess()` below `EXCESS_FLOOR`.
 
 ---
 
@@ -301,7 +478,7 @@ G.D.2 is dispatched.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.D.1 | Filter substrate: sparse GF(2) matrix + provenance + singletons | pending | — | C-Matrix |
+| G.D.1 | Filter substrate: sparse GF(2) matrix + provenance + singletons | done | a0e854b | C-Matrix |
 | G.D.2 | Clique/excess pruning + merging | pending | — | — |
 | G.D.W | Integrative writeup (filtering chapter) | pending | — | — |
 
@@ -317,6 +494,12 @@ layer, and G.C sieve layer.
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
 notable texture) for the juncture forks to consume. (Empty at sub-track open; the G.D.1 fork writes
 the first entry when it freezes C-Matrix.)
+
+### G.D.1 — 2026-06-07
+Discovery/flex: Inflection-point design completed; C-Matrix frozen as designed. Row-major SparseMatrix + inline MatrixRow provenance + col_weights side table + EXCESS_FLOOR=20 constant. Obstruction columns exempt from singleton/merge elimination via obstruction_col_start field.
+Affected: C-Matrix (frozen at a0e854b)
+Deferred: no
+Texture: rational_row_gf2 sign-bit remapping (local index 0 → global obstruction_col_start) is the one non-obvious build_matrix detail; KAT 2 cascading-singleton test exercises the fixpoint correctness obligation. EXCESS_FLOOR annotated as scale-dependent (principle-4). G.D.2 consumes C-Matrix directly; no contract flex needed.
 
 ---
 
