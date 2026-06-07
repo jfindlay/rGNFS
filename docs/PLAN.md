@@ -2,127 +2,151 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Phase β, sub-track G.E (Linear algebra)
+# rGNFS — Current Plan: Phase β, sub-track G.F (Square root + assembly)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **reverses the G.D `sonnet` opt-down back to the default.**
-The reversal is principled, not a regression: G.D opted down because its only frozen contract
-(C-Matrix) was *internal to Track G* and a filtering bug surfaced one sub-track downstream as a wrong
-matrix dimension (levers 3/4 moderate, recoverable). G.E is the opposite case. Applying the five-lever
-law: lever 2 (irreducible complexity) is **high** — block Lanczos over GF(2) carries the
-self-orthogonality problem (a nonzero GF(2) vector can be orthogonal to itself under the bilinear
-form, unlike over ℝ), which is a genuine FLOOR that cannot be fractured below one working solve;
-lever 3 (design-error cost) is **high** — G.E.1 reaches into the frozen `obstruction_count` slot of
-C-FactorBase (the quadratic-character columns) **and** freezes C-LinAlg, whose representation is
-re-consumed cross-track by D.B (NFS-DL linear algebra over F_ℓ, ROADMAP Phase γ); lever 4
-(correctness-criticality) is **high** — a wrong kernel vector silently yields a non-factorization at
-G.F, the deepest correctness seam in the GNFS pipeline. Levers 2/3/4 all high is exactly the case the
-planning doc names as **holding the adjudicator at the Opus default**. Lever 5 (inner-loop bandwidth)
-is strong (`cargo test --workspace` + deterministic-kernel KATs + the CADO end-to-end oracle) but
-does **not** license opting down here, because the opt-down condition is "strong tests *coinciding
-with* lower correctness-criticality" — and G.E's correctness-criticality is high. The ROADMAP
-independently flags **G.E.1 as Opus-tier** (Opus-flagged sessions table); G.D had no Opus session.
+`juncture-tier: opus` (header above) — **holds the default; does not opt down.** Applying the
+five-lever law to G.F: lever 2 (irreducible complexity) is **high** — the **algebraic square root via
+Couveignes / Chinese remaindering** (reduce ℤ[α] elements mod split prime ideals → per-prime
+Tonelli–Shanks → CRT lift → embedding-sign selection) is a genuine FLOOR that cannot be fractured
+below one working algebraic-root computation; lever 3 (design-error cost) is **high** — G.F.1 adds
+`NumberFieldElement::reduce_mod_ideal`, a **new cross-crate `shared/numfield` API** that D.B (NFS-DL
+over F_ℓ) is the natural re-consumer of, exactly the C-LinAlg cross-track situation one stage on;
+lever 4 (correctness-criticality) is **highest in the pipeline** — G.F is the **terminal seam**: a
+wrong square root produces a *trivial* gcd (1 or N), a **silent non-factorization**, not a red test.
+Levers 2/3/4 all high is the case the planning doc names as **holding the adjudicator at Opus**.
+Lever 5 (inner-loop bandwidth) is strong (`cargo test --workspace` + deterministic
+factor/root KATs) but does **not** license opting down: the real behavioural gate is the end-to-end
+"factor an 80–100-bit challenge" KAT, whose oracle (CADO-NFS / msieve) may be absent — so lever 5
+does **not** coincide with low correctness-criticality.
 
-The high lever-4 silent-failure risk drives a **second Opus juncture** beyond the G.E.1 design
-inflection: a dedicated **correctness-review juncture after G.E.2** (block Lanczos, the lever-2 FLOOR
-session). Because a Lanczos bug is silent until G.F (a plausible-but-wrong kernel, not a red test) and
-the CADO end-to-end oracle may be absent, the strongest model reviews the landed solver against the
-code + action-frame digest before G.E.3 builds on it. This is the juncture instrument the planning doc
-sanctions (paged T0 fork, one-shot, reads the digest, does not implement), sited by the cost-of-wrong
-of a specific high-risk session rather than by a sub-track boundary.
+**Roadmap-frame flex (logged, additive).** The ROADMAP scoped G.F as **"2 sessions, Sonnet,"** with
+**no Opus-flag** — written *before* the substrate survey revealed that G.F is not a thin wrapper. The
+survey found **three substrate gaps** G.F must fill (`reduce_mod_ideal` in numfield; `isqrt` and an
+exported big-integer `gcd` in bigint) and **two distinct square roots** (rational integer root;
+algebraic root via Couveignes) plus assembly. This plan re-shards to **4 algorithmic sessions +
+writeup** and adds **two Opus junctures at G.F.3** (the Couveignes FLOOR) — a *design* inflection
+(freeze `reduce_mod_ideal` + the CRT/embedding-sign strategy) and a *correctness review* after it
+lands (the terminal silent-failure seam). This mirrors the G.E two-juncture pattern, sited by
+cost-of-wrong rather than by the boundary. The flex is **additive** (re-tier + split, no contract
+break) and is surfaced for the ROADMAP Discoveries log at the G.F ◆ boundary (see Discoveries).
 
-Last rewrite: G.D ◆ boundary crossed (G.D.W landed at `7762339`; G.D ledger still-on-intent
-2026-06-07). G.D fully complete (G.D.1 → G.D.W); C-Matrix frozen, C-FactorBase / C-Relation stable.
-This plan opens sub-track G.E — the **linear algebra** stage of the GNFS pipeline — over the frozen
-filtered-matrix substrate. G.E reads the C-Matrix `SparseMatrix` and computes the GF(2) nullspace
-whose vectors are congruences of squares that G.F turns into a factorization.
+Last rewrite: G.E ◆ boundary crossed (G.E.W landed at `a985965`; G.E ledger still-on-intent
+2026-06-07, `f8ca3f8`). G.E fully complete (G.E.1 → G.E.W); **C-LinAlg frozen** (`BlockVec`,
+`MatrixOperator`, `KernelVector`, QC columns), C-Matrix / C-FactorBase / C-Relation stable. This plan
+opens sub-track G.F — the **square-root and assembly** stage, the final stage of the GNFS factoring
+pipeline. G.F takes a `KernelVector` (a congruence of squares), recovers the original (a, b) pairs
+through the C-Matrix provenance map, computes the rational and algebraic square roots, and combines
+them via integer GCD to extract a non-trivial factor of N.
 
 ---
 
 ## Purpose (design intent)
 
 Per ROADMAP: a self-consistent, pedagogically clear Rust reference library for DLP/ECDLP/GNFS
-algorithms. This sub-track (G.E) builds **GNFS linear algebra** — given the compact, full-rank
-**sparse GF(2) matrix** from G.D filtering, find vectors in its **left nullspace**: a subset of
-(filtered) rows whose GF(2) sum is zero, i.e. a set of relations whose combined rational and
-algebraic norms are each perfect squares. Each nullspace vector is a **congruence of squares**, the
-object G.F's square-root step turns into a factor of N. It comprises:
+algorithms. This sub-track (G.F) builds **GNFS square root + assembly** — the terminal stage that
+turns a nullspace vector into a factor. Given a `KernelVector` from G.E (a subset S of relations
+whose combined rational and algebraic norms are each perfect squares), compute:
 
-1. **The linear-operator substrate (G.E.1).** A blocked GF(2) vector representation and the view of
-   the C-Matrix `SparseMatrix` as a linear operator (sparse matrix–block-vector product), plus the
-   **quadratic-character columns** that guarantee the algebraic-side square root exists in K (not
-   merely that the algebraic norm is a square in ℤ). This is the substrate both solvers sit on, and
-   the seam D.B (NFS-DL over F_ℓ) re-consumes.
-2. **Block Lanczos (G.E.2, primary).** The Montgomery block-Lanczos iteration over GF(2): build an
-   A-orthogonal basis of the Krylov subspace, handling the self-orthogonality that GF(2)'s bilinear
-   form admits (the winnowing of which block columns advance each step), and extract the kernel.
-3. **Block Wiedemann (G.E.3, secondary).** The Coppersmith block-Wiedemann alternative: a matrix
-   Krylov sequence, Berlekamp–Massey to find a linear generator, and kernel extraction from the
-   generator. A second, orthogonal solver over the same C-LinAlg substrate — the ROADMAP's
-   "secondary" path, useful as a cross-check and the natural generalisation target for D.B.
+1. **The rational square root.** X with $X^2 \equiv \prod_{i \in S}(a_i - b_i m) \pmod N$ — the
+   product of rational norms is a perfect-square integer (the matrix nullspace + sign column
+   guarantee it); extract its integer square root and reduce mod N.
+2. **The algebraic square root (Couveignes' algorithm).** β ∈ K = ℚ(α) with
+   $\beta^2 = \prod_{i \in S}(a_i - b_i \alpha)$; then Y = Norm(β) ∈ ℤ, and y = Y mod N. The QC
+   columns (frozen in C-FactorBase by G.E.1) guarantee β exists *in K*. Couveignes computes β by
+   **Chinese remaindering**: reduce the product element modulo many split prime ideals, take the
+   square root in each residue field 𝔽_p (Tonelli–Shanks), and CRT-lift to a candidate in ℤ[α],
+   resolving the global sign via the real embedding.
+3. **Assembly.** Form x = X mod N, y = Y mod N; if x ≢ ±y (mod N), $\gcd(x - y, N)$ is a non-trivial
+   factor of N. Wrap the whole pipeline (kernel → provenance → roots → gcd) in a driver and verify
+   end-to-end.
 
-This is the fourth stage of the GNFS pipeline proper: it sits *on* the G.D filtered matrix (C-Matrix)
-and the factor-base column layout (C-FactorBase), and it *produces* the nullspace-vector representation
-(C-LinAlg) that G.F (square root) consumes to form the congruence of squares.
+It comprises four algorithmic sessions:
 
-Re-read this intent at every ◆ boundary to catch **defocus** (gold-plating beyond block Lanczos +
-block Wiedemann at demonstration fidelity — Montgomery's full cache-blocking, the GF(2)-word SIMD
-packing, MPI-distributed Wiedemann, and out-of-core matrix streaming are out of scope, ROADMAP
-principle 3) and **rigidity** (grinding through a kernel representation that G.F or D.B later shows is
-wrong, rather than surfacing it at the boundary).
+1. **Substrate gaps (G.F.1).** Fill the three capabilities the survey found absent:
+   `NumberFieldElement::reduce_mod_ideal(p, r)` (ℤ[α] element → 𝔽_p, the Couveignes inner step),
+   `isqrt` (exact integer square root for the rational side), and an **exported** big-integer `gcd`
+   (the final assembly step). These reach into frozen `shared/numfield` and `shared/bigint` —
+   additive-reshard, surfaced for sign-off.
+2. **Rational square root (G.F.2).** Recover (a, b) pairs via `expand_provenance`, form the product
+   ∏(a − bm), verify it is a perfect square, extract X via `isqrt`, reduce mod N.
+3. **Algebraic square root via Couveignes (G.F.3, the FLOOR).** The CRT square root in ℤ[α], the
+   lever-2/3/4 session: design-inflection `@plan` (freeze `reduce_mod_ideal` + the CRT/embedding-sign
+   strategy) and a post-landing correctness-review `@plan`.
+4. **Assembly + end-to-end driver (G.F.4).** Combine the roots, take gcd(x − y, N), and stand up the
+   first top-level "factor N" driver chaining the whole pipeline. End-to-end factoring KAT.
 
-**Scoping discipline (ROADMAP three-way split, applied to G.E).** Algorithmic content complete: block
-Lanczos with self-orthogonality handling, block Wiedemann with Berlekamp–Massey, and the
-quadratic-character obstruction columns — the full GF(2) nullspace machinery. **Scale-only** content
-(block width tuned to machine word size, Montgomery's multi-block cache strategy, large-matrix
-convergence behaviour a tiny matrix never stresses) is present at **demonstration fidelity** (the
-blocking is real even where its speedup doesn't show at toy scale — principle 2, disconnect annotated
-per principle 4). **Engineering optimizations** (SIMD GF(2) word packing, NUMA, MPI distribution,
-out-of-core streaming) are omitted. **CADO-NFS / msieve are dev-only correctness oracles** for the
-end-to-end "kernel recovers the same factorization" cross-check — never on a build path.
+This is the fifth and final stage of the GNFS factoring pipeline proper: it sits *on* the G.E
+nullspace representation (C-LinAlg `KernelVector`), the C-Matrix provenance map, and the G.A
+number-field substrate (C-NF), and it *produces* the factorization that closes the GNFS arc. G.W
+(separate sub-track, Opus) is the integrative writeup that articulates the whole cross-phase pipeline.
+
+Re-read this intent at every ◆ boundary to catch **defocus** (gold-plating beyond Couveignes at
+demonstration fidelity — the full early-abort CRT prime budgeting, the lattice-based square-root
+variant, and Montgomery's batch square root are out of scope, ROADMAP principle 3) and **rigidity**
+(grinding through a CRT sign convention that the end-to-end factor KAT shows is wrong, rather than
+surfacing it at the G.F.3 review juncture).
+
+**Scoping discipline (ROADMAP three-way split, applied to G.F).** Algorithmic content complete:
+rational integer square root, Couveignes' CRT algebraic square root with embedding-sign resolution,
+the final gcd assembly, and the kernel → provenance → roots thread. **Scale-only** content (the
+number of CRT primes needed to pin β, the bit-length growth of the lifted coefficients, early-abort
+on a wrong sign) is present at **demonstration fidelity** (the CRT lift is real even where its prime
+budget is trivial at toy scale — principle 2, disconnect annotated per principle 4). **Engineering
+optimizations** (batch Tonelli–Shanks, lattice square root, p-adic Newton lift) are omitted.
+**CADO-NFS / msieve are dev-only correctness oracles** for the end-to-end "recover the same factor"
+cross-check — never on a build path.
 
 ---
 
 ## Current state
 
-Phase α + sub-tracks G.A, G.B, G.C, G.D complete. Workspace crates: `shared/field`, `shared/bigint`,
-`shared/numth`, `shared/numfield`, `rho`, `gnfs`. `cargo test --workspace` green at `7762339`.
+Phase α + sub-tracks G.A, G.B, G.C, G.D, G.E complete. Workspace crates: `shared/field`,
+`shared/bigint`, `shared/numfield`, `shared/numth`, `rho`, `gnfs`. `cargo test --workspace` green at
+`f8ca3f8`.
 
-The `gnfs` crate carries `polyselect/` (G.B), `sieve/` (G.C), and `filter/` (G.D). G.E adds a sibling
-`linalg/` module (no linalg module exists yet — clean greenfield, the third non-`polyselect`/`sieve`
-module after `filter/`).
+The `gnfs` crate carries `polyselect/` (G.B), `sieve/` (G.C), `filter/` (G.D), and `linalg/` (G.E).
+G.F adds a sibling **`sqrt/`** module (no sqrt module exists yet — clean greenfield, the fourth
+non-`polyselect`/`sieve` module after `filter/` and `linalg/`). The gnfs `lib.rs` module list is
+`pub mod polyselect; pub mod sieve; pub mod filter; pub mod linalg;` — G.F.1 adds `pub mod sqrt;`.
 
-Substrate G.E consumes (all frozen):
-- **C-Matrix** (`gnfs::filter`): the `SparseMatrix` — row-major `rows: Vec<MatrixRow>` (each row a
-  sorted `cols: Vec<usize>` of set GF(2) columns + a `provenance: Vec<usize>` of original relation
-  indices), `num_cols`, `obstruction_col_start`, `obstruction_count`, and the `col_weights: Vec<u32>`
-  side table. G.E reads the row-major store for matrix–vector products and reads the provenance map
-  through to G.F. Frozen at G.D.1 (`a0e854b`).
-- **C-FactorBase** (`gnfs::sieve`): `FactorBase` with `rational_primes`, `algebraic_ideals`
-  (`AlgebraicPrime { p, r, index, is_bad_prime }`), `matrix_width()` =
-  `rational_size() + algebraic_size() + obstruction_count`, and the **public `obstruction_count`
-  field** (currently 1, the sign column; docstringed "G.E may increase it"). Frozen at G.C.1
-  (`c1dc0b6`). **G.E.1 is the first consumer that widens `obstruction_count`** — see the QC reach-back
-  below.
-- **C-Relation** (`gnfs::sieve`): the `Relation` type and its `rational_row_gf2` / `algebraic_row_gf2`
-  GF(2) helpers. `algebraic_row_gf2` returns length `algebraic_size() + obstruction_count` and
-  **auto-pads the obstruction tail with zeros** — so widening `obstruction_count` produces wider
-  zero-tails with no signature change. Frozen at G.C.1 (`c1dc0b6`).
+Substrate G.F consumes (all frozen):
+- **C-LinAlg** (`gnfs::linalg`): `KernelVector { row_indices: Vec<usize> }` with
+  `expand_provenance(&self, &SparseMatrix) -> Vec<usize>` (symmetric difference of provenance →
+  original relation indices) and `verify`. **This is the G.E → G.F seam, over-specified at G.E.1
+  precisely for this consumer.** Frozen at G.E.1 (`416f6db`).
+- **C-Matrix** (`gnfs::filter`): `SparseMatrix` with the `provenance: Vec<usize>` per row that
+  `expand_provenance` threads. Frozen at G.D.1 (`a0e854b`).
+- **C-Relation** (`gnfs::sieve`): `Relation { a: BigInt, b: BigInt, rational_exponents,
+  algebraic_exponents, rational_sign: bool }`. G.F reads `a`, `b` (to form ∏(a − bm) and ∏(a − bα))
+  and `rational_sign`. Frozen at G.C.1 (`c1dc0b6`).
+- **C-PolyPair** (`gnfs::polyselect`): `PolyPair { f, g, m: BigInt, n: BigInt, degree, ... }` with
+  `monic_f()` and `number_field() -> NumberField`. G.F reads `n` (target), `f`/`m` (the two sides),
+  and constructs K via `number_field()`. Frozen at G.B.1 (`2f43f99`).
+- **C-NF** (`shared::numfield`): `NumberField`, `NumberFieldElement` (`mul`, `square`, `pow`, `norm`,
+  …), `Ideal { p, r }`. G.F **adds `reduce_mod_ideal`** to `NumberFieldElement` (the one sanctioned
+  reach — see below). Frozen at G.A.3 (`7844773`).
+- **C-Fp** (`shared::field`): the `Fp<L>` trait with **`legendre` and `sqrt` (Tonelli–Shanks) already
+  present** as default methods (the ROADMAP-noted α.5 patch is *landed* — survey-confirmed; this
+  gap is closed). G.F's per-prime square root calls `Fp::sqrt`. Frozen (α.5).
 
-**Substrate gap G.E fills itself (the QC reach into C-FactorBase):** G.C reserved
-`obstruction_count = 1` (the sign/−1 column) and zero-filled it through G.D. G.E's GF(2) linear
-algebra additionally needs **quadratic-character columns**: parity conditions that guarantee the
-selected relations' algebraic-norm product is a square *in the number field K*, not merely a square
-integer (the sign column alone does not ensure the algebraic square root exists). G.E.1 chooses the
-number of QC columns, **widens `FactorBase::obstruction_count` to `1 + num_qc`** (additive — the
-substrate was built to absorb this; see Discoveries & risks), rebuilds the matrix so QC columns are
-real matrix columns, and populates their parities. This is a **reach into frozen C-FactorBase**, so it
-is surfaced as an **additive-reshard** (not silently grown) — but it is mechanical (a slot designed
-to be widened), not a destructive contract break.
+**Substrate gaps G.F fills itself (G.F.1, additive-reshard).** The survey found three capabilities
+G.F needs that do not yet exist:
+1. **`NumberFieldElement::reduce_mod_ideal(p, r)`** — reduce an ℤ[α] element mod the prime ideal
+   `(p, α − r)` to an 𝔽_p element. The inner step of Couveignes' CRT. New method on a frozen C-NF
+   type (additive — no existing signature changes). **D.B is the natural re-consumer** (F_ℓ residue
+   fields), so freeze the signature deliberately, C-LinAlg-style.
+2. **`isqrt(&BigInt) -> Option<BigInt>`** (exact integer square root, `None` if not a perfect
+   square) — for the rational side. Absent everywhere; `shared/bigint` is the home.
+3. **Exported big-integer `gcd`** — `shared/sieve` has a *private* `gcd_bigint`; lift/export a
+   `gcd(&BigInt, &BigInt) -> BigInt` to `shared/bigint` for the final `gcd(x − y, N)`.
+
+All three are **additive** (new functions / a new method; no signature breaks) and surfaced as an
+**additive-reshard** at G.F.1 for sign-off, not silently grown.
 
 ---
 
@@ -130,10 +154,13 @@ to be widened), not a destructive contract break.
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace` (Rust's compiler is
 the type gate; `cargo test` subsumes it on a clean build, so one green `cargo test --workspace`
-satisfies both). A red session is not a complete session. G.E adds modules to the *existing* `gnfs`
-crate (already in `members`), so no workspace `Cargo.toml` change is required. The CADO-NFS
-end-to-end oracle KAT follows the established `#[ignore = "CADO-NFS not installed; ..."]` pattern
-(`merge_kat.rs`, `line_sieve_kat.rs`) and skips cleanly when CADO is absent.
+satisfies both). A red session is not a complete session. G.F adds a module to the *existing* `gnfs`
+crate and methods to the *existing* `shared/numfield` + `shared/bigint` crates (all already in
+`members`), so no workspace `Cargo.toml` change is required. The end-to-end factoring oracle KAT
+follows the established `#[ignore = "CADO-NFS not installed; ..."]` pattern
+(`lanczos_kat.rs:317`, `merge_kat.rs`, `line_sieve_kat.rs`) and skips cleanly when the oracle is
+absent; the deterministic "factor this known N" KAT carries reproducibility without an external
+oracle.
 
 ---
 
@@ -146,587 +173,290 @@ session is dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| G.E.1 `@plan` | Linalg substrate: blocked GF(2) vectors + matrix operator + quadratic-character columns | A | **Opus** | C-Matrix, C-FactorBase, C-Relation | new `gnfs/src/linalg/mod.rs`, `gnfs/src/linalg/blockvec.rs`, `gnfs/src/linalg/operator.rs`, `gnfs/src/lib.rs` (add `pub mod linalg`), `gnfs/tests/linalg_substrate_kat.rs` |
-| G.E.2 `@plan` | Block Lanczos GF(2) nullspace solver (primary) | B | Sonnet | G.E.1 (C-LinAlg), C-Matrix | `gnfs/src/linalg/lanczos.rs`, `gnfs/src/linalg/mod.rs`, `gnfs/tests/lanczos_kat.rs` |
-| G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | B | Sonnet | G.E.1 (C-LinAlg), C-Matrix | `gnfs/src/linalg/wiedemann.rs`, `gnfs/src/linalg/mod.rs`, `gnfs/tests/wiedemann_kat.rs` |
-| G.E.W ◆ | G.E integrative writeup (linear-algebra chapter) | I | Sonnet | all G.E | `gnfs/docs/PEDAGOGY.md` (append §31+), `docs/BENCHMARKS.md` (append) |
+| G.F.1 | Square-root substrate: `reduce_mod_ideal` + `isqrt` + exported BigInt `gcd` | A | Sonnet | C-NF, C-Fp | `shared/numfield/src/element.rs` (add `reduce_mod_ideal`), `shared/bigint/src/lib.rs` (+ new `isqrt.rs` / `gcd` export), `shared/numfield/tests/reduce_mod_ideal_kat.rs`, `shared/bigint/tests/isqrt_gcd_kat.rs` |
+| G.F.2 | Rational square root from a kernel vector | B | Sonnet | C-LinAlg, C-Relation, C-PolyPair, G.F.1 | new `gnfs/src/sqrt/mod.rs`, `gnfs/src/sqrt/rational.rs`, `gnfs/src/lib.rs` (add `pub mod sqrt`), `gnfs/tests/sqrt_rational_kat.rs` |
+| G.F.3 `@plan` | Algebraic square root via Couveignes / CRT | B | **Opus** (design fork) + Sonnet build + **Opus** review fork | C-NF (`reduce_mod_ideal`), C-Fp (`sqrt`), C-Relation, C-PolyPair | `gnfs/src/sqrt/algebraic.rs`, `gnfs/src/sqrt/mod.rs`, `gnfs/tests/sqrt_algebraic_kat.rs` |
+| G.F.4 | Assembly + end-to-end factor driver (gcd(x−y, N)) | I | Sonnet | all G.F, C-PolyPair | `gnfs/src/sqrt/assembly.rs`, `gnfs/src/sqrt/mod.rs`, `gnfs/tests/factor_end_to_end_kat.rs` |
+| G.F.W ◆ | G.F integrative writeup (square-root chapter) | I | Sonnet | all G.F | `gnfs/docs/PEDAGOGY.md` (append §42+), `docs/BENCHMARKS.md` (append) |
 
-**Sequencing notes.** G.E carries **two `@plan` junctures of different kinds.** G.E.1 is a *design*
-inflection: it stands up the `linalg/` module (sibling to `filter/`) and freezes **C-LinAlg** — the
-blocked GF(2) vector representation and the sparse-matrix-as-linear-operator interface both solvers
-consume, plus the **quadratic-character column** resolution (widen `obstruction_count`). It
-deliberately implements *no solver* — pure substrate, the wide-design surface the ROADMAP front-loads
-as Opus. The G.E.2 `@plan` is a *correctness-review* juncture, not a design one: when block Lanczos
-(the lever-2 FLOOR, with its silent-wrong-kernel failure mode) lands green, halt and page a T0
-`@plan-juncture` fork to review the implementation (self-orthogonality winnowing, kernel validity,
-the operator-interface contract) against the landed code + the action-frame digest *before* G.E.3 is
-dispatched — because a Lanczos bug is silent until G.F and the CADO oracle may be absent. The fork
-returns one-shot findings; it does not implement. Once both solvers' substrate is sound, G.E.2 (block
-Lanczos, primary) and G.E.3 (block Wiedemann, secondary) are **two orthogonal Category-B solvers**
-over the same C-LinAlg substrate (mutually independent, either order), each freezing nothing new and
-each KAT-able against the same nullspace. G.E.W is the ◆ boundary.
+**Sequencing notes.** G.F carries **two `@plan` junctures, both at G.F.3** (the Couveignes FLOOR),
+of different kinds. The first is a *design* inflection (runs **before** G.F.3 implements): page an
+Opus `@plan-juncture` fork to freeze **C-AlgSqrt** — the `reduce_mod_ideal` signature (already
+sketched at G.F.1 but the *Couveignes contract* — which split primes, how many, the CRT lift, the
+embedding-sign convention — is resolved here), because a wrong sign convention or an under-budgeted
+prime set is a silent terminal failure and the API is D.B-reused. The second is a *correctness-review*
+juncture (runs **after** G.F.3 lands green, before G.F.4): page an Opus `@plan-juncture` fork to
+review the landed CRT square root against the code + action-frame digest — because a Couveignes bug
+is *silent* (a plausible β with the wrong sign → trivial gcd at G.F.4) and the end-to-end oracle may
+be absent. Both forks return one-shot findings; neither implements. **G.F.1** (substrate gaps) and
+**G.F.2** (rational root) are mutually orderable but both must precede G.F.3 (it consumes
+`reduce_mod_ideal`); G.F.2 is independent of G.F.3 and could run after it, but the listed order keeps
+the cheaper rational root first as a warm-up that exercises `expand_provenance`. **G.F.4** consumes
+both roots; **G.F.W** is the ◆ boundary.
 
-**Why G.E is 3 solver/substrate sessions + writeup (ROADMAP said 3-4).** The one-line-commit-title
-corollary keeps each row a clean title. G.E.1's substrate (representation + operator + QC columns) is
-the wide-design FLOOR the ROADMAP Opus-flags; bundling a solver into it would make it two titles and
-overflow the design surface — it stands alone. Block Lanczos and block Wiedemann are **not merged**:
-"block Lanczos *and* block Wiedemann" is two commit titles, they are two orthogonal algorithms
-(Category B, the ROADMAP's primary/secondary split), and each is independently KAT-able — merging
-would Cartesian-product two intricate solvers into one session. The block-Lanczos self-orthogonality
-handling (lever-2 FLOOR) cannot be fractured below one working solve, so G.E.2 is one irreducible
-unit; same for Wiedemann's Krylov-sequence + Berlekamp–Massey in G.E.3. **G.E.W** is the integrative
-writeup, allocated its own session per the under-scheduling guidance. The G.E.2 correctness-review
-juncture is **not** a session row: per the planning doc, a review juncture is a paged fork with no
-commit-shaped code deliverable, so it rides as a `@plan` marker on G.E.2's boundary, not as its own
-ledger line.
+**Why G.F is 4 algorithmic sessions + writeup (ROADMAP said 2).** The one-line-commit-title corollary
+drives the split: "square root" alone is *three* commit titles (substrate gaps; rational root;
+Couveignes algebraic root) because the survey revealed three absent substrate capabilities and two
+mathematically distinct roots — none of which the ROADMAP's "2 sessions" line anticipated (it
+predates the survey). The Couveignes algebraic root (G.F.3) is the lever-2 FLOOR and **cannot** be
+merged with the rational root (a different algorithm: integer isqrt vs CRT-in-ℤ[α]) or with the
+substrate gaps (folding `reduce_mod_ideal` into it would make two titles and bury the FLOOR's design
+surface). Assembly (G.F.4) is split from the roots because the end-to-end factor driver is the *first*
+pipeline-chaining code in the project (no driver exists yet — survey item 7) and earns its own title +
+its own end-to-end KAT. **G.F.W** is the integrative writeup, allocated its own session per the
+under-scheduling guidance. The two G.F.3 junctures are **not** session rows: per the planning doc, a
+juncture fork has no commit-shaped code deliverable, so they ride as `@plan` markers on G.F.3, not as
+ledger lines.
 
 ---
 
 ## Session detail
 
-Lower-fidelity rows (G.E.2, G.E.3, G.E.W) are sketched; per the planning philosophy, sessions inside
-a sub-track are crisply specified only after the substrate session (G.E.1) lands and freezes C-LinAlg.
+Lower-fidelity rows (G.F.3, G.F.4, G.F.W) are sketched; per the planning philosophy, sessions inside a
+sub-track are crisply specified only after the substrate (G.F.1) and the G.F.3 design juncture resolve
+C-AlgSqrt. G.F.1 and G.F.2 are crisp; G.F.3's design surface is deliberately left for its `@plan` fork.
 
-### G.E.1 — Linalg substrate: blocked GF(2) vectors + matrix operator + quadratic-character columns (Opus, design inflection)
+### G.F.1 — Square-root substrate: `reduce_mod_ideal` + `isqrt` + exported BigInt `gcd` (Sonnet, additive-reshard)
 
 **Deliverable:**
-- New `gnfs/src/linalg/` module (sibling to `filter/`). `gnfs/src/lib.rs` adds `pub mod linalg` and
-  re-exports the solver entry surface (added by G.E.2/G.E.3).
-- `linalg/blockvec.rs`: **C-LinAlg, part 1.** A blocked GF(2) vector / block of `N` GF(2) vectors
-  (block width chosen at demonstration fidelity — e.g. 64, a machine word, annotated principle-4 as
-  the scale knob). The GF(2) inner products and block operations block Lanczos and Wiedemann both
-  need.
-- `linalg/operator.rs`: **C-LinAlg, part 2.** The view of a C-Matrix `SparseMatrix` as a linear
-  operator: the sparse matrix–block-vector product `A·V` and `Aᵀ·V` over GF(2), reading the
-  row-major `rows`/`cols`. Both solvers consume *this*, never the `SparseMatrix` directly, so the
-  representation is the frozen seam.
-- **Quadratic-character columns.** Choose `num_qc`, widen `FactorBase::obstruction_count` to
-  `1 + num_qc`, rebuild the matrix (or extend it) so QC columns are real matrix columns, and populate
-  each row's QC parities (the Legendre-symbol parity of the algebraic norm at chosen auxiliary
-  primes). The sign column stays at `obstruction_col_start`; QC columns follow. **This is the
-  load-bearing design call of the session** — it reaches into frozen C-FactorBase and is re-consumed
-  by D.B; freeze the QC representation so G.F and D.B don't disagree.
-- `linalg/mod.rs`: the linalg entry surface (the operator constructor, the kernel-vector type) and
-  the public types.
+- **`NumberFieldElement::reduce_mod_ideal(&self, p: &BigInt, r: &BigInt) -> /* Fp value */`** on the
+  C-NF element type. Reduces the element's `RatPoly` representation mod the prime ideal `(p, α − r)`:
+  evaluate the polynomial at α ≡ r (mod p), clear denominators mod p, return the 𝔽_p residue. The
+  bridge from `BigInt`-valued coefficients into the `Fp<L>` world (survey item 4's missing bridge)
+  lives here. **Additive** — new method, no change to any frozen `NumberFieldElement` signature.
+- **`isqrt(&BigInt) -> Option<BigInt>`** in `shared/bigint`: exact integer square root, `Some(x)` iff
+  the input is a perfect square `x²`, else `None`. Newton/bisection at demonstration fidelity.
+- **Exported `gcd(&BigInt, &BigInt) -> BigInt`** in `shared/bigint`: lift the private `gcd_bigint`
+  from `gnfs::sieve` (or delegate to `num_integer::gcd`) to a public, tested home. The final
+  `gcd(x − y, N)` consumes it.
 
-**Key design decisions (juncture fork designs C-LinAlg and writes it into Cross-session contracts):**
-1. **Blocked-vector representation.** Block width `N` and the GF(2) packing (a `u64` per block of 64
-   vectors vs a `Vec<bool>`). Block Lanczos/Wiedemann both want word-packed blocks for the
-   matrix–vector product; bias toward a packed `u64`-block representation, annotated principle-4 (the
-   packing is the scale knob — at toy scale a single word suffices). Freeze it — both solvers read it.
-2. **Matrix-operator interface.** Whether `A·V` reads the C-Matrix row store directly or G.E.1
-   builds a transposed/CSC companion for `Aᵀ·V`. Decide and freeze: both solvers route every matrix
-   access through this interface, so a later change is a cross-solver break.
-3. **Quadratic-character columns (the C-FactorBase reach).** `num_qc` (number of QC columns), the
-   choice of auxiliary primes, and whether QC columns are added by **widening
-   `FactorBase::obstruction_count`** (the confirmed expected approach — QC become real matrix columns,
-   cleanest for D.B reuse) and rebuilding via `build_matrix`. Freeze the rule and surface the widen as
-   an **additive-reshard** (see Discoveries & risks). **If the QC machinery turns out to require
-   changing the *meaning* of an existing C-FactorBase column rather than appending — destructive-HALT,
-   not additive.** (Not expected: the substrate auto-pads zero-tails for any `obstruction_count`.)
-4. **Kernel-vector representation (the C-LinAlg → G.F seam).** A nullspace vector is a subset of
-   *filtered* matrix rows; G.F expands it through the C-Matrix provenance map to a set of *original*
-   relations. Decide and freeze how a solver returns a kernel vector (a bit-mask over current rows? a
-   `Vec<usize>` of selected row indices?) so G.F and D.B consume a stable shape. Over-specify: carry
-   the row-index form G.F needs even if Lanczos internally prefers a bit-mask.
+**Key design decisions (the additive-reshard surface):**
+1. **`reduce_mod_ideal` return type and the `Fp` limb width.** Whether it returns a concrete
+   `FpNaive<L>` / `Uint<L>` (and which `L`) or a `BigInt` residue. Bias toward returning the residue
+   in a form G.F.3 can feed to `Fp::sqrt` directly. **Freeze the signature** — D.B (F_ℓ) re-consumes
+   this; over-specify toward a scalar-residue shape, C-LinAlg-style.
+2. **`isqrt` perfect-square contract.** `Option` (None = not a square) vs `(BigInt, bool)`. Bias
+   toward `Option` — the rational-root caller wants exactly "is this a perfect square, and if so its
+   root."
+3. **`gcd` home and signedness.** `BigInt` (signed) gcd must return the non-negative gcd; document the
+   sign convention. Confirm whether to lift-and-delete the `sieve` private copy or leave it (avoid two
+   copies — prefer lift + re-export from `sieve` if needed).
 
 **KAT (≥1 required):**
-1. **Operator correctness:** for a small hand-built `SparseMatrix`, `A·V` and `Aᵀ·V` match the
-   hand-computed GF(2) products for several block vectors `V`.
-2. **QC column construction:** widening `obstruction_count` to `1 + num_qc` yields a matrix of width
-   `matrix_width()` with the sign column at `obstruction_col_start` and `num_qc` QC columns following;
-   each row's QC parity matches the hand-computed Legendre-symbol parity for a toy relation set.
-3. **Round-trip with provenance:** a hand-built kernel vector expands through the C-Matrix provenance
-   map to the expected set of original relation indices (the G.F seam exercised before G.F exists).
-4. **Determinism:** the operator products and QC columns are deterministic for a fixed matrix.
+1. **`reduce_mod_ideal` correctness:** for a hand-built `NumberField` (e.g. f = x² − 2) and a split
+   prime ideal `(p, r)`, the reduction of α, of a rational constant, and of a product matches the
+   hand-computed 𝔽_p value; and `reduce_mod_ideal(α) = r mod p`.
+2. **`isqrt`:** `isqrt(k²) = Some(k)` for several k; `isqrt(k² + 1) = None`; `isqrt(0) = Some(0)`.
+3. **`gcd`:** matches known gcds; `gcd(0, n) = n`; non-negative result for mixed-sign inputs.
 
-**Subtlety:** the QC widen must be **additive** — it appends columns at the end of the obstruction
-block and leaves every rational/algebraic/sign column index unchanged, so C-Matrix rows built before
-the widen stay valid. A QC implementation that *renumbers* columns silently invalidates the frozen
-C-Matrix layout (and any G.D provenance reasoning). KAT 2 must assert the pre-QC column indices are
-unchanged after the widen. **The juncture fork decides** the representation and writes it into
-C-LinAlg.
+**Subtlety:** `reduce_mod_ideal` must clear rational denominators mod p — if a coefficient
+denominator is divisible by p the reduction is undefined (the prime ideal is "bad" for this element);
+decide and document the contract (panic? `Option`? — for split QC-style primes chosen > B_alg this
+should not arise, but the contract must be explicit). **The additive-reshard must be surfaced** at
+session start: it adds a method to frozen C-NF and functions to frozen `shared/bigint`; mechanical, but
+sign-off per the additive-reshard rule.
 
-**Deferred:** block Lanczos (G.E.2); block Wiedemann (G.E.3); the writeup (G.E.W).
+**Deferred:** the rational root (G.F.2); Couveignes (G.F.3); assembly (G.F.4); the writeup (G.F.W).
 
-### G.E.2 — Block Lanczos GF(2) nullspace solver (Sonnet, on frozen C-LinAlg, + T0 review juncture, sketch)
+### G.F.2 — Rational square root from a kernel vector (Sonnet)
 
-**Deliverable:** Montgomery's block-Lanczos iteration over GF(2), reading the C-LinAlg operator and
-blocked-vector representation. Build the A-orthogonal Krylov basis, handle **self-orthogonality** (the
-GF(2)-specific winnowing: at each step select which block columns are A-invertible and advance only
-those, carrying the rest forward), iterate to convergence, and extract kernel vectors. Returns
-nullspace vectors in the frozen C-LinAlg kernel representation. The **primary** solver.
+**Deliverable:** the rational side of the congruence. Given a `KernelVector` and the original
+`Vec<Relation>` + `PolyPair`: call `kv.expand_provenance(&matrix)` to get the relation index set S;
+form the product $\prod_{i \in S}(a_i - b_i m)$ over ℤ (using `poly.m`); assert it is a perfect square
+via `isqrt` (G.F.1) — the matrix nullspace + sign column guarantee it, so a `None` here is a
+*detected* upstream bug, not a normal path; reduce X = isqrt(product) mod N. Returns X (mod N).
+Establishes the `gnfs/src/sqrt/` module (`mod.rs` + `rational.rs`) and the `pub mod sqrt` in `lib.rs`.
 
-Freezes nothing new (consumes C-LinAlg, C-Matrix).
+Freezes the `sqrt` module entry surface (the kernel → product → root signature both sides share).
 
-**KAT (≥1 required):** (a) for a small matrix with a known nullspace, Lanczos recovers a basis of the
-left nullspace (each returned vector `v` satisfies `vᵀA = 0`); (b) the recovered kernel dimension is
-deterministic for a fixed matrix; (c) **end-to-end CADO oracle (the ROADMAP G.E KAT):** for a small N,
-a Lanczos kernel vector expands (through provenance) to a congruence of squares that yields the same
-nontrivial factor CADO-NFS finds — dev-only, `#[ignore]`d if CADO absent, deterministic-kernel KAT (b)
-carries reproducibility without it.
+**KAT (≥1 required):** (a) for a hand-built relation set whose rational-norm product is a known
+square, the recovered X satisfies X² ≡ product (mod N); (b) the product is computed over the correct
+S (matches a hand-traced `expand_provenance`); (c) a deliberately non-square product triggers the
+`isqrt = None` upstream-bug path (assert it is caught, not silently squared).
 
-**Review juncture (`@plan`, T0/Opus, one-shot — runs after this session lands green, before G.E.3).**
-Because a block-Lanczos bug is *silent* (a plausible-but-wrong or trivial kernel, not a red test) and
-surfaces only as a non-factorization at G.F — and because the CADO end-to-end oracle may be absent —
-a paged T0 `@plan-juncture` fork reviews the landed implementation against the code + action-frame
-digest. Its remit: (1) the **self-orthogonality winnowing** is correct (the GF(2)-specific step that
-naive Lanczos gets wrong — does it actually carry non-advancing columns forward, or silently drop
-them?); (2) the recovered vectors genuinely lie in the left nullspace, not merely pass a
-dimension check; (3) the solver honours the frozen C-LinAlg operator + kernel-vector contracts (no
-shortcut that G.E.3/G.F/D.B can't consume); (4) the principle-4 annotations (block-width scale knob)
-are present and honest. The fork **returns findings one-shot** (accurate / needs-fix / needs-human
-discussion) and **does not implement** — fixes, if any, are a follow-on `@build` turn surfaced by
-whoever pages the fork. This is the planning doc's review-juncture instrument, sited at the FLOOR
-session by its cost-of-wrong, not at a sub-track boundary.
+**Subtlety:** the sign column (frozen in C-FactorBase) guarantees an even count of negative rational
+norms, so the product is positive — but G.F.2 must still handle the product sign defensively
+(`isqrt` on a negative input is `None`); a negative product means the sign column was not honoured by
+the kernel vector (an upstream G.E bug), which G.F.2 should surface, not paper over.
 
-**Subtlety (principle-4 annotation):** self-orthogonality is *the* GF(2) phenomenon block Lanczos must
-handle and it is **not** under-exposed at toy scale — even a tiny GF(2) matrix exhibits self-orthogonal
-vectors, so KAT (a) must include a matrix that forces the winnowing path (a vector orthogonal to itself
-under A). Montgomery's *block-width* tuning, by contrast, *is* a scale optimisation (the speedup from a
-word-wide block is invisible at toy scale) — annotate that disconnect in the docstring + G.E.W +
-Track τ.
+### G.F.3 — Algebraic square root via Couveignes / CRT (Opus design fork + Sonnet build + Opus review fork, the FLOOR, sketch)
 
-### G.E.3 — Block Wiedemann GF(2) nullspace solver (Sonnet, on frozen C-LinAlg, sketch)
+**Deliverable:** Couveignes' algorithm for $\beta$ with $\beta^2 = \prod_{i \in S}(a_i - b_i \alpha)$
+in K, then Y = Norm(β) ∈ ℤ and y = Y mod N. Sketch (the G.F.3 *design* `@plan` fork resolves and
+freezes the specifics into C-AlgSqrt before implementation):
+- Form the product element $\gamma = \prod_{i \in S}(a_i - b_i \alpha) \in \mathbb{Z}[\alpha]$ (using
+  the C-NF element `mul`).
+- Select a set of primes p that split completely in K (reuse the G.E.1 `select_qc_primes` machinery
+  or a sibling); for each, `reduce_mod_ideal` γ to each 𝔽_p factor, take `Fp::sqrt` (Tonelli–Shanks,
+  C-Fp), and assemble the per-prime square root of the element.
+- **CRT-lift** the per-prime roots to a candidate β ∈ ℤ[α] with coefficients pinned once enough
+  primes are used (the bit-length / prime-count budget is the principle-4 scale knob).
+- **Resolve the global sign** of β via the real embedding of K (α ↦ a real root of f): β and −β both
+  square to γ; the correct one makes Y = Norm(β) consistent with the rational side. **This sign
+  resolution is the silent-failure locus** — getting it wrong yields a valid-looking Y that produces a
+  trivial gcd at G.F.4.
 
-**Deliverable:** Coppersmith's block-Wiedemann alternative over GF(2): compute the matrix Krylov
-sequence `{xᵀAⁱy}`, run **Berlekamp–Massey** (block/matrix variant at demonstration fidelity) to find
-a linear generator, and extract kernel vectors from the generator polynomial evaluated at A. Reads the
-same C-LinAlg operator; returns kernel vectors in the same representation. The **secondary** solver —
-an orthogonal cross-check of G.E.2 and the natural generalisation target for D.B (NFS-DL over F_ℓ).
+Consumes C-NF (`reduce_mod_ideal`, `norm`), C-Fp (`sqrt`), C-Relation, C-PolyPair. **Freezes
+C-AlgSqrt** (the algebraic-square-root contract: the Couveignes entry signature, the prime-selection
+rule, the CRT lift, and the embedding-sign convention) — re-consumed by D.B.
 
-Freezes nothing new (consumes C-LinAlg, C-Matrix).
+**KAT (≥1 required):** (a) for a hand-built K and a γ that *is* a known square β², Couveignes recovers
+β (up to sign) and Norm(β) matches the hand-computed Y; (b) the recovered Y, combined with a matching
+rational X, satisfies X² ≡ Y² (mod N) for a toy N (the congruence holds before the full driver
+exists); (c) determinism for a fixed γ and prime set; (d) **end-to-end via G.F.4's KAT** is the
+behavioural gate (deferred to G.F.4, oracle-gated).
 
-**KAT (≥1 required):** (a) Wiedemann recovers the *same* left nullspace as G.E.2 on a shared small
-matrix (the two solvers cross-validate); (b) deterministic kernel dimension for a fixed matrix;
-(c) the Berlekamp–Massey generator degree is the hand-computed value for a toy Krylov sequence.
+**Design juncture (`@plan`, T0/Opus, one-shot — runs BEFORE this session implements).** Page an Opus
+`@plan-juncture` fork to design and freeze **C-AlgSqrt**: the number and selection of CRT primes
+(enough to pin β's coefficients at toy scale — the principle-4 budget), the CRT lift representation,
+and above all the **embedding-sign convention** (how β's global sign is fixed). The fork writes the
+resolved interface into Cross-session contracts before implementation is dispatched. Its remit is the
+load-bearing design call the ROADMAP's "Sonnet" line did not anticipate.
 
-**Subtlety (principle-4 annotation):** block Wiedemann's payoff is **distributed/parallel** (the
-Krylov sequence parallelises across blocks where Lanczos does not) — a scale advantage entirely
-under-exposed at toy scale, where Lanczos is simpler and just as fast. Implement Wiedemann at
-demonstration fidelity (the matrix Berlekamp–Massey is real) and annotate that the *reason* it exists
-at NFS scale (parallelism, no global synchronisation per step) is invisible here.
+**Review juncture (`@plan`, T0/Opus, one-shot — runs AFTER this session lands green, before G.F.4).**
+Because a Couveignes bug is *silent* (a wrong-sign β → trivial gcd, not a red test) and the end-to-end
+oracle may be absent, page an Opus `@plan-juncture` fork to review the landed CRT square root against
+the code + action-frame digest. Remit: (1) the **embedding-sign resolution** is correct (the silent
+locus); (2) the prime budget genuinely pins β (not under-determined at toy scale); (3) the solver
+honours C-NF `reduce_mod_ideal` and C-Fp `sqrt` as frozen; (4) the principle-4 annotations
+(prime-count scale knob) are present and honest. The fork returns findings one-shot (accurate /
+needs-fix / needs-human discussion) and does **not** implement — fixes are a follow-on `@build` turn.
+This is the planning doc's review-juncture instrument, sited at the FLOOR by its cost-of-wrong.
 
-### G.E.W ◆ — Integrative writeup (Sonnet, sketch)
+**Subtlety (principle-4 annotation):** the *number* of CRT primes needed to reconstruct β grows with
+the coefficient bit-length, which is tiny at toy scale (a handful of primes suffice) — annotate that
+the prime budget is the scale knob, while the *algorithm* (reduce → Tonelli–Shanks → CRT → sign) is
+the same at all scales. The embedding-sign resolution, by contrast, is **not** a scale artifact — it
+is a correctness obligation present even at toy scale, and the primary target of the review juncture.
 
-The linear-algebra chapter (`gnfs/docs/PEDAGOGY.md`, append after §30 as a new
-`# Linear Algebra: A Code-Tour Chapter`): the filtered matrix as a GF(2) linear system, the **nullspace
-as a congruence of squares**, why the sign and **quadratic-character** columns are needed (the
-algebraic square root must exist *in K*, not merely as an integer), block Lanczos and its
-self-orthogonality winnowing, block Wiedemann as the parallel alternative, and the kernel-vector →
-provenance → original-relations thread G.F consumes. Append a G.E benchmark row to
-`docs/BENCHMARKS.md` (matrix dimensions in / kernel dimension out / both solvers' timings).
-**Display-math chapter** — the doc-format recommendation (ROADMAP Discoveries) applies directly here:
-the block-Lanczos recurrence, the A-orthogonality condition, and the Berlekamp–Massey generator use
-**MathJax `$$…$$`** (the heavy LA math the Discoveries entry named as load-bearing display math);
-existing inline-Unicode passages may stay, and `$$` is already established in PEDAGOGY.md (from
-§1429). Per pacing guidance, integrative writeups are under-scheduled — allocate a full session. This
-is where C-LinAlg gets its public prose articulation and the D.B (F_ℓ generalisation) downstream reuse
-is surfaced. Its Track τ maths-first sibling (T.G) pairs at the **G.W** ◆ boundary, not here — G.E.W
-is a code-tour sub-chapter feeding the eventual G.W chapter. **G.E.W is a candidate Opus session only
-if the block-Lanczos / L-notation math is treated as a designated payoff derivation** (ROADMAP T.G
-note) — but as a code-tour it is exposition, not the payoff proof, so Sonnet, consistent with G.D.W.
+### G.F.4 — Assembly + end-to-end factor driver (Sonnet, sketch)
+
+**Deliverable:** the terminal assembly. Given X (G.F.2) and Y (G.F.3): form x = X mod N, y = Y mod N;
+if x ≡ ±y (mod N) the kernel vector yields the trivial factorization (report and signal "try another
+kernel vector"); else compute $\gcd(x - y, N)$ (G.F.1's exported gcd) and return the non-trivial
+factor. Then stand up the **first top-level "factor N" driver** (survey item 7: no end-to-end driver
+exists yet) chaining kernel-vector → `expand_provenance` → rational root → algebraic root → gcd, with
+the multi-kernel-vector retry loop (try kernel vectors until one gives a non-trivial gcd).
+
+Consumes all G.F + C-PolyPair. Freezes nothing new (it is the integrative I-session that *uses* the
+frozen roots).
+
+**KAT (≥1 required):** (a) **deterministic end-to-end:** for a small hand-prepared N with a known
+matrix + kernel vector, the driver recovers a known non-trivial factor of N (no external oracle —
+carries reproducibility); (b) the trivial-gcd path (x ≡ ±y) is detected and the retry loop advances
+to the next kernel vector; (c) **end-to-end oracle KAT (the ROADMAP G.F KAT):** factor a published
+challenge in the **80–100-bit range** and confirm against CADO-NFS / msieve — dev-only,
+`#[ignore = "CADO-NFS not installed; ..."]`d, deterministic KAT (a) carries reproducibility without
+it.
+
+**Subtlety:** the trivial-factorization outcome (x ≡ ±y) is *expected* for some kernel vectors — the
+driver must loop over multiple nullspace vectors, not treat the first trivial gcd as failure. The
+end-to-end KAT's 80–100-bit target may stress toy-scale assumptions elsewhere in the pipeline (norm
+bit-widths, the `Uint<4>` limb width noted in ROADMAP α Discoveries) — if a width limit surfaces here,
+that is an **additive-reshard** discovery (widen `Uint<L>`), surfaced not silently grown.
+
+### G.F.W ◆ — Integrative writeup (square-root chapter) (Sonnet, sketch)
+
+The square-root chapter (`gnfs/docs/PEDAGOGY.md`, append after §41 as a new
+`# Square Root and Assembly: A Code-Tour Chapter`): the kernel vector as a congruence of squares, the
+rational square root (perfect-square integer → isqrt), **Couveignes' algorithm** (the CRT square root
+in ℤ[α], why reduce-mod-split-ideal + Tonelli–Shanks + CRT recovers β, and the embedding-sign
+resolution), why the QC columns (frozen by G.E.1) guarantee β exists in K, and the final
+$\gcd(x - y, N)$ that closes the GNFS pipeline. This is the chapter where the **whole factoring arc**
+(polyselect → sieve → filter → linalg → square root → factor) is finally visible end-to-end. Append a
+G.F benchmark row to `docs/BENCHMARKS.md` (N bit-length / kernel vectors tried / factor recovered /
+timing). **Display-math chapter** — uses **MathJax `$$…$$`** (the CRT congruences, the
+$\beta^2 = \prod(a - b\alpha)$ identity, the embedding map) per the doc-format recommendation (ROADMAP
+Discoveries); `$$` is already established in PEDAGOGY.md (from §1429 and the G.E chapter §31+). Per
+pacing guidance, integrative writeups are under-scheduled — allocate a full session. Its Track τ
+maths-first sibling (T.G) pairs at the **G.W** ◆ boundary (the GNFS-wide writeup), not here — G.F.W is
+a code-tour sub-chapter feeding the eventual G.W chapter. **Sonnet**, consistent with G.D.W / G.E.W
+(exposition, not a designated payoff proof — the L-notation / Couveignes-correctness proof, if treated
+as payoff, lands in G.W/T.G).
 
 ---
 
 ## Cross-session contracts
 
-The scaffolding sessions compose through. The juncture fork at G.E.1 writes the resolved **C-LinAlg**
-interface (and the resolved QC widen) into this section before implementation is dispatched.
+The scaffolding sessions compose through. The G.F.3 design juncture writes the resolved **C-AlgSqrt**
+interface into this section before implementation is dispatched.
+
+### C-LinAlg — GF(2) nullspace substrate: blocked vectors + matrix operator + kernel representation (compiler + KAT) — *frozen at G.E.1 (416f6db)*
+**Defined:** G.E.1. **Consumed by (in G.F):** G.F.2 / G.F.3 (`KernelVector::expand_provenance` to get
+the relation index set S), G.F.4 (the driver iterates kernel vectors). G.F **reads** the kernel
+representation; it does **not** amend C-LinAlg. The `expand_provenance` seam was over-specified at
+G.E.1 *for this consumer*; G.F is its first real client. Stable for G.F.
 
 ### C-Matrix — filtered sparse GF(2) matrix + relation-provenance map (compiler + KAT) — *frozen at G.D.1 (a0e854b)*
-**Defined:** G.D.1. **Consumed by (in G.E):** G.E.1 (the matrix operator reads `rows`/`cols`;
-`obstruction_col_start` / `obstruction_count` for the column blocks; provenance through to the
-kernel-vector → G.F seam), G.E.2 / G.E.3 (via the C-LinAlg operator, never directly). G.E **reads**
-the matrix and **widens `obstruction_count`** (a C-FactorBase reach, below) which *rebuilds* the
-matrix to a wider `num_cols`; it does **not** otherwise amend the C-Matrix row/provenance shape. The
-provenance map is the load-bearing seam carried through to G.F (already over-specified at G.D.1 to
-store original relation indices). Stable for G.E except the additive QC widen.
-
-### C-FactorBase — two-sided factor base + norm computation (compiler + KAT) — *frozen at G.C.1 (c1dc0b6)*
-**Defined:** G.C.1. **Consumed by (in G.E):** G.E.1 (`matrix_width()`, `rational_size()` /
-`algebraic_size()` for column partitioning; **`obstruction_count` widened from 1 to `1 + num_qc`**).
-G.E.1 is the **first consumer to widen `obstruction_count`** — the QC reach the G.D plan anticipated.
-The widen is **additive** (the field is `pub`, docstringed "G.E may increase it"; `algebraic_row_gf2`
-auto-pads the obstruction tail with zeros for any `obstruction_count`), so it appends columns without
-renumbering or changing the meaning of any rational/algebraic/sign column. Surfaced as an
-**additive-reshard** for sign-off at the G.E.1 juncture, not silently grown. *Watch:* if QC turns out
-to need *re-meaning* an existing column (not appending), that is a **destructive-HALT** (not expected).
+**Defined:** G.D.1. **Consumed by (in G.F):** G.F.2 / G.F.3 (the `provenance` map, via
+`expand_provenance`). G.F **reads** provenance; it does not amend C-Matrix. Stable for G.F.
 
 ### C-Relation — relation / exponent-vector format (compiler + KAT) — *frozen at G.C.1 (c1dc0b6)*
-**Defined:** G.C.1. **Consumed by (in G.E):** G.E.1 (`rational_row_gf2` / `algebraic_row_gf2` when the
-QC widen rebuilds the matrix; the `Vec<Relation>` stays live for the provenance → G.F expansion). G.E
-**reads** relations; it does **not** amend C-Relation. The integer-exponent over-specification (for
-D.A's GF(ℓ)) is irrelevant to G.E's GF(2) work. Stable for G.E.
+**Defined:** G.C.1. **Consumed by (in G.F):** G.F.2 (`a`, `b`, `rational_sign` to form ∏(a − bm)),
+G.F.3 (`a`, `b` to form ∏(a − bα)). G.F **reads** relations; it does not amend C-Relation. Stable for
+G.F.
 
-### C-LinAlg — GF(2) nullspace substrate: blocked vectors + matrix operator + kernel representation (compiler + KAT) — *frozen at G.E.1*
-**Defined:** G.E.1. **Consumed by:** G.E.2 (block Lanczos), G.E.3 (block Wiedemann), **G.F (square
-root expands a kernel vector through the C-Matrix provenance map to original relations)**, and
-**D.B (NFS-DL linear algebra over F_ℓ generalises the GF(2) operator and block machinery — ROADMAP
-Phase γ)**. The blocked GF(2) vector representation, the sparse-matrix-as-linear-operator interface
-(`A·V`, `Aᵀ·V`), the quadratic-character column resolution, and the kernel-vector representation. This
-contract is **re-consumed cross-track by D.B** (unlike C-Matrix, which was Track-G-internal) — so
-over-specify the operator interface and the kernel representation now, before D.B exists: carry the
-F_ℓ-friendly shapes (a general scalar-block view rather than a GF(2)-hardcoded one) where the cost is
-low, so D.B generalises rather than re-forks. The G.E.2 review juncture additionally checks that block
-Lanczos honours this contract as frozen (no shortcut G.E.3/G.F/D.B can't consume).
+### C-PolyPair — polynomial pair + number-field constructor (compiler + KAT) — *frozen at G.B.1 (2f43f99)*
+**Defined:** G.B.1. **Consumed by (in G.F):** G.F.2 (`m`, `n`), G.F.3 (`number_field()`, `f`), G.F.4
+(`n` for the gcd). G.F **reads** the poly pair; it does not amend C-PolyPair. Stable for G.F.
 
-**Resolved interface (frozen):**
+### C-NF — number-field substrate: element arithmetic + ideals (compiler + KAT) — *frozen at G.A.3 (7844773); additively extended at G.F.1*
+**Defined:** G.A.3. **Consumed by (in G.F):** G.F.1 (**adds `reduce_mod_ideal`**), G.F.3
+(`reduce_mod_ideal`, `norm`, element `mul`). **G.F.1 is the first consumer to extend C-NF** — adding
+`NumberFieldElement::reduce_mod_ideal(p, r)`. The extension is **additive** (a new method; no existing
+`NumberFieldElement` signature changes), surfaced as an **additive-reshard** for sign-off at G.F.1,
+not silently grown. The new method is **re-consumed by D.B** (F_ℓ residue fields), so freeze its
+signature deliberately (over-specify toward a scalar-residue shape). *Watch:* if Couveignes turns out
+to need *changing* an existing C-NF method's semantics (not adding), that is a **destructive-HALT**
+(not expected — the survey confirms element arithmetic + ideals are sufficient as-is).
 
-#### 1. BlockVec — blocked GF(2) vector representation
+### C-Fp — prime-field substrate: `Fp<L>` trait with `legendre` + `sqrt` (compiler + KAT) — *frozen (α.5)*
+**Defined:** α.5. **Consumed by (in G.F):** G.F.3 (`Fp::sqrt` per split prime, Tonelli–Shanks).
+**Survey-confirmed present** — the ROADMAP-noted "Fp missing legendre/sqrt" gap is *closed*
+(`legendre`/`sqrt` are landed default methods on the `Fp<L>` trait). G.F **reads** the trait; it does
+not amend C-Fp. Stable for G.F.
 
-```rust
-/// Block width: 64 vectors packed into machine words.
-///
-/// Principle-4 annotation: at toy scale a single word suffices and the blocking overhead
-/// is invisible; at NFS scale the word-wide block is the inner loop's cache-friendly unit.
-/// The width is the scale knob — D.B may widen to 128 or parameterise over block width.
-pub const BLOCK_WIDTH: usize = 64;
-
-/// A block of `BLOCK_WIDTH` GF(2) vectors, each of length `num_rows`.
-///
-/// Representation: `data[i]` is a `u64` whose bit `j` (0 ≤ j < 64) is the `j`-th vector's
-/// value at row `i`. This is the "row of words" layout: iterating over rows is contiguous,
-/// and the 64 vectors are interleaved bit-by-bit within each word.
-///
-/// # D.B generalisation note
-///
-/// For F_ℓ (ℓ > 2), the natural generalisation is `data: Vec<[Scalar; BLOCK_WIDTH]>` where
-/// `Scalar` is the field element type. The GF(2) specialisation packs 64 scalars into one
-/// `u64`. D.B may introduce a `BlockVec<S>` generic or a parallel `BlockVecFl` type; the
-/// *interface* (inner products, apply, apply_transpose) is the stable seam.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlockVec {
-    /// Packed row data: `data[row]` bit `j` = vector `j`'s value at `row`.
-    pub data: Vec<u64>,
-    /// Number of rows (the vector dimension, i.e. matrix height for A·V).
-    pub num_rows: usize,
-}
-
-impl BlockVec {
-    /// Construct a zero block vector of the given dimension.
-    pub fn zeros(num_rows: usize) -> Self;
-
-    /// Construct from a dense `num_rows × BLOCK_WIDTH` bool matrix (column-major: `cols[j][i]`).
-    /// Used for test construction; solvers use `zeros` + `set_bit`.
-    pub fn from_columns(cols: &[Vec<bool>]) -> Self;
-
-    /// Get bit `(row, col)` where `col < BLOCK_WIDTH`.
-    pub fn get(&self, row: usize, col: usize) -> bool;
-
-    /// Set bit `(row, col)` to `value`.
-    pub fn set(&mut self, row: usize, col: usize, value: bool);
-
-    /// XOR `self` with `other` in place (component-wise GF(2) addition).
-    pub fn xor_assign(&mut self, other: &BlockVec);
-
-    /// Compute the `BLOCK_WIDTH × BLOCK_WIDTH` GF(2) inner-product matrix `self^T · other`.
-    ///
-    /// Returns a `[u64; BLOCK_WIDTH]` where `result[i]` bit `j` = `⟨self.col(i), other.col(j)⟩`
-    /// over GF(2) (i.e., parity of the AND of the two columns).
-    ///
-    /// This is the core primitive for block Lanczos's A-orthogonality check and for
-    /// Wiedemann's Krylov-sequence inner products.
-    pub fn inner_product_matrix(&self, other: &BlockVec) -> [u64; BLOCK_WIDTH];
-
-    /// Extract column `j` as a dense `Vec<bool>` (for debugging / KAT).
-    pub fn column(&self, j: usize) -> Vec<bool>;
-}
-```
-
-#### 2. MatrixOperator — sparse matrix as linear operator over GF(2)
-
-```rust
-/// A view of a `SparseMatrix` as a linear operator over GF(2).
-///
-/// Provides `apply` (A·V) and `apply_transpose` (Aᵀ·V) for block vectors. Both solvers
-/// (Lanczos, Wiedemann) consume this interface exclusively; they never read `SparseMatrix`
-/// fields directly. This is the frozen seam: the internal representation (row-major CSR,
-/// whether a CSC companion exists) is an implementation detail.
-///
-/// # Transpose strategy (design decision, frozen)
-///
-/// `apply_transpose` computes Aᵀ·V **on-the-fly** by iterating over rows and scattering
-/// contributions, rather than pre-building a CSC (column-major) companion. Rationale:
-///
-/// - At toy scale, the matrix fits in cache and the scatter is cheap.
-/// - At NFS scale, the matrix is too large to duplicate; production solvers (CADO-NFS)
-///   also compute the transpose product on-the-fly with careful cache blocking.
-/// - Pre-building CSC would double memory and complicate the C-Matrix contract (which is
-///   row-major only).
-///
-/// Principle-4 annotation: the on-the-fly transpose is the correct algorithm at all scales;
-/// the *cache-blocking* that makes it fast at NFS scale is the engineering optimisation
-/// out of scope (scoping principle 3).
-///
-/// # D.B generalisation note
-///
-/// For F_ℓ, the operator needs the same shape but with scalar multiplication. The natural
-/// generalisation is a trait `LinearOperator<V>` with `apply(&self, v: &V) -> V` and
-/// `apply_transpose(&self, v: &V) -> V`. G.E implements the concrete GF(2) version; D.B
-/// may introduce the trait and have `MatrixOperator` implement it.
-pub struct MatrixOperator<'a> {
-    matrix: &'a SparseMatrix,
-}
-
-impl<'a> MatrixOperator<'a> {
-    /// Construct an operator view of the given sparse matrix.
-    pub fn new(matrix: &'a SparseMatrix) -> Self;
-
-    /// Number of rows (matrix height).
-    pub fn num_rows(&self) -> usize;
-
-    /// Number of columns (matrix width).
-    pub fn num_cols(&self) -> usize;
-
-    /// Compute A·V: multiply the matrix by a block vector.
-    ///
-    /// Input `v` has dimension `num_cols`; output has dimension `num_rows`.
-    /// Each output row is the GF(2) dot product of the matrix row with each of the
-    /// `BLOCK_WIDTH` input vectors.
-    pub fn apply(&self, v: &BlockVec) -> BlockVec;
-
-    /// Compute Aᵀ·V: multiply the transpose by a block vector.
-    ///
-    /// Input `v` has dimension `num_rows`; output has dimension `num_cols`.
-    /// Computed on-the-fly by scattering: for each matrix row `i`, for each column `c`
-    /// in that row, XOR `v.data[i]` into `result.data[c]`.
-    pub fn apply_transpose(&self, v: &BlockVec) -> BlockVec;
-}
-```
-
-#### 3. KernelVector — nullspace vector representation (the G.F seam)
-
-```rust
-/// A vector in the left nullspace of the matrix: a subset of rows whose GF(2) sum is zero.
-///
-/// Representation: a sorted, deduplicated `Vec<usize>` of **filtered-matrix row indices**
-/// (indices into `SparseMatrix::rows`). G.F expands this to original relation indices by
-/// collecting `matrix.rows[i].provenance` for each `i` in `row_indices` and taking the
-/// symmetric difference (XOR union).
-///
-/// # Why row indices, not a bit-mask
-///
-/// - G.F needs row indices to look up provenance; a bit-mask would require a scan.
-/// - Kernel vectors are sparse (typically a small fraction of rows); a bit-mask wastes space.
-/// - Solvers (Lanczos, Wiedemann) internally work with bit-packed block vectors, but they
-///   convert to `KernelVector` on output — the conversion is O(rows) and happens once per
-///   kernel vector, not in the inner loop.
-///
-/// # D.B generalisation note
-///
-/// For F_ℓ, a kernel vector is still a subset of rows (those with nonzero coefficient in
-/// the nullspace vector). The representation is identical; D.B may add a `coefficients`
-/// field (`Vec<Scalar>`) for the non-GF(2) case, but the row-index spine is stable.
-///
-/// # Invariants
-///
-/// - `row_indices` is sorted and deduplicated.
-/// - Each index is < `matrix.rows.len()` (the filtered matrix, not the original relations).
-/// - The GF(2) sum of the selected rows is the zero vector (verified by `verify`).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KernelVector {
-    /// Sorted, deduplicated row indices into the filtered matrix.
-    pub row_indices: Vec<usize>,
-}
-
-impl KernelVector {
-    /// Construct from a sorted, deduplicated list of row indices.
-    ///
-    /// Panics if `row_indices` is not sorted or contains duplicates.
-    pub fn new(row_indices: Vec<usize>) -> Self;
-
-    /// Construct from a bit-mask over rows (used by solvers internally).
-    ///
-    /// `mask[i]` is true iff row `i` is in the kernel vector.
-    pub fn from_mask(mask: &[bool]) -> Self;
-
-    /// Verify that this is a valid left-nullspace vector of the given matrix.
-    ///
-    /// Returns `true` iff the GF(2) sum of `matrix.rows[i].cols` for `i` in `row_indices`
-    /// is the empty set (all columns cancel).
-    pub fn verify(&self, matrix: &SparseMatrix) -> bool;
-
-    /// Expand through the provenance map to original relation indices.
-    ///
-    /// Returns the symmetric difference (XOR union) of `matrix.rows[i].provenance` for
-    /// each `i` in `row_indices`. This is the set of original relations whose product
-    /// yields a congruence of squares.
-    ///
-    /// The result is sorted and deduplicated.
-    pub fn expand_provenance(&self, matrix: &SparseMatrix) -> Vec<usize>;
-
-    /// Number of selected rows.
-    pub fn len(&self) -> usize;
-
-    /// True if no rows are selected (the trivial kernel vector).
-    pub fn is_empty(&self) -> bool;
-}
-```
-
-#### 4. Quadratic-character columns — the C-FactorBase reach
-
-**Resolution (frozen):**
-
-- **`num_qc` = 10** (demonstration fidelity). At NFS scale, `num_qc` is typically 20–50 to ensure
-  the algebraic square root exists with high probability; at toy scale, 10 suffices and keeps the
-  matrix width manageable. Principle-4 annotation: the *number* is the scale knob; the *mechanism*
-  (Legendre-symbol parity at auxiliary primes) is the same at all scales.
-
-- **Auxiliary prime selection:** the first `num_qc` primes `q > B_alg` that **split completely**
-  in K (i.e., `f(x)` has `deg(f)` distinct roots mod `q`). Rationale: split primes yield
-  well-defined Legendre symbols for the algebraic norm; inert or ramified primes complicate the
-  character computation. At toy scale with small `B_alg`, finding 10 split primes is fast (trial
-  over primes > `B_alg`).
-
-- **Widen mechanism (additive, as anticipated):**
-  1. Caller sets `fb.obstruction_count = 1 + num_qc` (was 1, the sign column).
-  2. Caller calls `build_matrix(relations, &fb)` — the existing function, unchanged.
-  3. `build_matrix` produces a matrix with `num_cols = fb.matrix_width()` = rational + algebraic +
-     `1 + num_qc`. The sign column is at `obstruction_col_start`; QC columns are at indices
-     `obstruction_col_start + 1` through `obstruction_col_start + num_qc`.
-  4. `algebraic_row_gf2` auto-pads the obstruction tail with zeros (existing behaviour), so the
-     matrix rows have the correct width with QC columns initially zero.
-  5. A new function `populate_qc_columns(matrix: &mut SparseMatrix, relations: &[Relation],
-     fb: &FactorBase, qc_primes: &[u64])` fills in the QC parities by computing the Legendre
-     symbol of each relation's algebraic norm at each QC prime.
-
-- **Column-index stability (the additive-reshard invariant):** widening `obstruction_count` from 1
-  to `1 + num_qc` appends columns at the end. All rational, algebraic, and sign column indices are
-  unchanged. A matrix built before the widen (with `obstruction_count = 1`) has fewer columns but
-  the same column semantics for indices `0..obstruction_col_start + 1`. KAT must verify this.
-
-```rust
-/// Populate quadratic-character columns in a matrix.
-///
-/// For each row `i`, for each QC prime `qc_primes[k]`, sets column
-/// `matrix.obstruction_col_start + 1 + k` to the Legendre-symbol parity of the
-/// algebraic norm of `relations[provenance[0]]` at `qc_primes[k]`.
-///
-/// Preconditions:
-/// - `matrix` was built with `fb.obstruction_count = 1 + qc_primes.len()`.
-/// - `qc_primes` are primes > `fb.b_alg` that split completely in K.
-/// - Each row's provenance is non-empty (true for any matrix from `build_matrix`).
-///
-/// # Legendre-symbol computation
-///
-/// For a relation with algebraic norm `N_alg(a, b)` and a QC prime `q`, the QC parity is
-/// `(N_alg / q) mod 2` where `(· / q)` is the Legendre symbol. If `N_alg ≡ 0 (mod q)`,
-/// the symbol is 0 (even parity). The parity is 1 iff the Legendre symbol is −1.
-///
-/// For merged rows (provenance has multiple original relations), the QC parity is the
-/// XOR (GF(2) sum) of the individual relations' parities — consistent with how merged
-/// rows' factor-base columns are the XOR of the originals.
-pub fn populate_qc_columns(
-    matrix: &mut SparseMatrix,
-    relations: &[Relation],
-    fb: &FactorBase,
-    poly: &PolyPair,
-    qc_primes: &[u64],
-);
-
-/// Select `num_qc` auxiliary primes for quadratic-character columns.
-///
-/// Returns the first `num_qc` primes `q > b_alg` such that `f(x)` has `deg(f)` distinct
-/// roots mod `q` (i.e., `q` splits completely in K = ℚ[x]/(f)).
-///
-/// # Panics
-///
-/// Panics if fewer than `num_qc` split primes exist below some reasonable bound (should
-/// not happen for any reasonable `num_qc` and `b_alg`).
-pub fn select_qc_primes(f: &IntPoly, b_alg: u64, num_qc: usize) -> Vec<u64>;
-```
-
-#### 5. Public module surface of `gnfs::linalg`
-
-```rust
-// gnfs/src/linalg/mod.rs
-
-//! Linear algebra substrate for GNFS: blocked GF(2) vectors, sparse matrix operator,
-//! and kernel-vector representation.
-//!
-//! This module provides the substrate for G.E.2 (block Lanczos) and G.E.3 (block Wiedemann).
-//! Both solvers consume the `MatrixOperator` interface and return `KernelVector`s; they never
-//! access `SparseMatrix` fields directly.
-//!
-//! # C-LinAlg contract
-//!
-//! The types and functions in this module implement the C-LinAlg contract frozen at G.E.1.
-//! G.E.2, G.E.3, G.F, and D.B consume this interface.
-
-pub mod blockvec;
-pub mod operator;
-
-pub use blockvec::{BlockVec, BLOCK_WIDTH};
-pub use operator::MatrixOperator;
-
-// Re-export kernel vector and QC utilities from this module's root.
-mod kernel;
-mod qc;
-
-pub use kernel::KernelVector;
-pub use qc::{populate_qc_columns, select_qc_primes};
-
-/// Default number of quadratic-character columns (demonstration fidelity).
-///
-/// Principle-4 annotation: at NFS scale this is typically 20–50; at toy scale 10 suffices.
-pub const DEFAULT_NUM_QC: usize = 10;
-```
-
-**Files created by G.E.1:**
-- `gnfs/src/linalg/mod.rs` — module root, public surface
-- `gnfs/src/linalg/blockvec.rs` — `BlockVec`, `BLOCK_WIDTH`
-- `gnfs/src/linalg/operator.rs` — `MatrixOperator`
-- `gnfs/src/linalg/kernel.rs` — `KernelVector`
-- `gnfs/src/linalg/qc.rs` — `populate_qc_columns`, `select_qc_primes`, `DEFAULT_NUM_QC`
-- `gnfs/src/lib.rs` — add `pub mod linalg` and re-exports
-- `gnfs/tests/linalg_substrate_kat.rs` — KATs per the session detail
+### C-AlgSqrt — Couveignes algebraic-square-root contract (compiler + KAT) — *to be frozen at G.F.3 (design juncture)*
+**Defined:** G.F.3. **Consumed by:** G.F.4 (Y for the assembly), **D.B (NFS-DL over F_ℓ generalises
+the CRT square root — ROADMAP Phase γ)**. The Couveignes entry signature (kernel/relation set + K →
+β + Y), the split-prime-selection rule, the CRT lift, and the **embedding-sign convention**. The
+G.F.3 **design juncture** resolves and writes this subsection before implementation; the G.F.3
+**review juncture** checks the landed solver honours it. Like C-LinAlg, this is **cross-track-reused
+by D.B**, so over-specify toward an F_ℓ-friendly shape (a general residue-field square-root view, not
+a GF(2)-or-ℤ-hardcoded one) where the cost is low. *Marked "to be frozen at G.F.3."*
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The G.E.2 review juncture is not a ledger row (a paged
-fork with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
+"Froze" names contracts this session locked. The two G.F.3 junctures are not ledger rows (paged forks
+with no commit-shaped deliverable); their outcomes are recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | done | 416f6db | C-LinAlg (frozen); C-FactorBase obstruction_count widened (additive, confirmed). Extra files: kernel.rs, qc.rs (plainly part of unit — juncture fork split KernelVector and QC into separate files). |
-| G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | done | 5145d4c | — (T0 review juncture: review-passed — see digest) |
-| G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | done | 19936a7 | — |
-| G.E.W | Integrative writeup (linear-algebra chapter) | done | a985965 | — |
+| G.F.1 | Square-root substrate: reduce_mod_ideal + isqrt + exported gcd | pending | — | — |
+| G.F.2 | Rational square root from a kernel vector | pending | — | — |
+| G.F.3 | Algebraic square root via Couveignes / CRT | pending | — | — |
+| G.F.4 | Assembly + end-to-end factor driver (gcd(x−y, N)) | pending | — | — |
+| G.F.W | Integrative writeup (square-root chapter) | pending | — | — |
 
-Contracts frozen before G.E: C-Fp (cf00ed5), C-numth (α.2), C-NF (bdba6f5), C-Ideal (05b27c8),
-C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d), C-FactorBase
-(c1dc0b6), C-Relation (c1dc0b6), C-Matrix (a0e854b). G.E opens over the frozen G.A substrate, G.B
-polynomial-selection layer, G.C sieve layer, and G.D filter layer.
+Contracts frozen before G.F: C-Fp (cf00ed5 / α.5), C-numth (α.2), C-NF (bdba6f5 / 7844773), C-Ideal
+(05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d),
+C-FactorBase (c1dc0b6), C-Relation (c1dc0b6), C-Matrix (a0e854b), C-LinAlg (416f6db). G.F opens over
+the frozen G.A substrate, G.B polynomial-selection layer, G.C sieve layer, G.D filter layer, and G.E
+linear-algebra layer.
 
 ---
 
 ## Action-frame digest
 
 The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
-notable texture) for the juncture forks to consume — including the **G.E.2 review-juncture outcome**
-(the T0 fork's findings on block Lanczos), which is recorded here rather than in the ledger.
+notable texture) for the juncture forks to consume — including the **G.F.3 design-juncture outcome**
+(the frozen C-AlgSqrt) and the **G.F.3 review-juncture outcome** (the T0 fork's findings on
+Couveignes), which are recorded here rather than in the ledger.
 
-### G.E.1 — 2026-06-07
-Discovery/flex: G.E.1 inflection fork returned `design-confident`; C-LinAlg frozen with BlockVec (u64 row-of-words, BLOCK_WIDTH=64), MatrixOperator (on-the-fly transpose, no CSC companion), KernelVector (sorted Vec<usize> row indices), and QC columns (num_qc=10, additive widen of obstruction_count to 1+num_qc via populate_qc_columns). Additive-reshard of C-FactorBase confirmed mechanical (designed-to-widen slot).
-Affected: C-LinAlg (frozen at 416f6db); C-FactorBase obstruction_count widened (additive, not destructive).
-Deferred: no — all four design decisions resolved; D.B generalisation paths documented in contract.
-Texture: The juncture fork split KernelVector and QC into separate files (kernel.rs, qc.rs) beyond the session list's three-file expectation — plainly part of the unit, allowed and noted. The on-the-fly transpose decision (no CSC companion) is frozen; D.B may introduce a LinearOperator trait.
-
-### G.E.2 — 2026-06-07
-Discovery/flex: T0 correctness-review juncture returned `review-passed` on all six review points. Self-orthogonality winnowing correct (inactive columns checked for nullspace membership, not silently dropped). Recovered vectors verified via KernelVector::verify in all KATs. C-LinAlg contracts honoured (matrix access exclusively through MatrixOperator, returns KernelVector). Principle-4 annotations present and honest. KAT forces self-orthogonality path via duplicate-row matrix. Three-term recurrence follows Montgomery's standard form correctly.
-Affected: none — no contract flex; C-LinAlg consumed correctly.
-Deferred: no — review-passed, G.E.3 may proceed.
-Texture: Minor observation: dedup_by at end of block_lanczos relies on adjacent duplicates; non-adjacent duplicates possible in theory but not a correctness issue at toy scale. The CADO oracle KAT is present but ignored (CADO not installed); deterministic-kernel KAT carries reproducibility.
-
-### G.E.W ◆ — 2026-06-07
-Discovery/flex: G.E.W ◆ boundary fork returned `still-on-intent`. All three algorithmic components delivered (G.E.1 substrate, G.E.2 block Lanczos, G.E.3 block Wiedemann). C-LinAlg frozen in D.B-consumable form (D.B generalisation paths documented in contract and code docstrings). QC widen stayed additive (sign column at obstruction_col_start, QC at +1..+10). Principle-4 annotations present and honest (block-width scale knob, Wiedemann parallelism payoff, self-orthogonality as toy-scale phenomenon). PEDAGOGY chapter §31–§41 (929 lines) at expected quality with MathJax display math. No defocus or rigidity detected.
-Affected: none — no contract flex; G.E sub-track complete.
-Deferred: no — still-on-intent, G.F may proceed over frozen C-LinAlg + C-Matrix.
-Texture: On-the-fly transpose tradeoff (memory vs compute) documented in contract and code; D.B may revisit for F_ℓ sparsity patterns. CADO oracle KAT gated with established #[ignore] pattern.
+*(none yet)*
 
 ---
 
@@ -735,109 +465,115 @@ Texture: On-the-fly transpose tradeoff (memory vs compute) documented in contrac
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **Quadratic-character columns reach into frozen C-FactorBase — additive-reshard, surface don't
-  grow silently (lever 3, cross-track into D.B).** G.C reserved `obstruction_count = 1` (sign only)
-  and zero-filled it through G.D, anticipating this exact moment (the G.D plan's "watch" note). G.E.1
-  widens `obstruction_count` to `1 + num_qc` so QC become real matrix columns. The substrate was
-  *built* to absorb this: `obstruction_count` is a `pub` field docstringed "G.E may increase it," and
-  `algebraic_row_gf2` auto-pads the obstruction tail with zeros for any count — so the widen appends
-  columns without renumbering. This is an **additive-reshard** (mechanical widen of a
-  designed-to-widen slot — surface for sign-off at the G.E.1 juncture, do not silently grow). Only if
-  QC requires *changing the meaning* of an existing C-FactorBase column is it a **destructive-HALT**
-  (not expected). The QC representation is re-consumed by D.B, so freeze it deliberately.
+- **Roadmap-frame flex: G.F is 4 algorithmic sessions + Opus junctures, not "2 sessions Sonnet"
+  (surface at the G.F ◆ boundary for the ROADMAP Discoveries log).** The ROADMAP scoped G.F before the
+  substrate survey, which revealed three absent capabilities (`reduce_mod_ideal`, `isqrt`, exported
+  `gcd`) and two distinct square roots. The one-line-commit-title corollary forces the split; lever
+  4 (terminal silent-failure seam) + lever 3 (new D.B-reused cross-crate API) force the two Opus
+  junctures at G.F.3. This is an **additive** roadmap flex (re-tier + split, no contract break) — log
+  it at the boundary; do not treat the ROADMAP's "2 sessions Sonnet" as binding given the new
+  evidence.
 
-- **C-LinAlg is the first cross-track-reused Track-G linalg contract (D.B generalises it).** Unlike
-  C-Matrix (Track-G-internal), the operator + blocked-vector + kernel representation is generalised
-  by D.B (NFS-DL linear algebra over F_ℓ). Re-forking it at D.B would be a **destructive reshard**
-  one track over; designing the operator interface as a scalar-block view (not GF(2)-hardcoded) where
-  the cost is low is the over-specify rule applied to a cross-track contract. If G.E.1 finds the
-  GF(2)-specific shortcuts are too entangled to generalise cheaply, *surface it* (additive note for
-  D.A/D.B), do not silently hardcode.
+- **`reduce_mod_ideal` extends frozen C-NF — additive-reshard, surface don't grow silently (lever 3,
+  cross-track into D.B).** G.F.1 adds a method to the frozen `NumberFieldElement` type. The C-NF
+  element arithmetic + ideal machinery is sufficient as-is (survey-confirmed); the new method is
+  purely additive (no existing signature changes). It is **re-consumed by D.B** (F_ℓ residue fields),
+  so freeze the signature deliberately. **Additive-reshard** (surface at G.F.1). Only if Couveignes
+  requires *changing* existing C-NF semantics is it a **destructive-HALT** (not expected).
 
-- **Self-orthogonality is the GF(2) correctness phenomenon, not a scale artifact (lever 4) — and the
-  primary target of the G.E.2 review juncture.** Over ℝ, Lanczos's basis vectors are never
-  self-orthogonal; over GF(2) a nonzero vector can be orthogonal to itself under A, which naive
-  Lanczos divides by (a silent wrong/trivial kernel). Block Lanczos's winnowing handles it. This is an
-  *internal-continue* correctness obligation at G.E.2 (handle the winnowing, KAT a
-  self-orthogonal-forcing matrix), present even at toy scale — not a halt. The G.E.2 review juncture
-  exists precisely because getting this wrong is silent.
+- **The algebraic square root is the terminal silent-failure seam (lever 4) — why the G.F.3 review
+  juncture is load-bearing.** Unlike G.D filtering (a bug surfaces as a wrong matrix dimension), a
+  Couveignes bug — most acutely a wrong **embedding-sign** for β — returns a plausible Y that produces
+  a *trivial* gcd (1 or N) at G.F.4: a silent non-factorization, not a red test. The deterministic
+  end-to-end KAT (G.F.4 KAT a) is the behavioural gate; when the CADO/msieve oracle is absent, the
+  **G.F.3 T0 review juncture** is the compensating control. This is why lever 4 stays high (holding
+  juncture-tier at Opus) and why the FLOOR session earns *both* a design and a review juncture.
 
-- **A wrong kernel is silent (lever 4, why the end-to-end KAT *and* the G.E.2 review juncture are
-  load-bearing).** Unlike G.D filtering (a bug surfaces immediately as a wrong matrix *dimension*), a
-  linear-algebra bug can return a plausible kernel vector that is simply *wrong* (the trivial
-  solution, or a vector that isn't in the nullspace), surfacing only as a non-factorization at G.F.
-  The deterministic-kernel KAT (dimension) is necessary but not sufficient; the **end-to-end CADO
-  oracle KAT** (kernel → actual factor) is the behavioural gate — and when CADO is absent, the
-  **G.E.2 T0 review juncture** is the compensating control (a strong model reads the solver and the
-  digest). This is why lever 5 is strong *only with* the end-to-end KAT, why correctness-criticality
-  (lever 4) stays high — holding juncture-tier at Opus — and why the FLOOR session earns its own
-  review juncture.
+- **C-AlgSqrt is the second cross-track-reused Track-G contract (D.B generalises it, after C-LinAlg).**
+  Like C-LinAlg, the Couveignes CRT square root generalises to D.B (NFS-DL over F_ℓ: the residue-field
+  square root becomes a residue-field discrete-log-adjacent step). Re-forking it at D.B would be a
+  destructive reshard one track over; designing the algebraic-square-root interface as a general
+  residue-field view where the cost is low is the over-specify rule applied to a cross-track contract.
+  If G.F.3 finds the ℤ-specific shortcuts too entangled to generalise cheaply, *surface it* (additive
+  note for D.A/D.B), do not silently hardcode.
 
-- **CADO-NFS oracle availability.** The end-to-end "kernel recovers CADO's factorization" KAT
-  (G.E.2 KAT c) depends on CADO-NFS as a dev oracle. Absent → gate behind the established
-  `#[ignore = "CADO-NFS not installed; ..."]` pattern (already used in `merge_kat.rs`,
-  `line_sieve_kat.rs`); the deterministic-kernel KAT (G.E.2 KAT b, G.E.3 KAT a cross-validation)
-  carries reproducibility without CADO, and the G.E.2 review juncture compensates for the lost
-  behavioural oracle. The project-wide oracle-gating policy is still open (ROADMAP Discoveries,
-  reference-oracle entry) — G.E inherits the per-test `#[ignore]` workaround; it does not resolve the
-  policy. **msieve** is also named as a G.E/G.F oracle (ROADMAP reference-oracle entry) but is not yet
-  present; no new msieve dependency is introduced — the CADO end-to-end check suffices.
+- **The end-to-end KAT's 80–100-bit target may stress the `Uint<4>` limb width (ROADMAP α Discovery).**
+  ROADMAP α flagged C1/`shared::numth` as hardcoded to `Uint<4>` (256-bit), "sufficient for toy-scale
+  NFS." G.F.4's published-challenge KAT (80–100 bits) is within 256 bits, so `Uint<4>` should suffice
+  — but if norm products or CRT lifts overflow it, widening to `Uint<L>` is the **additive-reshard**
+  the ROADMAP α Discovery already sanctioned ("mechanical changes that can be done in-place"). Surface
+  if it surfaces; do not silently grow.
 
-- **Block-width and Wiedemann-parallelism payoffs under-exposed at toy scale (principle 4).** The
-  word-wide block (block Lanczos) and the distributed Krylov sequence (block Wiedemann) are *scale*
-  optimisations — at toy scale a single block / a serial Krylov sequence is simpler and just as fast.
-  Implement at demonstration fidelity and annotate the disconnect in code + G.E.W + Track τ. Not a
-  correctness risk — a pedagogy-honesty obligation. (Distinct from self-orthogonality, which *is*
-  exposed at toy scale.)
+- **Reference-oracle availability (CADO-NFS / msieve for G.F).** The end-to-end "recover the same
+  factor" KAT (G.F.4 KAT c) depends on CADO-NFS / msieve as dev oracles (ROADMAP reference-oracle
+  entry names **msieve** specifically as a G.F square-root oracle; neither is yet present). Absent →
+  gate behind the established `#[ignore = "CADO-NFS not installed; ..."]` pattern (already used in
+  `lanczos_kat.rs`, `merge_kat.rs`, `line_sieve_kat.rs`); the **deterministic** factor KAT (G.F.4 KAT
+  a) carries reproducibility without an oracle. The project-wide oracle-gating policy is still open
+  (ROADMAP Discoveries, reference-oracle entry) — G.F inherits the per-test `#[ignore]` workaround; it
+  does not resolve the policy. No new msieve dependency is introduced.
 
-- **`linalg/` module is fresh ambient surface (lever 1).** Third non-`polyselect`/`sieve` module in
-  `gnfs` (after `filter/`); G.E.1 sets `src/linalg/` layout, which G.F (`src/sqrt/`?) will sibling.
-  Keep the crate-internal module structure open rather than over-committing at G.E.1.
+- **No end-to-end driver exists yet — G.F.4 stands up the first pipeline chain (lever 1).** The survey
+  confirmed the pipeline stages are wired only in per-stage KATs, never end-to-end. G.F.4 builds the
+  first "factor N" driver. Keep its surface minimal (a function that takes a `PolyPair` + matrix +
+  relations and returns a factor, with the kernel-vector retry loop) — it is integrative glue, not a
+  new frozen contract; G.W (the GNFS-wide writeup) may later articulate a cleaner pipeline API.
 
-- **Documentation math-rendering format (now directly relevant — G.E.W is heavy display math).**
-  Recommended at the G.C ◆ boundary: **Markdown + MathJax** (`$…$` / `$$…$$`), to be ratified at T.0
-  (ROADMAP Discoveries log). Unlike G.D (whose `*.W` produced little prose math), **G.E.W is one of
-  the chapters the Discoveries entry explicitly named as load-bearing display math** (block-Lanczos /
-  block-Wiedemann linear algebra). G.E.W uses MathJax `$$…$$` for the LA recurrences; `$$` is already
-  established in PEDAGOGY.md. Not a code contract — gates no G.E implementation session, only G.E.W's
-  prose.
+- **CRT-prime-budget and embedding-sign payoffs at toy scale (principle 4).** The number of CRT primes
+  needed to pin β is tiny at toy scale (a handful), and the embedding-sign resolution is *correctness*,
+  not scale — present even at toy scale. Implement at demonstration fidelity and annotate the
+  prime-budget scale knob in code + G.F.W + Track τ. (Distinct from the sign resolution, which is a
+  correctness obligation, not a scale artifact.)
+
+- **`sqrt/` module is fresh ambient surface (lever 1).** Fourth non-`polyselect`/`sieve` module in
+  `gnfs` (after `filter/`, `linalg/`); G.F.2 sets `src/sqrt/` layout. Keep the crate-internal module
+  structure open rather than over-committing at G.F.2.
+
+- **Documentation math-rendering format (G.F.W is heavy display math).** Recommended at the G.C ◆
+  boundary: **Markdown + MathJax** (`$…$` / `$$…$$`), to be ratified at T.0 (ROADMAP Discoveries log).
+  G.F.W (CRT congruences, the $\beta^2 = \prod(a - b\alpha)$ identity, the embedding map) uses MathJax
+  `$$…$$`; `$$` is already established in PEDAGOGY.md (from §1429 and the G.E chapter). Not a code
+  contract — gates no G.F implementation session, only G.F.W's prose.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase β / Track G section: G.E entry "block Lanczos primary, block Wiedemann
-  secondary"; Opus-flagged-sessions table G.E.1 entry; Cross-track contracts; Discoveries log —
-  including the documentation-format and reference-oracle entries) and the prior `docs/PLAN.md` G.D
-  history before any G.E session.
-- Read `gnfs/docs/PEDAGOGY.md` (the G.D filtering chapter §22–§30, especially the C-Matrix /
-  obstruction-column passages forward-referencing G.E) and `shared/numfield/docs/PEDAGOGY.md` for the
-  pedagogical register (rST docstrings, KATs per session, narrative chapter at each ◆ boundary). New
-  `gnfs::linalg` work matches it.
-- **Register: PEDAGOGY.** This is a reference library — code is teaching material. Match the G.C.W /
-  G.D.W chapter genre and quality.
-- **Tier routing:** G.E.1 is the `@plan` **design** inflection (**Opus** juncture fork per
-  `juncture-tier: opus` — freezes C-LinAlg and widens C-FactorBase's `obstruction_count`, a
-  cross-track-reused contract; the opt-back-up from G.D's `sonnet` is justified in the header). G.E.2
-  is Sonnet (`@build`) **but carries a second `@plan` marker for a T0/Opus correctness-review juncture
-  after it lands** (paged `@plan-juncture` fork, one-shot, reviews block Lanczos before G.E.3 — see
-  the G.E.2 session detail). G.E.3 and G.E.W are Sonnet (`@build`). The two Opus touchpoints are the
-  G.E.1 design fork and the G.E.2 review fork; the ROADMAP Opus-flags G.E.1, and the review fork is
-  the lever-4-driven addition.
-- **Invariants to preserve:** the G.A substrate contracts (C-NF, C-Res, C-numth, C-Ideal,
-  C-Dedekind), the G.B contracts (C-PolyPair, C-Score), the G.C contracts (C-Relation, C-FactorBase),
-  and the **G.D contract (C-Matrix)** are frozen — G.E consumes them. The one sanctioned reach is the
-  **additive widen of `FactorBase::obstruction_count`** at G.E.1 (surface as additive-reshard). The
-  `rho` crate, `gnfs::polyselect`, `gnfs::sieve`, and `gnfs::filter` stay otherwise untouched (G.E
-  *adds* `gnfs::linalg`; the QC widen rebuilds the matrix but does not change filter code).
+- Read `docs/ROADMAP.md` (Phase β / Track G: G.F entry "Couveignes' algorithm via Chinese
+  remaindering; final integer GCD; end-to-end KAT factor an 80–100-bit challenge"; the
+  reference-oracle Discoveries entry naming msieve for G.F; the documentation-format entry) and the
+  prior `docs/PLAN.md` G.E history before any G.F session. **Note the roadmap-frame flex** (G.F is 4
+  sessions + Opus junctures, not the ROADMAP's "2 sessions Sonnet" — logged in Discoveries above).
+- Read `gnfs/docs/PEDAGOGY.md` (the G.E linear-algebra chapter §31–§41, especially §32 "the congruence
+  of squares" and §33 "why the sign and QC columns are needed" — they forward-reference G.F's two
+  square roots; and the "What G.F consumes" passage on `expand_provenance`) and
+  `shared/numfield/docs/PEDAGOGY.md` (the G.A.W chapter, for the number-field element + ideal register
+  G.F.1's `reduce_mod_ideal` extends). New `gnfs::sqrt` and the C-NF extension match the genre.
+- **Register: PEDAGOGY.** This is a reference library — code is teaching material. Match the G.D.W /
+  G.E.W chapter genre and quality.
+- **Tier routing:** G.F.1, G.F.2 are Sonnet (`@build`). **G.F.3 carries two `@plan` markers:** a
+  T0/Opus **design** juncture *before* it implements (page `@plan-juncture` to freeze C-AlgSqrt — the
+  Couveignes contract, the embedding-sign convention) and a T0/Opus **correctness-review** juncture
+  *after* it lands (page `@plan-juncture` to review the CRT square root before G.F.4). G.F.3's *build*
+  is Sonnet between the two forks. G.F.4 and G.F.W are Sonnet (`@build`). The two Opus touchpoints are
+  the G.F.3 design fork and the G.F.3 review fork; the ROADMAP did not pre-flag them (the flex is
+  logged in Discoveries).
+- **Invariants to preserve:** the G.A substrate contracts (C-NF, C-Res, C-numth, C-Ideal, C-Dedekind),
+  the G.B contracts (C-PolyPair, C-Score), the G.C contracts (C-Relation, C-FactorBase), the G.D
+  contract (C-Matrix), and the **G.E contract (C-LinAlg)** are frozen — G.F consumes them. The
+  sanctioned reaches are the **additive `reduce_mod_ideal` method on C-NF** and the **additive `isqrt`
+  / exported `gcd` in `shared/bigint`** at G.F.1 (surface as additive-reshard). The `rho` crate,
+  `gnfs::polyselect`, `gnfs::sieve`, `gnfs::filter`, and `gnfs::linalg` stay otherwise untouched (G.F
+  *adds* `gnfs::sqrt` and extends `shared/numfield` + `shared/bigint` additively).
 - **CADO-NFS / msieve are dev-only oracles**, never on a build path (ROADMAP scoping principle 3).
-  Gate oracle KATs with the established `#[ignore]` pattern.
-- **Doc-format note (for G.E.W):** new display mathematics uses MathJax (`$$…$$`); inline-Unicode may
-  stay. G.E.W is a heavy-LA-math chapter — one of the Discoveries-log-named load-bearing display-math
-  chapters. Recommendation pending T.0 ratification (ROADMAP Discoveries log).
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the `linalg/`-module
-  shard pattern is unproven for this crate (first linalg module; C-LinAlg is the first cross-track
-  linalg contract and the first session to widen `obstruction_count`). With the added G.E.2 review
-  marker this halts **three times**: the G.E.1 design inflection, the **G.E.2 correctness-review
-  juncture** (the new one — page a T0 `@plan-juncture` fork on block Lanczos before G.E.3), and the
-  G.E.W ◆ boundary.
+  Gate oracle KATs with the established `#[ignore]` pattern. msieve is named as the G.F square-root
+  oracle but is not present — no new dependency is introduced; the deterministic factor KAT suffices.
+- **Doc-format note (for G.F.W):** new display mathematics uses MathJax (`$$…$$`); inline-Unicode may
+  stay. G.F.W is a display-math chapter (CRT, the square-root identity, the embedding). Recommendation
+  pending T.0 ratification (ROADMAP Discoveries log).
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the `sqrt/`-module
+  shard pattern is unproven for this crate (first sqrt module; C-AlgSqrt is a new cross-track contract;
+  G.F.1 is the first session to extend C-NF and `shared/bigint`; G.F.4 is the first end-to-end driver).
+  With the two G.F.3 markers this halts **three times**: the **G.F.3 design inflection** (freeze
+  C-AlgSqrt *before* implementation), the **G.F.3 correctness-review juncture** (review Couveignes
+  *after* it lands, before G.F.4), and the **G.F.W ◆ boundary**.
