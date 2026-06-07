@@ -717,3 +717,678 @@ squares that factors N.
 6. **Lenstra, A. K., and Lenstra, H. W. Jr. (eds.) (1993).** *The Development of the Number Field
    Sieve.* Springer LNM 1554. The original papers on GNFS, including the algebraic side and the
    role of the defining polynomial.
+
+---
+
+# Sieving: A Code-Tour Chapter
+
+This chapter explains the `gnfs/src/sieve` module — the sieving stage of the General Number Field
+Sieve. It is organised by the implementation, not by mathematical abstraction: each section
+introduces the mathematics, then shows how it is realised in code. A reader who has read the
+polynomial selection chapter (§1–§11 above) can read this one without consulting the source.
+
+The chapter covers the relation as the unit of NFS data, the two-sided factor base, the norm
+bridge, the line sieve, the special-q strategy, lattice sieving, the exponent vector and relation
+matrix, and the downstream reuse in G.D, G.E, and D.A.
+
+---
+
+## 12. The Relation as the Unit of NFS Data
+
+### What a relation is
+
+A **relation** in GNFS is a coprime integer pair (a, b) with b ≥ 1 for which both the rational
+norm and the algebraic norm are smooth over their respective factor bases:
+
+```text
+N_rat(a, b) = a − b·m          (rational side: the value of g(x) = x − m at a/b, cleared)
+N_alg(a, b) = b^d · f(a/b)     (algebraic side: the homogeneous form of f at (a, b))
+```
+
+Both norms must be smooth — divisible only by primes up to their respective bounds B_rat and B_alg.
+A pair that is smooth on only one side is not a relation; it contributes nothing to the factoring
+computation.
+
+The `Relation` type in `gnfs/src/sieve/mod.rs` carries the pair and both smoothness witnesses:
+
+```rust
+pub struct Relation {
+    /// The a-coordinate (can be negative).
+    pub a: BigInt,
+    /// The b-coordinate (always positive: b ≥ 1).
+    pub b: BigInt,
+    /// Exponent vector over the rational factor base.
+    pub rational_exponents: ExponentVector,
+    /// Exponent vector over the algebraic factor base.
+    pub algebraic_exponents: ExponentVector,
+    /// True if the rational norm a − b·m is negative.
+    pub rational_sign: bool,
+}
+```
+
+The `verify()` predicate checks all four invariants:
+
+1. gcd(a, b) = 1 (coprimality — non-coprime pairs are degenerate).
+2. The rational exponent vector reconstructs |N_rat(a, b)| (product of p^e matches the norm).
+3. The algebraic exponent vector reconstructs |N_alg(a, b)| (same check on the algebraic side).
+4. The sign matches: `rational_sign == (a − b·m < 0)`.
+
+```rust
+rel.verify(&poly, &fb).expect("relation must be valid");
+```
+
+### Why smoothness on both sides is required
+
+The factoring computation (G.F) requires finding a subset S of relations such that the product
+of all rational norms is a perfect square in ℤ and the product of all algebraic norms is a
+perfect square in the number field K = ℚ(α). This is the congruence of squares that yields a
+non-trivial factor of N.
+
+For the product to be a perfect square, every prime must appear to an even total exponent across
+all selected relations. This is a linear algebra problem over GF(2): find a subset S such that
+the sum of all exponent vectors (mod 2) is the zero vector. The relation matrix has one row per
+relation and one column per prime (plus sign and quadratic-character columns). The null space of
+this matrix over GF(2) gives the subsets S.
+
+A relation that is smooth on only one side has no algebraic (or rational) exponent vector, so it
+cannot participate in the square-root computation. Both sides must be smooth for the relation to
+contribute a complete row to the matrix.
+
+---
+
+## 13. The Two-Sided Factor Base
+
+### The rational factor base
+
+The rational factor base is the set of primes p ≤ B_rat. A rational norm N_rat(a, b) = a − b·m
+is smooth over this base if all its prime factors are ≤ B_rat.
+
+### The algebraic factor base: degree-1 prime ideals
+
+The algebraic factor base is not simply the set of primes p ≤ B_alg. It is the set of
+**degree-1 prime ideals** (p, α − r) in ℤ[α], where α is a root of f and r ∈ [0, p) satisfies
+f(r) ≡ 0 (mod p). Each prime p contributes as many ideals as f has roots mod p (up to deg(f)).
+
+The `AlgebraicPrime` type represents one such ideal:
+
+```rust
+pub struct AlgebraicPrime {
+    /// The rational prime p.
+    pub p: u64,
+    /// The root r ∈ [0, p) with f(r) ≡ 0 (mod p).
+    pub r: u64,
+    /// Index of this ideal in the algebraic factor base (for column mapping).
+    pub index: usize,
+    /// True if p | disc(f) (bad prime).
+    pub is_bad_prime: bool,
+}
+```
+
+The key sieve condition: the ideal (p, α − r) divides N_alg(a, b) if and only if a ≡ r·b (mod p).
+This is the algebraic analogue of the rational condition a ≡ b·m (mod p) for the rational side.
+
+### Why degree-1 ideals
+
+At toy scale, the degree-1 ideal (p, r) representation suffices because:
+
+1. The algebraic norm N_alg(a, b) = b^d · f(a/b) factors in ℤ[α] as a product of prime ideals.
+2. For a prime p with f(r) ≡ 0 (mod p), the ideal (p, α − r) divides the principal ideal (a − b·α)
+   in ℤ[α], and hence divides N_alg(a, b) = Norm(a − b·α).
+3. The sieve condition a ≡ r·b (mod p) is the efficient way to enumerate which (a, b) pairs have
+   the ideal (p, r) dividing their algebraic norm.
+
+### The `FactorBase` type
+
+The `FactorBase` type in `gnfs/src/sieve/factor_base.rs` holds both sides:
+
+```rust
+pub struct FactorBase {
+    /// Rational factor base: primes p ≤ B_rat, sorted ascending.
+    pub rational_primes: Vec<u64>,
+    /// Algebraic factor base: degree-1 prime ideals (p, r), sorted by (p, r).
+    pub algebraic_ideals: Vec<AlgebraicPrime>,
+    /// Rational smoothness bound B_rat.
+    pub b_rat: u64,
+    /// Algebraic smoothness bound B_alg.
+    pub b_alg: u64,
+    /// Number of obstruction columns reserved for G.E (sign + quadratic chars).
+    pub obstruction_count: usize,
+}
+```
+
+Construction:
+
+```rust
+let fb = FactorBase::new(&poly.f, b_rat, b_alg);
+```
+
+`FactorBase::new` uses `factor_base_up_to` (from `shared-numth`) for the rational side, and
+brute-force root-finding (checking f(r) ≡ 0 mod p for each r ∈ 0..p) for the algebraic side.
+
+### Bad primes and the principle-4 annotation
+
+A prime p is **bad** if p | disc(f). At bad primes, Dedekind's theorem does not apply directly:
+ℤ[α] may not be the full ring of integers at p, and the ideal factorisation above p may be more
+complex than the root structure of f mod p suggests.
+
+At toy scale, bad primes are prominent. For f(x) = x³ − x − 1, the discriminant is −23, so p = 23
+is a bad prime. The implementation includes bad primes in the algebraic factor base with the
+`is_bad_prime: true` flag, using direct root-finding (correct for linear factors even at bad
+primes). The flag documents the principle-4 over-exposure:
+
+**Principle-4 annotation.** At cryptographic scale (RSA-768+), bad primes are marginal: the
+discriminant has few prime factors, and those primes are a negligible fraction of the algebraic
+factor base. At toy scale, bad primes can be a significant fraction of the factor base and are
+unavoidable for hand-picked polynomials. The `is_bad_prime` flag makes this visible without
+changing the algorithm.
+
+### Column indexing for G.D and G.E
+
+The `AlgebraicPrime::index` field and the lookup methods `rational_index(p)` and
+`algebraic_index(p, r)` provide the mapping from factor-base elements to matrix columns. G.D
+(filtering) and G.E (linear algebra) use these indices to build and manipulate the relation
+matrix without re-scanning the factor base.
+
+The `matrix_width()` method returns the total number of columns:
+
+```rust
+pub fn matrix_width(&self) -> usize {
+    self.rational_size() + self.algebraic_size() + self.obstruction_count
+}
+```
+
+The `obstruction_count` is initialised to 1 (the sign/−1 column). G.E will add quadratic-character
+columns; the slot exists so the matrix-width calculation is stable across stages.
+
+---
+
+## 14. The Norm Bridge
+
+### Why norms are signed BigInt but trial_smooth takes Uint<4>
+
+The rational norm N_rat(a, b) = a − b·m can be negative (when a < b·m). The algebraic norm
+N_alg(a, b) = b^d · f(a/b) can also be negative depending on f and (a, b). Both are computed as
+signed `BigInt` values.
+
+The smoothness predicate `trial_smooth` (from `shared-numth`) operates on `Uint<4>` — unsigned
+256-bit integers. The **norm bridge** in `gnfs/src/sieve/norms.rs` converts a signed norm to its
+absolute value as `Uint<4>`:
+
+```rust
+pub fn norm_to_uint(norm: &BigInt) -> Result<Uint<4>, NormBridgeError> {
+    let abs_norm = norm.abs();
+    let bits = abs_norm.bits() as usize;
+    if bits > 256 {
+        return Err(NormBridgeError::Overflow { bits_required: bits });
+    }
+    // ... convert to Uint<4> via big-endian byte array ...
+}
+```
+
+The bridge rejects out-of-range norms with `NormBridgeError::Overflow` rather than silently
+truncating. Silent truncation would produce incorrect smoothness witnesses — a correctness hazard.
+
+### The sign column in the relation matrix
+
+The sign of the rational norm is tracked separately in the `rational_sign: bool` field of
+`Relation`. This is the "−1 column" for G.E's linear algebra: the product of all selected
+relations' rational norms must be a perfect square, which requires the sign product to be +1
+(an even number of negative norms). The sign column encodes this constraint.
+
+The algebraic norm's sign is not stored separately because the algebraic square root computation
+(G.F) handles sign via the real embedding of K, not via a matrix column.
+
+### The algebraic norm as a resultant
+
+The algebraic norm N_alg(a, b) = b^d · f(a/b) is computed as the homogeneous form:
+
+```text
+N_alg(a, b) = Σ_{i=0}^{d} f.coeffs[i] · a^i · b^{d−i}
+```
+
+This equals Res(f, a − b·x) up to sign and leading-coefficient factors. The resultant
+relationship is the algebraic hook: N_alg(a, b) is the norm of the ideal (a − b·α) in ℤ[α],
+which equals the resultant of f and a − b·x. The implementation computes the homogeneous form
+directly (avoiding rational arithmetic) rather than via the resultant, which would be slower.
+
+---
+
+## 15. The Line Sieve
+
+### The log-p mark-then-confirm pattern
+
+The line sieve in `gnfs/src/sieve/line.rs` is the baseline relation-collection algorithm. For
+each b in 1..=B, it sieves the range a ∈ −A..=A on both sides simultaneously:
+
+**Step 1.** Initialise a sieve array of size 2A + 1 with zeros.
+
+**Step 2 (rational side).** For each prime p in the rational factor base, find the starting
+a ≡ b·m (mod p) and mark all a in range with += log₂(p). The rational norm N_rat(a, b) = a − b·m
+is divisible by p iff a ≡ b·m (mod p).
+
+**Step 3 (algebraic side).** For each ideal (p, r) in the algebraic factor base, find the
+starting a ≡ r·b (mod p) and mark all a in range with += log₂(p). The algebraic norm N_alg(a, b)
+is divisible by the ideal (p, r) iff a ≡ r·b (mod p).
+
+**Step 4 (threshold filter).** Collect candidates where the sieve value exceeds a smoothness
+threshold (default: 0.8 × log₂(B_alg)). The threshold accepts candidates where the algebraic
+norm has accumulated enough log contributions to plausibly be smooth.
+
+**Step 5 (confirm).** For each candidate (a, b): check gcd(a, b) = 1; compute both norms; call
+`trial_smooth` on both; if both are fully smooth, construct a `Relation`.
+
+```rust
+pub fn line_sieve(
+    poly: &PolyPair,
+    fb: &FactorBase,
+    config: &LineSieveConfig,
+) -> Vec<Relation> {
+    // ...
+    for b in 1u64..=config.b_bound {
+        let mut sieve: Vec<f32> = vec![0.0f32; sieve_len];
+        // Step 2: rational side sieve
+        for (pi, &p) in fb.rational_primes.iter().enumerate() {
+            let bm_mod_p = mod_u64_bigint(&(&b_big * &poly.m), p);
+            let start_a = first_a_in_range(bm_mod_p, p, -a_bound);
+            let mut a = start_a;
+            while a <= a_bound { sieve[(a + a_bound) as usize] += rat_logs[pi]; a += p as i64; }
+        }
+        // Step 3: algebraic side sieve
+        for (ai, ap) in fb.algebraic_ideals.iter().enumerate() {
+            let rb_mod_p = (ap.r as u128 * b as u128 % ap.p as u128) as u64;
+            let start_a = first_a_in_range(rb_mod_p, ap.p, -a_bound);
+            let mut a = start_a;
+            while a <= a_bound { sieve[(a + a_bound) as usize] += alg_logs[ai]; a += ap.p as i64; }
+        }
+        // Steps 4–5: threshold filter and confirm
+        // ...
+    }
+}
+```
+
+### Why this is the engineering heart of NFS
+
+The log-p mark-then-confirm pattern is the key engineering insight of NFS sieving. The sieve
+array accumulates approximate log contributions cheaply (one addition per prime per sieve
+position). The threshold filter eliminates most candidates before the expensive `trial_smooth`
+call. At cryptographic scale (B ≈ 10⁷, A ≈ 10⁷, B_rat/B_alg ≈ 10⁶), the threshold filters
+~99% of candidates, making the sieve dramatically faster than brute-force trial division of
+every (a, b) pair.
+
+### Principle-4 annotation: asymptotic win under-exposed at toy scale
+
+**At toy scale (A = 10, B = 3, B_rat = B_alg = 30), the log-sieve barely beats direct trial
+division.** The sieve array has only 21 entries; the factor bases have ~10 primes each; the
+threshold filters almost nothing (every candidate passes). The asymptotic win — avoiding trial
+division for most pairs — is not visible because there are so few pairs to begin with.
+
+The KAT uses a conservative lower bound (≥ 5 relations) rather than an exact count, because the
+threshold heuristic may miss some smooth pairs at toy scale. The exact count is pinned by the
+determinism KAT (KAT b3 in `line_sieve_kat.rs`).
+
+At cryptographic scale, the sieve array has ~10⁷ entries, the factor bases have ~10⁵ elements,
+and the threshold filters ~99% of candidates. The log-sieve is then 100–1000× faster than
+brute-force trial division.
+
+---
+
+## 16. The Special-q Strategy
+
+### The yield multiplier
+
+The special-q strategy in `gnfs/src/sieve/special_q.rs` is an optimization layer over the line
+sieve. For each **special prime** q in a chosen range [q_min, q_max], the sieve is restricted to
+pairs (a, b) with q | N_alg(a, b). The restriction is enforced by the sieve condition:
+
+```text
+q | N_alg(a, b)  iff  a ≡ r_q·b (mod q)
+```
+
+for some root r_q of f mod q. Every candidate in the restricted set already has q as a known
+algebraic factor. The remaining cofactor N_alg(a, b) / q is smaller and therefore more likely
+to be smooth over the algebraic factor base.
+
+The `SpecialQResult` type records the per-q output:
+
+```rust
+pub struct SpecialQResult {
+    /// The special prime q.
+    pub q: u64,
+    /// The root r_q ∈ [0, q) of f mod q used for this sieve run.
+    pub r_q: u64,
+    /// Relations collected in this sieve run.
+    pub relations: Vec<Relation>,
+    /// The sieve area covered: ⌈(2A+1)/q⌉ × B pairs.
+    pub restricted_area: u64,
+}
+```
+
+Every relation in `relations` carries q in its algebraic exponent vector — this is the structural
+invariant of the special-q strategy, checked by the KAT.
+
+### The restricted sieve loop
+
+The implementation runs the same log-sieve as the line sieve, but only visits a values satisfying
+a ≡ r_q·b (mod q) for each b. This is implemented by stepping a in increments of q:
+
+```rust
+let rb_q = (r_q as u128 * b as u128 % q as u128) as u64;
+let start_a_q = first_a_in_range(rb_q, q, -a_bound);
+let mut a_q = start_a_q;
+while a_q <= a_bound {
+    // apply threshold filter and trial-divide
+    a_q += q as i64;
+}
+```
+
+The log-sieve array is still computed over the full range (for all primes in the factor bases),
+but only the q-restricted positions are trial-divided. This is the correct approach: the sieve
+contributions from other primes are still needed to filter candidates.
+
+### Principle-4 annotation: yield advantage under-exposed at toy scale
+
+**At toy scale, the yield advantage of the special-q strategy over the plain line sieve is
+under-exposed.** The yield multiplier is a scale phenomenon:
+
+- At cryptographic scale (B_alg ≈ 10⁶, A ≈ 10⁷), the algebraic norm N_alg(a, b) is large
+  (hundreds of bits) and the probability of smoothness is low. The pre-guaranteed factor q
+  significantly reduces the cofactor, making smoothness much more likely. The special-q strategy
+  yields 5–10× more relations per sieve area than the plain line sieve.
+
+- At toy scale (B_alg = 30, A = 10, B = 3), the norms are already small (tens of bits) and
+  smooth with high probability. The pre-guaranteed factor q does not significantly improve the
+  smoothness probability. The yield advantage is not observable.
+
+The KAT (`kat_b_yield_comparison_principle4_annotated` in `special_q_kat.rs`) checks the
+structural property (q in the algebraic exponent vector) and annotates the yield comparison as
+under-exposed at toy scale, rather than asserting a yield improvement that would fail.
+
+---
+
+## 17. Lattice Sieving (Demonstration Fidelity)
+
+### The lattice L_q and its natural basis
+
+For a special prime q with root r_q, the set of (a, b) pairs satisfying the sieve restriction is
+the **lattice**:
+
+```text
+L_q = { (a, b) ∈ ℤ² : a ≡ r_q·b (mod q) }
+```
+
+A natural basis for L_q is:
+
+```text
+v1 = (q, 0)    (check: q ≡ r_q·0 (mod q) ✓)
+v2 = (r_q, 1)  (check: r_q ≡ r_q·1 (mod q) ✓)
+```
+
+Every lattice point s·v1 + t·v2 = (s·q + t·r_q, t) satisfies a ≡ r_q·b (mod q) since
+s·q + t·r_q ≡ t·r_q ≡ r_q·t (mod q).
+
+### Gauss 2D lattice reduction
+
+The natural basis (v1, v2) is not efficient for enumeration: v1 = (q, 0) has length q, which
+is large for large special primes. The **Gauss lattice reduction** algorithm finds a shorter,
+more orthogonal basis (V1, V2):
+
+```text
+while |V1| > |V2|: swap V1, V2
+V1 = V1 - round(dot(V1, V2) / dot(V2, V2)) * V2
+```
+
+Repeat until convergence. The reduced basis satisfies |V1| ≤ |V2| and
+|dot(V1, V2)| ≤ |V2|² / 2 (the Gauss-reduced condition). The algorithm preserves the lattice
+because each step is a unimodular transformation (determinant ±1).
+
+The `LatticeBasis` type in `gnfs/src/sieve/lattice.rs` implements this:
+
+```rust
+pub struct LatticeBasis {
+    pub v1: (i64, i64),
+    pub v2: (i64, i64),
+    pub q: u64,
+    pub r_q: u64,
+}
+
+impl LatticeBasis {
+    pub fn initial(q: u64, r_q: u64) -> Self { /* v1=(q,0), v2=(r_q,1) */ }
+    pub fn gauss_reduce(&self) -> Self { /* Gauss reduction loop */ }
+    pub fn in_lattice(&self, a: i64, b: i64) -> bool { /* a ≡ r_q·b (mod q) */ }
+}
+```
+
+### Enumeration via the reduced basis
+
+The lattice sieve enumerates (a, b) = s·V1 + t·V2 for integer (s, t) in a bounded region,
+rather than stepping through a in increments of q for each b. The reduced basis vectors are
+shorter than the original basis, so the enumeration visits fewer lattice points outside the
+sieve region |a| ≤ A, 1 ≤ b ≤ B.
+
+For each enumerated (a, b), the sieve applies the same log-threshold filter and trial-division
+as the line sieve. The `LatticeSieveResult` records the per-(q, r_q) output:
+
+```rust
+pub struct LatticeSieveResult {
+    pub q: u64,
+    pub r_q: u64,
+    pub basis: LatticeBasis,  // exposed for KAT inspection
+    pub relations: Vec<Relation>,
+    pub enumerated_points: u64,
+}
+```
+
+### Principle-4 annotation: yield-per-area improvement is a scale phenomenon
+
+**At toy scale, the lattice sieve produces the same (a, b) pairs as the special-q line sieve
+for the same (q, r_q).** The two algorithms are mathematically equivalent: both enumerate L_q
+in the region |a| ≤ A, 1 ≤ b ≤ B. The efficiency difference — the reduced basis visits fewer
+wasted candidates outside the sieve region — is a constant factor that is swamped by the
+overhead of the reduction and enumeration at small q.
+
+At cryptographic scale, the reduced basis has vectors of length ≈ √q, so the enumeration covers
+≈ A·B / q lattice points with minimal waste. For q ≈ 10⁶ and A, B ≈ 10⁷, this is a significant
+efficiency gain over stepping by q.
+
+The KAT (`kat_b_lattice_sieve_subset_of_special_q_sieve` in `lattice_kat.rs`) verifies that the
+lattice sieve produces a subset of the special-q sieve relations for the same (q, r_q), and
+annotates the yield-per-area comparison as under-exposed at toy scale.
+
+---
+
+## 18. The Exponent Vector and the Relation Matrix
+
+### The `ExponentVector` type
+
+The `ExponentVector` type in `gnfs/src/sieve/mod.rs` stores the sparse exponent representation
+for one side of a relation:
+
+```rust
+pub struct ExponentVector {
+    /// Sparse: (factor-base index, exponent) pairs, sorted by index.
+    /// Exponents are always > 0 (zeros are not stored).
+    pub entries: Vec<(usize, u32)>,
+}
+```
+
+The exponent type is `u32`, not `u8` or `bool`. This accommodates:
+
+- **NFS-factoring (G.E):** exponents are small (typically 1–3), reduced mod 2 for the GF(2)
+  nullspace computation.
+- **NFS-DL (D.A):** exponents are reduced mod ℓ where ℓ is the target group order; ℓ can be
+  large, but exponents before reduction are still small integers.
+
+The `u32` type is the smallest that accommodates both without overflow risk. This is the
+over-specification for D.A: storing integer exponents rather than pre-reduced GF(2) parities
+means D.A can read the exponents directly without resharding the relation format.
+
+### The GF(2) row methods
+
+The `Relation` type provides two methods for G.E:
+
+```rust
+/// GF(2) row for the rational side: sign column prepended, then exponent parities.
+pub fn rational_row_gf2(&self, fb: &FactorBase) -> Vec<bool> {
+    let mut row = vec![false; 1 + fb.rational_size()];
+    row[0] = self.rational_sign;  // sign/−1 column
+    for (idx, exp) in self.rational_exponents.iter() {
+        row[1 + idx] = (exp % 2) == 1;
+    }
+    row
+}
+
+/// GF(2) row for the algebraic side: exponent parities, obstruction columns appended as zeros.
+pub fn algebraic_row_gf2(&self, fb: &FactorBase) -> Vec<bool> {
+    let mut row = vec![false; fb.algebraic_size() + fb.obstruction_count];
+    for (idx, exp) in self.algebraic_exponents.iter() {
+        if idx < fb.algebraic_size() { row[idx] = (exp % 2) == 1; }
+    }
+    // Obstruction columns remain false; G.E fills them in.
+    row
+}
+```
+
+The sign column is prepended to the rational row: bit 0 is 1 iff `rational_sign` is true. The
+obstruction columns (quadratic characters) are appended to the algebraic row as zeros; G.E fills
+them in when it constructs the full matrix.
+
+### Why integer exponents, not GF(2) parities
+
+The design decision to store full integer exponents (not pre-reduced GF(2) parities) is the
+load-bearing cross-track call in the C-Relation contract. Three consumers need different views:
+
+- **G.D (filtering):** reads the exponent vectors to detect duplicate or linearly dependent
+  relations. Integer exponents are needed to identify exact duplicates.
+- **G.E (linear algebra):** reduces exponents mod 2 via `rational_row_gf2` / `algebraic_row_gf2`
+  to build the GF(2) matrix. The `u32` exponents are reduced on demand.
+- **D.A (NFS-DL):** reads the integer exponents directly for GF(ℓ) linear algebra, where ℓ is
+  the target group order. Pre-reducing to GF(2) would destroy the information D.A needs.
+
+Re-narrowing C-Relation after G.E or D.A consumes it would be a destructive reshard. The
+over-specification (integer exponents) is the correct design for a cross-track contract.
+
+---
+
+## 19. Downstream Reuse: G.D, G.E, and D.A
+
+### G.D (filtering)
+
+The relation corpus from the sieve feeds G.D (filtering), which removes:
+
+- **Duplicate relations:** the same (a, b) pair found by multiple sieve runs (e.g., the line
+  sieve and the special-q sieve may both find the same relation).
+- **Linearly dependent relations:** relations whose exponent vectors are linearly dependent over
+  GF(2), which would not contribute to the null space.
+
+G.D reads the `ExponentVector` entries and the `FactorBase` column indices. The `AlgebraicPrime::index`
+field and the `rational_index` / `algebraic_index` lookup methods provide the column mapping.
+
+### G.E (linear algebra)
+
+G.E (linear algebra over GF(2)) takes the filtered relation corpus and finds a subset S such that
+the sum of all exponent vectors (mod 2) is the zero vector. This is the null space computation:
+
+1. Build the relation matrix: one row per relation, one column per factor-base prime (plus sign
+   and quadratic-character columns). Each row is `rational_row_gf2` concatenated with
+   `algebraic_row_gf2`.
+2. Find the null space of this matrix over GF(2) (e.g., via structured Gaussian elimination).
+3. Each null-space vector identifies a subset S of relations whose exponent product is a perfect
+   square on both sides.
+
+The `matrix_width()` method on `FactorBase` gives the total column count:
+rational_size + algebraic_size + obstruction_count.
+
+### D.A (NFS-DL)
+
+The NFS discrete logarithm algorithm (D.A) uses the same relation structure as NFS factoring,
+but interprets exponents mod ℓ (the target group order) instead of mod 2. The integer exponents
+stored in `ExponentVector` support this interpretation directly.
+
+D.A may add **Schirokauer map** columns to the algebraic exponent vector. The sparse
+`(index, exponent)` representation accommodates additional entries without resharding the
+`Relation` type. This is the cross-track over-specification: the `Relation` type is designed so
+D.A can read it without modification.
+
+---
+
+## 20. KAT Summary (G.C)
+
+The following table lists the key known-answer tests across the sieve module, with the
+mathematical fact each one verifies. All tests are in `gnfs/tests/`.
+
+| Test | File | Mathematical fact verified |
+|------|------|---------------------------|
+| `kat1_algebraic_factor_base_matches_brute_force` | `factor_base_kat.rs` | Algebraic FB = brute-force root enumeration mod each p ≤ B_alg |
+| `kat1b_index_lookups_consistent` | `factor_base_kat.rs` | `rational_index` / `algebraic_index` round-trip correctly |
+| `kat2_norm_reconstruction_and_relation_verify` | `factor_base_kat.rs` | `Relation::verify()` holds for hand-constructed smooth relation |
+| `kat2b_verify_fails_on_perturbed_exponent` | `factor_base_kat.rs` | `verify()` fails when an exponent is perturbed |
+| `kat2c_relation_new_rejects_non_coprime` | `factor_base_kat.rs` | `Relation::new` returns None for non-coprime (a, b) |
+| `kat2d_relation_new_rejects_partial_smoothness` | `factor_base_kat.rs` | `Relation::new` returns None when cofactor > 1 |
+| `kat3_norm_bridge_range` | `factor_base_kat.rs` | Toy-scale norm fits Uint<4>; 2^257 overflows with error |
+| `kat3b_norm_sign` | `factor_base_kat.rs` | `norm_sign` returns true iff norm < 0 |
+| `kat3c_norm_bridge_round_trip_with_trial_smooth` | `factor_base_kat.rs` | `norm_to_uint` + `trial_smooth` round-trip for known smooth norm |
+| `kat_a_sieve_produces_relations_all_verify` | `line_sieve_kat.rs` | Sieve finds ≥ 5 relations; all satisfy `verify()` |
+| `kat_a2_all_relations_are_coprime_and_smooth` | `line_sieve_kat.rs` | All returned relations are coprime and fully smooth |
+| `kat_b_deterministic_relation_count` | `line_sieve_kat.rs` | Same parameters → same relations (determinism) |
+| `kat_b2_lower_threshold_finds_at_least_as_many_relations` | `line_sieve_kat.rs` | Lower threshold ≥ higher threshold relation count |
+| `kat_b3_exact_count_is_stable` | `line_sieve_kat.rs` | Exact count is stable across runs (pins the implementation) |
+| `kat_a_relations_verify_and_carry_q` | `special_q_kat.rs` | All special-q relations verify and carry q in algebraic EV |
+| `kat_a2_sieve_restriction_enforced` | `special_q_kat.rs` | All (a, b) satisfy a ≡ r_q·b (mod q) |
+| `kat_a3_spot_check_known_relation_q7` | `special_q_kat.rs` | (a=5, b=1) found for q=7, r_q=5; carries q=7 in algebraic EV |
+| `kat_b_yield_comparison_principle4_annotated` | `special_q_kat.rs` | Yield advantage annotated as under-exposed at toy scale |
+| `kat_b2_special_q_relations_subset_of_line_sieve` | `special_q_kat.rs` | Special-q relations ⊆ line sieve relations for same q |
+| `kat_a_all_relations_lie_in_lattice` | `lattice_kat.rs` | All lattice-sieve (a, b) satisfy a ≡ r_q·b (mod q) |
+| `kat_a2_all_relations_verify` | `lattice_kat.rs` | All lattice-sieve relations satisfy `verify()` |
+| `kat_a3_relations_carry_q_in_algebraic_exponents` | `lattice_kat.rs` | All lattice-sieve relations carry q in algebraic EV |
+| `kat_a4_reduced_basis_q7_r5_is_correct` | `lattice_kat.rs` | Gauss-reduced basis for q=7, r_q=5 is correct |
+| `kat_b_lattice_sieve_subset_of_special_q_sieve` | `lattice_kat.rs` | Lattice-sieve relations ⊆ special-q sieve relations |
+| `kat_c_yield_comparison_principle4_annotated` | `lattice_kat.rs` | Yield-per-area improvement annotated as under-exposed |
+
+---
+
+## 21. What Comes Next
+
+Sieving is the third stage of the GNFS pipeline. The output — a corpus of `Relation` objects,
+each with both exponent vectors and the sign bit — is the input to the filtering and linear
+algebra stages.
+
+**G.D (filtering)** takes the raw relation corpus and removes duplicates and linearly dependent
+relations. The `ExponentVector` entries and the `FactorBase` column indices are the interface
+between G.C and G.D.
+
+**G.E (linear algebra over GF(2))** takes the filtered corpus and finds a subset S of relations
+whose exponent product is a perfect square on both sides. The `rational_row_gf2` and
+`algebraic_row_gf2` methods on `Relation` produce the GF(2) matrix rows. The `matrix_width()`
+method on `FactorBase` gives the column count.
+
+**G.F (square root)** takes the subset S from G.E and computes the congruence of squares
+mod N that yields the non-trivial factor. This stage uses the number-field arithmetic from
+`shared-numfield` and the algebraic structure of K = ℚ(α).
+
+**D.A (NFS-DL)** adapts the same relation structure for discrete logarithm computation. The
+integer exponents in `ExponentVector` are read directly (not reduced mod 2) and used in GF(ℓ)
+linear algebra. The `Relation` type is designed to support this adaptation without resharding.
+
+---
+
+## Further Reading (G.C)
+
+1. **Pomerance, C. (1996).** *A tale of two sieves.* Notices of the AMS, 43(12), 1473–1485.
+   An accessible introduction to the quadratic sieve and the number field sieve, with the
+   sieving step explained at a high level.
+
+2. **Lenstra, A. K., and Lenstra, H. W. Jr. (eds.) (1993).** *The Development of the Number
+   Field Sieve.* Springer LNM 1554. The original papers on GNFS, including the sieving step
+   and the algebraic side.
+
+3. **Briggs, M. E. (1998).** *An introduction to the general number field sieve.* Master's
+   thesis, Virginia Tech. A self-contained exposition of the GNFS pipeline including sieving,
+   with worked examples at toy scale.
+
+4. **Kleinjung, T., Aoki, K., Franke, J., et al. (2010).** *Factorization of a 768-bit RSA
+   modulus.* CRYPTO 2010. The RSA-768 factorisation, which used the special-q lattice sieve
+   as the primary relation-collection strategy.
+
+5. **Schirokauer, O. (1993).** *Discrete logarithms and local units.* Philosophical Transactions
+   of the Royal Society A, 345(1676), 409–423. The Schirokauer maps used in D.A (NFS-DL) to
+   handle the units in the number field — the D.A extension of the C-Relation contract.

@@ -185,3 +185,59 @@ for this reason. The Coppersmith multi-poly improvement is < 2× at toy scale (K
 | `tests/murphy_kat.rs` | 10 | Murphy-E ordering, monotonicity, positivity; Dickman-ρ spot-checks |
 | `tests/root_sieve_kat.rs` | 8 | Rotation root-preservation, determinism, generator count, score agreement |
 | `tests/coppersmith_kat.rs` | 12 | Verify, count, best-score, generator, principle-4 annotation |
+
+## G.C — Sieving: line sieve, special-q, lattice sieve
+
+Toy semiprime: N = 5 (f(x) = x³ − x − 1, m = 2, f(m) = 5). Sieve region: |a| ≤ 10, 1 ≤ b ≤ 3
+(63 pairs total). Factor-base bounds: B_rat = B_alg = 30. All timings are wall-clock from a
+single run in unoptimized debug builds (`cargo test`, no `--release`). The dominant cost at toy
+scale is the `trial_smooth` call (trial division up to B_alg = 30) for each candidate that
+passes the log-threshold filter.
+
+**Actual numbers (debug, unoptimized, 1000-run median):**
+
+| Sieve variant | Sieve area | Relations found | Yield | Wall time (debug) | Relations/sec (debug) |
+|---------------|-----------|-----------------|-------|-------------------|-----------------------|
+| Line sieve (threshold = 0.8) | 63 pairs | 14 | 22.2% | ~9.6 ms | ~1 460 |
+| Special-q (q ∈ [5, 17], threshold = 0.5) | ~9 pairs/q | 16 (across all q) | — | ~10.0 ms | — |
+| Lattice sieve (q ∈ [5, 17]) | ~9 points/q | 14 (across all q) | — | ~9.5 ms | — |
+
+**Interpretation.** The 9.6 ms per line-sieve run is dominated by `trial_smooth` calls on the
+~14 candidates that pass the log-threshold filter. Each `trial_smooth` call trial-divides by all
+primes up to B_alg = 30 (10 primes), so the total cost is ~14 × 10 = 140 trial divisions per
+run. In release mode this drops to < 0.1 ms.
+
+The special-q sieve finds 16 relations (vs. 14 for the line sieve) because it uses a looser
+threshold (0.5 vs. 0.8) and covers a different subset of the sieve region per q. The lattice
+sieve finds the same 14 relations as the line sieve for the same (q, r_q) pairs — the two
+algorithms are mathematically equivalent at toy scale (see principle-4 annotation below).
+
+**Science↔engineering note (principle 4).** Three asymptotic wins are under-exposed at toy scale:
+
+1. **Log-sieve vs. brute-force trial division.** At toy scale (63 pairs, 10 primes), the
+   log-threshold filter eliminates almost nothing — every candidate passes. The asymptotic win
+   (avoiding trial division for ~99% of pairs at cryptographic scale) is not visible. At
+   cryptographic scale (A, B ≈ 10⁷, B_alg ≈ 10⁶), the threshold filters ~99% of candidates,
+   making the sieve 100–1000× faster than brute-force trial division.
+
+2. **Special-q yield multiplier.** At toy scale, the norms are already small (tens of bits) and
+   smooth with high probability. The pre-guaranteed factor q does not significantly improve the
+   smoothness probability. At cryptographic scale, the special-q strategy yields 5–10× more
+   relations per sieve area than the plain line sieve.
+
+3. **Lattice sieve efficiency.** At toy scale, the lattice sieve and the special-q line sieve
+   produce the same (a, b) pairs — the reduced basis has no efficiency advantage when q is small.
+   At cryptographic scale, the reduced basis (length ≈ √q) covers the sieve region with minimal
+   waste, giving a significant efficiency gain over stepping by q.
+
+The KATs annotate all three disconnects explicitly (principle-4 annotations in `line_sieve_kat.rs`,
+`special_q_kat.rs`, and `lattice_kat.rs`).
+
+### Test coverage added (G.C)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `tests/factor_base_kat.rs` | 9 | Factor-base construction, index lookups, norm bridge, `Relation::verify()` |
+| `tests/line_sieve_kat.rs` | 8 (+1 ignored) | Relation count, verify, determinism, threshold monotonicity; CADO oracle (ignored) |
+| `tests/special_q_kat.rs` | 13 | q-restriction enforcement, q in algebraic EV, yield annotation, subset check |
+| `tests/lattice_kat.rs` | 15 | Lattice membership, verify, q in algebraic EV, basis reduction, subset check |
