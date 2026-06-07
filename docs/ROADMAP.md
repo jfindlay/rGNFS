@@ -353,7 +353,19 @@ for the realisation.
   quantum period) that escapes the generic √n / L-notation search bound.
 - **Artifact location.** A new standing document, separate from `PEDAGOGY.md` (e.g.
   `docs/MATHEMATICS.md`, or `docs/textbook/` if it grows past single-file scale — decided at T.0).
-  rST or Markdown TBD at T.0 to match the project's doc tooling.
+- **Markup format (recommended at the G.C ◆ boundary; ratify at T.0).** **Markdown with MathJax**
+  (`$…$` inline, `$$…$$` display). This supersedes the earlier "rST or Markdown TBD." The driver is
+  that the textbook's payoff content — the L-notation subexponentiality derivation, block-Lanczos /
+  block-Wiedemann linear algebra, the MOV reduction — needs *true display mathematics* (limits on
+  integrals, matrices, multi-line aligned derivations) that the project's current convention of
+  inline Unicode glyphs (ℤ[α], 𝔽₂, ∫) in plain Markdown cannot render. MathJax keeps every existing
+  `.md` artifact in place (no migration to rST/Sphinx), renders on GitHub and in standard viewers,
+  and lets trivial inline glyphs stay as Unicode while non-trivial expressions move to TeX
+  delimiters. The same convention is recommended (not mandated) for the `*.W` `PEDAGOGY.md`
+  code-tours, so the textbook and the code-tours render consistently. See the
+  documentation-format Discoveries-log entry for the full reasoning. Ratification at T.0 is the
+  formal freeze (a `tetratile`-style rST/Sphinx path remains the only live alternative and would be
+  reopened only if T.0 finds a hard MathJax limitation).
 
 C-Textbook is a documentation-register contract (not a code interface), so it lives here rather than
 in the Cross-track contracts section; but it is genuinely cross-track (every chapter obeys it), so a
@@ -473,6 +485,46 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06 — Documentation math-rendering format: Markdown + MathJax (recommended at G.C ◆)
+
+*Provenance:* raised at the G.C ◆ boundary while setting up the next sub-track. *Finding:* every
+documentation artifact in the project today (`docs/PEDAGOGY.md`, `gnfs/docs/PEDAGOGY.md`,
+`shared/numfield/docs/PEDAGOGY.md`, the ROADMAP/PLAN themselves) renders mathematics as **inline
+Unicode glyphs in plain Markdown** — `ℤ[α]`, `𝔽₂`, `∫`, `≡`, subscripts via Unicode digits. There
+are **no math delimiters anywhere** in the tree (no `$…$`, no `$$…$$`, no `.. math::`, no fenced
+math blocks). This is adequate for short inline expressions and reads fine as plain text, but it
+**cannot render true display mathematics**: integrals with limits, matrices, multi-line aligned
+derivations, large fractions, sub/superscript stacks.
+
+*Why it matters now / downstream:* the project's heaviest mathematics is still ahead — the
+L-notation subexponentiality derivation (G.W/T.G, T.D), block-Lanczos / block-Wiedemann linear
+algebra (G.E, D.B), the MOV reduction (E.C/T.E), and the whole Track τ textbook (modelled on
+`tetratile/docs/mathematics.rst`, a maths-first artifact). These are exactly the chapters where
+display math is load-bearing pedagogy, not decoration. Deciding the format *now*, while the doc
+corpus is still small, avoids a later migration across many chapters.
+
+*Decision (recommended; formal freeze at T.0):* **Markdown + MathJax** — `$…$` for inline,
+`$$…$$` for display. Rationale, naming the tradeoff explicitly:
+- **Wins:** zero migration (every artifact stays `.md`); renders on GitHub and in standard Markdown
+  viewers without a build step; trivial glyphs can stay Unicode while only non-trivial expressions
+  take TeX delimiters; the TeX source is the same notation the textbook would use under any tooling.
+- **Loses (vs rST + Sphinx):** no native cross-reference/`:math:`-role machinery, no Sphinx
+  numbering/indexing, and no enforced build-time math validation — MathJax fails silently in a
+  renderer rather than erroring at build. The `tetratile`-style rST/Sphinx path is the one live
+  alternative and buys those features at the cost of a build toolchain and an rST migration of the
+  existing `.md` corpus.
+
+*Scope of the recommendation:* applies to the Track τ textbook (supersedes the earlier "rST or
+Markdown TBD" in the Phase τ scope contract) **and** is recommended — not mandated — for the `*.W`
+`PEDAGOGY.md` code-tours, so textbook and code-tours render consistently. Existing chapters need not
+be retrofitted wholesale; new display math uses MathJax, and inline-Unicode passages can be migrated
+opportunistically.
+
+*Status:* **recommended, not yet frozen.** T.0 ratifies (it already owns the doc-tooling decision).
+This is a *static-frame documentation-tooling* call, not a code contract — it blocks nothing in G.D
+(filtering produces no prose math beyond its `*.W` chapter, far downstream). Reopen only if T.0
+finds a hard MathJax limitation (e.g. a renderer the project must target that lacks MathJax).
+
 ### 2026-06 — Open question queued during G.C sharding (reference-oracle comparison tests)
 
 Surfaced while sharding G.C (sieving): the ROADMAP names four external reference implementations as
@@ -561,8 +613,9 @@ G.A is complete: G.A.1a (bdba6f5), G.A.1b (05b27c8), G.A.2 (bcd63cd), G.A.3 (784
   background* (proofs + intro analysis/algebra/probability/logic). Chapter-pairing is the
   effort-neutral move: per-track math chapters pair with existing `*.W` writeups; only T.0 and T.Z
   add net sessions. Open at next inflection point: artifact location/format
-  (`docs/MATHEMATICS.md` vs `docs/textbook/`; rST vs Markdown) and whether T.0 runs early or is
-  deferred until more chapters exist to calibrate the register against.
+  (`docs/MATHEMATICS.md` vs `docs/textbook/`; ~~rST vs Markdown~~ — **format resolved at the G.C ◆
+  boundary: Markdown + MathJax; see the documentation-format Discoveries entry**) and whether T.0
+  runs early or is deferred until more chapters exist to calibrate the register against.
 
 - **Scoping principle 4 added (phenomenology beyond reach), prompted by bad-prime apprehension at
   toy scale.** *Provenance:* during G.A action-frame work a `@build` agent was apprehensive about
