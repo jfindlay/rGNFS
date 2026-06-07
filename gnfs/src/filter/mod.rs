@@ -1,10 +1,13 @@
-//! Filter substrate for GNFS: sparse GF(2) matrix construction and singleton removal.
+//! Filter substrate for GNFS: sparse GF(2) matrix construction, singleton removal,
+//! clique/excess pruning, and column merging.
 //!
 //! This module is the entry point for the ``gnfs::filter`` sub-crate. It provides:
 //!
 //! - [`matrix`] — the sparse GF(2) matrix type (``SparseMatrix``, ``MatrixRow``) and
 //!   the ``EXCESS_FLOOR`` constant (C-Matrix contract).
 //! - [`singleton`] — singleton removal to fixpoint (``remove_singletons``).
+//! - [`merge`] — clique/excess pruning (``prune_cliques``) and column merging
+//!   (``merge_columns``) over the singleton-removed matrix (G.D.2).
 //! - [`build_matrix`] — constructs the initial ``SparseMatrix`` from a relation corpus.
 //!
 //! # Background
@@ -13,12 +16,13 @@
 //! to a well-overdetermined sparse GF(2) matrix suitable for linear algebra (G.E). The
 //! two main operations are:
 //!
-//! 1. **Singleton removal** (G.D.1, this session): primes/ideals appearing in only one
-//!    surviving relation cannot contribute to a GF(2) dependency; remove their rows and
-//!    iterate to a fixpoint.
+//! 1. **Singleton removal** (G.D.1): primes/ideals appearing in only one surviving
+//!    relation cannot contribute to a GF(2) dependency; remove their rows and iterate
+//!    to a fixpoint.
 //!
-//! 2. **Clique pruning and merging** (G.D.2, next session): reduce matrix weight while
-//!    preserving excess >= ``EXCESS_FLOOR``.
+//! 2. **Clique pruning and merging** (G.D.2): reduce matrix weight while preserving
+//!    excess >= ``EXCESS_FLOOR`` (pruning), then eliminate low-weight columns by
+//!    XOR-merging the rows that contain them (merging).
 //!
 //! # Column layout
 //!
@@ -37,9 +41,11 @@
 //! inflection point. G.D.2, G.E, and G.F consume this interface directly.
 
 pub mod matrix;
+pub mod merge;
 pub mod singleton;
 
 pub use matrix::{MatrixRow, SparseMatrix, EXCESS_FLOOR};
+pub use merge::{merge_columns, prune_cliques};
 pub use singleton::remove_singletons;
 
 use crate::sieve::{FactorBase, Relation};

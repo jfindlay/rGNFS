@@ -45,4 +45,5 @@ pub use sieve::{
 pub use filter::{
     MatrixRow, SparseMatrix, EXCESS_FLOOR,
     build_matrix, remove_singletons,
+    prune_cliques, merge_columns,
 };
