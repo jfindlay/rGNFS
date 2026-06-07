@@ -359,7 +359,7 @@ QC widen rebuilds the matrix; the `Vec<Relation>` stays live for the provenance 
 **reads** relations; it does **not** amend C-Relation. The integer-exponent over-specification (for
 D.A's GF(ℓ)) is irrelevant to G.E's GF(2) work. Stable for G.E.
 
-### C-LinAlg — GF(2) nullspace substrate: blocked vectors + matrix operator + kernel representation (compiler + KAT) — *to be frozen at G.E.1*
+### C-LinAlg — GF(2) nullspace substrate: blocked vectors + matrix operator + kernel representation (compiler + KAT) — *frozen at G.E.1*
 **Defined:** G.E.1. **Consumed by:** G.E.2 (block Lanczos), G.E.3 (block Wiedemann), **G.F (square
 root expands a kernel vector through the C-Matrix provenance map to original relations)**, and
 **D.B (NFS-DL linear algebra over F_ℓ generalises the GF(2) operator and block machinery — ROADMAP
@@ -369,11 +369,318 @@ contract is **re-consumed cross-track by D.B** (unlike C-Matrix, which was Track
 over-specify the operator interface and the kernel representation now, before D.B exists: carry the
 F_ℓ-friendly shapes (a general scalar-block view rather than a GF(2)-hardcoded one) where the cost is
 low, so D.B generalises rather than re-forks. The G.E.2 review juncture additionally checks that block
-Lanczos honours this contract as frozen (no shortcut G.E.3/G.F/D.B can't consume). The juncture fork at
-G.E.1 writes the resolved interface here before G.E.2 is dispatched.
+Lanczos honours this contract as frozen (no shortcut G.E.3/G.F/D.B can't consume).
 
-*(Resolved interface — Rust signatures — written here by the G.E.1 juncture fork at execution time.
-Mark not-yet-frozen until then.)*
+**Resolved interface (frozen):**
+
+#### 1. BlockVec — blocked GF(2) vector representation
+
+```rust
+/// Block width: 64 vectors packed into machine words.
+///
+/// Principle-4 annotation: at toy scale a single word suffices and the blocking overhead
+/// is invisible; at NFS scale the word-wide block is the inner loop's cache-friendly unit.
+/// The width is the scale knob — D.B may widen to 128 or parameterise over block width.
+pub const BLOCK_WIDTH: usize = 64;
+
+/// A block of `BLOCK_WIDTH` GF(2) vectors, each of length `num_rows`.
+///
+/// Representation: `data[i]` is a `u64` whose bit `j` (0 ≤ j < 64) is the `j`-th vector's
+/// value at row `i`. This is the "row of words" layout: iterating over rows is contiguous,
+/// and the 64 vectors are interleaved bit-by-bit within each word.
+///
+/// # D.B generalisation note
+///
+/// For F_ℓ (ℓ > 2), the natural generalisation is `data: Vec<[Scalar; BLOCK_WIDTH]>` where
+/// `Scalar` is the field element type. The GF(2) specialisation packs 64 scalars into one
+/// `u64`. D.B may introduce a `BlockVec<S>` generic or a parallel `BlockVecFl` type; the
+/// *interface* (inner products, apply, apply_transpose) is the stable seam.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockVec {
+    /// Packed row data: `data[row]` bit `j` = vector `j`'s value at `row`.
+    pub data: Vec<u64>,
+    /// Number of rows (the vector dimension, i.e. matrix height for A·V).
+    pub num_rows: usize,
+}
+
+impl BlockVec {
+    /// Construct a zero block vector of the given dimension.
+    pub fn zeros(num_rows: usize) -> Self;
+
+    /// Construct from a dense `num_rows × BLOCK_WIDTH` bool matrix (column-major: `cols[j][i]`).
+    /// Used for test construction; solvers use `zeros` + `set_bit`.
+    pub fn from_columns(cols: &[Vec<bool>]) -> Self;
+
+    /// Get bit `(row, col)` where `col < BLOCK_WIDTH`.
+    pub fn get(&self, row: usize, col: usize) -> bool;
+
+    /// Set bit `(row, col)` to `value`.
+    pub fn set(&mut self, row: usize, col: usize, value: bool);
+
+    /// XOR `self` with `other` in place (component-wise GF(2) addition).
+    pub fn xor_assign(&mut self, other: &BlockVec);
+
+    /// Compute the `BLOCK_WIDTH × BLOCK_WIDTH` GF(2) inner-product matrix `self^T · other`.
+    ///
+    /// Returns a `[u64; BLOCK_WIDTH]` where `result[i]` bit `j` = `⟨self.col(i), other.col(j)⟩`
+    /// over GF(2) (i.e., parity of the AND of the two columns).
+    ///
+    /// This is the core primitive for block Lanczos's A-orthogonality check and for
+    /// Wiedemann's Krylov-sequence inner products.
+    pub fn inner_product_matrix(&self, other: &BlockVec) -> [u64; BLOCK_WIDTH];
+
+    /// Extract column `j` as a dense `Vec<bool>` (for debugging / KAT).
+    pub fn column(&self, j: usize) -> Vec<bool>;
+}
+```
+
+#### 2. MatrixOperator — sparse matrix as linear operator over GF(2)
+
+```rust
+/// A view of a `SparseMatrix` as a linear operator over GF(2).
+///
+/// Provides `apply` (A·V) and `apply_transpose` (Aᵀ·V) for block vectors. Both solvers
+/// (Lanczos, Wiedemann) consume this interface exclusively; they never read `SparseMatrix`
+/// fields directly. This is the frozen seam: the internal representation (row-major CSR,
+/// whether a CSC companion exists) is an implementation detail.
+///
+/// # Transpose strategy (design decision, frozen)
+///
+/// `apply_transpose` computes Aᵀ·V **on-the-fly** by iterating over rows and scattering
+/// contributions, rather than pre-building a CSC (column-major) companion. Rationale:
+///
+/// - At toy scale, the matrix fits in cache and the scatter is cheap.
+/// - At NFS scale, the matrix is too large to duplicate; production solvers (CADO-NFS)
+///   also compute the transpose product on-the-fly with careful cache blocking.
+/// - Pre-building CSC would double memory and complicate the C-Matrix contract (which is
+///   row-major only).
+///
+/// Principle-4 annotation: the on-the-fly transpose is the correct algorithm at all scales;
+/// the *cache-blocking* that makes it fast at NFS scale is the engineering optimisation
+/// out of scope (scoping principle 3).
+///
+/// # D.B generalisation note
+///
+/// For F_ℓ, the operator needs the same shape but with scalar multiplication. The natural
+/// generalisation is a trait `LinearOperator<V>` with `apply(&self, v: &V) -> V` and
+/// `apply_transpose(&self, v: &V) -> V`. G.E implements the concrete GF(2) version; D.B
+/// may introduce the trait and have `MatrixOperator` implement it.
+pub struct MatrixOperator<'a> {
+    matrix: &'a SparseMatrix,
+}
+
+impl<'a> MatrixOperator<'a> {
+    /// Construct an operator view of the given sparse matrix.
+    pub fn new(matrix: &'a SparseMatrix) -> Self;
+
+    /// Number of rows (matrix height).
+    pub fn num_rows(&self) -> usize;
+
+    /// Number of columns (matrix width).
+    pub fn num_cols(&self) -> usize;
+
+    /// Compute A·V: multiply the matrix by a block vector.
+    ///
+    /// Input `v` has dimension `num_cols`; output has dimension `num_rows`.
+    /// Each output row is the GF(2) dot product of the matrix row with each of the
+    /// `BLOCK_WIDTH` input vectors.
+    pub fn apply(&self, v: &BlockVec) -> BlockVec;
+
+    /// Compute Aᵀ·V: multiply the transpose by a block vector.
+    ///
+    /// Input `v` has dimension `num_rows`; output has dimension `num_cols`.
+    /// Computed on-the-fly by scattering: for each matrix row `i`, for each column `c`
+    /// in that row, XOR `v.data[i]` into `result.data[c]`.
+    pub fn apply_transpose(&self, v: &BlockVec) -> BlockVec;
+}
+```
+
+#### 3. KernelVector — nullspace vector representation (the G.F seam)
+
+```rust
+/// A vector in the left nullspace of the matrix: a subset of rows whose GF(2) sum is zero.
+///
+/// Representation: a sorted, deduplicated `Vec<usize>` of **filtered-matrix row indices**
+/// (indices into `SparseMatrix::rows`). G.F expands this to original relation indices by
+/// collecting `matrix.rows[i].provenance` for each `i` in `row_indices` and taking the
+/// symmetric difference (XOR union).
+///
+/// # Why row indices, not a bit-mask
+///
+/// - G.F needs row indices to look up provenance; a bit-mask would require a scan.
+/// - Kernel vectors are sparse (typically a small fraction of rows); a bit-mask wastes space.
+/// - Solvers (Lanczos, Wiedemann) internally work with bit-packed block vectors, but they
+///   convert to `KernelVector` on output — the conversion is O(rows) and happens once per
+///   kernel vector, not in the inner loop.
+///
+/// # D.B generalisation note
+///
+/// For F_ℓ, a kernel vector is still a subset of rows (those with nonzero coefficient in
+/// the nullspace vector). The representation is identical; D.B may add a `coefficients`
+/// field (`Vec<Scalar>`) for the non-GF(2) case, but the row-index spine is stable.
+///
+/// # Invariants
+///
+/// - `row_indices` is sorted and deduplicated.
+/// - Each index is < `matrix.rows.len()` (the filtered matrix, not the original relations).
+/// - The GF(2) sum of the selected rows is the zero vector (verified by `verify`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KernelVector {
+    /// Sorted, deduplicated row indices into the filtered matrix.
+    pub row_indices: Vec<usize>,
+}
+
+impl KernelVector {
+    /// Construct from a sorted, deduplicated list of row indices.
+    ///
+    /// Panics if `row_indices` is not sorted or contains duplicates.
+    pub fn new(row_indices: Vec<usize>) -> Self;
+
+    /// Construct from a bit-mask over rows (used by solvers internally).
+    ///
+    /// `mask[i]` is true iff row `i` is in the kernel vector.
+    pub fn from_mask(mask: &[bool]) -> Self;
+
+    /// Verify that this is a valid left-nullspace vector of the given matrix.
+    ///
+    /// Returns `true` iff the GF(2) sum of `matrix.rows[i].cols` for `i` in `row_indices`
+    /// is the empty set (all columns cancel).
+    pub fn verify(&self, matrix: &SparseMatrix) -> bool;
+
+    /// Expand through the provenance map to original relation indices.
+    ///
+    /// Returns the symmetric difference (XOR union) of `matrix.rows[i].provenance` for
+    /// each `i` in `row_indices`. This is the set of original relations whose product
+    /// yields a congruence of squares.
+    ///
+    /// The result is sorted and deduplicated.
+    pub fn expand_provenance(&self, matrix: &SparseMatrix) -> Vec<usize>;
+
+    /// Number of selected rows.
+    pub fn len(&self) -> usize;
+
+    /// True if no rows are selected (the trivial kernel vector).
+    pub fn is_empty(&self) -> bool;
+}
+```
+
+#### 4. Quadratic-character columns — the C-FactorBase reach
+
+**Resolution (frozen):**
+
+- **`num_qc` = 10** (demonstration fidelity). At NFS scale, `num_qc` is typically 20–50 to ensure
+  the algebraic square root exists with high probability; at toy scale, 10 suffices and keeps the
+  matrix width manageable. Principle-4 annotation: the *number* is the scale knob; the *mechanism*
+  (Legendre-symbol parity at auxiliary primes) is the same at all scales.
+
+- **Auxiliary prime selection:** the first `num_qc` primes `q > B_alg` that **split completely**
+  in K (i.e., `f(x)` has `deg(f)` distinct roots mod `q`). Rationale: split primes yield
+  well-defined Legendre symbols for the algebraic norm; inert or ramified primes complicate the
+  character computation. At toy scale with small `B_alg`, finding 10 split primes is fast (trial
+  over primes > `B_alg`).
+
+- **Widen mechanism (additive, as anticipated):**
+  1. Caller sets `fb.obstruction_count = 1 + num_qc` (was 1, the sign column).
+  2. Caller calls `build_matrix(relations, &fb)` — the existing function, unchanged.
+  3. `build_matrix` produces a matrix with `num_cols = fb.matrix_width()` = rational + algebraic +
+     `1 + num_qc`. The sign column is at `obstruction_col_start`; QC columns are at indices
+     `obstruction_col_start + 1` through `obstruction_col_start + num_qc`.
+  4. `algebraic_row_gf2` auto-pads the obstruction tail with zeros (existing behaviour), so the
+     matrix rows have the correct width with QC columns initially zero.
+  5. A new function `populate_qc_columns(matrix: &mut SparseMatrix, relations: &[Relation],
+     fb: &FactorBase, qc_primes: &[u64])` fills in the QC parities by computing the Legendre
+     symbol of each relation's algebraic norm at each QC prime.
+
+- **Column-index stability (the additive-reshard invariant):** widening `obstruction_count` from 1
+  to `1 + num_qc` appends columns at the end. All rational, algebraic, and sign column indices are
+  unchanged. A matrix built before the widen (with `obstruction_count = 1`) has fewer columns but
+  the same column semantics for indices `0..obstruction_col_start + 1`. KAT must verify this.
+
+```rust
+/// Populate quadratic-character columns in a matrix.
+///
+/// For each row `i`, for each QC prime `qc_primes[k]`, sets column
+/// `matrix.obstruction_col_start + 1 + k` to the Legendre-symbol parity of the
+/// algebraic norm of `relations[provenance[0]]` at `qc_primes[k]`.
+///
+/// Preconditions:
+/// - `matrix` was built with `fb.obstruction_count = 1 + qc_primes.len()`.
+/// - `qc_primes` are primes > `fb.b_alg` that split completely in K.
+/// - Each row's provenance is non-empty (true for any matrix from `build_matrix`).
+///
+/// # Legendre-symbol computation
+///
+/// For a relation with algebraic norm `N_alg(a, b)` and a QC prime `q`, the QC parity is
+/// `(N_alg / q) mod 2` where `(· / q)` is the Legendre symbol. If `N_alg ≡ 0 (mod q)`,
+/// the symbol is 0 (even parity). The parity is 1 iff the Legendre symbol is −1.
+///
+/// For merged rows (provenance has multiple original relations), the QC parity is the
+/// XOR (GF(2) sum) of the individual relations' parities — consistent with how merged
+/// rows' factor-base columns are the XOR of the originals.
+pub fn populate_qc_columns(
+    matrix: &mut SparseMatrix,
+    relations: &[Relation],
+    fb: &FactorBase,
+    poly: &PolyPair,
+    qc_primes: &[u64],
+);
+
+/// Select `num_qc` auxiliary primes for quadratic-character columns.
+///
+/// Returns the first `num_qc` primes `q > b_alg` such that `f(x)` has `deg(f)` distinct
+/// roots mod `q` (i.e., `q` splits completely in K = ℚ[x]/(f)).
+///
+/// # Panics
+///
+/// Panics if fewer than `num_qc` split primes exist below some reasonable bound (should
+/// not happen for any reasonable `num_qc` and `b_alg`).
+pub fn select_qc_primes(f: &IntPoly, b_alg: u64, num_qc: usize) -> Vec<u64>;
+```
+
+#### 5. Public module surface of `gnfs::linalg`
+
+```rust
+// gnfs/src/linalg/mod.rs
+
+//! Linear algebra substrate for GNFS: blocked GF(2) vectors, sparse matrix operator,
+//! and kernel-vector representation.
+//!
+//! This module provides the substrate for G.E.2 (block Lanczos) and G.E.3 (block Wiedemann).
+//! Both solvers consume the `MatrixOperator` interface and return `KernelVector`s; they never
+//! access `SparseMatrix` fields directly.
+//!
+//! # C-LinAlg contract
+//!
+//! The types and functions in this module implement the C-LinAlg contract frozen at G.E.1.
+//! G.E.2, G.E.3, G.F, and D.B consume this interface.
+
+pub mod blockvec;
+pub mod operator;
+
+pub use blockvec::{BlockVec, BLOCK_WIDTH};
+pub use operator::MatrixOperator;
+
+// Re-export kernel vector and QC utilities from this module's root.
+mod kernel;
+mod qc;
+
+pub use kernel::KernelVector;
+pub use qc::{populate_qc_columns, select_qc_primes};
+
+/// Default number of quadratic-character columns (demonstration fidelity).
+///
+/// Principle-4 annotation: at NFS scale this is typically 20–50; at toy scale 10 suffices.
+pub const DEFAULT_NUM_QC: usize = 10;
+```
+
+**Files created by G.E.1:**
+- `gnfs/src/linalg/mod.rs` — module root, public surface
+- `gnfs/src/linalg/blockvec.rs` — `BlockVec`, `BLOCK_WIDTH`
+- `gnfs/src/linalg/operator.rs` — `MatrixOperator`
+- `gnfs/src/linalg/kernel.rs` — `KernelVector`
+- `gnfs/src/linalg/qc.rs` — `populate_qc_columns`, `select_qc_primes`, `DEFAULT_NUM_QC`
+- `gnfs/src/lib.rs` — add `pub mod linalg` and re-exports
+- `gnfs/tests/linalg_substrate_kat.rs` — KATs per the session detail
 
 ---
 
@@ -385,7 +692,7 @@ fork with no commit-shaped deliverable); its outcome is recorded in the Action-f
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | pending | — | C-LinAlg (+ widen C-FactorBase obstruction_count) |
+| G.E.1 | Linalg substrate: blocked GF(2) vectors + operator + QC columns | done | 416f6db | C-LinAlg (frozen); C-FactorBase obstruction_count widened (additive, confirmed). Extra files: kernel.rs, qc.rs (plainly part of unit — juncture fork split KernelVector and QC into separate files). |
 | G.E.2 | Block Lanczos GF(2) nullspace solver (primary) | pending | — | — |
 | G.E.3 | Block Wiedemann GF(2) nullspace solver (secondary) | pending | — | — |
 | G.E.W | Integrative writeup (linear-algebra chapter) | pending | — | — |
@@ -403,7 +710,11 @@ The externalized action frame: appended on non-trivial iterations (discoveries, 
 notable texture) for the juncture forks to consume — including the **G.E.2 review-juncture outcome**
 (the T0 fork's findings on block Lanczos), which is recorded here rather than in the ledger.
 
-*(none yet)*
+### G.E.1 — 2026-06-07
+Discovery/flex: G.E.1 inflection fork returned `design-confident`; C-LinAlg frozen with BlockVec (u64 row-of-words, BLOCK_WIDTH=64), MatrixOperator (on-the-fly transpose, no CSC companion), KernelVector (sorted Vec<usize> row indices), and QC columns (num_qc=10, additive widen of obstruction_count to 1+num_qc via populate_qc_columns). Additive-reshard of C-FactorBase confirmed mechanical (designed-to-widen slot).
+Affected: C-LinAlg (frozen at 416f6db); C-FactorBase obstruction_count widened (additive, not destructive).
+Deferred: no — all four design decisions resolved; D.B generalisation paths documented in contract.
+Texture: The juncture fork split KernelVector and QC into separate files (kernel.rs, qc.rs) beyond the session list's three-file expectation — plainly part of the unit, allowed and noted. The on-the-fly transpose decision (no CSC companion) is frozen; D.B may introduce a LinearOperator trait.
 
 ---
 
