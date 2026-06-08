@@ -8,6 +8,7 @@ description = "General Number Field Sieve: polynomial selection, sieving, and fa
 shared-bigint = { path = "../shared/bigint" }
 shared-numfield = { path = "../shared/numfield" }
 shared-numth = { path = "../shared/numth" }
+shared-field = { path = "../shared/field" }
 num-bigint = { version = "0.4", features = ["serde"] }
 num-integer = "0.1"
 num-rational = "0.4"

@@ -1,10 +1,13 @@
-//! NFS discrete-logarithm (NFS-DL) substrate: Schirokauer map and DL relation format.
+//! NFS discrete-logarithm (NFS-DL) substrate: Schirokauer map, DL relation format, and
+//! F_ℓ linear-algebra substrate.
 //!
 //! This module is the entry point for the NFS-DL bridge sub-track (Track D). It provides:
 //!
 //! - [`schirokauer`] — the Schirokauer map λ: K* → (ℤ/ℓ)^r (virtual-log coordinates).
 //! - [`DLRelation`] — the DL relation format: the factoring [`Relation`] augmented with
 //!   Schirokauer columns (C-DLRelation contract).
+//! - [`linalg`] — F_ℓ linear-algebra substrate: block vectors, sparse matrix, operator,
+//!   and block Lanczos solver (C-LinAlgFl contract, frozen D.B.1).
 //!
 //! # Two-number-field setup
 //!
@@ -23,12 +26,29 @@
 //!
 //! See [`schirokauer`] module for the map interface. The r > 1 multi-coordinate shape is
 //! carried even when toy instances use r = 1 (required for D.C descent and E.C solver).
+//!
+//! # Contract C-LinAlgFl (frozen D.B.1)
+//!
+//! See [`linalg`] module for the F_ℓ block-solver substrate interface. D.B.2 (block Wiedemann
+//! + virtual-log recovery) and D.C (individual-log descent) consume this interface directly.
 
 pub mod schirokauer;
 pub mod relation;
+pub mod linalg;
 
 pub use schirokauer::{schirokauer as compute_schirokauer, PrimeIdeal, SchirokauerError};
 pub use relation::{augment_relation, collect_dl_relations, DLMatrix};
+pub use linalg::{
+    FL_BLOCK_WIDTH,
+    FlBlockVec,
+    FlSparseMatrix,
+    FlSparseRow,
+    FlMatrixOperator,
+    FlSolution,
+    bigint_to_fp,
+    build_fl_matrix,
+    block_lanczos_fl,
+};
 
 use num_bigint::BigInt;
 
