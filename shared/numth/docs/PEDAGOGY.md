@@ -1,5 +1,13 @@
 # The α-Substrate: A Code-Tour Chapter
 
+> **Maths-first treatment.** For the mathematical foundations — Miller–Rabin primality (Fermat
+> witnesses, strong pseudoprimes, the 2-Sylow structure argument), smooth-number theory
+> (Canfield–Erdős–Pomerance density theorem), ECM (Lenstra's elliptic-curve method, the
+> group-order smoothness argument, Montgomery-form curves), and Tonelli–Shanks (square roots mod
+> $p$) — see `docs/MATHEMATICS.md §The α-Substrate: Primality, Smoothness, and ECM`. This chapter
+> is the code-tour sibling: it assumes the reader knows the mathematics and focuses on the
+> implementation in Rust.
+
 This chapter explains the three shared crates built in Phase α — `shared-field`, `shared-bigint`,
 and `shared-numth` — which together form the arithmetic and number-theoretic substrate that every
 later track sits on. Like the number-field chapter (`shared/numfield/docs/PEDAGOGY.md`), it is

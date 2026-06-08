@@ -1,5 +1,11 @@
 # Pollard Rho for ECDLP: A Phase-by-Phase Guide
 
+> **Maths-first treatment.** For the mathematical foundations — the birthday-paradox collision
+> argument, Floyd's cycle detection, the group-homomorphism structure that makes rho work on
+> elliptic curves, orbit-collapsing maps, and the $L$-notation bound — see
+> `docs/MATHEMATICS.md §Pollard Rho for ECDLP`. This chapter is the code-tour sibling: it assumes
+> the reader knows the mathematics and focuses on the phase-by-phase implementation in Rust.
+
 This document explains the optimization sequence implemented in this crate. It is aimed at a reader
 who knows group theory and has seen the discrete logarithm problem before, but is new to the
 specific algorithmic techniques used here. The code is the example; this document is the lesson.
