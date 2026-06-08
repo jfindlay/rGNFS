@@ -374,7 +374,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 |---|---------|--------|--------|-------|
 | T.0 | Textbook spine: C-Textbook + framing + prerequisites + On-scale + rho/α retrofit | done | 5c9b783 | C-Textbook |
 | G.W | GNFS integrative writeup + design-statement verification + L-notation | done | 76f3633 | — |
-| T.G | Track-G maths-first textbook chapter (L-notation payoff proof) | pending | — | — |
+| T.G | Track-G maths-first textbook chapter (L-notation payoff proof) | done | a896198 | — |
 
 Contracts frozen before this bundle: C-Fp (cf00ed5 / α.5), C-numth (α.2), C-NF (bdba6f5 / 7844773),
 C-Ideal (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d),
@@ -390,6 +390,12 @@ The externalized action frame: appended on non-trivial iterations (discoveries, 
 notable texture) for the juncture forks to consume — including the **T.0 `@plan` confirmation
 outcome** (the C-Textbook freeze verdict) and any **G.W design-statement-verification divergence**,
 recorded here rather than in the ledger.
+
+### T.G ◆ boundary — 2026-06-08
+Discovery/flex: T.G ◆ boundary-transform: still-on-intent. All three sessions landed matching the Purpose. C-Textbook register held (T.G exhibited "survey with proof-sketch depth" correctly; L-notation derivation complete). G.W design-statement verification passed on all three principles. Track-G arc (G.A → G.W → T.G) coherent.
+Affected: none — no contract flex triggered
+Deferred: no — all anticipated flexes resolved or not triggered. Roadmap-frame flex (T.0 runs before G.W↔T.G) is additive and should be logged in ROADMAP Discoveries at the next ROADMAP update.
+Texture: Bad-primes over-exposure (principle-4 annotation, already documented in G.W §59) is the only non-trivial observation. The constant (64/9)^{1/3} vs simplified 2√6/3 discrepancy is honest and cited; the exponent 1/3 is proved completely.
 
 ### G.W — 2026-06-08
 Discovery/flex: Design-statement verification passed on all three principles (Principle 1: algorithmic content complete; Principle 3: no new engineering optimisations; Principle 4: scale-only at demonstration fidelity). One principle-4 annotation: bad primes over-exposed at toy scale (an over-exposed phenomenon, not a divergence).
