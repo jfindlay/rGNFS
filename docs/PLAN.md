@@ -2,7 +2,7 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-G closeout + Track-τ open (G.W, T.G; T.0 spine)
+# rGNFS — Current Plan: Track-D open (D.A — NFS-DL relation adaptation)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
@@ -10,404 +10,269 @@ contracts + ledger + digest). Rewritten at sub-track boundaries. For the project
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
 `juncture-tier: opus` (header above) — **holds the default; does not opt down.** Applying the
-five-lever law to this bundle: lever 3 (design-error cost) is **high** for T.0 — it freezes
-**C-Textbook**, the cross-track documentation-register contract that *every* later chapter
-(T.D / T.E / T.S / T.Z, and the recommended `*.W` code-tours) obeys; getting the register wrong is
-"expensive to retrofit across all chapters" (ROADMAP Phase τ). Lever 2 (irreducible complexity) is
-**high** at two payoff proofs — the **L-notation subexponentiality derivation** (G.W code-tour +
-T.G textbook) is a designated payoff proof the ROADMAP flags Opus. Lever 5 (inner-loop bandwidth)
-is the decisive asymmetry here, and it points the *wrong way for opting down*: this is a
-**docs-dominant** bundle, and `cargo test --workspace` does **not** gate prose quality, register
-fidelity, or proof correctness. There is effectively **no fast inner loop** for the load-bearing
-content. Per the planning law, opting the juncture tier down to Sonnet is licensed only when *strong*
-test-suite quality coincides with low correctness-criticality; here the inner loop is *weak/absent*
-for the work that matters, so lever 5 does **not** license opting down — it reinforces holding at
-Opus. Levers 1 (ambient complexity) and 4 (correctness-criticality) are low-moderate (the code is
-frozen and clean; prose has no silent-failure seam), but they do not overturn levers 2/3/5.
+five-lever law: lever 3 (design-error cost) is **high** — D.A is the NFS-factoring → NFS-DL bridge,
+and the contracts frozen here (C-Schirokauer, C-DLRelation) are "reused in D.B and D.C and consumed
+by E.C" (ROADMAP), the project's most visible cross-track bridge. Lever 4 (correctness-criticality)
+is **high** — a wrong virtual-logarithm column silently corrupts every DL solution. Lever 5
+(inner-loop bandwidth) is *strong* (mature `cargo test --workspace` gate, 16 existing KAT files, a
+PARI discrete-log cross-check available for D.A.2) — but the opt-down law licenses Sonnet only when
+strong tests coincide with *low* correctness-criticality, which does **not** hold here. Levers 3+4
+dominate; juncture-tier holds at Opus. The D.A.1 substrate freeze is exactly the cross-track contract
+a juncture should adjudicate at Opus.
 
-**Roadmap-frame flex (logged, additive).** The ROADMAP schedules G.W as a standalone 1-session
-Opus writeup and folds T.G into it "at the G ◆ boundary," but T.G obeys **C-Textbook**, which **T.0
-freezes** — and T.0 has not yet run (no `docs/MATHEMATICS.md` / `docs/textbook/` exists). The
-G.W↔T.G pairing the ROADMAP names is therefore **blocked on T.0**. This plan resolves the
-open boundary-transform decision (ROADMAP Discoveries: "whether T.0 runs early or is deferred")
-by **running T.0 first**, then the paired G.W + T.G, as a **3-session Track-G-closeout /
-Track-τ-open bundle**. The flex is **additive** (sequence the spine ahead of its first consumer; no
-contract break) and is surfaced for the ROADMAP Discoveries log at the T.G ◆ boundary (see
-Discoveries).
-
-Last rewrite: G.F ◆ boundary crossed (G.F.W landed at `f7ebe1d`; G.F ledger still-on-intent
-2026-06-07, `e870c82`). **G.F fully complete** (G.F.1 → G.F.W); **C-AlgSqrt frozen** (Couveignes CRT
-algebraic square root, D.B-consumable); the GNFS factoring pipeline proper (G.A → G.F) is complete
-end-to-end. This plan opens the **Track-G closeout + Track-τ spine** — the integrative writeups that
-articulate the whole GNFS arc and establish the standing mathematical textbook.
+Last rewrite: T.G ◆ boundary crossed (Track-G complete end-to-end; the ROADMAP Progress subsection
+reconciled at 2026-06-08). This plan opens **Phase γ / Track D (NFS-DL)** at its first sub-track,
+**D.A — relation adaptation**: the bridge from NFS-factoring (the now-complete `gnfs` pipeline) to
+NFS discrete-log in F_p.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP: a self-consistent, pedagogically clear Rust reference library for DLP/ECDLP/GNFS
-algorithms, complemented by a maths-first standing textbook (Track τ). This bundle produces the
-**integrative articulation** of the now-complete GNFS factoring pipeline and **establishes the
-textbook spine** every later chapter obeys. Three sessions:
+Per ROADMAP: NFS-DL is "a modification of NFS-factoring, easier to learn as the second pass." D.A is
+the bridge sub-track — *what changes when the target is `log_g(h)` in F_p instead of a factorisation
+of N*. Two sessions:
 
-1. **The textbook spine (T.0).** Establish the standing mathematical textbook (genre:
-   `tetratile/docs/mathematics.rst` — maths-first, code-second, learnable on its own), distinct
-   from the code-tour `PEDAGOGY.md` chapters. **Freeze C-Textbook** (audience: undergraduate maths
-   background; depth: survey with proof-sketch depth — complete and clinical, not exhaustive, not
-   inscrutable; through-line: *structure-based escape from search*; markup: Markdown + MathJax,
-   ratifying the G.C-boundary recommendation). Write the table of contents across the whole survey,
-   the escape-from-search framing chapter, the **prerequisites chapter** (the undergraduate-bridge:
-   the specific algebra/analysis/probability/logic theorems later chapters lean on), and the **"On
-   scale" interlude** (the full natural-philosophy exposition the ROADMAP `## On scale` section
-   defers here). **Retrofit** the existing `rho` (ECDLP) and α-substrate code-tours into textbook
-   chapters (or chapters that cite them), establishing the chapter-pairing pattern every later
-   `*.W` follows.
+1. **The bridge substrate (D.A.1).** The two-number-field setup and the **Schirokauer map** — the
+   new mathematical object NFS-DL needs and NFS-factoring does not. The Schirokauer map sends a
+   number-field element to its ℓ-adic virtual-logarithm coordinates (via β^((p^f−1)/ℓ) − 1),
+   supplying the extra columns that make the DL linear system solvable over F_ℓ. **Freezes
+   C-Schirokauer** (the map interface) and **C-DLRelation** (the DL relation format: the existing
+   `Relation` exponent vectors plus Schirokauer/virtual-log columns). This is the substrate session
+   whose interface binds D.B (linalg over F_ℓ), D.C (individual log + descent), and ultimately E.C
+   (the MOV bridge calls the NFS-DL solver). Over-specify deliberately.
 
-2. **The GNFS integrative writeup (G.W).** The whole-pipeline code-tour chapter
-   (`gnfs/docs/PEDAGOGY.md`): polynomial selection → sieving → filtering → linear algebra → square
-   root → factor, finally visible end-to-end in one narrative. The moment where the cross-phase
-   contracts (C-PolyPair, C-Score, C-Relation, C-FactorBase, C-Matrix, C-LinAlg, C-AlgSqrt) get
-   their **public articulation** and where the **design statement is verified against the actual
-   implementation** (ROADMAP: G.W "is the moment where the design statement is verified against the
-   actual implementation"). Carries the **L-notation complexity analysis** of GNFS as a payoff
-   derivation.
+2. **DL relation collection (D.A.2 ◆).** Adapt the sieve output into DL relations targeting
+   `log_g(h)`: collect relations as today (reusing `line_sieve` / `special_q_sieve` and the frozen
+   C1 smoothness path), then augment each with its Schirokauer columns from D.A.1, producing the DL
+   relation matrix the F_ℓ linear algebra (D.B) will consume. KAT: recover a known toy F_p discrete
+   log end-to-end (relation collection → augmented matrix), cross-checked against a hand-computed or
+   PARI-computed reference. This session crosses the **Track-D-entry ◆ boundary** (D.A close).
 
-3. **The Track-G textbook chapter (T.G ◆).** The maths-first sibling to G.W in the standing
-   textbook: the GNFS chapter written for a reader who does *not* already know the implementation.
-   Carries the **L-notation subexponentiality derivation** as a complete payoff proof (the ROADMAP
-   names this an Opus payoff) and the Couveignes-correctness sketch. Cross-references G.W (code) and
-   T.0 (spine). This session crosses the **Track-G ◆ boundary**.
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing D.B's F_ℓ linear algebra
+or D.C's descent here — both are later sub-tracks; D.A stops at producing the augmented relation
+matrix) and **rigidity** (forcing the relation collection into the factoring `Relation` type if the
+Schirokauer augmentation genuinely needs a DL-specific wrapper — a contract-sharp discovery, not a
+silent squeeze).
 
-Re-read this intent at every ◆ boundary to catch **defocus** (gold-plating beyond survey-with-
-proof-sketch depth — encyclopaedic case enumeration, full proofs where a sketch suffices, ROADMAP
-C-Textbook depth contract) and **rigidity** (forcing the ROADMAP's "G.W as a lone session" when the
-T.0-dependency evidence shows the spine must precede the paired chapter).
-
-**Scoping discipline (ROADMAP three-way split, applied here).** This bundle is *integrative and
-expository*: no new algorithmic content (G.A → G.F is complete). The payoff proofs (L-notation
-subexponentiality) are **mathematical content included in full** (principle 1 — the proof *is* the
-payoff). The "On scale" interlude and the principle-4 disconnect annotations are the **honest
-science↔engineering gap** narration (principle 4). No new engineering optimizations (principle 3).
-CADO-NFS / msieve remain dev-only oracles, unchanged.
-
----
-
-## Current state
-
-Phase α + Track G sub-tracks G.A, G.B, G.C, G.D, G.E, **G.F complete**. Workspace crates:
-`shared/field`, `shared/bigint`, `shared/numfield`, `shared/numth`, `rho`, `gnfs`.
-`cargo test --workspace` green at `e870c82`.
-
-**Existing documentation corpus** (the substrate T.0/G.W/T.G work over):
-- `docs/PEDAGOGY.md` — Pollard rho for ECDLP code-tour (§1–§7, ~487 lines). **T.0 retrofits.**
-- `shared/numth/docs/PEDAGOGY.md` — α-substrate code-tour (§1–§8, ~438 lines; ECM, Miller–Rabin,
-  smoothness, batched inversion, Tonelli–Shanks). **T.0 retrofits** (S0.W backfill, done).
-- `shared/numfield/docs/PEDAGOGY.md` — G.A number-field code-tour (~742 lines). **G.W/T.G cite.**
-- `gnfs/docs/PEDAGOGY.md` — G.B–G.F code-tours (5 chapters §1–§51, ~3532 lines: polyselect,
-  sieving, filtering, linear algebra, square root). **G.W appends the integrative chapter; T.G is
-  its maths-first sibling.**
-
-**No textbook artifact exists yet** — `docs/MATHEMATICS.md` and `docs/textbook/` are both absent.
-T.0 creates it (location decided at T.0 — see C-Textbook §location).
-
-**Known stale-doc cleanup (G.W-era, additive).** `gnfs/src/lib.rs:17–19` still describes the `sqrt`
-module's algebraic/assembly entry points as "stub" (stale since G.F.3/G.F.4 landed). G.W's
-design-statement-verification pass should correct this docstring (a `cargo check`-touching edit,
-trivially part of the writeup unit) — surfaced, not silently grown.
+**Scoping discipline (ROADMAP three-way split, applied here).** The Schirokauer map and two-NF setup
+are **algorithmic content included in full** (principle 1 — the map *is* NFS-DL's defining
+machinery). The `Uint<4>` width stays as-is per the C1 width policy (ROADMAP) — D.A.1
+*confirms-and-records* that toy F_p norms fit 256 bits (a KAT) and defers the const-generic widening
+behind the ROADMAP's prescriptive trigger; the width ceiling is a **principle-4 engineering-scale
+annotation** (deferred to D.W), not a mathematical limit. No engineering optimisations (principle 3).
+PARI remains a dev-only oracle (D.A.2 cross-check), never on a build path.
 
 ---
 
 ## Verify gate
 
-`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace` (Rust's compiler is
-the type gate; `cargo test` subsumes it on a clean build, so one green `cargo test --workspace`
-satisfies both). **This is a docs-dominant bundle:** T.0 and T.G are pure prose (new `.md` files,
-no code), and G.W is prose + the one stale-docstring cleanup in `gnfs/src/lib.rs`. The VERIFY gate
-therefore guards only that the docstring edit keeps the doc-test/build green; **it does not and
-cannot gate prose quality, register fidelity, or proof correctness** — which is precisely why the
-juncture tier holds at Opus (lever 5: no inner loop for the load-bearing content). No workspace
-`Cargo.toml` change is required. New textbook `.md` files are not compiled.
+`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Confirmed by survey:
+no Makefile / justfile / xtask wrapper exists in the workspace; raw `cargo` is the only CI surface.
+Rust's compiler is the type gate; `cargo test` subsumes it on a clean build, so one green
+`cargo test --workspace` satisfies both. D.A is **code** (unlike the prior docs-dominant bundle) —
+the gate is a real inner loop, which is why lever 5 is strong even though juncture-tier still holds
+at Opus on levers 3+4.
 
 ---
 
 ## Session list
 
 One commit-shaped session per row. `Cat` = category (A substrate / B algorithm / C optimization /
-I integrative). `◆` marks a sub-track-final session. `@plan` marks an inflection or
-contract-freeze point requiring a juncture fork + human sign-off before the next session is
-dispatched.
+I integrative). `◆` marks a sub-track-final session. `@plan` marks an inflection or contract-freeze
+point requiring a juncture fork + human sign-off before the next session is dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| T.0 `@plan` | Textbook spine: freeze C-Textbook + ToC + escape-from-search framing + prerequisites + "On scale" interlude + rho/α retrofit | A | **Opus** | (existing rho + α code-tours) | new `docs/MATHEMATICS.md` (spine + framing + prerequisites + On-scale + retrofit chapters), `docs/PEDAGOGY.md` (cross-reference to textbook), `shared/numth/docs/PEDAGOGY.md` (cross-reference) |
-| G.W | GNFS integrative writeup: whole-pipeline code-tour + design-statement verification + L-notation | I | **Opus** | C-PolyPair, C-Score, C-Relation, C-FactorBase, C-Matrix, C-LinAlg, C-AlgSqrt | `gnfs/docs/PEDAGOGY.md` (append integrative chapter after §51), `gnfs/src/lib.rs` (correct stale "stub" docstring), `docs/BENCHMARKS.md` (append pipeline-wide row) |
-| T.G ◆ | Track-G maths-first textbook chapter (L-notation subexponentiality payoff proof + Couveignes sketch) | I | **Opus** | C-Textbook, G.W | `docs/MATHEMATICS.md` (append the GNFS chapter) |
+| D.A.1 `@plan` | Schirokauer map + two-number-field setup: freeze C-Schirokauer + C-DLRelation; confirm Uint<4> width KAT | A | **Opus** | C-NF, C-Ideal (`reduce_mod_ideal`), C-Relation, C1 | `gnfs/src/dl/mod.rs` (new), `gnfs/src/dl/schirokauer.rs` (new), `gnfs/src/lib.rs` (re-export `dl`), `gnfs/tests/schirokauer_kat.rs` (new) |
+| D.A.2 ◆ | DL relation collection for log_g(h): augment sieve relations with Schirokauer columns → DL matrix; toy-F_p KAT | B | Sonnet | C-Schirokauer, C-DLRelation, C-FactorBase, C1, (PARI oracle) | `gnfs/src/dl/relation.rs` (new), `gnfs/src/dl/mod.rs` (extend), `gnfs/tests/dl_relation_kat.rs` (new) |
 
-**Sequencing notes.** **T.0 must precede T.G** (T.G obeys C-Textbook, frozen by T.0) — this is the
-hard dependency that drives the bundle order. **G.W and T.G pair** (the ROADMAP's writeup-pairing:
-code-tour + maths-first siblings written while both are fresh), but T.G additionally consumes
-C-Textbook, so the order is T.0 → G.W → T.G. G.W is independent of T.0 in principle (it is a
-code-tour, not a textbook chapter) and *could* run first; the listed order front-loads the spine so
-the C-Textbook register is frozen before *either* chapter is written, keeping the G.W code-tour and
-T.G textbook chapter mutually consistent in notation and framing from the start. The single `@plan`
-marker sits on **T.0** (a post-landing C-Textbook freeze confirmation — the register binds every
-future chapter cross-track, so confirm the freeze before T.G consumes it). **T.G ◆** is the
-Track-G boundary.
+**Sequencing notes.** **D.A.1 must precede D.A.2** (D.A.2 consumes the frozen Schirokauer map and DL
+relation format). The single `@plan` marker sits on **D.A.1** — a post-landing freeze confirmation
+for C-Schirokauer + C-DLRelation, because the register binds D.B/D.C/E.C cross-track; confirm the
+freeze before D.A.2 (its first consumer) is dispatched. **D.A.2 ◆** is the Track-D-entry boundary.
 
-**Why 3 sessions (ROADMAP folded T.G into G.W).** The one-line-commit-title corollary: T.0
-("textbook spine + register freeze") and G.W ("GNFS integrative writeup") and T.G ("Track-G maths
-chapter") are three distinct commit titles. The ROADMAP's "T.G pairs with G.W, ~0 net new sessions"
-assumed C-Textbook was already frozen; it is not, so **T.0 is the net-new session** the ROADMAP
-front-loads exactly once ("T.0 is the only Track-T session that adds calendar time up front"). T.0
-and T.G are **not** mergeable (different artifacts: spine+retrofit vs the GNFS chapter; and T.G
-cannot be written before T.0 freezes its register). G.W and T.G are **not** mergeable (different
-genres: code-tour in `PEDAGOGY.md` vs maths-first in `MATHEMATICS.md` — the ROADMAP's core Track-τ
-distinction). Each is one clean title.
-
-**Flagged overrun-split points (contract-sharp, only if a session exceeds the band).**
-- **T.0** is a front-loaded substrate session (ROADMAP: T.0 "adds calendar time up front"; planning
-  doc: substrate sessions run 1.5–2×). If it overruns, the **rho/α retrofit chapters** are the
-  contract-sharp split: the spine (freeze C-Textbook + framing + prerequisites + On-scale) is the
-  irreducible unit; the retrofit consumes the just-frozen register and can fold into a follow-on
-  `T.0b` without fracturing the freeze. Surface at the T.0 `@plan` juncture if it lands oversized.
-- **T.G** is the larger of the G.W/T.G pair (ROADMAP: "the textbook chapter is the larger of the
-  two and may push toward the top of the band or split into a dedicated follow-on if it overruns —
-  decided at the boundary"). If it overruns, the contract-sharp split is the **L-notation payoff
-  proof** (a self-contained derivation) vs the GNFS-chapter narration — decided at the T.G ◆
-  boundary.
+**Why 2 sessions (matches ROADMAP allotment).** The one-line-commit-title corollary: D.A.1
+("Schirokauer map + two-NF setup") and D.A.2 ("DL relation collection") are two distinct commit
+titles. They are **not** mergeable — D.A.1 freezes a substrate contract D.A.2 consumes (a
+contract-sharp boundary, lever 2: the Schirokauer map is the irreducible unit). They are **not**
+further splittable below the floor — the two-NF setup and the map share the same algebraic substrate
+(`reduce_mod_ideal`, `NumberFieldElement::pow`) and fracturing them would split an irreducible unit
+just to hit a LOC number (forbidden). D.A.1 is a front-loaded Opus substrate session (planning doc:
+substrate sessions run 1.5–2× the band); if it overruns, the contract-sharp split is the
+**two-NF setup** (the scaffolding) vs the **Schirokauer map** (the new object) — surfaced at the
+D.A.1 `@plan` juncture, not pre-committed.
 
 ---
 
 ## Session detail
 
-T.0 is crisp (its design surface is the C-Textbook contract, resolved in-session as the spine's own
-work). G.W and T.G are sketched at integrative fidelity — their precise shape is correct to leave
-open until T.0 freezes the register and G.W's design-statement-verification pass reports.
+D.A.1 is crisp (its design surface is the C-Schirokauer + C-DLRelation freeze, resolved in-session
+as the substrate's own work). D.A.2 is sketched at post-substrate fidelity — correct to leave its
+precise shape open until D.A.1 freezes the map and relation format.
 
-### T.0 — Textbook spine: freeze C-Textbook + framing + prerequisites + On-scale + rho/α retrofit (Opus, substrate, `@plan`)
+### D.A.1 — Schirokauer map + two-number-field setup (Opus, substrate, `@plan`)
 
-**Deliverable:** the standing mathematical textbook's spine.
-- **Create the textbook artifact.** Default `docs/MATHEMATICS.md` (single-file start; promote to
-  `docs/textbook/` only if it outgrows single-file — decide in-session and record in C-Textbook).
-- **Freeze C-Textbook** (the documentation-register contract — see Cross-session contracts): the
-  audience floor (undergraduate maths: proofs + intro analysis/algebra/probability/logic), the
-  depth (survey with proof-sketch depth — complete, clinical; full proofs only where the proof is
-  the payoff), the through-line (*structure-based escape from search*), and the markup (Markdown +
-  MathJax — `$…$` inline, `$$…$$` display; ratifying the G.C-boundary recommendation, superseding
-  "rST or Markdown TBD").
-- **Table of contents** across the whole survey (rho, α-substrate, GNFS, NFS-DL, ECDLP attacks,
-  Shor, PQ) — the chapter skeleton every `*.W` later fills.
-- **Escape-from-search framing chapter** — the through-line stated once: every attack finds
-  exploitable structure (homomorphism, smoothness, endomorphism, pairing, quantum period) that
-  escapes the generic √n / L-notation search bound.
-- **Prerequisites chapter** — the undergraduate-background bridge: the specific theorems from
-  algebra/analysis/probability/logic the later chapters lean on.
-- **"On scale" interlude** — the full natural-philosophy exposition the ROADMAP `## On scale`
-  section defers here (three axes — resource/operational, mathematical-dimension, structural; the
-  three couplings; method-convergence vs problem-openness).
-- **Retrofit** the `rho` ECDLP and α-substrate code-tours into textbook chapters (or chapters that
-  cite them), establishing the **chapter-pairing pattern** (maths-first chapter ↔ code-tour) that
-  T.G and every later `*.W` follows.
+**Deliverable:** the NFS-DL bridge substrate.
+- **Two-number-field setup.** The DL analogue of the single algebraic/rational split: NFS-DL
+  typically uses two number fields (or a rational + algebraic side adapted for the DL target).
+  Establish how the existing `PolyPair` / `NumberField` machinery is configured for the `log_g(h)`
+  target in F_p (the prime p of the finite field, the target g and h).
+- **The Schirokauer map.** Implement the map λ: K* → (ℤ/ℓ)^r sending a number-field element to its
+  ℓ-adic virtual-logarithm coordinates, via the ε = (p^f − 1)/ℓ exponentiation and the
+  log-extraction. Consumes `NumberFieldElement::pow` and `reduce_mod_ideal` (both confirmed present
+  in `shared/numfield`). This is the object that supplies the extra matrix columns making the DL
+  system solvable.
+- **Freeze C-Schirokauer** (the map interface — see Cross-session contracts) and **C-DLRelation**
+  (the DL relation format: factoring `Relation`'s `u32` exponent vectors — already DL-ready, per the
+  survey's confirmed design note — plus the Schirokauer columns).
+- **Confirm-and-record the C1 width** (per ROADMAP C1 width policy): compute the toy-scale NFS-DL
+  norm bound and assert it fits `Uint<4>` (a KAT). No widening — the const-generic widening stays
+  behind the ROADMAP's prescriptive trigger. Record the verdict in Discoveries.
 
-**Key design decisions (the C-Textbook freeze surface — the `@plan` confirmation):**
-1. **Artifact location:** `docs/MATHEMATICS.md` vs `docs/textbook/`. Bias single-file until it
-   grows; record the chosen path in C-Textbook.
-2. **Markup ratification:** Markdown + MathJax (recommended at G.C ◆). The `@plan` confirmation
-   ratifies the freeze or reopens only on a hard MathJax limitation (ROADMAP Discoveries).
-3. **Register depth calibration:** "survey with proof-sketch depth" against the *actual* rho/α
-   content being retrofitted — the first real test of whether the level is right before it binds
-   every later chapter. The cross-track cost of a wrong register is the reason for the `@plan`.
+**Key design decisions (the C-Schirokauer / C-DLRelation freeze surface — the `@plan` confirmation):**
+1. **Schirokauer map signature & ℓ-handling:** how ℓ (the target subgroup order) enters the map; the
+   return shape (the r virtual-log coordinates); the error type for bad/ramified primes where the map
+   is undefined. Over-specify: carry the multi-coordinate (r > 1) shape even if toy instances use
+   r = 1, since D.C's descent will need it.
+2. **C-DLRelation shape:** confirm the factoring `Relation` (u32 exponents) is reused directly (the
+   survey confirms it was *designed* for this — re-narrowing would be a "destructive reshard" per the
+   `sieve/mod.rs` doc) vs. a DL-specific wrapper carrying the Schirokauer columns alongside. Bias
+   reuse + augmentation wrapper, not a re-typed relation.
+3. **Two-NF configuration:** whether D.A reuses `PolyPair` as-is or needs a `DLPolyPair` carrying the
+   second field — decided in-session against the actual `log_g(h)` setup.
 
-**KAT (≥1 required) — prose-contract analogue.** A textbook has no `cargo` KAT; the contract is
-**prose-enforced** (C-Textbook). The session's verification obligation is: (a) every C-Textbook
-clause (audience/depth/through-line/markup/location) is stated explicitly in the spine and is
-self-consistent; (b) the retrofit rho/α chapters demonstrably obey the just-frozen register (the
-pairing pattern is exhibited, not merely asserted); (c) MathJax renders (spot-check a display
-expression). *A row whose deliverable can't be a KAT has an undefined contract* — here the
-"KAT" is the register-conformance check, which is the prose-contract enforcement mechanism.
+**KAT (≥1 required):** (a) Schirokauer map KAT — the map evaluates correctly on a hand-computed toy
+number-field element (known ℓ-adic coordinates); (b) the map is a homomorphism on a small sample
+(λ(xy) = λ(x) + λ(y) mod ℓ) — the defining algebraic property; (c) **width KAT** — the toy-scale
+NFS-DL norm bound fits `Uint<4>` (the confirm-record obligation). `cargo test --workspace` green.
 
-**Subtlety:** C-Textbook is **cross-track** (every chapter in T.D/T.E/T.S/T.Z obeys it) and
-**prose-enforced** (nothing automatic catches drift). Over-specify deliberately: state the audience
-floor and depth precisely enough that a later chapter that *needs* to break the register (a topic
-requiring graduate background) must surface it as a discovery and flex C-Textbook at an inflection
-review, not silently raise the level. This is the substrate-over-specify rule applied to a
-documentation contract.
+**Subtlety:** C-Schirokauer is **cross-track** (D.B consumes the columns, D.C the descent, E.C the
+solver). Over-specify the map interface deliberately — the r > 1 multi-coordinate shape, the
+bad-prime error path — so a later sub-track that needs them doesn't force a reshard. The Schirokauer
+map is mathematically delicate (the ℓ-adic log extraction); this is the irreducible Opus unit (lever
+2). If the two-NF setup proves larger than expected, split it off (the flagged overrun boundary), but
+do not fracture the map itself.
 
-**Deferred:** the GNFS code-tour (G.W); the GNFS textbook chapter (T.G); all later per-track
-chapters (T.D/T.E/T.S, folded into their `*.W` siblings).
+**Deferred:** F_ℓ linear algebra (D.B); individual logarithm + special-q descent (D.C); the const-
+generic width widening (ROADMAP prescriptive trigger); the principle-4 width annotation (D.W).
 
-**`@plan` confirmation (post-landing, T0/Opus, one-shot).** Page a `@plan-juncture` fork to
-confirm the **C-Textbook freeze** before T.G (its first consumer) is dispatched: (1) the register
-clauses are complete and mutually consistent; (2) the markup choice is ratified (no hard MathJax
-limitation surfaced); (3) the retrofit chapters genuinely exhibit the pairing pattern; (4) the
-artifact-location choice is recorded. The fork returns one-shot findings; it does not implement.
-This is the contract-freeze confirmation the planning doc prescribes for a cross-track substrate.
+**`@plan` confirmation (post-landing, T0/Opus, one-shot).** Page a `@plan-juncture` fork to confirm
+the **C-Schirokauer + C-DLRelation freeze** before D.A.2 is dispatched: (1) the map interface is
+complete (signature, ℓ-handling, r > 1 shape, bad-prime error path) and mutually consistent; (2) the
+DL relation format reuses C-Relation cleanly (no destructive re-narrow); (3) the width verdict is
+recorded; (4) the project-wide PARI oracle-test policy is resolved (carried from the ROADMAP
+G.C-boundary open question — see Discoveries). One-shot findings; does not implement.
 
-### G.W — GNFS integrative writeup: whole-pipeline code-tour + design-statement verification + L-notation (Opus, integrative, sketch)
+### D.A.2 ◆ — DL relation collection for log_g(h) (Sonnet, algorithm, sketch)
 
-**Deliverable:** the GNFS integrative chapter of `gnfs/docs/PEDAGOGY.md` (append after §51 as a new
-`# The GNFS Pipeline End-to-End: An Integrative Chapter`). Sketch (crisp shape resolved in-session
-once T.0's register is frozen and the verification pass reports):
-- **The whole pipeline in one narrative:** polynomial selection (G.B) → sieving (G.C) → filtering
-  (G.D) → linear algebra (G.E) → square root + assembly (G.F), traced as a single data-flow from N
-  to a factor, with each stage's cross-phase contract named in prose for the first time
-  (C-PolyPair, C-Score, C-Relation, C-FactorBase, C-Matrix, C-LinAlg, C-AlgSqrt).
-- **Design-statement verification.** The ROADMAP names G.W as "where the design statement is
-  verified against the actual implementation." Walk the three-way scoping split (algorithmic
-  content complete; scale-only at demonstration fidelity; engineering omitted) against what G.A–G.F
-  actually shipped, and **report any divergence as a discovery** (additive-reshard if a gap; not a
-  silent pass). Includes correcting the stale `gnfs/src/lib.rs:17–19` "stub" docstring.
-- **L-notation complexity analysis** of GNFS (L_N[1/3, (64/9)^{1/3}]) — the heuristic-complexity
-  derivation as a payoff, cross-referencing the fuller T.G treatment.
-- **Benchmark row.** Append a pipeline-wide row to `docs/BENCHMARKS.md` (end-to-end factor: N
-  bit-length / stage timings / factor recovered).
+**Deliverable:** DL relation collection producing the augmented relation matrix for the F_ℓ linear
+algebra. Sketch (crisp shape resolved once D.A.1's contracts freeze):
+- **Collect relations** for the `log_g(h)` target by reusing the frozen sieve entry points
+  (`line_sieve` / `special_q_sieve`) and the C1 smoothness path — the relation-collection machinery
+  is shared with factoring (ROADMAP: "easier to learn as the second pass").
+- **Augment with Schirokauer columns.** For each collected relation, evaluate the D.A.1 Schirokauer
+  map and append the virtual-log coordinates, producing the DL relation matrix (the factoring
+  exponent columns + the Schirokauer columns) that D.B's F_ℓ linear algebra consumes.
+- **Assemble the DL matrix** in the shape D.B expects (defer the actual F_ℓ solve to D.B; D.A.2
+  stops at producing the matrix + a verification that the relations are consistent).
 
-Consumes all Track-G contracts (reads; freezes nothing new — integrative).
+Consumes C-Schirokauer, C-DLRelation, C-FactorBase, C1. Freezes nothing new (it is the algorithm
+session consuming D.A.1's substrate).
 
-**KAT (≥1 required) — prose-contract analogue + the one code touch.** (a) Every named cross-phase
-contract in the chapter matches its frozen definition (cross-check against Cross-session contracts +
-the per-stage `PEDAGOGY.md` chapters); (b) the design-statement-verification produces an explicit
-pass/divergence verdict for each of the three scoping principles; (c) the `cargo test --workspace`
-gate stays green after the lib.rs docstring correction (the one behavioural check).
+**KAT (≥1 required):** recover a **known toy F_p discrete log** end-to-end through relation
+collection + matrix assembly — cross-checked against a hand-computed reference or **PARI's
+discrete-log** functionality (dev-only oracle, `#[ignore]`/feature-gated so it skips cleanly when
+PARI is absent, per the oracle-test pattern). At minimum a deterministic KAT that does not require
+PARI carries the reproducibility burden (matching the G.C CADO-oracle pattern). `cargo test
+--workspace` green.
 
-**Subtlety:** the design-statement verification is the load-bearing judgment, not the narrative
-summary (planning doc: integrative writeups are "where the cross-track implications are surfaced,"
-consistently under-scheduled). If the verification finds a real divergence (e.g. a scale-only
-phenomenon implemented below demonstration fidelity, or an engineering optimization that crept in),
-that is a **discovery** for the ROADMAP Discoveries log, surfaced at the T.G ◆ boundary — not
-papered over to keep the writeup clean.
-
-### T.G ◆ — Track-G maths-first textbook chapter (Opus, integrative, sketch)
-
-**Deliverable:** the GNFS chapter of `docs/MATHEMATICS.md` — the maths-first sibling to G.W, written
-for a reader who does not already know the implementation (the C-Textbook register). Sketch:
-- The GNFS algorithm developed mathematically from the difference-of-squares / congruence-of-squares
-  idea through the number-field bridge, the factor-base smoothness phenomenon, the linear-algebra
-  dependency, and the square-root recovery — *structure-based escape from search* as the through-line.
-- **L-notation subexponentiality derivation as the payoff proof** (ROADMAP: Opus). The full
-  derivation of L_N[1/3, (64/9)^{1/3}] — why the smoothness-probability / sieving-cost tradeoff
-  optimises to exponent 1/3 — stated and proved at the depth the C-Textbook depth contract reserves
-  for payoff proofs (complete, not a sketch).
-- **Couveignes-correctness sketch** (the algebraic square root) at proof-sketch depth, cross-
-  referencing the G.F code-tour.
-- Cross-references: cites G.W (the code realisation) and the T.0 prerequisites/On-scale chapters.
-
-Consumes **C-Textbook** (register) and **G.W** (the code-tour it pairs with). Freezes nothing new.
-
-**KAT (≥1 required) — prose-contract analogue.** (a) The chapter obeys C-Textbook (audience floor,
-depth, through-line, markup) — register-conformance check; (b) the L-notation derivation is
-complete and self-contained (a reader with the prerequisites can follow it without the code); (c)
-cross-references to G.W and T.0 resolve.
-
-**Subtlety:** this is the **first textbook chapter to consume C-Textbook** — it is the real test of
-whether the T.0 register holds. If the GNFS chapter cannot be written at "survey with proof-sketch
-depth" without either over-running into exhaustiveness or under-running into inscrutability, that is
-a **C-Textbook flex** to surface at the ◆ boundary (a register discovery), not a silent level
-change. This is also the **Track-G ◆ boundary** — re-read the Purpose intent and verify the whole
-Track-G arc (G.A → G.W → T.G) is coherent before crossing into Track γ (D.*) or a later Track-τ
-chapter.
+**Subtlety:** the load-bearing judgment is the **augmentation seam** — wiring the Schirokauer columns
+into the relation/matrix format without re-narrowing the factoring `Relation`. If the DL matrix
+genuinely needs a shape the C-Matrix format can't carry, that is a **contract discovery** (additive-
+reshard) surfaced at the ◆ boundary, not a silent squeeze. This is the **Track-D-entry ◆ boundary** —
+re-read the Purpose intent and verify the D.A bridge (D.A.1 → D.A.2) is coherent before crossing into
+D.B.
 
 ---
 
 ## Cross-session contracts
 
-The integrative sessions read the frozen Track-G contracts and articulate them in prose; they
-freeze no new *code* contracts. The one new contract is **C-Textbook** (documentation-register),
-frozen at T.0.
+D.A freezes two new code contracts (C-Schirokauer, C-DLRelation) at D.A.1 and reads the frozen
+Track-G / G.A-substrate contracts.
 
-### C-Textbook — textbook documentation-register contract (prose-enforced) — *to be frozen at T.0*
+### C-Schirokauer — Schirokauer map interface (compiler + KAT) — *to be frozen at D.A.1*
 
-**Defined:** T.0. **Consumed by:** T.G (and every later textbook chapter — T.D, T.E, T.S, T.Z — and,
-as a recommendation, the `*.W` `PEDAGOGY.md` code-tours). **Cross-track** (every chapter obeys it),
-so over-specified deliberately at T.0. Prose-enforced — nothing automatic catches drift; a later
-chapter that needs to break the register must surface it as a discovery and flex C-Textbook at an
-inflection review, not silently raise the level.
+**Defined:** D.A.1. **Consumed by:** D.A.2 (relation augmentation), D.B (the virtual-log columns in
+the F_ℓ system), D.C (individual-log descent), and ultimately E.C (via the NFS-DL solver). **Cross-
+track** — over-specified deliberately at D.A.1. Compiler-enforced (the map signature) + KAT-enforced
+(homomorphism property + known-value evaluation).
 
-*To be frozen at T.0* — the resolved clauses (audience floor / depth / through-line / markup /
-artifact location) are written into this subsection by the T.0 session and confirmed at its `@plan`
-juncture. Provisional content (from the ROADMAP Phase τ scope contract, pending T.0 ratification):
-- **Audience:** interested maths student (human or agent), undergraduate maths background — comfort
-  with proofs; intro analysis, algebra, probability, logic. Anything beyond is built up or cited.
-- **Depth:** survey with proof-sketch depth. Key theorems stated and motivated; proofs are sketches
-  with citations, *except* where the proof is the pedagogical payoff (L-notation subexponentiality
-  in T.G/T.D; the MOV reduction in T.E — full proofs there). Complete (no key idea silently
-  omitted), academic and clinical, **not** exhaustive, **not** inscrutable (intuition leads, rigour
-  follows).
-- **Through-line:** structure-based escape from search.
-- **Markup:** Markdown + MathJax (`$…$` / `$$…$$`). Supersedes "rST or Markdown TBD." Ratified at
-  T.0's `@plan` confirmation; reopened only on a hard MathJax limitation.
-- **Artifact location:** `docs/MATHEMATICS.md` (single-file) or `docs/textbook/` (if it grows) —
-  *decided and recorded at T.0.*
+*To be frozen at D.A.1* — the resolved interface (map signature, ℓ-parameter handling, the r virtual-
+log coordinates, the bad-prime/undefined error type) is written into this subsection by the D.A.1
+session and confirmed at its `@plan` juncture. Provisional shape (from the ROADMAP D.A spec, pending
+D.A.1):
+- A map `schirokauer(elt: &NumberFieldElement, ell: &BigInt, …) -> Result<Vec<BigInt>, SchirokauerError>`
+  returning the r ℓ-adic virtual-log coordinates (r = unit-rank-derived; carry r > 1 even if toy uses
+  r = 1).
+- Consumes `NumberFieldElement::pow` and `reduce_mod_ideal` (both confirmed present in
+  `shared/numfield`).
+- Error path for bad/ramified primes where the map is undefined.
 
-### Frozen Track-G contracts (read by G.W / T.G; not amended)
+### C-DLRelation — DL relation format (compiler + KAT) — *to be frozen at D.A.1*
 
-These are stable; G.W articulates them in prose and T.G cites their mathematics. None is amended by
-this bundle.
+**Defined:** D.A.1. **Consumed by:** D.A.2, D.B. Compiler + KAT.
 
-- **C-PolyPair** — polynomial pair + number-field constructor (compiler + KAT) — *frozen G.B.1
-  (2f43f99)*. G.W: the polynomial-selection stage.
-- **C-Score** — Murphy-E scoring (compiler + KAT) — *frozen G.B.2 (00aa32d)*. G.W: poly-selection
-  quality; C3 cross-track note (D.A / E.K reuse).
-- **C-Relation** — relation / exponent-vector format (compiler + KAT) — *frozen G.C.1 (c1dc0b6)*.
-  G.W: the sieving stage's data unit.
-- **C-FactorBase** — two-sided factor base + sign/QC columns (compiler + KAT) — *frozen G.C.1
-  (c1dc0b6)*. G.W: smoothness + why the QC/sign columns exist.
-- **C-Matrix** — filtered sparse GF(2) matrix + provenance map (compiler + KAT) — *frozen G.D.1
-  (a0e854b)*. G.W: the filtering stage + the provenance thread to G.F.
-- **C-LinAlg** — GF(2) nullspace substrate: blocked vectors + kernel representation (compiler +
-  KAT) — *frozen G.E.1 (416f6db)*. G.W: the linear-algebra stage; the `expand_provenance` seam.
-- **C-AlgSqrt** — Couveignes algebraic-square-root contract (compiler + KAT) — *frozen G.F.3
-  (c80a855 + ec69a1f)*. G.W: the square-root stage; D.B re-consumption note.
+The DL relation reuses the factoring `Relation` (`gnfs/src/sieve/mod.rs` — `u32` exponent vectors,
+*already DL-ready by design*; the survey confirms `sieve/mod.rs` doc names re-narrowing a "destructive
+reshard") **augmented** with the Schirokauer columns. *To be frozen at D.A.1* — the resolved shape
+(augmentation wrapper vs. extended struct) is written here by the session. Bias: reuse `Relation` +
+a DL-augmentation carrier, not a re-typed relation.
 
-(Plus the G.A substrate contracts — C-NF, C-Res, C-numth, C-Ideal, C-Dedekind — and C1
-`shared::numth::is_smooth`, read but not foregrounded in this bundle.)
+### Frozen contracts read by D.A (not amended)
+
+These are stable; D.A consumes them and amends none.
+
+- **C-Relation** — relation / exponent-vector format (`u32` exponents, DL-ready) — *frozen G.C.1
+  (c1dc0b6)*. D.A reuses directly.
+- **C-FactorBase** — two-sided factor base + sign/QC columns — *frozen G.C.1 (c1dc0b6)*. D.A.2 reuses
+  for relation collection.
+- **C-NF** — number-field substrate (ℤ[α] arithmetic, `NumberFieldElement::pow`) — *frozen G.A.1
+  (bdba6f5) / extended G.F.1 (20cd263 — `reduce_mod_ideal`)*. D.A.1's Schirokauer map consumes
+  `reduce_mod_ideal` + `pow`.
+- **C-Ideal** — prime-ideal representation (p, α − r) — *frozen G.A (05b27c8)*. D.A consumes for the
+  per-prime Schirokauer evaluation.
+- **C1** — `shared::numth` smoothness (`trial_smooth`, `SmoothWitness`, `Uint<4>`) — *frozen α.2*.
+  D.A.2 reuses for DL relation collection. **Width: confirm-record at D.A.1 per ROADMAP C1 width
+  policy; no widening.**
+
+(Plus the remaining G.A substrate + Track-G contracts — C-Res, C-Dedekind, C-Score, C-Matrix,
+C-LinAlg, C-AlgSqrt — read where relevant but not foregrounded in D.A.)
 
 ---
 
 ## Progress ledger
 
-`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The T.0 `@plan` confirmation is not a ledger row (a
-paged fork with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
+`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
+names contracts this session locked. The D.A.1 `@plan` confirmation is not a ledger row (a paged fork
+with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| T.0 | Textbook spine: C-Textbook + framing + prerequisites + On-scale + rho/α retrofit | done | 5c9b783 | C-Textbook |
-| G.W | GNFS integrative writeup + design-statement verification + L-notation | done | 76f3633 | — |
-| T.G | Track-G maths-first textbook chapter (L-notation payoff proof) | done | a896198 | — |
+| D.A.1 | Schirokauer map + two-NF setup; confirm Uint<4> width | pending | — | C-Schirokauer, C-DLRelation |
+| D.A.2 | DL relation collection for log_g(h) + toy-F_p KAT | pending | — | — |
 
-Contracts frozen before this bundle: C-Fp (cf00ed5 / α.5), C-numth (α.2), C-NF (bdba6f5 / 7844773),
-C-Ideal (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d),
-C-FactorBase (c1dc0b6), C-Relation (c1dc0b6), C-Matrix (a0e854b), C-LinAlg (416f6db), C-AlgSqrt
-(c80a855 + ec69a1f). This bundle opens over the complete, frozen GNFS factoring pipeline (G.A → G.F)
-and freezes one new documentation-register contract (C-Textbook, at T.0).
+Contracts frozen before this sub-track (read by D.A): C-NF (bdba6f5 / extended 20cd263), C-Ideal
+(05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
+C-Score (00aa32d), C-Matrix (a0e854b), C-LinAlg (416f6db), C-AlgSqrt (c80a855 + ec69a1f), C1 (α.2),
+C-Textbook (5c9b783). This sub-track opens Phase γ over the complete, frozen GNFS factoring pipeline
+and freezes two new DL contracts (C-Schirokauer, C-DLRelation, both at D.A.1).
 
 ---
 
 ## Action-frame digest
 
-The externalized action frame: appended on non-trivial iterations (discoveries, contract flexes,
-notable texture) for the juncture forks to consume — including the **T.0 `@plan` confirmation
-outcome** (the C-Textbook freeze verdict) and any **G.W design-statement-verification divergence**,
-recorded here rather than in the ledger.
-
-### T.G ◆ boundary — 2026-06-08
-Discovery/flex: T.G ◆ boundary-transform: still-on-intent. All three sessions landed matching the Purpose. C-Textbook register held (T.G exhibited "survey with proof-sketch depth" correctly; L-notation derivation complete). G.W design-statement verification passed on all three principles. Track-G arc (G.A → G.W → T.G) coherent.
-Affected: none — no contract flex triggered
-Deferred: no — all anticipated flexes resolved or not triggered. Roadmap-frame flex (T.0 runs before G.W↔T.G) is additive and should be logged in ROADMAP Discoveries at the next ROADMAP update.
-Texture: Bad-primes over-exposure (principle-4 annotation, already documented in G.W §59) is the only non-trivial observation. The constant (64/9)^{1/3} vs simplified 2√6/3 discrepancy is honest and cited; the exponent 1/3 is proved completely.
-
-### G.W — 2026-06-08
-Discovery/flex: Design-statement verification passed on all three principles (Principle 1: algorithmic content complete; Principle 3: no new engineering optimisations; Principle 4: scale-only at demonstration fidelity). One principle-4 annotation: bad primes over-exposed at toy scale (an over-exposed phenomenon, not a divergence).
-Affected: none — no frozen contract invalidated
-Deferred: no — the bad-primes annotation is already documented in §59; surface at T.G ◆ boundary for the ROADMAP Discoveries log.
-Texture: All seven cross-phase contracts (C-PolyPair through C-AlgSqrt) named in prose for the first time in one place (§58 unified table). L-notation derivation of L_N[1/3, (64/9)^{1/3}] in §60. Stale lib.rs "stub" docstring corrected.
-
-### T.0 — 2026-06-08
-Discovery/flex: C-Textbook freeze confirmed at `@plan` juncture (design-confident). All four confirmation points satisfied: register clauses complete and mutually consistent, MathJax ratified, retrofit chapters exhibit the pairing pattern, artifact location recorded.
-Affected: C-Textbook (now frozen at 5c9b783)
-Deferred: no — the register is well-calibrated; T.G can proceed. If the GNFS chapter cannot hold "survey with proof-sketch depth," that is a C-Textbook flex to surface at the T.G ◆ boundary.
-Texture: Single-file artifact location (docs/MATHEMATICS.md) confirmed; promotion to docs/textbook/ deferred to T.Z. Register calibration verified against rho/α content — "survey with proof-sketch depth" exhibited correctly in both retrofit chapters.
+*(none yet)*
 
 ---
 
@@ -416,77 +281,63 @@ Texture: Single-file artifact location (docs/MATHEMATICS.md) confirmed; promotio
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **Roadmap-frame flex: T.0 runs before the G.W↔T.G pairing (surface at the T.G ◆ boundary for the
-  ROADMAP Discoveries log).** The ROADMAP folds T.G into G.W "at the G ◆ boundary" assuming
-  C-Textbook is already frozen; it is not (no textbook artifact exists). This plan runs T.0 first,
-  resolving the ROADMAP's open question ("whether T.0 runs early or is deferred until more chapters
-  exist to calibrate the register"). **Additive** (sequence, no contract break). Log at the ◆
-  boundary; this answers the open question rather than breaking the roadmap.
+- **C1 `Uint<4>` width — confirm-record at D.A.1, do NOT widen (ROADMAP C1 width policy).** The
+  width decision is *resolved*: D.A.1 asserts toy F_p norms fit 256 bits (a KAT) and consumes C1
+  as-is. The const-generic widening is pre-chosen but trigger-gated (ROADMAP: "if/when the ceiling
+  binds, as its own deliberate ROADMAP-then-shard session — never spontaneous in-flight scope
+  growth"). If D.A.1's width KAT *fails* (toy norms exceed 256 bits — not expected), that is a
+  **destructive-HALT**: stop and page the ROADMAP widening session, do not widen inline.
 
-- **C-Textbook is a cross-track prose-enforced contract — over-specify, surface flexes, never raise
-  the register silently (lever 3).** Frozen at T.0, consumed by every later textbook chapter
-  (T.D/T.E/T.S/T.Z). A later chapter that needs graduate-level depth must flex C-Textbook at an
-  inflection review, not silently raise the level in one chapter. T.G is the first consumer and the
-  first real test of the register; if the GNFS chapter cannot hold "survey with proof-sketch depth,"
-  that is a **C-Textbook flex** (additive-reshard), surfaced at the ◆ boundary.
+- **C-Schirokauer is cross-track prose+compiler-enforced — over-specify, surface flexes (lever 3).**
+  Frozen at D.A.1, consumed by D.B/D.C/E.C. A later sub-track needing a map shape D.A.1 didn't
+  provide (e.g. D.C's descent needing multi-coordinate r > 1) must flex C-Schirokauer at an
+  inflection review, not silently extend it. D.A.1 over-specifies (carry r > 1) to pre-empt this.
 
-- **Markup ratification (MathJax) is a T.0 freeze, not a re-litigation.** The G.C ◆ boundary
-  recommended Markdown + MathJax (ROADMAP Discoveries); T.0 ratifies it. Reopen only on a hard
-  MathJax limitation (a renderer the project must target that lacks MathJax) — otherwise the freeze
-  stands. Not a code contract; gates no implementation, only the textbook's and `*.W` chapters'
-  prose rendering.
+- **C-DLRelation reuse vs. re-narrow (additive-reshard risk).** The factoring `Relation` is DL-ready
+  by design (u32 exponents). D.A.1 augments, not re-narrows. If D.A.2 finds the augmentation needs a
+  matrix shape C-Matrix can't carry, that is an **additive-reshard** discovery at the ◆ boundary —
+  not a silent squeeze, and not a destructive-HALT (C-Matrix is read, not amended, by D.A).
 
-- **Design-statement verification may surface a divergence (G.W, additive-reshard).** G.W's mandate
-  to verify the design statement against the implementation may find a scale-only phenomenon
-  implemented below demonstration fidelity, or an engineering optimization that crept in. If so,
-  that is an **additive-reshard discovery** (a corrective follow-on session), surfaced at the T.G ◆
-  boundary — not silently passed. Only a divergence requiring a *change to a frozen contract* would
-  be a destructive-HALT (not expected — the pipeline is complete and KAT-green).
+- **PARI oracle gating (carried from ROADMAP G.C-boundary open question).** D.A.2's DL KAT may
+  cross-check against PARI's discrete log. The ROADMAP flags the project-wide oracle-test policy as
+  *still open, recommended for resolution at this Track-D plan-init*. For D.A.2, follow the G.C
+  pattern: PARI cross-check `#[ignore]`/feature-gated (skips cleanly when absent); a deterministic
+  non-PARI KAT carries the reproducibility burden. **Surface the project-wide policy decision at the
+  D.A.1 `@plan` juncture** — D.B leans harder on PARI, so resolving it now (not per-test) is owed.
 
-- **Stale `lib.rs` "stub" docstring (G.W cleanup, additive).** `gnfs/src/lib.rs:17–19` describes the
-  `sqrt` algebraic/assembly entries as "stub," stale since G.F.3/G.F.4 landed. G.W corrects it as
-  part of the design-statement-verification pass — a trivial `cargo check`-touching edit, plainly
-  part of the writeup unit; surfaced here, not silently grown.
-
-- **No fast inner loop for prose (lever 5, holds juncture-tier at Opus).** Unlike every prior
-  Track-G sub-track, this bundle's load-bearing content (register fidelity, L-notation proof
-  correctness, design-statement verification) is **not** gated by `cargo test`. The inner control
-  loop is weak/absent, which is the *opposite* of the opt-down condition — so juncture-tier holds at
-  Opus and the T.0 `@plan` confirmation is the compensating control for the C-Textbook freeze.
+- **No descent / no F_ℓ solve in D.A (defocus guard).** D.A stops at producing the augmented DL
+  relation matrix. The F_ℓ linear algebra is D.B; individual log + special-q descent is D.C.
+  Implementing either here is **defocus** — internal-continue only within the D.A scope.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase τ scope contract / C-Textbook provisional clauses; the G.W entry
-  "where the design statement is verified against the actual implementation"; the documentation-
-  format Discoveries entry recommending MathJax; the "On scale" section deferred to T.0) and the
-  prior `docs/PLAN.md` G.F history before any session in this bundle. **Note the roadmap-frame flex**
-  (T.0 runs before the G.W↔T.G pairing — logged in Discoveries above).
-- Read the existing documentation corpus T.0/G.W/T.G work over: `docs/PEDAGOGY.md` (rho ECDLP code-
-  tour, retrofitted by T.0), `shared/numth/docs/PEDAGOGY.md` (α-substrate, retrofitted by T.0),
-  `shared/numfield/docs/PEDAGOGY.md` (G.A, cited by G.W/T.G), `gnfs/docs/PEDAGOGY.md` §1–§51 (G.B–G.F
-  code-tours; G.W appends the integrative chapter, T.G is its maths-first sibling). The textbook
-  genre target is `tetratile/docs/mathematics.rst` (maths-first, learnable on its own).
-- **Register:** T.0 *establishes* the textbook register (C-Textbook); G.W is **PEDAGOGY** (code-tour,
-  matching the G.D.W/G.E.W/G.F.W chapter genre and quality); T.G is **textbook** (maths-first,
-  obeying the just-frozen C-Textbook). Do not conflate the two genres — that distinction is the core
-  of Track τ.
-- **Tier routing:** all three sessions are **Opus** (`@plan-deep` for the writing, or `@build`-Opus
-  if the chain dispatches build-tier; the payoff proofs and C-Textbook freeze are the Opus drivers).
-  T.0 carries one `@plan` marker: a T0/Opus **post-landing C-Textbook-freeze confirmation** (page
-  `@plan-juncture`) before T.G is dispatched. There is no design-juncture *before* T.0 — T.0 *is* the
-  spine-design session.
-- **Invariants to preserve:** all Track-G code contracts (C-PolyPair, C-Score, C-Relation,
-  C-FactorBase, C-Matrix, C-LinAlg, C-AlgSqrt) and the G.A substrate contracts are **frozen** — this
-  bundle reads and articulates them; it amends no code contract. The only code touch is the G.W
-  stale-docstring correction in `gnfs/src/lib.rs`. The new contract is **C-Textbook** (prose-
-  enforced, frozen at T.0).
-- **CADO-NFS / msieve remain dev-only oracles**, unchanged. No new dependency.
-- **Doc-format:** new display mathematics uses MathJax (`$$…$$`); ratified at T.0. The textbook is
-  Markdown + MathJax; the `*.W` code-tours are recommended (not mandated) to match.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — this bundle opens a
-  new artifact (the textbook) and freezes a new cross-track contract (C-Textbook), and prose has no
-  inner-loop test, so halt at every juncture. With the T.0 `@plan` marker and the T.G ◆ boundary it
-  halts **twice**: the **T.0 C-Textbook-freeze confirmation** (before G.W/T.G consume the register)
-  and the **T.G ◆ boundary** (the Track-G close + roadmap-flex log).
+- Read `docs/ROADMAP.md` (the D.A spec under Phase γ; **Contract C1 → Width policy** for the
+  confirm-record obligation and the prescriptive widening trigger; Contract C2 — the NFS-DL solver
+  interface D.A's contracts ultimately feed; Contract C3 — the polysel-scoring reuse note) and this
+  PLAN before any session.
+- Read the substrate D.A adapts: `gnfs/src/sieve/mod.rs` (the `Relation` / `ExponentVector` C-Relation
+  contract, u32-exponent DL-readiness note), `gnfs/src/sieve/factor_base.rs` (C-FactorBase),
+  `shared/numfield/src/element.rs` (`NumberFieldElement::pow`, `reduce_mod_ideal`),
+  `shared/numfield/src/ideal.rs` (C-Ideal), `shared/numth/src/smooth.rs` (C1, `Uint<4>`). The G.A
+  number-field code-tour (`shared/numfield/docs/PEDAGOGY.md`) and the T.G textbook chapter give the
+  mathematical background.
+- **Register:** D.A is **code** (Rust, `STYLE-CODE-RUST.md`), with KATs in `gnfs/tests/*_kat.rs`
+  following the existing naming convention (`schirokauer_kat.rs`, `dl_relation_kat.rs`). No PEDAGOGY
+  chapter in D.A — the NFS-DL writeup is D.W (later), paired with T.D.
+- **Tier routing:** D.A.1 is **Opus** (Schirokauer-map substrate + cross-track contract freeze —
+  `@plan-deep` for design or `@build`-Opus if the chain dispatches build-tier). D.A.2 is **Sonnet**
+  (`@build`). D.A.1 carries one `@plan` marker: a T0/Opus post-landing C-Schirokauer + C-DLRelation
+  freeze confirmation (page `@plan-juncture`) before D.A.2 is dispatched.
+- **Invariants to preserve:** all Track-G code contracts (C-Relation, C-FactorBase, C-Matrix,
+  C-LinAlg, C-AlgSqrt) and the G.A substrate contracts (C-NF, C-Ideal, C-Res, C-Dedekind) are
+  **frozen** — D.A reads and adapts them; it amends no Track-G contract. **C1 `Uint<4>` stays as-is**
+  (confirm-record, not widen). The new contracts are C-Schirokauer + C-DLRelation (D.A.1).
+- **PARI remains a dev-only oracle**, never on a build path. Resolve the project-wide oracle-test
+  gating policy at the D.A.1 `@plan` juncture (carried from the ROADMAP G.C-boundary open question).
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — D.A opens a new
+  sub-track (Track D) and freezes two new cross-track contracts on an unproven (for DL) shard pattern,
+  so halt at every juncture. With the D.A.1 `@plan` marker and the D.A.2 ◆ boundary it halts
+  **twice**: the **D.A.1 C-Schirokauer freeze confirmation** (before D.A.2 consumes it) and the
+  **D.A.2 ◆ boundary** (Track-D-entry close).

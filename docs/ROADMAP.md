@@ -36,9 +36,11 @@ they are treated together.
 2. **Scale-only optimizations** (Coppersmith multi-poly, large-prime variations, Galois automorphism
    quotienting) are implemented at *demonstration fidelity*: their mathematical content is present
    in the code, even where their performance contribution doesn't show at toy scale.
-3. **Engineering optimizations** (SIMD, NUMA, custom assembly, MPI distribution, GPU) are
-   explicitly omitted. CADO-NFS and msieve serve as dev-only correctness oracles, never on a
-   production path.
+ 3. **Engineering optimizations** (SIMD, NUMA, custom assembly, MPI distribution, GPU) are
+    explicitly omitted. **CADO-NFS** serves as the single live correctness oracle — an opt-in
+    *validation sidecar* on rGNFS's (purely demonstrative) runtime, never part of how rGNFS computes
+    its answer. (msieve, originally a co-oracle, is retired; PARI and msolve remain narrow per-track
+    DL/Gröbner cross-checks. See the dev-oracle policy in the Discoveries log.)
 
 This is stronger than "no optimizations" because it distinguishes mathematics-that-matters-at-scale
 from engineering-that-is-orthogonal-to-pedagogy. The former is in scope; the latter is not.
@@ -150,6 +152,37 @@ over a richly-ramified field can exhibit phenomena a "huge" instance over a tame
 | **Total** | **~72-93** | **23-36 months** | At one session every 3-5 days |
 
 At one session per week (more realistic part-time), 27-42 months. Multi-year commitment by design.
+
+### Progress
+
+*Reconciled at the T.G ◆ boundary (2026-06-08). The Scope table above is the frozen design-time
+estimate, kept intact for variance analysis; this subsection tracks actuals against it. Counts are
+**commit-shaped sessions** (one commit = one session), the same unit as the Scope table — distinct
+from PLANs, where one `docs/PLAN.md` bundles several sessions.*
+
+| Track | Estimate | Done | Remaining | Status |
+|-------|---------:|-----:|----------:|--------|
+| α — Foundation | 3-5 | ~6 (α.1–α.5 + S0.W backfill) | 0 | **complete** |
+| β — GNFS factoring (G) | 16-22 | ~22 (G.A → G.F + G.W) | 0 | **complete** |
+| γ — NFS-DL (D) | 8-10 | 0 | 8-10 | not started |
+| δ — Algebraic ECDLP (E) | 25-32 | 0 | 25-32 | not started |
+| ε — Shor + PQ (S) | 7-9 | 0 | 7-9 | not started |
+| ζ — Umbrella | 2-4 | 0 | 2-4 | not started |
+| τ — Textbook (T) | 2-3 | 2 (T.0 spine + T.G chapter) | ~1 (T.Z + per-chapter overruns) | spine + Track-G done |
+| **Total** | **~72-93** | **~30** | **~43-56** | ~⅓ complete |
+
+**Confirmed-complete spans** (commit-anchored): Phase α through `α.5`/`S0.W`; Track G end-to-end —
+G.A (`bdba6f5`…`967e394`), G.B (`2f43f99`…`7fa9ab9`), G.C (`c1dc0b6`…`23a5222`), G.D
+(`a0e854b`…`c9f18b9`), G.E (`416f6db`…`f8ca3f8`), G.F (`2af8116`…`e870c82`); and the Track-G-closeout
+/ Track-τ-open bundle — T.0 (`5c9b783`), G.W (`76f3633`), T.G (`a896198`). Next up per the
+sequencing order: **Track D (NFS-DL)**, opening with the Opus-flagged D.A.1 bridge session.
+
+**Estimation-bias note (inferred, not yet re-baselined):** the per-track *remaining* bands are the
+original design-time estimates. The G.C boundary found that demonstration-fidelity sessions run
+400–800 LOC (resolving to "own session," not a merge) — a bias toward the **upper** end of each
+band. If that pressure holds in Tracks D/E (which carry several demonstration-fidelity sessions),
+the realistic remaining count sits nearer the 56 ceiling than the 43 floor. A proper re-baseline is
+owed once Track D gives a second data point.
 
 ---
 
@@ -431,6 +464,56 @@ accommodate:
 The interface should be designed at S0.2 with all three consumers in mind, even though E.K won't
 land until much later. This is exactly the "substrate sessions over-specify" rule in action.
 
+**Width policy (prescriptive trigger — decided at the D.A boundary, 2026-06-08).** C1's surface is
+hardcoded to `Uint<4>` (256-bit). An impact assessment at the D.A boundary established that this is
+**architecturally isolated, not pervasive**: the core number-field/polynomial algebra is `BigInt`
+(unbounded, width-independent); factor-base indices are `usize` and exponents `u32`
+(width-independent); the relation/matrix contracts (C-Relation, C-Matrix) key on factor-base
+*indices*, not integer magnitudes. `Uint<4>` is confined to exactly three sites — `trial_smooth`'s
+input, `SmoothWitness::cofactor`, and `norm_to_uint` in `gnfs/sieve/norms.rs` (which carries an
+explicit 256-bit **overflow check** — the failure mode is *loud, not silent corruption*). Neither
+D.A contract (C-DLRelation, C-Schirokauer) embeds the width in its surface.
+
+*Decision:* the width is **not** widened speculatively. It stays `Uint<4>` while toy scale holds
+(per "speculative generality is the greater risk than late refactor"). D.A.1 *confirms-and-records*:
+it computes the toy-scale NFS-DL norm bound, asserts it fits 256 bits (a KAT), and a principle-4
+annotation in D.W records that this ceiling is an *engineering-scale boundary, not a mathematical
+one* (a consumer scaling rGNFS toward real NFS would hit it; the mathematics is unchanged).
+
+*The prescriptive trigger:* **if/when** the `Uint<4>` ceiling becomes constrictive — `norm_to_uint`'s
+overflow check fires in a real run, or a consumer legitimately needs to scale past toy N — the
+pre-chosen response is the **const-generic widening**: parameterise the three sites over `Uint<L>`
+(default `L = 4`), making future scaling a type-parameter change rather than an edit. **This widening
+must be executed as its own deliberate, boundary-respecting ROADMAP-then-shard session — never as
+spontaneous in-flight scope growth during whatever track first touches the wall.** A `@build` agent
+that encounters the overflow mid-session must *halt and surface it as a discovery*, not widen the
+type opportunistically. The widening is mechanical and local (three sites; `SmoothWitness::factors`
+stays `(u64, u32)` — primes fit in u64 even at NFS scale), so the late-refactor cost is bounded by
+design; that boundedness is exactly what licenses deferring it.
+
+*Performance / architecture tradeoffs of the widening (assessed at the D.A boundary — so the future
+session inherits them, not rediscovers them):*
+- **No toy-path tax.** `Uint<L>` with `L` const-generic and `crypto-bigint`'s monomorphisation means
+  `Uint<4>` instantiations compile to byte-identical machine code. Widening imposes nothing on the
+  toy regime; it only *relocates the overflow ceiling outward*. The wider-width arithmetic cost
+  (O(L²) multiply, limb-linear trial division) is **intrinsic to scaling N** — it would be paid under
+  any representation, `BigInt` included — so widening *reveals* that cost, it does not *create* it.
+- **Tradeoff 1 — over-wide global.** A single global `L` forces every smoothness consumer to the
+  widest width any one needs (e.g. G-track norms at `Uint<8>` would over-pay for E.K's narrower
+  Semaev-point smoothness). **Mitigation, and a requirement on the widening session:** make `L`
+  *per-call-site instantiable*, not one global alias — that is the whole point of the const-generic
+  shape over a hard retype.
+- **Tradeoff 2 — const-generic infectiousness.** `trial_smooth<const L>` is infectious upward: callers
+  wanting width-polymorphism must also become generic or pin a width. The propagation is *shallow* by
+  construction (the `SmoothWitness` result is already width-independent `(u64, u32)` and re-narrows
+  immediately), so it stops at `norm_to_uint` + the sieve relation-construction sites — but a careless
+  widening could leak `<const L>` across the whole sieve surface. Containing that propagation is
+  precisely why this is a *scoped, deliberate* session and not a mid-flight edit.
+
+These tradeoffs *reinforce* the deferral: there is no toy-path cost avoided by widening early and no
+contract entanglement created by waiting, so the only rational time to pay the (bounded, contained)
+widening cost is when the ceiling actually binds.
+
 ### Contract C2 — NFS-DL solver interface
 
 **Defined in:** D.C. **Consumed by:** E.C (MOV bridge).
@@ -485,6 +568,162 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06 — D.A boundary: dev-oracle policy RESOLVED + CADO-NFS validation-sidecar design statement
+
+Resolves the standing "reference-oracle comparison tests" open question (queued at G.C sharding,
+slipped five boundaries — see the now-closed entry below) and adds the build/install + sidecar
+design the open item was waiting on. Decided at the Track-D plan-init, as recommended.
+
+**Conceptual model: validation sidecars on the *demonstration* path, never the compute path.**
+rGNFS has **no production path** — its runtime is fundamentally *demonstrative/pedagogical* (it
+factors toy N and solves toy DL to teach how, not to produce factorizations anyone depends on). This
+*dissolves* the principle-3 tension rather than straining it: principle 3 forbids oracles on a
+*production* path, and there is none. An oracle is a **validation sidecar** — given the same input
+rGNFS just demonstrated on, the sidecar independently confirms rGNFS got the same answer. The oracle
+is **never part of how rGNFS computes its answer; only part of how a student gains confidence the
+answer is right** (compute-path vs. validation-path — the distinction that keeps it clean).
+
+**Single live reference: CADO-NFS. msieve retired.** The original plan named four scattered oracles
+(CADO, msieve, msolve, PARI). Consolidated:
+- **CADO-NFS** — the **sole live NFS reference implementation**, and the **designated end-state
+  validation sidecar** (see the design statement below). It is the one *living, maintained, serious*
+  open NFS implementation; it covers **every** Track-G stage (poly-select, sieve, filter, linalg,
+  sqrt) and **also does NFS-DL** (`cado-nfs-dl`), so it complements PARI in Track D rather than
+  needing a separate factoring oracle.
+- **msieve — RETIRED from the live-sidecar plan.** It is unmaintained (~2015, may need build
+  patching against modern GMP/compilers), does **not** do NFS-DL, and its originally-assigned stages
+  (G.E linear algebra, G.F square root) are **already complete and KAT-verified against published
+  values**. Marginal remaining benefit (a second independent linalg implementation) does not justify
+  carrying a dead build dependency. Retained only as an *optional historical* cross-check note for
+  G.E/G.F, not a maintained dependency. (Supersedes the line-694 msieve assignment.)
+- **PARI/GP** — lightweight DL cross-check (Track D), unchanged. Small, instant at toy scale.
+- **msolve** — Track-E Gröbner oracle (E.K), unchanged; the one genuinely distinct tool (and the one
+  with unbounded memory appetite — assess at E.K, not here).
+
+**Gating policy (project-wide, uniform).** Oracles are **absent-by-default, opt-in, skip cleanly.**
+Every oracle KAT is `#[ignore]`/feature-gated (`--features oracle-tests`) and skips cleanly when the
+binary is not found; the deterministic non-oracle KATs *always* carry the reproducibility burden
+(matching the established G.C CADO pattern). A demonstration sidecar mode is explicit opt-in (flag /
+env var), never automatic. **Nothing ever fails, hangs, or behaves environment-dependently because an
+oracle is uninstalled** — the student-with-no-setup path is always green. Dynamic/auto-install is
+*not* adopted (principle 3 disfavours it); install is a deliberate contributor step.
+
+**Consumer-hardware / student-budget viability (the question that prompted this).** At the scales
+rGNFS targets (toy, ~80–100-bit N on a laptop), both candidate sidecars run **comfortably on
+student-grade hardware with zero hosted/provisioned resources** — the hosted-cluster cost that haunts
+NFS applies only at *cryptographic* scale, which principle 3 puts out of scope. The friction is
+*build-time*, not runtime or RAM:
+- **msieve** (were it kept): trivial — small self-contained C build (~1–2 min), sub-second runs, a
+  few MB RAM. The *most* comfortable, but retired for the maintenance reasons above.
+- **CADO-NFS**: viable but heavier — large CMake C/C++/Python codebase, **several-to-~15 min** build,
+  hundreds of MB disk, needs a Python interpreter; at toy scale runtime is a few seconds dominated by
+  orchestration overhead, not math. No budget concern, no provisioning. *Build cost is the only real
+  friction; confirm exact times on first install per OS (Linux easiest; Windows is CADO's weak spot).*
+- **Honest caveat (principle-4-adjacent):** this comfort is *itself* a toy-scale artifact — the same
+  tools on the same hardware would be unusable at the cryptographic scales they were built for. Worth
+  a one-line annotation wherever the sidecar is documented.
+
+**Build/install detail lives in README/CONTRIBUTING, not here.** This ROADMAP entry fixes the
+*policy*; the contributor-facing "dev oracles" how-to (the actual clone/cmake/make invocations) is
+written into README/CONTRIBUTING when CADO is first wired live, so the durable roadmap does not carry
+a staleness-prone command reference.
+
+### CADO-NFS validation sidecar — destination design (end-state goal)
+
+*Not implemented now; this is the stated destination, built incrementally.* When rGNFS is complete,
+**CADO-NFS is its designated full-pipeline validation oracle**: given any instance rGNFS
+demonstrates, the CADO sidecar provides **behavior calibration** (do rGNFS's intermediate
+quantities — relation counts, matrix dimensions, kernel structure — match a serious implementation's
+at matched parameters?) and **results validation** (does the final factor / discrete log agree?).
+
+The path to this end state is *already being walked* by the per-stage cross-checks: G.B matches CADO
+published Murphy-E examples, G.C matches CADO relation counts within tolerance, G.D matches CADO
+matrix dimensions, G.E recovers the same factorizations — each today against *published* CADO values,
+not a live run. The end-state sidecar replaces "published values" with a *live, opt-in* CADO
+invocation over the same input, closing the loop into a single demonstration-time "rGNFS says X;
+CADO confirms X" experience. Incremental, opt-in, off the compute path — the destination, not a
+near-term deliverable.
+
+### 2026-06 — D.A boundary: C1 `Uint<4>` width decision resolved (confirm-record + prescriptive widening trigger)
+
+The α-boundary deferred the C1 `Uint<4>` → `Uint<L>` widening decision to "G.C or D.A." Resolved at
+the D.A sharding boundary. An impact assessment (prompted by the question "what is the impact of
+`Uint<4>` if a consumer scaled past the toy regime?") established that the width is **isolated at
+the smoothness boundary, not a deep/multifarious design commitment**: core algebra is `BigInt`,
+contracts key on factor-base indices, and only three sites touch the fixed width — one of which
+(`norm_to_uint`) already guards with a loud overflow check. *Verdict:* **no widening now**
+(confirm-and-record at D.A.1 + a D.W principle-4 annotation that the ceiling is engineering-scale,
+not mathematical). A **prescriptive widening trigger** is now recorded in the C1 contract subsection:
+if/when the ceiling binds, the const-generic widening is the pre-chosen response, executed as its own
+disciplined ROADMAP-then-shard session — never as spontaneous in-flight scope growth. See **Contract
+C1 → Width policy** for the full statement. This is a *static-frame policy* decision; it blocks
+nothing in D.A.
+
+### 2026-06 — Track-G closeout + Track-τ open (T.0, G.W, T.G; T.G ◆ boundary)
+
+The Track-G-closeout / Track-τ-open bundle is complete: T.0 (`5c9b783`), G.W (`76f3633`), T.G
+(`a896198`). This crosses the **Track-G ◆ boundary** — the GNFS arc (G.A → G.W → T.G) is coherent
+and closed. Three roadmap-frame updates are taken here.
+
+- **Roadmap-frame flex resolved: T.0 runs *before* the G.W↔T.G pairing (additive).** The ROADMAP
+  Phase τ scope contract folds T.G into G.W "at the G ◆ boundary," assuming C-Textbook is already
+  frozen. It was not — no textbook artifact existed. The G.W↔T.G pairing is therefore *blocked on
+  T.0*. The G.F-boundary PLAN resolved this by **running T.0 first**, then the paired G.W + T.G, as
+  a 3-session bundle. This is **additive** (sequence the spine ahead of its first consumer; no
+  contract break) and **answers the open question** flagged at the G.A boundary ("whether T.0 runs
+  early or is deferred until more chapters exist to calibrate the register"): T.0 ran early, and the
+  register calibrated cleanly against the existing rho/α retrofit content. The "T.0 is the only
+  Track-T session that adds calendar time up front" prediction held — T.G folded into G.W as
+  planned, net-new cost was T.0 alone.
+
+- **C-Textbook frozen (`5c9b783`).** The cross-track documentation-register contract — audience
+  (undergraduate maths background), depth (survey with proof-sketch depth: complete and clinical,
+  not exhaustive, not inscrutable; full proofs only at designated payoffs), through-line
+  (structure-based escape from search), markup (**Markdown + MathJax**, ratifying the G.C-boundary
+  recommendation), and artifact location (**`docs/MATHEMATICS.md`**, single-file; promotion to
+  `docs/textbook/` deferred to T.Z). This supersedes and closes the "rST or Markdown TBD" and the
+  "`docs/MATHEMATICS.md` vs `docs/textbook/`" open items from the G.A-boundary Track-τ entry. The
+  markup ratification also closes the documentation-format Discoveries entry below (recommended at
+  G.C ◆, now frozen): no hard MathJax limitation surfaced.
+
+- **G.W design-statement verification passed on all three scoping principles.** The ROADMAP names
+  G.W as "where the design statement is verified against the actual implementation." Verdict
+  (recorded in the PLAN action-frame digest): Principle 1 (algorithmic content complete) — pass;
+  Principle 3 (no engineering optimizations crept in) — pass; Principle 4 (scale-only at
+  demonstration fidelity) — pass, with one principle-4 *over-exposed* annotation: bad primes are
+  prominent at toy scale (documented in G.W §59), a toy-scale artifact, not a divergence. No frozen
+  contract was invalidated; no additive-reshard was triggered. The L-notation derivation of
+  L_N[1/3, (64/9)^{1/3}] landed complete (G.W §60; T.G full payoff proof). One stale-doc cleanup:
+  the `gnfs/src/lib.rs` `sqrt`-module "stub" docstring was corrected.
+
+### 2026-06 — End of sub-track G.F (square root + assembly, G.F ◆ boundary)
+
+G.F is complete: G.F.1 (`2af8116`), G.F.2 (`11f9065`), G.F.3 (`c80a855` + review fix `ec69a1f`),
+G.F.4 (`7f80040`), G.F.W (`f7ebe1d`). **The GNFS factoring pipeline proper (G.A → G.F) is now
+complete end-to-end**: the G.F.4 assembly + end-to-end factor driver closes the arc from N to a
+recovered factor. **C-AlgSqrt frozen** (`c80a855` + `ec69a1f`) — the Couveignes CRT algebraic
+square root, D.B-consumable. One substrate extension: C-NF was additively extended at G.F.1
+(`reduce_mod_ideal` frozen, `20cd263`). No roadmap-frame contract changes; the boundary was
+still-on-intent.
+
+### 2026-06 — End of sub-track G.E (linear algebra, G.E ◆ boundary)
+
+G.E is complete: G.E.1 (`416f6db`), G.E.2 (`5145d4c`), G.E.3 (`19936a7`), G.E.W (`a985965`). Block
+Lanczos landed as the primary GF(2) nullspace solver, block Wiedemann as the secondary — matching
+the ROADMAP's "block Lanczos as primary; block Wiedemann as secondary" prescription. **C-LinAlg
+frozen** (`416f6db`) — the GF(2) nullspace substrate (`BlockVec`, `MatrixOperator`, `KernelVector`,
+QC columns), consumed by G.F and re-consumed by D.B (block W/L over F_ℓ). The G.E.1 substrate-design
+session was Opus-tier as flagged. Boundary still-on-intent.
+
+### 2026-06 — End of sub-track G.D (filtering, G.D ◆ boundary)
+
+G.D is complete: G.D.1 (`a0e854b`), G.D.2 (`d424f53`), G.D.W (`7762339`). Singleton removal,
+clique/excess pruning, and 2-way-then-k-way merging landed with the graph view of relations.
+**C-Matrix frozen** (`a0e854b`) — the filtered sparse GF(2) matrix + provenance map, threading the
+relation→matrix provenance forward to G.F's square-root stage. The documentation math-rendering
+format discovery (MathJax recommendation, below) was first logged at the G.D plan-init (`d05f26f`)
+and carried to the G.C-boundary entry. Boundary still-on-intent; no roadmap-frame contract changes.
+
 ### 2026-06 — Documentation math-rendering format: Markdown + MathJax (recommended at G.C ◆)
 
 *Provenance:* raised at the G.C ◆ boundary while setting up the next sub-track. *Finding:* every
@@ -520,12 +759,20 @@ Markdown TBD" in the Phase τ scope contract) **and** is recommended — not man
 be retrofitted wholesale; new display math uses MathJax, and inline-Unicode passages can be migrated
 opportunistically.
 
-*Status:* **recommended, not yet frozen.** T.0 ratifies (it already owns the doc-tooling decision).
-This is a *static-frame documentation-tooling* call, not a code contract — it blocks nothing in G.D
-(filtering produces no prose math beyond its `*.W` chapter, far downstream). Reopen only if T.0
-finds a hard MathJax limitation (e.g. a renderer the project must target that lacks MathJax).
+*Status:* **FROZEN at T.0 (`5c9b783`).** Ratified as part of the C-Textbook freeze (see the
+Track-G-closeout Discoveries entry above) — no hard MathJax limitation surfaced. This was a
+*static-frame documentation-tooling* call, not a code contract; it blocked nothing in G.D
+(filtering produced no prose math beyond its `*.W` chapter). Reopen only if a later track must
+target a renderer that lacks MathJax.
 
-### 2026-06 — Open question queued during G.C sharding (reference-oracle comparison tests)
+### 2026-06 — Open question queued during G.C sharding (reference-oracle comparison tests) — RESOLVED at D.A boundary
+
+**RESOLVED (D.A boundary, 2026-06-08) — see the "dev-oracle policy RESOLVED + CADO-NFS
+validation-sidecar design statement" entry at the top of this log.** Outcome in brief: CADO-NFS is
+the single live reference (msieve retired); oracles are absent-by-default / opt-in / skip-clean
+validation sidecars on the demonstration path; build/install how-to goes to README/CONTRIBUTING; the
+sidecars run comfortably on student-grade hardware at toy scale (build-time is the only friction).
+The original framing is retained below for provenance.
 
 Surfaced while sharding G.C (sieving): the ROADMAP names four external reference implementations as
 dev-only correctness oracles, scattered across tracks — **CADO-NFS** (G.C relation counts, G.B
@@ -550,6 +797,11 @@ oracle-comparison-test strategy. Candidate shapes, not yet chosen:
 This is a *static-frame* documentation/policy question, not a code contract; it does not block G.C
 (the per-test gating already works). Resolve it once, project-wide, rather than re-deciding per
 oracle.
+
+**Carry-forward history (now closed):** the item slipped four boundaries (G.D, G.E, G.F, T.G) on the
+per-test workaround — non-blocking throughout because the `#[ignore]`/feature-gating held — and was
+**resolved at the fifth (D.A boundary)** as recommended, before Track-D PARI cross-checks are
+written. See the resolution entry at the top of the log.
 
 ### 2026-06 — End of sub-track G.C (sieving, G.C ◆ boundary)
 
