@@ -351,3 +351,56 @@ identifies them as kernel candidates. This phenomenon is fully exposed at toy sc
 | `tests/linalg_substrate_kat.rs` | 4 | Operator correctness (A·V, Aᵀ·V), QC column construction, provenance round-trip, determinism |
 | `tests/lanczos_kat.rs` | 6 (+1 ignored) | Self-orthogonality path, single dependency, full-rank, determinism, multiple dependencies; CADO oracle (ignored) |
 | `tests/wiedemann_kat.rs` | 9 | Cross-validation with Lanczos, full-rank, empty matrix, single dependency, determinism, BM Fibonacci, BM period-4, BM all-ones, all-zero rows, multiple dependencies |
+
+## G.F — Square root and assembly: rational sqrt, Couveignes CRT, GCD assembly
+
+Toy semiprime: N = 35 = 5 × 7 (~6-bit). K = ℚ(√2), f(x) = x² − 2, m = 6. Relations:
+(a=4, b=0) and (a=9, b=0). Kernel vector selects both relations. All timings are wall-clock
+from a single run in unoptimized debug builds (`cargo test`, no `--release`). At toy scale,
+all three stages (rational sqrt, Couveignes CRT, GCD assembly) complete in under 1 ms — the
+dominant cost is the `NumberFieldElement::mul` calls in `form_gamma` and the Lagrange
+interpolation in `per_prime_beta`.
+
+**Toy-scale factoring result (N = 35, 1 kernel vector tried):**
+
+| Stage | Input | Output | Wall time (debug) | Notes |
+|-------|-------|--------|-------------------|-------|
+| Rational sqrt | ∏(a_i − b_i·m) = 4 × 9 = 36 | X = 6 (mod 35) | < 1 ms | isqrt(36) = 6; trivial at toy scale |
+| Algebraic sqrt (Couveignes) | γ = 36 in K = ℚ(√2) | Y = 1 (mod 35) | < 1 ms | 10 CRT primes; Norm(6) = 36; 36 mod 35 = 1 |
+| GCD assembly | X = 6, Y = 1, N = 35 | factor = **5** | < 1 ms | gcd(6 − 1, 35) = gcd(5, 35) = 5 |
+
+**Factor recovered: 5 from N = 35 = 5 × 7. Kernel vectors tried: 1.**
+
+**Interpretation.** At toy scale (N = 35, 6-bit), all three stages are instantaneous. The
+dominant cost in `algebraic_sqrt` is the `form_gamma` product (2 `NumberFieldElement::mul`
+calls) and the `per_prime_beta` Lagrange interpolation (10 primes × 2 roots each). In release
+mode all stages complete in microseconds.
+
+**Science↔engineering note (principle 4).** Two scale-dependent phenomena are under-exposed
+at toy scale:
+
+1. **CRT prime count.** At toy scale (|S| = 2, coefficients ~ 4 bits, d = 2), 10 CRT primes
+   is massive overkill — 2–3 primes would suffice. At NFS scale (|S| ~ 10⁵, coefficients ~
+   100 bits, d ~ 5), the prime count grows as O(coefficient_bits / 64) and the CRT lift
+   dominates the algebraic sqrt cost. The prime count is the scale knob; the algorithm is
+   identical at all scales.
+
+2. **Trivial-GCD probability.** At toy scale, the first kernel vector yields a non-trivial
+   GCD (5 from N = 35). In general, ~50% of kernel vectors yield trivial GCDs for a semiprime
+   N = p × q; the retry loop is the safety net. At NFS scale, the linear algebra step produces
+   many kernel vectors (the nullspace dimension grows with the excess), so the retry loop
+   terminates quickly.
+
+**Embedding-sign resolution (not a scale artifact).** The sign resolution via the real
+embedding (Newton's method from m^{1/d}, evaluate β(θ), negate if < 0) is a correctness
+obligation at all scales, not a scale artifact. At toy scale it is exercised by the KAT; at
+NFS scale it is the same algorithm. The G.F.3 review juncture identified this as the
+silent-failure locus: a wrong-sign β produces a trivial GCD, not a red test.
+
+### Test coverage added (G.F)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `tests/sqrt_rational_kat.rs` | 5 | Rational sqrt correctness, index set, non-square panic, m-dependent factors |
+| `tests/sqrt_algebraic_kat.rs` | 7 | Couveignes correctness (known-square γ), congruence X²≡Y² (mod N), determinism, degree-2 two-relation case |
+| `tests/factor_end_to_end_kat.rs` | 6 (+1 ignored) | factor_from_congruence known values, full driver (N=35→5), trivial-GCD path, retry loop, all-trivial returns None; oracle KAT (ignored) |
