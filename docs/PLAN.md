@@ -242,7 +242,7 @@ D.B freezes one new code contract (C-LinAlgFl) at D.B.1 and reads the frozen Tra
 contracts. **C-LinAlgFl is sub-track-internal** (consumed by D.B.2 and D.C), distinguishing it from
 D.A's cross-track C-Schirokauer / C-DLRelation.
 
-### C-LinAlgFl — F_ℓ block-solver substrate (compiler + KAT) — *to be frozen at D.B.1*
+### C-LinAlgFl — F_ℓ block-solver substrate (compiler + KAT) — *frozen D.B.1*
 
 **Defined:** D.B.1. **Consumed by:** D.B.2 (Wiedemann reuses the vector/operator types; recovery
 reads the solved kernel), D.C (descent reads the recovered virtual-log table). Compiler-enforced
@@ -250,26 +250,236 @@ reads the solved kernel), D.C (descent reads the recovered virtual-log table). C
 correctness). **Not** consumed directly by E.C — the cross-track NFS-DL solver interface is C2,
 frozen at D.C.
 
-**Frozen interface (`gnfs/src/dl/linalg/`): *to be resolved at D.B.1 and written here by the
-`@plan-juncture` fork at execution time.*** The shape, sketched for the freeze (over-specify
-lightly):
+**Frozen interface (`gnfs/src/dl/linalg/`):**
 
-- **F_ℓ block vector** — `FlBlockVec` over `[Fp; BLOCK_WIDTH]` arrays (the F_ℓ analogue of GF(2)'s
-  bit-packed `BlockVec`), with `zeros`, `inner_product_matrix` (F_ℓ, returns an F_ℓ
-  `BLOCK_WIDTH × BLOCK_WIDTH` block), and component-wise F_ℓ add. Carries / threads the modulus
-  (`Fp<L>` needs `&Uint<L>`).
-- **F_ℓ matrix operator** — `apply` / `apply_transpose` over `FlBlockVec`, built from the F_ℓ matrix.
-- **Matrix-build entry** — `build_fl_matrix(&DLMatrix, ell) -> <F_ℓ matrix>`: reduces `u32` exponent
-  columns mod ℓ, appends Schirokauer columns (already mod ℓ), column layout `rational | algebraic |
-  schirokauer` per `DLMatrix::num_cols`.
-- **Solver entries** — `block_lanczos_fl(op, ell, seed) -> FlSolution` (D.B.1) and
-  `block_wiedemann_fl(...)` (D.B.2, same return shape). The solution shape carries the kernel /
-  particular solution D.B.2's virtual-log recovery and D.C's descent read.
-- **`BigInt`/`Fp` conversion** — the resolved approach for turning Schirokauer `BigInt` values into
-  `Fp` (helper or toy-ℓ-fits-`u64` constraint), recorded here at freeze.
+#### Constants
 
-*Marked "to be frozen at D.B.1"; the `@plan-juncture` fork writes the resolved interface into this
-subsection at execution time.*
+```rust
+/// Block width for F_ℓ block vectors: 32 field elements per block.
+///
+/// Smaller than GF(2)'s BLOCK_WIDTH=64 because field elements are larger than bits.
+/// 32 balances memory footprint against blocking benefit. Principle-4 annotation:
+/// at toy scale the blocking overhead is invisible; at NFS scale this is the
+/// cache-friendly unit for the inner loop.
+pub const FL_BLOCK_WIDTH: usize = 32;
+```
+
+#### FlBlockVec — F_ℓ block vector
+
+```rust
+/// A block of FL_BLOCK_WIDTH F_ℓ vectors, each of length `num_rows`.
+///
+/// Representation: `data[row]` is an array `[F; FL_BLOCK_WIDTH]` where `data[row][j]`
+/// is the j-th vector's value at `row`. This is the F_ℓ analogue of GF(2)'s bit-packed
+/// BlockVec — the layout is identical (row-major with vectors interleaved), but each
+/// scalar is a field element rather than a bit.
+///
+/// Generic over `F: Fp<L>` and `L` (limb count). The modulus ℓ is passed to each
+/// arithmetic method (matching the Fp trait's pattern), not stored in the struct.
+#[derive(Debug, Clone)]
+pub struct FlBlockVec<F: Fp<L>, const L: usize> {
+    /// Row data: `data[row][j]` = vector j's value at row.
+    pub data: Vec<[F; FL_BLOCK_WIDTH]>,
+    /// Number of rows (vector dimension).
+    pub num_rows: usize,
+}
+
+impl<F: Fp<L>, const L: usize> FlBlockVec<F, L> {
+    /// Construct a zero block vector of the given dimension.
+    pub fn zeros(num_rows: usize, ell: &Uint<L>) -> Self;
+
+    /// Get element (row, col) where col < FL_BLOCK_WIDTH.
+    pub fn get(&self, row: usize, col: usize) -> &F;
+
+    /// Set element (row, col) to value.
+    pub fn set(&mut self, row: usize, col: usize, value: F);
+
+    /// Component-wise F_ℓ addition: self += other.
+    pub fn add_assign(&mut self, other: &Self, ell: &Uint<L>);
+
+    /// Compute the FL_BLOCK_WIDTH × FL_BLOCK_WIDTH inner-product matrix self^T · other.
+    ///
+    /// Returns `result[i][j] = ⟨self.col(i), other.col(j)⟩` over F_ℓ (sum of products).
+    /// This is the core primitive for block Lanczos's orthogonality check.
+    pub fn inner_product_matrix(&self, other: &Self, ell: &Uint<L>)
+        -> [[F; FL_BLOCK_WIDTH]; FL_BLOCK_WIDTH];
+
+    /// Extract column j as a dense Vec<F> (for solution extraction / KAT).
+    pub fn column(&self, j: usize) -> Vec<F>;
+
+    /// Construct from dense columns (for test construction).
+    pub fn from_columns(cols: &[Vec<F>], ell: &Uint<L>) -> Self;
+}
+```
+
+#### FlSparseMatrix — F_ℓ sparse matrix
+
+```rust
+/// A sparse row in the F_ℓ matrix: (column_index, value) pairs.
+#[derive(Debug, Clone)]
+pub struct FlSparseRow<F> {
+    /// Sparse entries: (column index, F_ℓ value). Sorted by column index.
+    pub entries: Vec<(usize, F)>,
+}
+
+/// Sparse F_ℓ matrix in CSR-like format.
+///
+/// Built from DLMatrix by reducing exponent columns mod ℓ and converting
+/// Schirokauer BigInt columns to F_ℓ elements.
+#[derive(Debug, Clone)]
+pub struct FlSparseMatrix<F> {
+    /// Sparse rows.
+    pub rows: Vec<FlSparseRow<F>>,
+    /// Number of columns.
+    pub num_cols: usize,
+}
+```
+
+#### FlMatrixOperator — F_ℓ matrix as linear operator
+
+```rust
+/// A view of an FlSparseMatrix as a linear operator over F_ℓ.
+///
+/// Provides apply (A·V) and apply_transpose (Aᵀ·V) for block vectors.
+/// Mirrors the GF(2) MatrixOperator interface.
+pub struct FlMatrixOperator<'a, F> {
+    matrix: &'a FlSparseMatrix<F>,
+}
+
+impl<'a, F: Fp<L>, const L: usize> FlMatrixOperator<'a, F> {
+    pub fn new(matrix: &'a FlSparseMatrix<F>) -> Self;
+
+    pub fn num_rows(&self) -> usize;
+    pub fn num_cols(&self) -> usize;
+
+    /// Compute A·V: multiply the matrix by a block vector.
+    /// Input v has dimension num_cols; output has dimension num_rows.
+    pub fn apply(&self, v: &FlBlockVec<F, L>, ell: &Uint<L>) -> FlBlockVec<F, L>;
+
+    /// Compute Aᵀ·V: multiply the transpose by a block vector.
+    /// Input v has dimension num_rows; output has dimension num_cols.
+    pub fn apply_transpose(&self, v: &FlBlockVec<F, L>, ell: &Uint<L>) -> FlBlockVec<F, L>;
+}
+```
+
+#### Matrix-build entry
+
+```rust
+/// Build an F_ℓ sparse matrix from a DLMatrix.
+///
+/// Column layout: rational exponents | algebraic exponents | Schirokauer columns
+/// (matching DLMatrix::num_cols).
+///
+/// - Rational/algebraic exponents (u32) are reduced mod ℓ via from_u64.
+/// - Schirokauer columns (BigInt, already in ℤ/ℓ) are converted via bigint_to_fp.
+///
+/// # Type parameters
+/// - F: the Fp implementation (FpNaive4 or FpMonty4)
+/// - L: limb count (4 for 256-bit)
+pub fn build_fl_matrix<F: Fp<L>, const L: usize>(
+    dl_matrix: &DLMatrix,
+    ell: &Uint<L>,
+) -> FlSparseMatrix<F>;
+```
+
+#### BigInt→Fp conversion helper
+
+```rust
+/// Convert a BigInt (assumed to be in [0, ℓ) or reducible mod ℓ) to an Fp element.
+///
+/// The conversion path: BigInt → bytes → Uint<L> → Fp::from_uint.
+/// Handles negative BigInt values by reducing mod ℓ (adding ℓ if negative).
+///
+/// # Panics
+/// Panics if the BigInt's absolute value exceeds L*64 bits (cannot fit in Uint<L>).
+/// For toy ℓ (≤256 bits with L=4), this is not a constraint.
+pub fn bigint_to_fp<F: Fp<L>, const L: usize>(bi: &BigInt, ell: &Uint<L>) -> F;
+```
+
+#### FlSolution — solver return type
+
+```rust
+/// Solution from the F_ℓ block solver: a kernel vector over F_ℓ.
+///
+/// For NFS-DL, the kernel of the augmented relation matrix over F_ℓ gives the
+/// virtual logarithms of the factor-base elements. The solution vector's entries
+/// (indexed by column = factor-base element) are the virtual logs mod ℓ.
+///
+/// # Fields
+/// - `coefficients`: the solution vector, length = num_cols of the matrix.
+///   Entry i is the virtual log of factor-base element i (or Schirokauer correction).
+/// - `is_kernel`: true if this is a kernel vector (A·x = 0), false if particular solution.
+#[derive(Debug, Clone)]
+pub struct FlSolution<F> {
+    /// Solution vector: coefficients[i] = virtual log of column i.
+    pub coefficients: Vec<F>,
+    /// True if this is a kernel vector (homogeneous solution).
+    pub is_kernel: bool,
+}
+```
+
+#### Solver entries
+
+```rust
+/// Block Lanczos over F_ℓ: find the kernel of the matrix.
+///
+/// Returns a (possibly empty) list of kernel vectors — vectors x such that A·x = 0 over F_ℓ.
+/// The algorithm is randomized (via rng_seed); different seeds may find different vectors.
+///
+/// # Self-orthogonality handling (F_ℓ care)
+///
+/// Over F_ℓ (ℓ > 2), the inner-product matrix S = V^T·B·V can be singular even when
+/// V has full column rank (unlike GF(2) where singularity implies linear dependence).
+/// The F_ℓ block Lanczos handles this via Gaussian elimination with explicit F_ℓ
+/// inversion (Fermat inv), pivoting on nonzero entries rather than GF(2) parity.
+///
+/// # Arguments
+/// - op: the F_ℓ matrix operator
+/// - ell: the prime modulus (as Uint<L>)
+/// - rng_seed: seed for random initial vector
+pub fn block_lanczos_fl<F: Fp<L>, const L: usize>(
+    op: &FlMatrixOperator<'_, F>,
+    ell: &Uint<L>,
+    rng_seed: u64,
+) -> Vec<FlSolution<F>>;
+
+/// Block Wiedemann over F_ℓ (D.B.2 — same return shape as Lanczos).
+///
+/// Scalar (single-pair) demonstration fidelity, matching the GF(2) version.
+/// Uses Berlekamp–Massey over F_ℓ for the minimal polynomial.
+pub fn block_wiedemann_fl<F: Fp<L>, const L: usize>(
+    op: &FlMatrixOperator<'_, F>,
+    ell: &Uint<L>,
+    rng_seed: u64,
+) -> Vec<FlSolution<F>>;
+```
+
+#### Design decisions recorded at freeze
+
+1. **Block width FL_BLOCK_WIDTH = 32.** Smaller than GF(2)'s 64 because field elements are ~256 bits
+   vs 1 bit. 32 is a power of two that fits well in cache lines and provides sufficient blocking
+   benefit at toy scale. Not parameterised (const generic would complicate the interface for no
+   toy-scale benefit).
+
+2. **ℓ-threading via method parameters.** The modulus `ell: &Uint<L>` is passed to each arithmetic
+   method rather than stored in the struct. This matches the `Fp` trait's pattern and avoids
+   lifetime complexity. The caller (solver) holds the modulus and threads it through.
+
+3. **BigInt→Fp via `bigint_to_fp` helper.** The Schirokauer columns are `Vec<BigInt>` (already
+   reduced mod ℓ by D.A). The helper converts `BigInt → Uint<L> → Fp::from_uint`. Negative BigInt
+   values (possible from the Schirokauer map) are handled by adding ℓ. No `from_bigint` method is
+   added to the `Fp` trait — the helper is local to `dl/linalg/` and the conversion is a one-time
+   matrix-build cost, not an inner-loop operation.
+
+4. **FlSolution carries the full coefficient vector.** Unlike GF(2)'s `KernelVector` (row indices
+   only, since all nonzero entries are 1), the F_ℓ solution needs the actual field-element
+   coefficients. The `coefficients` vector is indexed by column (factor-base element index), and
+   its entries are the virtual logarithms mod ℓ. D.B.2's recovery reads this directly.
+
+5. **Parallel module confirmed.** The F_ℓ types (`FlBlockVec`, `FlSparseMatrix`, `FlMatrixOperator`)
+   are distinct from the GF(2) types (`BlockVec`, `SparseMatrix`, `MatrixOperator`). No shared
+   trait is introduced. The GF(2) C-LinAlg remains frozen and untouched. The duplication is
+   intentional (see Discoveries: parallel module, not generic refactor).
 
 ### Frozen contracts read by D.B (not amended)
 
