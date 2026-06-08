@@ -7,8 +7,9 @@
 //! strictly less than deg(f), with rational coefficients. Multiplication eagerly reduces mod f.
 
 use num_bigint::BigInt;
+use num_integer::Integer;
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 
 use crate::poly::{IntPoly, RatPoly};
 
@@ -189,6 +190,52 @@ impl<'a> NumberFieldElement<'a> {
         self.poly.degree().map_or(true, |d| d == 0)
     }
 
+    /// Reduce this element modulo the prime ideal `(p, α − r)`, returning the 𝔽_p residue.
+    ///
+    /// Evaluates the element's `RatPoly` representation at α ≡ r (mod p), clearing
+    /// denominators via modular inversion. The result is a `BigInt` in [0, p).
+    ///
+    /// This is the bridge from the number-field world into 𝔽_p: given an element
+    /// β = Σ (aᵢ/bᵢ) αⁱ, returns Σ (aᵢ · bᵢ⁻¹ · rⁱ) mod p.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any coefficient denominator is divisible by p. This signals a "bad prime"
+    /// for this element: the reduction is undefined because the denominator is not invertible
+    /// mod p. Callers must ensure p does not divide any denominator before calling this method.
+    pub fn reduce_mod_ideal(&self, p: &BigInt, r: &BigInt) -> BigInt {
+        // Accumulate the result as a BigInt in [0, p).
+        let mut acc = BigInt::zero();
+        // r_pow tracks r^i mod p, starting at r^0 = 1.
+        let mut r_pow = BigInt::one();
+
+        for coeff in &self.poly.coeffs {
+            // coeff = numer / denom; check that p ∤ denom (bad-prime contract).
+            let denom = coeff.denom();
+            if denom.is_multiple_of(p) {
+                panic!(
+                    "reduce_mod_ideal: bad prime — coefficient denominator {} is divisible by p={}; \
+                     reduction is undefined for this prime ideal",
+                    denom, p
+                );
+            }
+
+            // Compute denom⁻¹ mod p via the extended Euclidean algorithm.
+            let denom_inv = mod_inverse_bigint(denom, p);
+
+            // term = (numer * denom_inv * r_pow) mod p
+            let numer = coeff.numer();
+            let term = (numer * &denom_inv * &r_pow).mod_floor(p);
+            // Accumulate, keeping in [0, p).
+            acc = (acc + term).mod_floor(p);
+
+            // Advance r_pow: r^{i+1} = r^i * r mod p.
+            r_pow = (&r_pow * r).mod_floor(p);
+        }
+
+        acc
+    }
+
     /// Clone this element, keeping the same field reference.
     fn clone_in_field(&self) -> Self {
         Self { field: self.field, poly: self.poly.clone() }
@@ -207,6 +254,55 @@ impl Eq for NumberFieldElement<'_> {}
 impl std::fmt::Debug for NumberFieldElement<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "NumberFieldElement({:?})", self.poly)
+    }
+}
+
+// ─── Modular arithmetic helpers ───────────────────────────────────────────────
+
+/// Compute the modular inverse of `a` modulo `m` over ℤ.
+///
+/// Returns `x` such that `a * x ≡ 1 (mod m)`, reduced into [0, m).
+/// Panics if gcd(a, m) ≠ 1 (i.e., `a` is not invertible mod `m`).
+fn mod_inverse_bigint(a: &BigInt, m: &BigInt) -> BigInt {
+    let (gcd, x, _) = extended_gcd_int(a, m);
+    assert!(
+        gcd.is_one(),
+        "mod_inverse_bigint: {} is not invertible mod {} (gcd = {})",
+        a,
+        m,
+        gcd
+    );
+    x.mod_floor(m)
+}
+
+/// Extended Euclidean algorithm over ℤ.
+///
+/// Returns `(gcd, s, t)` such that `s * a + t * b = gcd` and `gcd ≥ 0`.
+fn extended_gcd_int(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
+    let mut old_r = a.clone();
+    let mut r = b.clone();
+    let mut old_s = BigInt::one();
+    let mut s = BigInt::zero();
+    let mut old_t = BigInt::zero();
+    let mut t = BigInt::one();
+
+    while !r.is_zero() {
+        let q = &old_r / &r;
+        let rem = &old_r - &q * &r;
+        old_r = r;
+        r = rem;
+        let new_s = old_s - &q * &s;
+        old_s = s;
+        s = new_s;
+        let new_t = old_t - &q * &t;
+        old_t = t;
+        t = new_t;
+    }
+
+    if old_r.is_negative() {
+        (-old_r, -old_s, -old_t)
+    } else {
+        (old_r, old_s, old_t)
     }
 }
 

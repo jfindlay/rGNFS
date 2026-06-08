@@ -1150,6 +1150,9 @@ name = "shared-bigint"
 version = "0.1.0"
 dependencies = [
  "crypto-bigint",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
  "shared-field",
 ]
 
@@ -1166,6 +1169,7 @@ name = "shared-numfield"
 version = "0.1.0"
 dependencies = [
  "num-bigint",
+ "num-integer",
  "num-rational",
  "num-traits",
 ]
