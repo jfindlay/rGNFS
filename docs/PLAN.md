@@ -372,7 +372,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| T.0 | Textbook spine: C-Textbook + framing + prerequisites + On-scale + rho/α retrofit | pending | — | — |
+| T.0 | Textbook spine: C-Textbook + framing + prerequisites + On-scale + rho/α retrofit | done | 5c9b783 | C-Textbook |
 | G.W | GNFS integrative writeup + design-statement verification + L-notation | pending | — | — |
 | T.G | Track-G maths-first textbook chapter (L-notation payoff proof) | pending | — | — |
 
@@ -391,7 +391,11 @@ notable texture) for the juncture forks to consume — including the **T.0 `@pla
 outcome** (the C-Textbook freeze verdict) and any **G.W design-statement-verification divergence**,
 recorded here rather than in the ledger.
 
-*(none yet)*
+### T.0 — 2026-06-08
+Discovery/flex: C-Textbook freeze confirmed at `@plan` juncture (design-confident). All four confirmation points satisfied: register clauses complete and mutually consistent, MathJax ratified, retrofit chapters exhibit the pairing pattern, artifact location recorded.
+Affected: C-Textbook (now frozen at 5c9b783)
+Deferred: no — the register is well-calibrated; T.G can proceed. If the GNFS chapter cannot hold "survey with proof-sketch depth," that is a C-Textbook flex to surface at the T.G ◆ boundary.
+Texture: Single-file artifact location (docs/MATHEMATICS.md) confirmed; promotion to docs/textbook/ deferred to T.Z. Register calibration verified against rho/α content — "survey with proof-sketch depth" exhibited correctly in both retrofit chapters.
 
 ---
 
