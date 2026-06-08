@@ -435,7 +435,7 @@ with no commit-shaped deliverable); their outcomes are recorded in the Action-fr
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| G.F.1 | Square-root substrate: reduce_mod_ideal + isqrt + exported gcd | pending | — | — |
+| G.F.1 | Square-root substrate: reduce_mod_ideal + isqrt + exported gcd | done | 2af8116 | C-NF additively extended (reduce_mod_ideal frozen); isqrt + gcd added to shared/bigint. Extra files: isqrt.rs (submodule), Cargo.toml updates, Cargo.lock (plainly part of unit). |
 | G.F.2 | Rational square root from a kernel vector | pending | — | — |
 | G.F.3 | Algebraic square root via Couveignes / CRT | pending | — | — |
 | G.F.4 | Assembly + end-to-end factor driver (gcd(x−y, N)) | pending | — | — |
