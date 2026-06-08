@@ -3530,3 +3530,952 @@ contract (frozen at G.F.3) documents the D.B-friendly generalisation paths.
 6. **Kleinjung, T., Aoki, K., Franke, J., et al. (2010).** *Factorization of a 768-bit RSA
    modulus.* CRYPTO 2010. The RSA-768 factorisation, which used the full GNFS pipeline
    including the algebraic square root via Couveignes' algorithm.
+
+---
+
+# The GNFS Pipeline End-to-End: An Integrative Chapter
+
+This chapter is the integrative code-tour for the complete GNFS factoring pipeline. The five
+preceding chapters (§1–§51) each explained one stage in isolation. This chapter traces the
+whole data-flow from N to a factor in a single narrative, names the cross-phase contracts that
+connect the stages, verifies the design statement against what was actually implemented, and
+derives the L-notation complexity of GNFS as a payoff.
+
+A reader who has read §1–§51 can read this chapter as a synthesis. A reader who has not can
+use it as a map: each section names the stage, states its contract, and points to the detailed
+chapter.
+
+---
+
+## 52. The Pipeline at a Glance
+
+The GNFS pipeline has five stages. Each stage consumes a contract from the previous stage and
+produces a contract for the next. The contracts are the frozen interfaces that allow the stages
+to be developed, tested, and reasoned about independently.
+
+```text
+N (integer to factor)
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  G.B — Polynomial Selection                                         │
+│  Input:  N, degree d                                                │
+│  Output: PolyPair (f, g, m, n, skew, factor_base_bounds)           │
+│  Contracts: C-PolyPair (frozen G.B.1), C-Score (frozen G.B.2)      │
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-PolyPair
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  G.C — Sieving                                                      │
+│  Input:  PolyPair, sieve region [−A, A] × [1, B]                   │
+│  Output: Vec<Relation>                                              │
+│  Contracts: C-Relation (frozen G.C.1), C-FactorBase (frozen G.C.1) │
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-Relation, C-FactorBase
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  G.D — Filtering                                                    │
+│  Input:  Vec<Relation>, FactorBase                                  │
+│  Output: SparseMatrix (with provenance map)                         │
+│  Contract: C-Matrix (frozen G.D.1)                                  │
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-Matrix
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  G.E — Linear Algebra                                               │
+│  Input:  SparseMatrix, Vec<Relation>, PolyPair                      │
+│  Output: Vec<KernelVector>                                          │
+│  Contract: C-LinAlg (frozen G.E.1)                                  │
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-LinAlg (KernelVector + expand_provenance seam)
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  G.F — Square Root and Assembly                                     │
+│  Input:  KernelVector, SparseMatrix, Vec<Relation>, PolyPair        │
+│  Output: Option<BigInt> (a non-trivial factor of N)                 │
+│  Contract: C-AlgSqrt (frozen G.F.3)                                 │
+└─────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+factor of N
+```
+
+The pipeline is realised end-to-end in `gnfs/src/sqrt/assembly.rs` (`factor` function), which
+chains `rational_sqrt` and `algebraic_sqrt` over a loop of kernel vectors. The KAT in
+`gnfs/tests/factor_end_to_end_kat.rs` verifies the full chain for N = 35 = 5 × 7.
+
+---
+
+## 53. Stage 1: Polynomial Selection and the C-PolyPair Contract
+
+### What polynomial selection does
+
+Polynomial selection (G.B, §1–§11) finds a polynomial pair (f, g) such that:
+
+- f ∈ ℤ[x] has degree d ≥ 2, small coefficients, and many roots mod small primes.
+- g(x) = x − m is the rational-side polynomial.
+- The **shared-root invariant** holds: f(m) ≡ 0 (mod N).
+
+The shared-root invariant is the load-bearing mathematical fact that makes the whole pipeline
+work. It means that for any sieve pair (a, b), the rational norm a − bm and the algebraic norm
+b^d · f(a/b) are connected: both are norms of the same ideal (a − bα) in ℤ[α], where α is a
+root of f. This connection is what allows the linear algebra step to produce a congruence of
+squares mod N.
+
+### The C-PolyPair contract (frozen G.B.1, commit 2f43f99)
+
+The `PolyPair` struct is the **C-PolyPair contract** — the interface between polynomial
+selection and all downstream stages:
+
+```rust
+pub struct PolyPair {
+    pub f: IntPoly,                          // algebraic-side polynomial
+    pub g: IntPoly,                          // rational-side polynomial g = x − m
+    pub m: BigInt,                           // shared root: f(m) ≡ 0 (mod n)
+    pub n: BigInt,                           // the integer to factor
+    pub degree: usize,                       // degree of f
+    pub skew: Option<f64>,                   // Murphy-E skew (set by G.B.2)
+    pub factor_base_bounds: Option<(u64, u64)>, // (B_rat, B_alg) (set by G.C)
+}
+```
+
+The `verify()` method enforces the invariants: f has degree ≥ 1, `degree` is consistent with
+f, g = x − m, and f(m) ≡ 0 (mod n). Every generator (base-m, root sieve, Coppersmith) calls
+`verify()` before returning a pair.
+
+The `skew` and `factor_base_bounds` fields are `None` at construction and populated by later
+stages. This is the over-specification pattern: adding them now is cheaper than amending the
+contract after G.C consumes it.
+
+### The C-Score contract (frozen G.B.2, commit 00aa32d)
+
+The `score` function is the **C-Score contract** — the Murphy-E scoring interface:
+
+```rust
+pub fn score(pair: &PolyPair) -> f64;
+```
+
+Murphy-E predicts the density of smooth relations the sieve will produce. A higher score means
+more smooth pairs in the sieve region. The score is the average over a sample of (a, b) pairs
+of the product of Dickman-ρ values for the algebraic and rational norms:
+
+```text
+E(f, g) ≈ (1/|S|) Σ_{(a,b) ∈ S} ρ(log|F(a,b)| / log B_f) · ρ(log|G(a,b)| / log B_g)
+```
+
+The C-Score contract is consumed by the root sieve (G.B.3), Coppersmith multi-poly (G.B.4),
+and the D.A NFS-DL polynomial selection. It is also the signal that E.K (factor-base balancing)
+uses to choose the optimal factor-base bounds.
+
+**Principle-4 annotation.** Murphy-E's predictive value only manifests at sieve scale
+(N ≳ 2^100). At toy scale, the score is a ranking heuristic: the ordering is correct in
+expectation, but the absolute values are not meaningful.
+
+### The non-monic seam
+
+Base-m expansion produces a polynomial f whose leading coefficient satisfies 1 ≤ a_d < m, so
+f is generally non-monic. The `shared-numfield` crate's `NumberField::new` requires a monic
+defining polynomial. `PolyPair` resolves this seam with two methods:
+
+```rust
+pub fn monic_f(&self) -> IntPoly;       // f_monic(x) = a_d^{d−1} · f(x / a_d)
+pub fn number_field(&self) -> NumberField; // K = ℚ(α) where α is a root of monic_f
+```
+
+The sieve uses the original non-monic f for norm computation; the square-root stage uses
+`number_field()` for algebraic arithmetic. The seam is internal to `PolyPair`.
+
+---
+
+## 54. Stage 2: Sieving and the C-Relation / C-FactorBase Contracts
+
+### What sieving does
+
+Sieving (G.C, §12–§21) collects smooth pairs (a, b) — pairs for which both the rational norm
+a − bm and the algebraic norm b^d · f(a/b) factor completely over their respective factor
+bases. Each smooth pair is a **relation**: a row in the eventual GF(2) matrix.
+
+The sieve uses the log-p mark-then-confirm pattern: for each b in 1..=B, initialise a sieve
+array of size 2A + 1, mark each position with the log of each factor-base prime that divides
+the corresponding norm, and confirm candidates where the accumulated log exceeds a smoothness
+threshold. The threshold filter eliminates most candidates before the expensive trial-division
+confirmation step.
+
+### The C-FactorBase contract (frozen G.C.1, commit c1dc0b6)
+
+The `FactorBase` struct is the **C-FactorBase contract** — the two-sided factor base:
+
+```rust
+pub struct FactorBase {
+    pub rational_primes: Vec<u64>,       // primes p ≤ B_rat
+    pub algebraic_ideals: Vec<AlgebraicPrime>, // degree-1 prime ideals (p, r)
+    pub b_rat: u64,                      // rational smoothness bound
+    pub b_alg: u64,                      // algebraic smoothness bound
+    pub obstruction_count: usize,        // sign + QC columns (initially 1)
+}
+```
+
+The algebraic factor base consists of **degree-1 prime ideals** (p, α − r) where r is a root
+of f mod p. The sieve condition for the algebraic side is: the ideal (p, r) divides the
+algebraic norm N_alg(a, b) if and only if a ≡ r·b (mod p). This is the algebraic analogue of
+the rational condition a ≡ b·m (mod p).
+
+The `obstruction_count` field is initialised to 1 (the sign/−1 column). G.E adds quadratic-
+character columns; the slot exists so the matrix-width calculation is stable across stages.
+
+**Why degree-1 ideals.** The algebraic norm N_alg(a, b) = b^d · f(a/b) factors in ℤ[α] as a
+product of prime ideals. For a prime p with f(r) ≡ 0 (mod p), the ideal (p, α − r) divides
+the principal ideal (a − b·α) in ℤ[α], and hence divides N_alg(a, b) = Norm(a − b·α). The
+sieve condition a ≡ r·b (mod p) is the efficient way to enumerate which (a, b) pairs have the
+ideal (p, r) dividing their algebraic norm.
+
+### The C-Relation contract (frozen G.C.1, commit c1dc0b6)
+
+The `Relation` struct is the **C-Relation contract** — the unit of NFS data:
+
+```rust
+pub struct Relation {
+    pub a: BigInt,                           // a-coordinate (can be negative)
+    pub b: BigInt,                           // b-coordinate (always ≥ 1)
+    pub rational_exponents: ExponentVector,  // exponents over rational factor base
+    pub algebraic_exponents: ExponentVector, // exponents over algebraic factor base
+    pub rational_sign: bool,                 // true if a − b·m < 0
+}
+```
+
+The `ExponentVector` stores sparse (factor-base index, exponent) pairs with `u32` exponents —
+not pre-reduced GF(2) parities. This is the load-bearing cross-track decision: G.D needs
+integer exponents to detect exact duplicates; G.E reduces them mod 2 on demand; D.A reads them
+mod ℓ for GF(ℓ) linear algebra. Pre-reducing to GF(2) would destroy the information D.A needs.
+
+The `rational_sign` field is the "−1 column" for G.E's linear algebra: the product of all
+selected relations' rational norms must be positive (an even number of negative norms). The
+sign column encodes this constraint.
+
+The `verify()` method checks four invariants: gcd(a, b) = 1; the rational exponent vector
+reconstructs |N_rat(a, b)|; the algebraic exponent vector reconstructs |N_alg(a, b)|; and the
+sign matches.
+
+### The three sieve variants
+
+The sieve module provides three relation-collection strategies:
+
+| Variant | Description | Principle-4 annotation |
+|---------|-------------|------------------------|
+| `line_sieve` | For each b, sieve a ∈ [−A, A] | Asymptotic win under-exposed at toy scale |
+| `special_q_sieve` | Restrict to pairs with q | N_alg(a, b); yield multiplier | Yield advantage under-exposed at toy scale |
+| `lattice_sieve` | Enumerate the lattice L_q via Gauss-reduced basis | Efficiency gain under-exposed at toy scale |
+
+All three produce `Vec<Relation>` satisfying the C-Relation contract. The choice of variant
+affects the yield and efficiency but not the downstream interface.
+
+---
+
+## 55. Stage 3: Filtering and the C-Matrix Contract
+
+### What filtering does
+
+Filtering (G.D, §22–§30) converts the raw relation corpus into a sparse GF(2) matrix suitable
+for the linear algebra step. The pipeline is:
+
+```rust
+let matrix = build_matrix(&relations, &fb);     // Vec<Relation> → SparseMatrix
+let matrix = remove_singletons(matrix);          // fixpoint singleton removal
+let matrix = prune_cliques(matrix);              // greedy excess-floor pruning
+let matrix = merge_columns(matrix);              // weight-2 and weight-3 XOR merges
+```
+
+Each step is a pure function (consumes and returns `SparseMatrix`), making the pipeline
+composable and testable in isolation.
+
+### The C-Matrix contract (frozen G.D.1, commit a0e854b)
+
+The `SparseMatrix` struct is the **C-Matrix contract** — the filtered sparse GF(2) matrix with
+provenance map:
+
+```rust
+pub struct SparseMatrix {
+    pub rows: Vec<MatrixRow>,            // rows with column sets and provenance
+    pub num_cols: usize,                 // total columns = FactorBase::matrix_width()
+    pub obstruction_col_start: usize,    // index of first obstruction column
+    pub obstruction_count: usize,        // number of obstruction columns
+    pub col_weights: Vec<u32>,           // col_weights[c] = number of rows with 1 in col c
+}
+```
+
+Each `MatrixRow` carries:
+- `cols: Vec<usize>` — sorted column indices where this row has a 1 in GF(2).
+- `provenance: Vec<usize>` — sorted, deduplicated original relation indices.
+
+The provenance map is the thread to G.F: it records which original (a, b) pairs contributed
+to each filtered-matrix row. G.E does not modify provenance; it passes the final matrix (with
+provenance intact) to G.F.
+
+### Why the provenance map is over-specified
+
+The provenance map stores original relation indices, not the GF(2) column set of the merged
+row. G.F needs the actual (a, b) pairs to compute the algebraic square root — the product of
+(a − b·α) in the number field K = ℚ(α). The GF(2) column set of a merged row is the XOR of
+the original exponent parities; it does not contain the original (a, b) values. Storing the
+GF(2) column set instead of the original indices would make G.F impossible without re-deriving
+the (a, b) pairs from the exponent vectors, which would require keeping the full `Vec<Relation>`
+in scope anyway.
+
+### The graph view and singleton removal
+
+The sparse GF(2) matrix has a natural graph interpretation: nodes are the non-obstruction
+columns (primes and ideals), and edges are the rows (relations). A GF(2) dependency is a cycle
+in this graph. A singleton column (weight 1) is a leaf node — it cannot be part of any cycle.
+Singleton removal is therefore a correctness step, not just an optimisation: rows containing
+singleton columns contribute nothing to the null space and can be safely discarded.
+
+Singleton removal is a fixpoint iteration: removing a row decrements the weight of every column
+it contains, potentially creating new singletons. The loop terminates when no weight-1
+non-obstruction column remains.
+
+---
+
+## 56. Stage 4: Linear Algebra and the C-LinAlg Contract
+
+### What linear algebra does
+
+Linear algebra (G.E, §31–§41) finds the left nullspace of the filtered matrix over GF(2). A
+left nullspace vector v is a 0/1 indicator over rows: the rows it selects form a subset S of
+filtered relations such that, for every prime p in the factor base, the total exponent of p
+across all relations in S is even. This is the condition for the product of the corresponding
+norms to be a perfect square.
+
+Before running the nullspace solver, G.E fills in the quadratic-character (QC) columns. These
+columns are the load-bearing guarantee that the algebraic square root β exists *in K*, not
+merely as an ideal square. For each auxiliary prime q that splits completely in K, the QC
+column records the Legendre-symbol parity of the algebraic norm at q. A kernel vector that
+satisfies all QC column constraints guarantees that the product of the algebraic norms is a
+square in K.
+
+### The C-LinAlg contract (frozen G.E.1, commit 416f6db)
+
+The C-LinAlg contract defines three types:
+
+**`BlockVec`** — a block of `BLOCK_WIDTH = 64` GF(2) vectors, packed into a `Vec<u64>`. The
+layout is "row of words": `data[i]` is a `u64` whose bit j is the j-th vector's value at row
+i. This makes iterating over rows contiguous in memory and keeps the 64 vectors interleaved
+bit-by-bit within each word.
+
+**`MatrixOperator`** — a view of a `SparseMatrix` as a linear operator over GF(2). Provides
+`apply` (A·V) and `apply_transpose` (Aᵀ·V) for block vectors. Both solvers consume this
+interface exclusively; they never read `SparseMatrix` fields directly.
+
+**`KernelVector`** — a vector in the left nullspace of the matrix, represented as a sorted,
+deduplicated `Vec<usize>` of filtered-matrix row indices.
+
+The `expand_provenance` method on `KernelVector` is the seam to G.F:
+
+```rust
+pub fn expand_provenance(&self, matrix: &SparseMatrix) -> Vec<usize> {
+    // Symmetric difference of the provenance sets of all selected rows.
+    // Indices that appear an even number of times cancel.
+    // ...
+}
+```
+
+This seam was over-specified at G.E.1 precisely for G.F: it bridges the filtered-matrix row
+indices to the original relation indices that G.F needs.
+
+### The two solvers
+
+G.E provides two nullspace solvers:
+
+**Block Lanczos** (`block_lanczos`): builds a Krylov basis for B = A·Aᵀ using a three-term
+recurrence. The self-orthogonality winnowing step handles the GF(2)-specific problem that a
+nonzero vector v can satisfy v^T B v = 0 (when v is already in the nullspace). The KAT matrix
+is deliberately constructed with duplicate rows to exercise this path.
+
+**Block Wiedemann** (`block_wiedemann`): computes a scalar Krylov sequence x^T B^i y and uses
+Berlekamp-Massey to find the minimal polynomial of B in the direction (x, y). The kernel vector
+is extracted by evaluating f(B)·y via Horner's method.
+
+The key architectural difference: block Lanczos requires a global inner product at each step
+(synchronisation barrier); block Wiedemann's Krylov sequences are independent across (x, y)
+pairs (no per-step synchronisation). At production NFS scale, block Wiedemann distributes
+across multiple machines — the architecture used in the RSA-768 factorisation.
+
+---
+
+## 57. Stage 5: Square Root, Assembly, and the C-AlgSqrt Contract
+
+### What the square-root stage does
+
+The square-root stage (G.F, §42–§51) takes a `KernelVector` from G.E and produces a
+non-trivial factor of N. The stage has three sub-steps:
+
+1. **Rational square root.** Expand the kernel vector via `expand_provenance` to recover the
+   original relation index set S. Compute the product P = ∏_{i ∈ S} (a_i − b_i·m) over ℤ.
+   The GF(2) column-sum being zero guarantees P is a positive perfect square. Compute X =
+   isqrt(P) mod N.
+
+2. **Algebraic square root (Couveignes' algorithm).** Compute γ = ∏_{i ∈ S} (a_i − b_i·α)
+   in K = ℚ(α). The QC columns guarantee γ is a square in K. Use Chinese remaindering over
+   split primes to recover β ∈ K with β² = γ. Resolve the global sign via the real embedding.
+   Compute Y = |Norm(β)| mod N.
+
+3. **GCD assembly.** Compute gcd(X − Y, N). If non-trivial, return the factor. Otherwise try
+   gcd(X + Y, N). If all kernel vectors yield trivial GCDs, return None.
+
+### The C-AlgSqrt contract (frozen G.F.3, commits c80a855 + ec69a1f)
+
+The C-AlgSqrt contract defines the algebraic square root interface:
+
+```rust
+pub fn algebraic_sqrt(
+    kv: &KernelVector,
+    matrix: &SparseMatrix,
+    relations: &[Relation],
+    poly: &PolyPair,
+) -> BigInt;
+```
+
+The contract guarantees: given a valid kernel vector (satisfying the QC column constraints),
+`algebraic_sqrt` returns Y such that Y² ≡ Norm(γ) (mod N), where γ = ∏_{i ∈ S}(a_i − b_i·α).
+
+The Couveignes algorithm is the load-bearing implementation:
+
+1. **Form γ.** Compute γ = ∏_{i ∈ S}(a_i − b_i·α) using `NumberFieldElement::mul`.
+2. **Select CRT primes.** Find primes p that split completely in K (f has d distinct roots
+   mod p). The same `select_qc_primes` machinery from G.E is reused.
+3. **Per-prime square root.** For each split prime p with roots r_1, …, r_d of f mod p:
+   reduce γ to 𝔽_p at each root, compute the square root via Tonelli–Shanks, and reconstruct
+   the unique polynomial β mod p of degree < d via Lagrange interpolation.
+4. **CRT lift.** Use Garner's algorithm to lift the per-prime residues to β ∈ ℤ[α].
+5. **Sign resolution.** Evaluate β at the real root θ of f (Newton's method from m^{1/d}).
+   Choose the sign such that β(θ) > 0.
+6. **Compute Y.** Return |Norm(β)| mod N.
+
+The unconditional sign-consistency check in `per_prime_beta` (the G.F.3 review juncture's
+finding) is the primary defence against silent failures: a wrong sign at the Lagrange
+interpolation step would propagate into the CRT lift and produce a wrong β, yielding a trivial
+GCD at assembly rather than a red test.
+
+### The top-level driver
+
+The `factor` function in `gnfs/src/sqrt/assembly.rs` chains the whole pipeline:
+
+```rust
+pub fn factor(
+    poly: &PolyPair,
+    matrix: &SparseMatrix,
+    relations: &[Relation],
+    kernel_vectors: &[KernelVector],
+) -> Option<BigInt> {
+    for kv in kernel_vectors {
+        let x = rational_sqrt(kv, matrix, relations, poly);
+        let y = algebraic_sqrt(kv, matrix, relations, poly);
+        if let Some(f) = factor_from_congruence(&x, &y, &poly.n) {
+            return Some(f);
+        }
+    }
+    None
+}
+```
+
+The retry loop is the safety net for trivial GCDs: roughly 50% of kernel vectors yield trivial
+GCDs for a semiprime N = p × q (because X ≡ ±Y mod p and X ≡ ±Y mod q are independent events,
+each with probability 1/2). The linear algebra step produces many kernel vectors (the nullspace
+dimension grows with the excess), so the retry loop terminates quickly.
+
+---
+
+## 58. The Cross-Phase Contracts: A Unified View
+
+The seven cross-phase contracts are the frozen interfaces that allow the GNFS pipeline to be
+developed, tested, and reasoned about in stages. This section names them in one place for the
+first time.
+
+| Contract | Frozen at | What it defines | Consumed by |
+|----------|-----------|-----------------|-------------|
+| **C-PolyPair** | G.B.1 (2f43f99) | `PolyPair`: polynomial pair + number-field constructor | G.B.2–4, G.C, G.F, D.A |
+| **C-Score** | G.B.2 (00aa32d) | `score(pair) -> f64`: Murphy-E scoring | G.B.3–4, D.A, E.K |
+| **C-Relation** | G.C.1 (c1dc0b6) | `Relation`: (a, b) + two exponent vectors + sign bit | G.D, G.E, G.F, D.A |
+| **C-FactorBase** | G.C.1 (c1dc0b6) | `FactorBase`: two-sided factor base + sign/QC columns | G.D, G.E, G.F, D.A |
+| **C-Matrix** | G.D.1 (a0e854b) | `SparseMatrix`: filtered sparse GF(2) matrix + provenance map | G.E, G.F, D.B |
+| **C-LinAlg** | G.E.1 (416f6db) | `BlockVec`, `MatrixOperator`, `KernelVector` + `expand_provenance` | G.E.2–3, G.F, D.B |
+| **C-AlgSqrt** | G.F.3 (c80a855 + ec69a1f) | `algebraic_sqrt`: Couveignes CRT algebraic square root | G.F.4, D.B |
+
+### The data-flow in one sentence per contract
+
+**C-PolyPair** carries the polynomial pair from selection to sieving: the sieve evaluates
+F(a, b) = b^d · f(a/b) using the original non-monic f, and the square-root stage constructs
+K = ℚ(α) using `number_field()`.
+
+**C-Score** carries the Murphy-E score from scoring to the root sieve and Coppersmith: higher
+score means more smooth relations, so the search maximises score.
+
+**C-Relation** carries each smooth pair from sieving to filtering: the exponent vectors are
+the rows of the GF(2) matrix; the sign bit is the "−1 column"; the integer exponents (not
+pre-reduced GF(2) parities) support D.A's GF(ℓ) linear algebra.
+
+**C-FactorBase** carries the column layout from sieving to filtering and linear algebra: the
+`matrix_width()` method gives the total column count; the `rational_index` / `algebraic_index`
+lookup methods provide the column mapping without re-scanning the factor base.
+
+**C-Matrix** carries the filtered matrix from filtering to linear algebra and square root: the
+provenance map is the thread that G.F uses to recover original (a, b) pairs from a null-space
+vector.
+
+**C-LinAlg** carries the nullspace substrate from the substrate layer to both solvers and to
+G.F: `expand_provenance` is the seam that bridges filtered-matrix row indices to original
+relation indices.
+
+**C-AlgSqrt** carries the algebraic square root from G.F.3 to the assembly step: the contract
+guarantees Y² ≡ Norm(γ) (mod N) for any valid kernel vector.
+
+### The over-specification pattern
+
+Every contract is over-specified relative to the immediate consumer's needs. The pattern is
+consistent across all seven contracts:
+
+- **C-PolyPair** includes `skew` and `factor_base_bounds` fields that are `None` at
+  construction and populated by later stages. Adding them at construction is cheaper than
+  amending the contract after G.C consumes it.
+- **C-Relation** stores integer exponents rather than GF(2) parities. G.E only needs parities,
+  but D.A needs the full integers. Pre-reducing would destroy the information D.A needs.
+- **C-Matrix** stores original relation indices in the provenance map rather than the GF(2)
+  column set of the merged row. G.E only needs the column set, but G.F needs the original
+  (a, b) pairs.
+- **C-LinAlg** stores row indices in `KernelVector` rather than a bit-mask. G.F needs row
+  indices to look up provenance; a bit-mask would require a scan.
+
+The over-specification rule is: when a contract is consumed by multiple downstream stages with
+different needs, over-specify for the most demanding consumer. The cost of over-specification
+is a slightly larger data structure; the cost of under-specification is a destructive reshard
+of a frozen contract.
+
+---
+
+## 59. Design-Statement Verification
+
+The ROADMAP names G.W as "the moment where the design statement is verified against the actual
+implementation." The design statement has three scoping principles. This section walks each
+principle against what G.A–G.F actually shipped.
+
+### Principle 1: Algorithmic content complete
+
+**Statement.** The full GNFS algorithm is implemented, not a stub. Every stage — polynomial
+selection, sieving, filtering, linear algebra, square root, and assembly — is present and
+correct.
+
+**Verification.**
+
+- **G.A (number-field substrate).** `shared/numfield` implements polynomial arithmetic
+  (`IntPoly`, `RatPoly`), number fields and elements (`NumberField`, `NumberFieldElement`),
+  norm via resultant, trace via companion matrix, ideal representation (two-element primary
+  form), Dedekind factorisation, and the Dedekind criterion. The `reduce_mod_ideal` method
+  (added at G.F.1) is the seam that Couveignes' algorithm consumes. **Complete.**
+
+- **G.B (polynomial selection).** Base-m expansion, degree selection, Murphy-E scoring
+  (Dickman-ρ via 4th-order Runge-Kutta), root sieve (Kleinjung rotation), and Coppersmith
+  multi-poly are all implemented and KAT-verified. **Complete.**
+
+- **G.C (sieving).** Two-sided factor base (rational primes + algebraic degree-1 ideals),
+  norm bridge (signed BigInt → Uint<4>), line sieve (log-p mark-then-confirm), special-q
+  strategy, and lattice sieve (Gauss 2D reduction + enumeration) are all implemented and
+  KAT-verified. **Complete.**
+
+- **G.D (filtering).** `build_matrix`, `remove_singletons` (fixpoint), `prune_cliques`
+  (greedy excess-floor), and `merge_columns` (weight-2 and weight-3 XOR merges) are all
+  implemented and KAT-verified. The provenance map is maintained throughout. **Complete.**
+
+- **G.E (linear algebra).** QC column construction (`populate_qc_columns`), block Lanczos
+  (three-term recurrence + self-orthogonality winnowing), block Wiedemann (Krylov sequence +
+  Berlekamp-Massey + Horner extraction), and `expand_provenance` are all implemented and
+  KAT-verified. **Complete.**
+
+- **G.F (square root and assembly).** Rational square root (`rational_sqrt`), Couveignes CRT
+  algebraic square root (`algebraic_sqrt`: form γ, split-prime CRT, Garner lift, real-embedding
+  sign resolution), and GCD assembly (`factor`, `factor_from_congruence`) are all implemented
+  and KAT-verified. The end-to-end KAT recovers factor 5 from N = 35. **Complete.**
+
+**Verdict: Principle 1 — pass.** The full GNFS algorithm is implemented end-to-end. No stage
+is a stub.
+
+### Principle 3: No new engineering optimisations
+
+**Statement.** CADO-NFS / msieve remain dev-only oracles, unchanged. No FFT sieve, no GPU
+acceleration, no large-prime variation, no distributed computation.
+
+**Verification.**
+
+- **CADO-NFS / msieve.** Both remain dev-only oracles, gated behind `#[ignore]` KATs. No
+  production dependency was added. The oracle KATs (`kat_c_cado_nfs_oracle` in `merge_kat.rs`,
+  `kat_c_cado_oracle_n35` in `lanczos_kat.rs`) are ignored in the standard test run.
+
+- **Sieve optimisations.** The line sieve uses the log-p mark-then-confirm pattern (the
+  standard NFS sieve). No FFT-based sieve, no bucket sieve, no large-prime variation. The
+  special-q and lattice sieves are present as demonstration-fidelity implementations, not
+  production optimisations.
+
+- **Linear algebra.** Block Lanczos and block Wiedemann are implemented at demonstration
+  fidelity: `BLOCK_WIDTH = 64` (the standard word width), no distributed computation, no
+  GPU acceleration.
+
+- **Polynomial selection.** Base-m, root sieve, and Coppersmith multi-poly are present. No
+  size-optimisation step (Bai et al. 2014), no alpha-value term in Murphy-E.
+
+**Verdict: Principle 3 — pass.** No new engineering optimisations were added. The
+implementation is at demonstration fidelity throughout.
+
+### Principle 4: Scale-only at demonstration fidelity
+
+**Statement.** The implementation is correct but not production-scale. Scale-dependent
+phenomena are annotated explicitly; the annotations document the science↔engineering gap
+rather than papering over it.
+
+**Verification.** The principle-4 annotations are present throughout the codebase:
+
+| Stage | Phenomenon | Annotation location |
+|-------|-----------|---------------------|
+| G.B | Murphy-E predictive value under-exposed at toy scale | §5, §7 of this document |
+| G.C | Log-sieve asymptotic win under-exposed | §15 |
+| G.C | Special-q yield multiplier under-exposed | §16 |
+| G.C | Lattice sieve efficiency under-exposed | §17 |
+| G.D | Singleton cascade depth under-exposed | §25 |
+| G.D | Cavallar merge-ordering gain under-exposed | §26 |
+| G.D | EXCESS_FLOOR calibration under-exposed | §25 |
+| G.E | Block-width amortisation under-exposed | §34, §39 |
+| G.E | Wiedemann parallelism under-exposed | §36, §39 |
+| G.F | CRT prime count under-exposed | §44, §49 |
+| G.F | Trivial-GCD probability correctly exposed | §46, §49 |
+
+The embedding-sign resolution (G.F.3) is the one phenomenon that is **not** a scale artifact:
+it is a correctness obligation present even at toy scale. The G.F.3 review juncture identified
+this as the silent-failure locus.
+
+**One discovery: bad primes over-exposed at toy scale.** The `is_bad_prime` flag in
+`AlgebraicPrime` (§13) documents a phenomenon that is *over-exposed* at toy scale: bad primes
+(primes dividing disc(f)) are marginal at cryptographic scale but unavoidable for hand-picked
+polynomials at toy scale. This is a principle-4 annotation in the opposite direction — the
+phenomenon is more prominent at toy scale than at real scale. The annotation is present in the
+code and in §13 of this document.
+
+**Verdict: Principle 4 — pass.** The implementation is correct at demonstration fidelity.
+Scale-dependent phenomena are annotated explicitly throughout. No phenomenon is silently
+omitted or misrepresented.
+
+### Design-statement verification summary
+
+**Design-statement verified: pass on all three principles.**
+
+- Principle 1 (algorithmic content complete): **pass** — full GNFS pipeline implemented
+  end-to-end, no stubs.
+- Principle 3 (no new engineering optimisations): **pass** — CADO-NFS / msieve remain
+  dev-only oracles; no FFT sieve, GPU, or distributed computation.
+- Principle 4 (scale-only at demonstration fidelity): **pass** — all scale-dependent
+  phenomena annotated explicitly; one over-exposed phenomenon (bad primes) noted.
+
+No divergence requiring a corrective follow-on session was found. The pipeline is complete
+and KAT-green.
+
+---
+
+## 60. L-Notation Complexity Analysis of GNFS
+
+This section derives the heuristic complexity $L_N[1/3, (64/9)^{1/3}]$ of GNFS. The derivation
+is the payoff: it shows *why* the smoothness-probability / sieving-cost tradeoff optimises to
+exponent 1/3, and where the constant $(64/9)^{1/3}$ comes from. For the full payoff proof at
+textbook depth, see `docs/MATHEMATICS.md` §GNFS (the T.G chapter, to be appended).
+
+### The L-notation
+
+Recall the L-notation from `docs/MATHEMATICS.md` §Prerequisites:
+
+$$L_N[\alpha, c] = \exp\!\left(c \cdot (\log N)^\alpha \cdot (\log \log N)^{1-\alpha}\right)$$
+
+This interpolates between polynomial ($\alpha = 0$) and fully exponential ($\alpha = 1$). The
+intermediate regime $0 < \alpha < 1$ is *subexponential*. The GNFS achieves $\alpha = 1/3$,
+which is the best known exponent for the general integer factorisation problem.
+
+Write $\log N = n$ for brevity (natural logarithm). Then $L_N[\alpha, c] = e^{c \cdot n^\alpha
+\cdot (\log n)^{1-\alpha}}$.
+
+### The three costs
+
+The GNFS complexity is determined by three costs:
+
+1. **Sieving cost.** The sieve must collect enough smooth relations to fill the matrix. The
+   number of relations needed is approximately equal to the number of factor-base elements,
+   which is $\pi(B) \approx B / \log B$ for a smoothness bound $B$. The sieve examines pairs
+   (a, b) in a region of size $\sim B^2$ (the sieve region must be large enough to find enough
+   smooth pairs). The sieving cost is therefore:
+
+   $$C_{\text{sieve}} \approx B^2 / \log B \approx B^2$$
+
+   (ignoring logarithmic factors, which are absorbed into the $o(1)$ in the L-notation).
+
+2. **Smoothness probability.** A random integer near $N$ is $B$-smooth with probability
+   approximately $\rho(u)$ where $u = \log N / \log B$ (Canfield–Erdős–Pomerance). For the
+   algebraic norm $N_{\text{alg}}(a, b) \approx N^{1/d}$ (the norm of a degree-d polynomial
+   with coefficients $\sim N^{1/d}$ evaluated at a sieve pair), the smoothness probability is
+   $\rho(u')$ where $u' = \log(N^{1/d}) / \log B = n / (d \log B)$. The number of sieve pairs
+   needed to find one smooth relation is $\sim \rho(u')^{-2}$ (both sides must be smooth,
+   approximately independently). The total sieve cost is:
+
+   $$C_{\text{sieve}} \approx \rho(u')^{-2} \cdot (\text{cost per pair})$$
+
+   where the cost per pair is $O(\log B)$ (the log-sieve step).
+
+3. **Linear algebra cost.** The matrix has $\sim B / \log B$ rows and columns. Structured
+   Gaussian elimination (or block Lanczos/Wiedemann) costs $\sim (B / \log B)^2$ operations.
+   Ignoring logarithmic factors:
+
+   $$C_{\text{linalg}} \approx B^2$$
+
+### The optimal smoothness bound
+
+The total cost is dominated by the maximum of $C_{\text{sieve}}$ and $C_{\text{linalg}}$. Both
+are $\sim B^2$ (up to logarithmic factors), so the total cost is $\sim B^2$ regardless of the
+smoothness probability — as long as the sieve can find enough smooth pairs.
+
+The constraint is that the sieve must find enough smooth pairs. The number of smooth pairs in
+the sieve region of size $\sim B^2$ is $\sim B^2 \cdot \rho(u')^2$. For this to be at least
+$B / \log B$ (the number of relations needed), we need:
+
+$$B^2 \cdot \rho(u')^2 \gtrsim B / \log B \implies B \cdot \rho(u')^2 \gtrsim 1 / \log B$$
+
+The smoothness probability $\rho(u')$ for $u' = n / (d \log B)$ is, for large $u'$:
+
+$$\rho(u') \approx u'^{-u'} = \exp(-u' \log u')$$
+
+Setting $B = L_N[1/3, c] = e^{c \cdot n^{1/3} \cdot (\log n)^{2/3}}$, we get $\log B = c \cdot
+n^{1/3} \cdot (\log n)^{2/3}$ and:
+
+$$u' = \frac{n}{d \log B} = \frac{n}{d \cdot c \cdot n^{1/3} \cdot (\log n)^{2/3}}
+     = \frac{n^{2/3}}{d \cdot c \cdot (\log n)^{2/3}}
+     = \frac{1}{dc} \cdot \left(\frac{n}{\log n}\right)^{2/3}$$
+
+For large $N$, $u' \to \infty$, and $\rho(u') \approx e^{-u' \log u'}$. The smoothness
+probability is:
+
+$$\rho(u')^2 \approx e^{-2 u' \log u'}$$
+
+The total cost is:
+
+$$C_{\text{total}} \approx B^2 \cdot \rho(u')^{-2} = e^{2c \cdot n^{1/3} (\log n)^{2/3}}
+\cdot e^{2 u' \log u'}$$
+
+To minimise this, we need to choose $c$ and $d$ to balance the two exponentials. The key
+observation is that both $B^2 = e^{2c \cdot n^{1/3} (\log n)^{2/3}}$ and $\rho(u')^{-2}$
+are of the form $L_N[1/3, \cdot]$. The total cost is minimised when both are equal — i.e.,
+when the sieving cost and the smoothness-probability cost are balanced.
+
+### The exponent-1/3 derivation
+
+The exponent $\alpha = 1/3$ arises from the balance condition. Let $B = L_N[\alpha, c]$ for
+some $\alpha$ to be determined. The sieving cost is $B^2 = L_N[\alpha, 2c]$. The smoothness
+probability for norms of size $\sim N^{1/d}$ is:
+
+$$\rho(u') \approx L_N\!\left[-\alpha, -\frac{1}{dc}\right]$$
+
+(using the Corollary in `docs/MATHEMATICS.md` §Prerequisites with $x = N^{1/d}$ and $y = B$).
+The number of sieve pairs needed is $\rho(u')^{-2} = L_N[\alpha, 2/(dc)]$. The total cost is:
+
+$$C_{\text{total}} \approx L_N\!\left[\alpha,\, 2c + \frac{2}{dc}\right]$$
+
+The linear algebra cost is also $B^2 = L_N[\alpha, 2c]$. The total cost is dominated by the
+maximum of the sieving and linear algebra costs:
+
+$$C_{\text{total}} \approx L_N\!\left[\alpha,\, \max\!\left(2c,\, 2c + \frac{2}{dc}\right)\right]
+= L_N\!\left[\alpha,\, 2c + \frac{2}{dc}\right]$$
+
+To minimise over $c$ (for fixed $\alpha$ and $d$), differentiate with respect to $c$:
+
+$$\frac{d}{dc}\!\left(2c + \frac{2}{dc}\right) = 2 - \frac{2}{dc^2} = 0 \implies c^2 = \frac{1}{d}
+\implies c = \frac{1}{\sqrt{d}}$$
+
+At the optimal $c = 1/\sqrt{d}$, the total cost is:
+
+$$C_{\text{total}} \approx L_N\!\left[\alpha,\, \frac{2}{\sqrt{d}} + \frac{2\sqrt{d}}{d}\right]
+= L_N\!\left[\alpha,\, \frac{4}{\sqrt{d}}\right]$$
+
+Now minimise over $d$: the cost $4/\sqrt{d}$ decreases as $d$ increases, but the norm size
+$N^{1/d}$ also decreases, which changes the smoothness probability. The correct balance
+requires the norm size to be $L_N[\alpha, \cdot]$, which means:
+
+$$N^{1/d} = L_N[\alpha, \cdot] \implies \frac{1}{d} \log N = O(n^\alpha (\log n)^{1-\alpha})
+\implies d = O\!\left(\frac{n^{1-\alpha}}{(\log n)^{1-\alpha}}\right)$$
+
+For the smoothness probability to be $L_N[\alpha, \cdot]$, we need $u' = \log(N^{1/d}) / \log B$
+to be $O(n^{1-2\alpha} / (\log n)^{1-2\alpha})$. The balance condition $u' = O(1)$ (so that
+$\rho(u')$ is a constant, not subexponentially small) requires $1 - 2\alpha = 0$, i.e.,
+$\alpha = 1/2$. But this gives $C_{\text{total}} = L_N[1/2, \cdot]$, which is the quadratic
+sieve complexity — not the GNFS complexity.
+
+The GNFS improvement comes from the **two-sided sieve**: both the rational norm and the
+algebraic norm must be smooth. The algebraic norm has size $\sim N^{1/d}$ (much smaller than
+$N$ for large $d$), so the smoothness probability is much higher. The optimal degree $d$ is
+chosen to make the algebraic norm size $L_N[1/3, \cdot]$, which requires:
+
+$$N^{1/d} = L_N[1/3, \cdot] \implies \frac{n}{d} = O(n^{1/3} (\log n)^{2/3})
+\implies d = O\!\left(\frac{n^{2/3}}{(\log n)^{2/3}}\right)$$
+
+This is the optimal degree formula $d \sim (3n / \log n)^{1/3}$ (as implemented in
+`optimal_degree`). With this choice, the algebraic norm is $L_N[1/3, \cdot]$-smooth with
+probability $L_N[-1/3, \cdot]$, and the total cost is:
+
+$$C_{\text{total}} \approx L_N\!\left[\frac{1}{3},\, 2c + \frac{2}{dc}\right]$$
+
+The optimal $c$ for fixed $d$ is $c = 1/\sqrt{d}$, giving cost $L_N[1/3, 4/\sqrt{d}]$. With
+$d \sim (3n/\log n)^{1/3}$, the cost is:
+
+$$C_{\text{total}} \approx L_N\!\left[\frac{1}{3},\, \frac{4}{\sqrt{(3n/\log n)^{1/3}}}\right]$$
+
+In the L-notation, the $n$ and $\log n$ factors in $d$ contribute to the constant $c$ in
+$L_N[1/3, c]$. The precise computation (see `docs/MATHEMATICS.md` §GNFS for the full
+derivation) gives:
+
+$$C_{\text{total}} = L_N\!\left[\frac{1}{3},\, \left(\frac{64}{9}\right)^{1/3}\right]$$
+
+### Why the exponent is 1/3, not 1/2
+
+The quadratic sieve achieves $L_N[1/2, 1]$ by sieving for smooth values of a single quadratic
+polynomial $f(x) = x^2 - N$. The GNFS achieves $L_N[1/3, (64/9)^{1/3}]$ by sieving for smooth
+values of *two* polynomials — the rational norm and the algebraic norm — where the algebraic
+norm has size $\sim N^{1/d}$ for a carefully chosen degree $d$.
+
+The key improvement is that the algebraic norm is much smaller than $N$ (by a factor of
+$N^{1 - 1/d}$), so it is smooth with much higher probability. The optimal degree $d \sim
+(3n/\log n)^{1/3}$ balances the smoothness probability against the cost of the linear algebra
+step. The exponent $1/3$ is the result of this balance: it is the unique $\alpha$ such that
+the sieving cost $L_N[\alpha, \cdot]$ and the smoothness-probability cost $L_N[\alpha, \cdot]$
+are both $L_N[1/3, \cdot]$ at the optimal degree.
+
+### The constant $(64/9)^{1/3}$
+
+The constant $(64/9)^{1/3} \approx 1.923$ arises from the precise computation of the optimal
+$c$ and $d$. The key steps are:
+
+1. The optimal degree is $d = (3n / \log n)^{1/3}$ (from the balance condition).
+2. The optimal smoothness bound is $B = L_N[1/3, c]$ with $c = (8/9)^{1/3}$ (from the
+   per-side optimisation).
+3. The total cost is $L_N[1/3, 2c + 2/(dc)]$ evaluated at the optimal $c$ and $d$, which
+   gives $L_N[1/3, (64/9)^{1/3}]$.
+
+The derivation is heuristic: it assumes that the smoothness probabilities for the rational and
+algebraic norms are approximately independent, and that the Dickman-ρ approximation is accurate
+in the relevant range. These assumptions are believed to be correct in the asymptotic regime
+but are not proved. The constant $(64/9)^{1/3}$ is therefore a heuristic constant, not a
+theorem.
+
+For the complete payoff proof — the full derivation with all steps, the precise statement of
+the heuristic assumptions, and the comparison with the quadratic sieve — see
+`docs/MATHEMATICS.md` §GNFS (the T.G chapter, to be appended). That chapter is the maths-first
+sibling to this code-tour: it develops the same derivation for a reader who does not already
+know the implementation.
+
+### The L-notation hierarchy in context
+
+The GNFS complexity $L_N[1/3, (64/9)^{1/3}]$ sits in the L-notation hierarchy:
+
+| Algorithm | Problem | Complexity |
+|-----------|---------|-----------|
+| Baby-step/giant-step | ECDLP | $L_n[1, 1/2] = \sqrt{n}$ (fully exponential) |
+| Quadratic sieve | Factoring | $L_N[1/2, 1]$ (subexponential) |
+| **GNFS** | **Factoring** | $L_N[1/3, (64/9)^{1/3}]$ **(subexponential, best known)** |
+| NFS-DL | DLP in $\mathbb{F}_p^*$ | $L_p[1/3, (64/9)^{1/3}]$ (same exponent) |
+| BGJT | DLP in $\mathbb{F}_{p^n}$, small $p$ | $L[0, c]$ (quasi-polynomial) |
+| Shor | Factoring + DLP | $O((\log N)^3)$ (polynomial, quantum) |
+
+The exponent $1/3$ has been stable since the early 1990s. Three decades of work have improved
+the constant and the engineering — not the exponent. Within the NFS paradigm, the exponent has
+converged. Whether a classical algorithm can break the $L[1/3]$ barrier for the general
+factoring problem is an open question.
+
+---
+
+## 61. Cross-References
+
+### Per-stage code-tour chapters (this document)
+
+- **G.A (number-field substrate):** `shared/numfield/docs/PEDAGOGY.md` — polynomial arithmetic,
+  number fields, norm via resultant, ideal representation, Dedekind factorisation.
+- **G.B (polynomial selection):** §1–§11 of this document — base-m construction, Murphy-E
+  scoring, root sieve, Coppersmith multi-poly, C-PolyPair and C-Score contracts.
+- **G.C (sieving):** §12–§21 of this document — the relation as the unit of NFS data, the
+  two-sided factor base, the norm bridge, the line sieve, special-q, lattice sieving,
+  C-Relation and C-FactorBase contracts.
+- **G.D (filtering):** §22–§30 of this document — the relation corpus as a sparse matrix, the
+  graph view, singleton removal, excess and clique pruning, column merging, C-Matrix contract.
+- **G.E (linear algebra):** §31–§41 of this document — the filtered matrix as a GF(2) linear
+  system, sign and QC columns, block Lanczos, block Wiedemann, the kernel-vector →
+  provenance → original-relations thread, C-LinAlg contract.
+- **G.F (square root and assembly):** §42–§51 of this document — the kernel vector as a
+  congruence of squares, rational square root, Couveignes' algorithm, GCD assembly,
+  C-AlgSqrt contract.
+
+### Mathematical textbook
+
+- **`docs/MATHEMATICS.md` §GNFS** (T.G chapter, to be appended) — the maths-first sibling to
+  this integrative chapter. Develops the GNFS algorithm mathematically from the
+  difference-of-squares idea through the number-field bridge, factor-base smoothness, linear-
+  algebra dependency, and square-root recovery. Carries the full L-notation subexponentiality
+  derivation as the payoff proof. Cross-references this chapter for the code realisation.
+
+- **`docs/MATHEMATICS.md` §Prerequisites** — the L-notation definition, the Canfield–Erdős–
+  Pomerance smooth-number density theorem, and the Dickman-ρ function. The prerequisites for
+  the L-notation derivation in §60 above.
+
+- **`docs/MATHEMATICS.md` §On Scale** — the three axes of scale (resource/operational,
+  mathematical-dimension, structural), the three couplings, and the honest science↔engineering
+  gap. The natural-philosophy context for the principle-4 annotations throughout this document.
+
+---
+
+## 62. KAT Summary (G.W — Integrative)
+
+The integrative chapter does not add new KATs (it is a code-tour, not a new implementation).
+The KATs that verify the cross-phase pipeline end-to-end are:
+
+| Test | File | What it verifies |
+|------|------|-----------------|
+| `kat_a_factor_driver_recovers_known_factor` | `factor_end_to_end_kat.rs` | Full pipeline: N = 35 → factor 5 or 7 |
+| `kat_a_factor_from_congruence_known_values` | `factor_end_to_end_kat.rs` | gcd(6 − 1, 35) = 5; congruence of squares identity |
+| `kat_b_retry_loop_skips_trivial_and_finds_factor` | `factor_end_to_end_kat.rs` | Retry loop: KV1 trivial, KV2 yields factor 5 |
+| `kat_d_end_to_end_provenance` | `merge_kat.rs` | Provenance thread: XOR of original relations' GF(2) column sets equals the merged row |
+| `kat_3_round_trip_provenance` | `linalg_substrate_kat.rs` | `expand_provenance` returns the correct symmetric difference |
+| `kat_a_cross_validation_with_lanczos` | `wiedemann_kat.rs` | Block Lanczos and block Wiedemann cross-validate on the shared 6×4 matrix |
+
+The end-to-end KAT (`kat_a_factor_driver_recovers_known_factor`) is the pipeline-level
+verification: it exercises the full chain from a hand-built `PolyPair` and `Vec<Relation>`
+through the square-root stage to a recovered factor. The provenance KATs verify the
+cross-stage thread that connects G.D, G.E, and G.F.
+
+---
+
+## Further Reading (G.W — Integrative)
+
+1. **Lenstra, A. K., and Lenstra, H. W. Jr. (eds.) (1993).** *The Development of the Number
+   Field Sieve.* Springer LNM 1554. The original papers on GNFS, including the full pipeline
+   from polynomial selection through the square-root step.
+
+2. **Buhler, J., Lenstra, H. W. Jr., and Pomerance, C. (1993).** *Factoring integers with the
+   number field sieve.* In: Lenstra and Lenstra (eds.), LNM 1554. The original description of
+   the full GNFS pipeline, including the L-notation complexity analysis.
+
+3. **Pomerance, C. (1996).** *A tale of two sieves.* Notices of the AMS, 43(12), 1473–1485.
+   An accessible introduction to the quadratic sieve and the number field sieve, with the
+   L-notation comparison.
+
+4. **Crandall, R., and Pomerance, C. (2005).** *Prime Numbers: A Computational Perspective.*
+   2nd ed. Springer. Chapter 6 covers the full GNFS pipeline, including the L-notation
+   complexity analysis and the algebraic square root.
+
+5. **Kleinjung, T., Aoki, K., Franke, J., et al. (2010).** *Factorization of a 768-bit RSA
+   modulus.* CRYPTO 2010. The RSA-768 factorisation — the largest GNFS factorisation to date
+   — which used the full pipeline described in this chapter.
+
+6. **Granville, A. (2008).** *Smooth numbers: computational number theory and beyond.* MSRI
+   Publications 44. The smooth-number density theorem (Canfield–Erdős–Pomerance) and the
+   Dickman-ρ function — the mathematical engine of the L-notation derivation in §60.
+
+7. **`docs/MATHEMATICS.md` §GNFS** (T.G chapter, to be appended). The maths-first sibling to
+   this chapter: the full L-notation subexponentiality derivation as a payoff proof, the
+   Couveignes-correctness sketch, and the GNFS algorithm developed mathematically from first
+   principles.

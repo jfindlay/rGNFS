@@ -15,8 +15,9 @@
 //!   map, and singleton removal (C-Matrix contract). Entry points: [`filter::build_matrix`],
 //!   [`filter::remove_singletons`].
 //! - [`sqrt`] — square root stage: rational square root from a kernel vector (G.F.2);
-//!   algebraic square root via Couveignes (G.F.3, stub); assembly (G.F.4, stub).
-//!   Entry point: [`sqrt::rational_sqrt`].
+//!   Couveignes CRT algebraic square root — form γ, split-prime CRT lift, Garner reconstruction,
+//!   real-embedding sign resolution (G.F.3); final GCD assembly and top-level `factor` driver
+//!   (G.F.4). Entry points: [`sqrt::rational_sqrt`], [`sqrt::algebraic_sqrt`], [`sqrt::factor`].
 //!
 //! # Pedagogical intent
 //!
