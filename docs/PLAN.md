@@ -680,13 +680,22 @@ let beta_j_fp = gamma_j_fp.sqrt(&p_uint).expect("gamma must be QR mod split prim
 let beta_j: u64 = beta_j_fp.to_uint().as_words()[0];
 ```
 
+**Implementation note (harmless deviation from the above):** The G.F.3 build uses a standalone
+`tonelli_shanks(n: u64, p: u64) -> Option<u64>` function instead of `FpNaive::<4>::sqrt`. The
+algorithm is identical (Tonelli–Shanks); the interface is simpler: it operates directly on `u64`
+values, avoiding the `BigInt → Uint<4>` conversion and the `FpNaive` wrapper entirely. This
+sidesteps the `bigint_to_uint4` bridge and the `shared_field` import for the per-prime step. The
+`FpNaive::<4>::sqrt` path above remains the D.B-friendly shape (it generalises to larger `L` and
+to the `Fp<L>` trait); the standalone function is the pragmatic choice at G.F.3 toy scale. The
+frozen C-AlgSqrt summary row below reflects the actual implementation.
+
 #### Summary of frozen interface
 
 | Component | Specification |
 |-----------|---------------|
 | **Entry signature** | `algebraic_sqrt(kv, matrix, relations, poly) -> BigInt` returning Y = \|Norm(β)\| mod N |
 | **Prime selection** | Reuse `select_qc_primes`; default 10 primes (principle-4 scale knob) |
-| **Per-prime step** | `reduce_mod_ideal` → `bigint_to_uint4` → `FpNaive::<4>::sqrt` → Lagrange interpolation |
+| **Per-prime step** | `reduce_mod_ideal` → standalone `tonelli_shanks(n: u64, p: u64)` → Lagrange interpolation (deviation from `FpNaive::<4>::sqrt` — same algorithm, simpler interface; see §5 note) |
 | **CRT lift** | Garner's algorithm per coefficient; result is `Vec<BigInt>` → `NumberFieldElement` |
 | **Sign convention** | Real embedding: find θ (real root of f), evaluate β(θ), negate if < 0 |
 | **Norm computation** | `NumberFieldElement::norm()` → `BigRational` → extract numerator → reduce mod N |
@@ -707,7 +716,7 @@ with no commit-shaped deliverable); their outcomes are recorded in the Action-fr
 |---|---------|--------|--------|-------|
 | G.F.1 | Square-root substrate: reduce_mod_ideal + isqrt + exported gcd | done | 2af8116 | C-NF additively extended (reduce_mod_ideal frozen); isqrt + gcd added to shared/bigint. Extra files: isqrt.rs (submodule), Cargo.toml updates, Cargo.lock (plainly part of unit). |
 | G.F.2 | Rational square root from a kernel vector | done | 11f9065 | gnfs::sqrt module established (mod.rs + rational.rs). Extra file: gnfs/Cargo.toml (added shared-bigint dep, plainly part of unit). |
-| G.F.3 | Algebraic square root via Couveignes / CRT | pending | — | — |
+| G.F.3 | Algebraic square root via Couveignes / CRT | done | c80a855 + ec69a1f | C-AlgSqrt frozen. Extra files: gnfs/Cargo.toml (num-integer, num-rational deps), gnfs/src/lib.rs (re-export), Cargo.lock (plainly part of unit). Review fix: unconditional sign-consistency check (ec69a1f). |
 | G.F.4 | Assembly + end-to-end factor driver (gcd(x−y, N)) | pending | — | — |
 | G.F.W | Integrative writeup (square-root chapter) | pending | — | — |
 
@@ -731,6 +740,12 @@ Discovery/flex: G.F.3 design inflection fork returned `design-confident`; C-AlgS
 Affected: C-AlgSqrt (frozen by design juncture, written into Cross-session contracts).
 Deferred: no — all five design decisions resolved; D.B generalisation paths documented (L parameterisation, lower-level couveignes_sqrt helper).
 Texture: The silent-failure locus (embedding-sign) is handled by real-embedding with G.F.4 retry loop as safety net. Lagrange interpolation per prime is the key step connecting reduce_mod_ideal output to CRT input.
+
+### G.F.3 review juncture — 2026-06-07
+Discovery/flex: T0 correctness-review juncture returned `review-needs-discussion` (no silent-failure bugs found). Two items: (1) per-prime sign consistency check was debug-only — fixed to unconditional assert (ec69a1f); (2) standalone `tonelli_shanks` used instead of `FpNaive::<4>::sqrt` — harmless deviation (same algorithm), C-AlgSqrt §5 updated with implementation note. Embedding-sign resolution confirmed correct. Prime budget confirmed sufficient at toy scale. Principle-4 annotations confirmed present and honest.
+Affected: C-AlgSqrt §5 (implementation note added); gnfs/src/sqrt/algebraic.rs (unconditional check).
+Deferred: no — both items resolved; G.F.4 may proceed.
+Texture: The per-prime sign consistency is now enforced unconditionally (panics on upstream kernel bugs in both debug and release). The G.F.4 retry loop remains the safety net for wrong-sign β from the global sign resolution.
 
 ---
 
