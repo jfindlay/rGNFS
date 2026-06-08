@@ -416,14 +416,284 @@ to need *changing* an existing C-NF method's semantics (not adding), that is a *
 (`legendre`/`sqrt` are landed default methods on the `Fp<L>` trait). G.F **reads** the trait; it does
 not amend C-Fp. Stable for G.F.
 
-### C-AlgSqrt — Couveignes algebraic-square-root contract (compiler + KAT) — *to be frozen at G.F.3 (design juncture)*
+### C-AlgSqrt — Couveignes algebraic-square-root contract (compiler + KAT) — *frozen at G.F.3 (design juncture)*
+
 **Defined:** G.F.3. **Consumed by:** G.F.4 (Y for the assembly), **D.B (NFS-DL over F_ℓ generalises
-the CRT square root — ROADMAP Phase γ)**. The Couveignes entry signature (kernel/relation set + K →
-β + Y), the split-prime-selection rule, the CRT lift, and the **embedding-sign convention**. The
-G.F.3 **design juncture** resolves and writes this subsection before implementation; the G.F.3
-**review juncture** checks the landed solver honours it. Like C-LinAlg, this is **cross-track-reused
-by D.B**, so over-specify toward an F_ℓ-friendly shape (a general residue-field square-root view, not
-a GF(2)-or-ℤ-hardcoded one) where the cost is low. *Marked "to be frozen at G.F.3."*
+the CRT square root — ROADMAP Phase γ)**. Like C-LinAlg, this is **cross-track-reused by D.B**, so
+over-specified toward an F_ℓ-friendly shape (a general residue-field square-root view, not a
+GF(2)-or-ℤ-hardcoded one) where the cost is low.
+
+#### 1. Entry function signature
+
+```rust
+/// Compute the algebraic square root Y = Norm(β) mod N via Couveignes' CRT algorithm.
+///
+/// Given a kernel vector (a subset S of relations whose algebraic norm product is a
+/// perfect square in K), computes β ∈ K with β² = γ = ∏_{i ∈ S}(a_i − b_i·α), then
+/// returns Y = |Norm(β)| mod N.
+///
+/// # Algorithm (Couveignes)
+///
+/// 1. Form γ = ∏_{i ∈ S}(a_i − b_i·α) ∈ K via NumberFieldElement::mul.
+/// 2. Select CRT primes: primes p that split completely in K, p > B_alg.
+/// 3. For each split prime p with roots r_1, ..., r_d of f mod p:
+///    - Reduce γ mod (p, α − r_j) to get γ_j ∈ 𝔽_p via reduce_mod_ideal.
+///    - Compute β_j = sqrt(γ_j) in 𝔽_p via Fp::sqrt (Tonelli–Shanks).
+///    - Combine the d roots β_1, ..., β_d into a single β mod p via Lagrange interpolation
+///      (the unique polynomial of degree < d passing through (r_j, β_j)).
+/// 4. CRT-lift the per-prime β mod p values to recover β's coefficients in ℤ[α].
+/// 5. Resolve the global sign of β via the real embedding (see §4 below).
+/// 6. Return Y = |Norm(β)| mod N.
+///
+/// # Panics
+///
+/// - If γ is not a quadratic residue mod any split prime (upstream kernel bug).
+/// - If the CRT lift fails to converge (insufficient primes — scale bug).
+///
+/// # Parameters
+///
+/// - `kv`: The kernel vector (subset of filtered-matrix rows).
+/// - `matrix`: The filtered sparse GF(2) matrix (carries provenance).
+/// - `relations`: The original relation list.
+/// - `poly`: The polynomial pair (provides f, m, n, and number_field()).
+///
+/// # Returns
+///
+/// Y = |Norm(β)| mod N as a `BigInt`.
+pub fn algebraic_sqrt(
+    kv: &KernelVector,
+    matrix: &SparseMatrix,
+    relations: &[Relation],
+    poly: &PolyPair,
+) -> BigInt
+```
+
+**D.B-friendly note:** The signature takes the kernel/relation/poly triple, not a pre-formed γ. D.B
+may factor out a lower-level `couveignes_sqrt(gamma: &NumberFieldElement, nf: &NumberField, n:
+&BigInt, num_primes: usize) -> BigInt` if the F_ℓ context provides γ differently. The G.F.3
+implementation may internally use such a helper; the public entry is the above.
+
+#### 2. Split-prime selection rule
+
+**Reuse `select_qc_primes` from `gnfs::linalg::qc`.** The QC-prime machinery already finds primes
+that split completely in K (i.e., f has d distinct roots mod p). The Couveignes primes are the same
+class; the only difference is the count.
+
+**Prime-count budget (principle-4 scale knob):**
+
+- **Toy scale (demonstration fidelity):** 5–10 primes suffice. The coefficient bit-length of β is
+  bounded by `|S| · max(log|a_i|, log|b_i|) · d`, which at toy scale (|S| ~ 50, coefficients ~ 20
+  bits, d ~ 3–5) is ~3000 bits. Each 64-bit prime contributes ~64 bits of CRT information, so
+  ~50 primes would be overkill; 5–10 is ample margin.
+- **Scale annotation:** The prime count is the scale knob. The algorithm is identical at all scales;
+  only the count changes. Annotate in code: `// Principle-4: prime_count is the scale knob; 10
+  suffices at toy scale, O(coefficient_bits / 64) at NFS scale.`
+
+**Selection:**
+
+```rust
+/// Select CRT primes for Couveignes' algorithm.
+///
+/// Returns `num_primes` primes p > b_alg that split completely in K (f has d distinct
+/// roots mod p). Reuses the QC-prime selection logic.
+fn select_couveignes_primes(f: &IntPoly, b_alg: u64, num_primes: usize) -> Vec<u64> {
+    select_qc_primes(f, b_alg, num_primes)
+}
+```
+
+**Default:** `const DEFAULT_COUVEIGNES_PRIMES: usize = 10;` (demonstration fidelity).
+
+#### 3. CRT lift
+
+**Per-prime square root step:**
+
+For each split prime p with roots r_1, ..., r_d of f mod p:
+
+1. **Reduce γ to 𝔽_p:** For each root r_j, call `gamma.reduce_mod_ideal(&p_big, &r_j_big)` to get
+   `gamma_j: BigInt` in `[0, p)`.
+
+2. **Convert BigInt → Uint<L>:** At toy scale, `L = 4` (256-bit) suffices for primes up to 64 bits.
+   ```rust
+   fn bigint_to_uint4(x: &BigInt, p: u64) -> Uint<4> {
+       // x is in [0, p) where p < 2^64; extract the low 64 bits.
+       use num_traits::ToPrimitive;
+       let v = x.to_u64().expect("residue must fit in u64 at toy scale");
+       Uint::<4>::from(v)
+   }
+   ```
+   **D.B note:** At F_ℓ scale, L may need to be larger. The conversion is the limb-width seam;
+   parameterise if D.B requires.
+
+3. **Compute sqrt in 𝔽_p:** Call `FpNaive::<4>::from_uint(gamma_j_uint, &p_uint).sqrt(&p_uint)`.
+   If `None`, panic — γ is not a QR mod p, indicating an upstream kernel bug (the QC columns should
+   guarantee γ is a square in K, hence a QR mod every split prime).
+
+4. **Lagrange interpolation mod p:** Given the d pairs `(r_j, beta_j)` where `beta_j = sqrt(gamma_j)`,
+   reconstruct the unique polynomial `beta_poly` of degree < d such that `beta_poly(r_j) = beta_j`
+   for all j. This is β mod p as a polynomial in α with coefficients in 𝔽_p.
+
+   ```rust
+   /// Lagrange interpolation mod p: given (r_j, beta_j) pairs, return the coefficients
+   /// [c_0, c_1, ..., c_{d-1}] of the unique polynomial c_0 + c_1·x + ... + c_{d-1}·x^{d-1}
+   /// passing through all points, reduced mod p.
+   fn lagrange_interp_mod_p(points: &[(u64, u64)], p: u64) -> Vec<u64>
+   ```
+
+**CRT combination:**
+
+After processing all primes, we have for each coefficient index k (0 ≤ k < d) a set of residues
+`{c_k mod p_1, c_k mod p_2, ...}`. Apply the Chinese Remainder Theorem to recover `c_k` in ℤ.
+
+**CRT algorithm:** Use Garner's algorithm (iterative, avoids large intermediate products):
+
+```rust
+/// CRT-lift a set of (residue, modulus) pairs to a single BigInt.
+///
+/// Given [(r_1, p_1), (r_2, p_2), ...], returns x such that x ≡ r_i (mod p_i) for all i,
+/// with 0 ≤ x < ∏ p_i.
+fn crt_lift(residues: &[(u64, u64)]) -> BigInt {
+    // Garner's algorithm: iteratively lift.
+    // x = r_1 + p_1 * (r_2 - r_1) * inv(p_1, p_2) + ...
+}
+```
+
+**Representation of β:** After CRT, β is represented as a `Vec<BigInt>` of d coefficients
+`[c_0, c_1, ..., c_{d-1}]` where β = c_0 + c_1·α + ... + c_{d-1}·α^{d-1}. Convert to
+`NumberFieldElement` for norm computation:
+
+```rust
+let beta_poly = RatPoly::from_coeffs(coeffs.iter().map(|c| BigRational::from(c.clone())).collect());
+let beta = NumberFieldElement { field: &nf, poly: beta_poly };
+```
+
+**Sign ambiguity:** The per-prime square roots have a ±1 ambiguity. Lagrange interpolation
+propagates this: for each prime, we could have chosen −β_j instead of β_j. The CRT lift recovers
+*some* β with β² = γ, but it may be −β (the other square root). This is resolved in §4.
+
+#### 4. Embedding-sign convention (the silent-failure locus)
+
+**The problem:** β and −β both satisfy β² = γ. The CRT lift recovers one of them, but we don't know
+which. Choosing the wrong one gives Y = Norm(−β) = (−1)^d · Norm(β), which for odd d flips the sign
+of Y. Even if |Y| is correct, the sign of Y mod N matters for the final gcd: we need X² ≡ Y² (mod N)
+with X, Y having the same sign convention. A wrong sign yields a trivial gcd.
+
+**The resolution:** Use the **real embedding** of K. Since f is the GNFS algebraic polynomial, it
+has at least one real root θ (the polynomial arises from base-m expansion of N, which is positive,
+so f has a real root near m^{1/d}). Evaluate β at θ to get a real number β(θ). Choose the sign of β
+such that **β(θ) > 0**.
+
+**Implementation:**
+
+1. **Find a real root θ of f:** Use Newton's method starting from m^{1/d} (a good initial guess for
+   base-m polynomials). At toy scale, f64 precision suffices; for robustness, use interval
+   arithmetic or arbitrary-precision floats if needed.
+
+   ```rust
+   /// Find a real root of f using Newton's method.
+   ///
+   /// Starts from initial guess `x0` and iterates until |f(x)| < tol.
+   /// Returns the root as an f64 (sufficient precision at toy scale).
+   fn find_real_root(f: &IntPoly, x0: f64, tol: f64, max_iter: usize) -> Option<f64>
+   ```
+
+   **Initial guess:** `x0 = (poly.m as f64).powf(1.0 / d as f64)` where d = deg(f).
+
+2. **Evaluate β at θ:** Given β = c_0 + c_1·α + ... + c_{d-1}·α^{d-1} and θ (a real root of f, so
+   α ↦ θ is a valid embedding), compute β(θ) = c_0 + c_1·θ + ... + c_{d-1}·θ^{d-1}.
+
+   ```rust
+   /// Evaluate a polynomial (given as BigInt coefficients) at a real point.
+   fn eval_at_real(coeffs: &[BigInt], theta: f64) -> f64 {
+       coeffs.iter().enumerate().map(|(i, c)| {
+           let c_f64 = c.to_f64().unwrap_or(0.0);
+           c_f64 * theta.powi(i as i32)
+       }).sum()
+   }
+   ```
+
+3. **Sign correction:** If β(θ) < 0, negate β (i.e., negate all coefficients). This ensures the
+   returned β has β(θ) > 0.
+
+   ```rust
+   let beta_at_theta = eval_at_real(&coeffs, theta);
+   if beta_at_theta < 0.0 {
+       for c in &mut coeffs {
+           *c = -c.clone();
+       }
+   }
+   ```
+
+**Why this works:** The real embedding α ↦ θ is a ring homomorphism K → ℝ. For γ = β², we have
+γ(θ) = β(θ)². Since γ is a product of (a_i − b_i·α) terms, γ(θ) = ∏(a_i − b_i·θ). The sign of γ(θ)
+is determined by the count of negative factors, which the sign column in G.E tracks. By choosing
+β(θ) > 0, we ensure β is the "positive" square root under the real embedding, consistent with the
+rational side's sign convention (X > 0 from isqrt).
+
+**Fallback (if Newton fails):** If f has no real root (possible for some polynomials, though rare
+for GNFS base-m polynomials), fall back to the **norm-sign convention**: compute Norm(β) and
+Norm(−β) = (−1)^d · Norm(β). Choose the one that is positive. This is less robust (it doesn't
+guarantee consistency with the rational side) but is a fallback for edge cases.
+
+**G.F.4 retry loop:** If the chosen sign is wrong, gcd(X − Y, N) will be trivial (1 or N). The G.F.4
+assembly driver has a retry loop over kernel vectors; a trivial gcd from one vector is not fatal.
+The sign convention here is a best-effort heuristic, not a guarantee. The retry loop is the safety
+net.
+
+#### 5. Per-prime square root step (BigInt → Fp bridge)
+
+**The limb-width issue:** `reduce_mod_ideal` returns `BigInt` in `[0, p)`. `Fp::sqrt` requires
+`Uint<L>`. At toy scale, primes are < 2^64, so `L = 4` (256-bit) is ample.
+
+**Conversion:**
+
+```rust
+use crypto_bigint::Uint;
+use num_traits::ToPrimitive;
+
+/// Convert a BigInt residue in [0, p) to Uint<4> for Fp operations.
+///
+/// Panics if the residue does not fit in 64 bits (toy-scale assumption).
+fn bigint_to_uint4(x: &BigInt) -> Uint<4> {
+    let v = x.to_u64().expect("residue must fit in u64 at toy scale");
+    Uint::<4>::from(v)
+}
+
+/// Convert a Uint<4> back to BigInt.
+fn uint4_to_bigint(x: &Uint<4>) -> BigInt {
+    // Extract the low 64 bits (sufficient at toy scale).
+    BigInt::from(x.as_words()[0])
+}
+```
+
+**D.B note:** At F_ℓ scale, primes may exceed 64 bits. The conversion would need to handle larger
+`L` and multi-word extraction. Parameterise `L` if D.B requires; for G.F.3, hardcode `L = 4`.
+
+**Sqrt call:**
+
+```rust
+use shared_field::{Fp, FpNaive};
+
+let p_uint = Uint::<4>::from(p);
+let gamma_j_uint = bigint_to_uint4(&gamma_j);
+let gamma_j_fp = FpNaive::<4>::from_uint(gamma_j_uint, &p_uint);
+let beta_j_fp = gamma_j_fp.sqrt(&p_uint).expect("gamma must be QR mod split prime");
+let beta_j: u64 = beta_j_fp.to_uint().as_words()[0];
+```
+
+#### Summary of frozen interface
+
+| Component | Specification |
+|-----------|---------------|
+| **Entry signature** | `algebraic_sqrt(kv, matrix, relations, poly) -> BigInt` returning Y = \|Norm(β)\| mod N |
+| **Prime selection** | Reuse `select_qc_primes`; default 10 primes (principle-4 scale knob) |
+| **Per-prime step** | `reduce_mod_ideal` → `bigint_to_uint4` → `FpNaive::<4>::sqrt` → Lagrange interpolation |
+| **CRT lift** | Garner's algorithm per coefficient; result is `Vec<BigInt>` → `NumberFieldElement` |
+| **Sign convention** | Real embedding: find θ (real root of f), evaluate β(θ), negate if < 0 |
+| **Norm computation** | `NumberFieldElement::norm()` → `BigRational` → extract numerator → reduce mod N |
+| **Limb width** | `L = 4` (256-bit) at toy scale; parameterise for D.B if needed |
+
+**Verification gate:** The G.F.3 KAT (a) tests that for a known-square γ, Couveignes recovers β with
+Norm(β) matching the hand-computed Y. The G.F.4 end-to-end KAT is the behavioural gate.
 
 ---
 
@@ -456,7 +726,11 @@ notable texture) for the juncture forks to consume — including the **G.F.3 des
 (the frozen C-AlgSqrt) and the **G.F.3 review-juncture outcome** (the T0 fork's findings on
 Couveignes), which are recorded here rather than in the ledger.
 
-*(none yet)*
+### G.F.3 design juncture — 2026-06-07
+Discovery/flex: G.F.3 design inflection fork returned `design-confident`; C-AlgSqrt frozen with: entry `algebraic_sqrt(kv, matrix, relations, poly) -> BigInt` (Y = |Norm(β)| mod N); prime selection reuses `select_qc_primes` (default 10, principle-4 scale knob); per-prime step: `reduce_mod_ideal` → `bigint_to_uint4` → `FpNaive::<4>::sqrt` → Lagrange interpolation; CRT lift via Garner's algorithm per coefficient; sign convention: real embedding (find θ via Newton from m^{1/d}, evaluate β(θ), negate if < 0); fallback: norm-sign convention if Newton fails.
+Affected: C-AlgSqrt (frozen by design juncture, written into Cross-session contracts).
+Deferred: no — all five design decisions resolved; D.B generalisation paths documented (L parameterisation, lower-level couveignes_sqrt helper).
+Texture: The silent-failure locus (embedding-sign) is handled by real-embedding with G.F.4 retry loop as safety net. Lagrange interpolation per prime is the key step connecting reduce_mod_ideal output to CRT input.
 
 ---
 
