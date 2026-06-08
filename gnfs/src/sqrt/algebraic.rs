@@ -284,15 +284,20 @@ fn per_prime_beta(gamma: &NumberFieldElement<'_>, f: &IntPoly, p: u64, d: usize)
         roots.iter().zip(beta_vals.iter()).map(|(&r, &b)| (r, b)).collect();
     let result = lagrange_interp_mod_p(&points, p, d);
 
-    // Verify: the result polynomial should square to γ at each root.
-    // (This is a debug assertion; in production, trust the algorithm.)
-    #[cfg(debug_assertions)]
+    // Verify unconditionally: the result polynomial must square to γ at each root.
+    // A mismatch here means the per-root sign choices are inconsistent — an upstream kernel
+    // bug (the QC columns should guarantee γ is a square in K, so every β(r_j)² = γ_j must
+    // hold after Lagrange interpolation). Panic loudly rather than silently propagating a
+    // wrong β into the CRT lift.
     for (j, (&r, &gamma_j)) in roots.iter().zip(gamma_vals.iter()).enumerate() {
         let beta_at_r = eval_poly_u64(&result, r, p);
         let beta_sq = mul_mod(beta_at_r, beta_at_r, p);
-        debug_assert_eq!(
+        assert_eq!(
             beta_sq, gamma_j,
-            "per_prime_beta: β(r_{j})² = {beta_sq} ≠ γ(r_{j}) = {gamma_j} (mod p={p})"
+            "per_prime_beta: sign inconsistency — β(r_{j})² = {beta_sq} ≠ γ(r_{j}) = {gamma_j} \
+             (mod p={p}); the Lagrange polynomial does not square to γ at root r_{j}={r}. \
+             This is an upstream kernel bug: the QC columns should guarantee γ is a perfect \
+             square in K, so β(r_j)² ≡ γ_j (mod p) must hold for all j."
         );
     }
 
