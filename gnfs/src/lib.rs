@@ -30,6 +30,7 @@ pub mod sieve;
 pub mod filter;
 pub mod linalg;
 pub mod sqrt;
+pub mod dl;
 
 pub use polyselect::{
     select_base_m, select_base_m_with_m, optimal_degree,
@@ -55,3 +56,5 @@ pub use filter::{
 };
 
 pub use sqrt::{algebraic_sqrt, factor, factor_from_congruence, rational_sqrt};
+
+pub use dl::{compute_schirokauer, DLRelation, PrimeIdeal, SchirokauerError};
