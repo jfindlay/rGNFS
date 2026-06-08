@@ -512,6 +512,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "proptest",
+ "shared-bigint",
  "shared-numfield",
  "shared-numth",
 ]

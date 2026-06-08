@@ -14,6 +14,9 @@
 //! - [`filter`] — filtering substrate: sparse GF(2) matrix construction, relation-provenance
 //!   map, and singleton removal (C-Matrix contract). Entry points: [`filter::build_matrix`],
 //!   [`filter::remove_singletons`].
+//! - [`sqrt`] — square root stage: rational square root from a kernel vector (G.F.2);
+//!   algebraic square root via Couveignes (G.F.3, stub); assembly (G.F.4, stub).
+//!   Entry point: [`sqrt::rational_sqrt`].
 //!
 //! # Pedagogical intent
 //!
@@ -25,6 +28,7 @@ pub mod polyselect;
 pub mod sieve;
 pub mod filter;
 pub mod linalg;
+pub mod sqrt;
 
 pub use polyselect::{
     select_base_m, select_base_m_with_m, optimal_degree,
@@ -48,3 +52,5 @@ pub use filter::{
     build_matrix, remove_singletons,
     prune_cliques, merge_columns,
 };
+
+pub use sqrt::rational_sqrt;

@@ -5,6 +5,7 @@ edition = "2024"
 description = "General Number Field Sieve: polynomial selection, sieving, and factorization"
 
 [dependencies]
+shared-bigint = { path = "../shared/bigint" }
 shared-numfield = { path = "../shared/numfield" }
 shared-numth = { path = "../shared/numth" }
 num-bigint = { version = "0.4", features = ["serde"] }
