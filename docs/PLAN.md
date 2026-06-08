@@ -517,8 +517,10 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.B.1 | F_ℓ linalg substrate + block Lanczos; freeze C-LinAlgFl | pending | — | — |
+| D.B.1 | F_ℓ linalg substrate + block Lanczos; freeze C-LinAlgFl | done | 652cfa6 | C-LinAlgFl |
 | D.B.2 | Block Wiedemann over F_ℓ + virtual-log recovery + toy-F_p DL KAT | pending | — | — |
+
+Extras allowed in D.B.1 commit: `gnfs/Cargo.toml` (added shared-field dependency, plainly part of the unit), `Cargo.lock` (auto-updated by Cargo). `FlMatrixOperator` carries `L` as a const generic (`FlMatrixOperator<'a, F, const L: usize>`) — Rust type-system constraint, internal-continue, D.B.2 aware.
 
 Contracts frozen before this sub-track (read by D.B): C-NF (bdba6f5 / extended 20cd263), C-Ideal
 (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
@@ -531,7 +533,11 @@ new F_ℓ-linalg contract (C-LinAlgFl, at D.B.1).
 
 ## Action-frame digest
 
-*(none yet)*
+### D.B.1 — 2026-06-08
+Discovery/flex: `FlMatrixOperator` requires `L` as a const generic in the struct (`FlMatrixOperator<'a, F, const L: usize>`) — Rust type-system constraint; the contract name and interface are otherwise identical.
+Affected: C-LinAlgFl (minor shape deviation, internal-continue; D.B.2 consumes the same types)
+Deferred: no
+Texture: Inflection fork returned design-confident; parallel-module decision confirmed in implementation (GF(2) linalg untouched). BigInt→Fp resolved via local helper (bigint_to_fp). Block Lanczos KAT at toy scale takes ~22s due to FpNaive4 256-bit arithmetic — expected, not a correctness issue.
 
 ---
 
