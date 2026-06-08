@@ -747,6 +747,12 @@ Affected: C-AlgSqrt §5 (implementation note added); gnfs/src/sqrt/algebraic.rs 
 Deferred: no — both items resolved; G.F.4 may proceed.
 Texture: The per-prime sign consistency is now enforced unconditionally (panics on upstream kernel bugs in both debug and release). The G.F.4 retry loop remains the safety net for wrong-sign β from the global sign resolution.
 
+### G.F.W ◆ — 2026-06-07
+Discovery/flex: G.F ◆ boundary fork returned `still-on-intent`. All four algorithmic sessions delivered (G.F.1 substrate, G.F.2 rational root, G.F.3 Couveignes algebraic root, G.F.4 assembly + driver). C-AlgSqrt frozen in D.B-consumable form (D.B generalisation paths documented in contract and code). Principle-4 annotations present and honest (CRT prime count as scale knob, embedding-sign resolution as correctness obligation at all scales). PEDAGOGY chapter §42–§51 (~640 lines) at expected quality with MathJax display math. No defocus or rigidity detected. Roadmap-frame flex (4 sessions + Opus junctures vs ROADMAP's "2 sessions Sonnet") logged in Discoveries for ROADMAP Discoveries log.
+Affected: none — no contract flex; G.F sub-track complete.
+Deferred: no — still-on-intent, G.W (GNFS-wide writeup) may proceed over frozen G.F contracts.
+Texture: The tonelli_shanks deviation from FpNaive::<4>::sqrt is documented in C-AlgSqrt §5 (harmless, same algorithm). Per-prime sign consistency check made unconditional (ec69a1f). G.F.4 retry loop is the safety net for wrong-sign β.
+
 ---
 
 ## Discoveries & risks
