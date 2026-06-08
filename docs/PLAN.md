@@ -718,7 +718,7 @@ with no commit-shaped deliverable); their outcomes are recorded in the Action-fr
 | G.F.2 | Rational square root from a kernel vector | done | 11f9065 | gnfs::sqrt module established (mod.rs + rational.rs). Extra file: gnfs/Cargo.toml (added shared-bigint dep, plainly part of unit). |
 | G.F.3 | Algebraic square root via Couveignes / CRT | done | c80a855 + ec69a1f | C-AlgSqrt frozen. Extra files: gnfs/Cargo.toml (num-integer, num-rational deps), gnfs/src/lib.rs (re-export), Cargo.lock (plainly part of unit). Review fix: unconditional sign-consistency check (ec69a1f). |
 | G.F.4 | Assembly + end-to-end factor driver (gcd(x−y, N)) | done | 7f80040 | First top-level factor driver. Extra file: gnfs/src/lib.rs (re-exports, plainly part of unit). |
-| G.F.W | Integrative writeup (square-root chapter) | pending | — | — |
+| G.F.W | Integrative writeup (square-root chapter) | done | f7ebe1d | — |
 
 Contracts frozen before G.F: C-Fp (cf00ed5 / α.5), C-numth (α.2), C-NF (bdba6f5 / 7844773), C-Ideal
 (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-PolyPair (2f43f99), C-Score (00aa32d),
