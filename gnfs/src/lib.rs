@@ -53,4 +53,4 @@ pub use filter::{
     prune_cliques, merge_columns,
 };
 
-pub use sqrt::{algebraic_sqrt, rational_sqrt};
+pub use sqrt::{algebraic_sqrt, factor, factor_from_congruence, rational_sqrt};

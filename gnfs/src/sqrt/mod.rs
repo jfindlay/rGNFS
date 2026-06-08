@@ -7,8 +7,8 @@
 //!   square root X via `isqrt`, and reduce X mod N. Entry point: [`rational::rational_sqrt`].
 //! - [`algebraic`] — algebraic square root via Couveignes' CRT algorithm in ℤ[α].
 //!   Entry point: [`algebraic::algebraic_sqrt`].
-//! - `assembly` (G.F.4, not yet implemented) — final assembly: combine X and Y, compute
-//!   gcd(X − Y, N) to extract a non-trivial factor.
+//! - [`assembly`] — final assembly: combine X and Y, compute gcd(X − Y, N) to extract a
+//!   non-trivial factor. Entry points: [`assembly::factor_from_congruence`], [`assembly::factor`].
 //!
 //! # Background
 //!
@@ -27,7 +27,9 @@
 //! for this consumer. G.F.2 is its first real client.
 
 pub mod algebraic;
+pub mod assembly;
 pub mod rational;
 
 pub use algebraic::algebraic_sqrt;
+pub use assembly::{factor, factor_from_congruence};
 pub use rational::rational_sqrt;
