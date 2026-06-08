@@ -25,8 +25,10 @@
 //! carried even when toy instances use r = 1 (required for D.C descent and E.C solver).
 
 pub mod schirokauer;
+pub mod relation;
 
 pub use schirokauer::{schirokauer as compute_schirokauer, PrimeIdeal, SchirokauerError};
+pub use relation::{augment_relation, collect_dl_relations, DLMatrix};
 
 use num_bigint::BigInt;
 

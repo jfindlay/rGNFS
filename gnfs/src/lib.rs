@@ -57,4 +57,7 @@ pub use filter::{
 
 pub use sqrt::{algebraic_sqrt, factor, factor_from_congruence, rational_sqrt};
 
-pub use dl::{compute_schirokauer, DLRelation, PrimeIdeal, SchirokauerError};
+pub use dl::{
+    compute_schirokauer, DLRelation, PrimeIdeal, SchirokauerError,
+    augment_relation, collect_dl_relations, DLMatrix,
+};
