@@ -373,7 +373,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | T.0 | Textbook spine: C-Textbook + framing + prerequisites + On-scale + rho/α retrofit | done | 5c9b783 | C-Textbook |
-| G.W | GNFS integrative writeup + design-statement verification + L-notation | pending | — | — |
+| G.W | GNFS integrative writeup + design-statement verification + L-notation | done | 76f3633 | — |
 | T.G | Track-G maths-first textbook chapter (L-notation payoff proof) | pending | — | — |
 
 Contracts frozen before this bundle: C-Fp (cf00ed5 / α.5), C-numth (α.2), C-NF (bdba6f5 / 7844773),
@@ -390,6 +390,12 @@ The externalized action frame: appended on non-trivial iterations (discoveries, 
 notable texture) for the juncture forks to consume — including the **T.0 `@plan` confirmation
 outcome** (the C-Textbook freeze verdict) and any **G.W design-statement-verification divergence**,
 recorded here rather than in the ledger.
+
+### G.W — 2026-06-08
+Discovery/flex: Design-statement verification passed on all three principles (Principle 1: algorithmic content complete; Principle 3: no new engineering optimisations; Principle 4: scale-only at demonstration fidelity). One principle-4 annotation: bad primes over-exposed at toy scale (an over-exposed phenomenon, not a divergence).
+Affected: none — no frozen contract invalidated
+Deferred: no — the bad-primes annotation is already documented in §59; surface at T.G ◆ boundary for the ROADMAP Discoveries log.
+Texture: All seven cross-phase contracts (C-PolyPair through C-AlgSqrt) named in prose for the first time in one place (§58 unified table). L-notation derivation of L_N[1/3, (64/9)^{1/3}] in §60. Stale lib.rs "stub" docstring corrected.
 
 ### T.0 — 2026-06-08
 Discovery/flex: C-Textbook freeze confirmed at `@plan` juncture (design-confident). All four confirmation points satisfied: register clauses complete and mutually consistent, MathJax ratified, retrofit chapters exhibit the pairing pattern, artifact location recorded.
