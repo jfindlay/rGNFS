@@ -201,33 +201,75 @@ D.B.
 D.A freezes two new code contracts (C-Schirokauer, C-DLRelation) at D.A.1 and reads the frozen
 Track-G / G.A-substrate contracts.
 
-### C-Schirokauer — Schirokauer map interface (compiler + KAT) — *to be frozen at D.A.1*
+### C-Schirokauer — Schirokauer map interface (compiler + KAT) — *frozen D.A.1 (f2dbf0a)*
 
 **Defined:** D.A.1. **Consumed by:** D.A.2 (relation augmentation), D.B (the virtual-log columns in
 the F_ℓ system), D.C (individual-log descent), and ultimately E.C (via the NFS-DL solver). **Cross-
 track** — over-specified deliberately at D.A.1. Compiler-enforced (the map signature) + KAT-enforced
 (homomorphism property + known-value evaluation).
 
-*To be frozen at D.A.1* — the resolved interface (map signature, ℓ-parameter handling, the r virtual-
-log coordinates, the bad-prime/undefined error type) is written into this subsection by the D.A.1
-session and confirmed at its `@plan` juncture. Provisional shape (from the ROADMAP D.A spec, pending
-D.A.1):
-- A map `schirokauer(elt: &NumberFieldElement, ell: &BigInt, …) -> Result<Vec<BigInt>, SchirokauerError>`
-  returning the r ℓ-adic virtual-log coordinates (r = unit-rank-derived; carry r > 1 even if toy uses
-  r = 1).
-- Consumes `NumberFieldElement::pow` and `reduce_mod_ideal` (both confirmed present in
-  `shared/numfield`).
-- Error path for bad/ramified primes where the map is undefined.
+**Frozen interface (`gnfs/src/dl/schirokauer.rs`):**
 
-### C-DLRelation — DL relation format (compiler + KAT) — *to be frozen at D.A.1*
+```rust
+pub fn schirokauer<'a>(
+    elt: &NumberFieldElement<'a>,
+    ell: &BigInt,
+    ideals: &[PrimeIdeal<'a>],
+) -> Result<Vec<BigInt>, SchirokauerError>
+```
+
+- **Signature:** Takes a number-field element `elt`, the target subgroup order `ell` (BigInt), and a
+  slice of prime ideals. Returns the r ℓ-adic virtual-log coordinates `[λ_1(β), ..., λ_r(β)]` ∈
+  (ℤ/ℓ)^r, one coordinate per ideal.
+- **r > 1 multi-coordinate shape:** The return type `Vec<BigInt>` carries r coordinates where r =
+  `ideals.len()`. This shape is carried even when toy instances use r = 1, since D.C's descent and
+  E.C's solver will need it.
+- **ℓ-handling:** The `ell` parameter is passed explicitly as a `BigInt`. The map computes ε =
+  (p−1)/ℓ per ideal and performs the ℓ-adic log extraction (β^ε − 1)/ℓ evaluated at α ≡ r (mod ℓ).
+- **Error type (`SchirokauerError`):** Four variants covering the undefined-map cases:
+  - `RamifiedPrime { p, ell }` — p ≢ 1 (mod ℓ); the map is undefined for this ideal.
+  - `ElementDivisibleByEll { ell }` — ℓ divides a coefficient of the element.
+  - `ExponentOverflow { p, ell }` — ε = (p−1)/ℓ overflows (internal BigInt pow handles this).
+  - `NotDivisibleByEll { coeff_index }` — β^ε − 1 not divisible by ℓ (indicates non-integer element).
+- **Re-export:** `PrimeIdeal<'a>` is re-exported as a type alias for `Ideal<'a>` from `shared-numfield`
+  (the C-Ideal contract). The public surface is `gnfs::compute_schirokauer`, `gnfs::SchirokauerError`,
+  `gnfs::PrimeIdeal`.
+
+**KAT coverage (`gnfs/tests/schirokauer_kat.rs`):** (a) known-value KAT (hand-computed λ(1+α), λ(α),
+λ(2)); (b) homomorphism KAT (λ(xy) = λ(x) + λ(y) mod ℓ); (c) width KAT (toy F_p norms fit Uint<4>);
+(d) error-path KAT (RamifiedPrime for p ≢ 1 mod ℓ); (e) multi-coordinate shape KAT (two ideals → two
+coordinates).
+
+### C-DLRelation — DL relation format (compiler + KAT) — *frozen D.A.1 (f2dbf0a)*
 
 **Defined:** D.A.1. **Consumed by:** D.A.2, D.B. Compiler + KAT.
 
-The DL relation reuses the factoring `Relation` (`gnfs/src/sieve/mod.rs` — `u32` exponent vectors,
-*already DL-ready by design*; the survey confirms `sieve/mod.rs` doc names re-narrowing a "destructive
-reshard") **augmented** with the Schirokauer columns. *To be frozen at D.A.1* — the resolved shape
-(augmentation wrapper vs. extended struct) is written here by the session. Bias: reuse `Relation` +
-a DL-augmentation carrier, not a re-typed relation.
+**Frozen interface (`gnfs/src/dl/mod.rs`):**
+
+```rust
+pub struct DLRelation {
+    pub relation: Relation,           // The factoring Relation (u32 exponent vectors)
+    pub schirokauer_cols: Vec<BigInt>, // Virtual-log coordinates from compute_schirokauer
+}
+
+impl DLRelation {
+    pub fn new(relation: Relation, schirokauer_cols: Vec<BigInt>) -> Self;
+    pub fn schirokauer_rank(&self) -> usize;  // = schirokauer_cols.len()
+}
+```
+
+- **Augmentation wrapper, not re-typed relation:** The factoring `Relation` (C-Relation contract,
+  `gnfs/src/sieve/mod.rs`) is reused directly — `u32` exponent vectors, DL-ready by design. The
+  `DLRelation` wrapper adds the Schirokauer columns alongside, not inside, the relation. This
+  preserves C-Relation and avoids a destructive reshard.
+- **Shape:** `relation` carries the (a, b) pair and both exponent vectors (rational + algebraic);
+  `schirokauer_cols` carries the r virtual-log coordinates from `compute_schirokauer`. D.B reads the
+  integer exponents mod ℓ (not mod 2) and appends the Schirokauer columns as extra matrix columns.
+- **Usage (D.A.2 → D.B):** D.A.2 constructs `DLRelation` by (1) collecting a smooth relation via the
+  sieve (reusing `line_sieve` / `special_q_sieve`), (2) evaluating `compute_schirokauer` on the
+  algebraic element a + b·α, (3) wrapping: `DLRelation::new(relation, schirokauer_cols)`. D.B
+  assembles the DL matrix from a collection of `DLRelation` values.
+- **Re-export:** `gnfs::DLRelation` is the public surface.
 
 ### Frozen contracts read by D.A (not amended)
 
@@ -259,7 +301,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.A.1 | Schirokauer map + two-NF setup; confirm Uint<4> width | pending | — | C-Schirokauer, C-DLRelation |
+| D.A.1 | Schirokauer map + two-NF setup; confirm Uint<4> width | done | f2dbf0a | C-Schirokauer, C-DLRelation |
 | D.A.2 | DL relation collection for log_g(h) + toy-F_p KAT | pending | — | — |
 
 Contracts frozen before this sub-track (read by D.A): C-NF (bdba6f5 / extended 20cd263), C-Ideal
@@ -272,7 +314,28 @@ and freezes two new DL contracts (C-Schirokauer, C-DLRelation, both at D.A.1).
 
 ## Action-frame digest
 
-*(none yet)*
+**D.A.1 `@plan` juncture confirmation (post-landing freeze, T0/Opus one-shot):** `design-confident`.
+All four confirmation points passed:
+
+1. **Map interface completeness (C-Schirokauer):** ✓ Complete. Signature
+   `schirokauer(elt, ell, ideals) -> Result<Vec<BigInt>, SchirokauerError>` is mutually consistent.
+   The r > 1 multi-coordinate shape is carried (KAT-verified with two ideals). Error type covers all
+   undefined-map cases (RamifiedPrime, ElementDivisibleByEll, ExponentOverflow, NotDivisibleByEll).
+   Sufficient for D.B (virtual-log columns), D.C (descent), E.C (solver).
+
+2. **C-DLRelation shape:** ✓ Reuses C-Relation cleanly. `DLRelation` is an augmentation wrapper
+   (`relation: Relation` + `schirokauer_cols: Vec<BigInt>`), not a re-typed relation. No destructive
+   re-narrow. Sufficient for D.A.2 (construction) and D.B (matrix assembly).
+
+3. **Width verdict:** ✓ KAT `kat_c_width_uint4` confirms toy F_p norms (p ≈ 2^35, f = x²+1, B ≈
+   p^(1/3)) fit Uint<4> with > 230 bits headroom. Confirm-record obligation satisfied. No widening.
+
+4. **PARI oracle-test policy:** ✓ D.A.1 respects the resolved policy (ROADMAP D.A boundary). No PARI
+   dependency on the build path. All KATs are deterministic with hand-computed references. No oracle
+   test that fails when PARI is absent.
+
+Frozen contracts written to `## Cross-session contracts`: C-Schirokauer (f2dbf0a), C-DLRelation
+(f2dbf0a). D.A.2 may proceed.
 
 ---
 
