@@ -302,7 +302,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | D.A.1 | Schirokauer map + two-NF setup; confirm Uint<4> width | done | f2dbf0a | C-Schirokauer, C-DLRelation |
-| D.A.2 | DL relation collection for log_g(h) + toy-F_p KAT | pending | — | — |
+| D.A.2 | DL relation collection for log_g(h) + toy-F_p KAT | done | 651c17e | — |
 
 Contracts frozen before this sub-track (read by D.A): C-NF (bdba6f5 / extended 20cd263), C-Ideal
 (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
@@ -336,6 +336,12 @@ All four confirmation points passed:
 
 Frozen contracts written to `## Cross-session contracts`: C-Schirokauer (f2dbf0a), C-DLRelation
 (f2dbf0a). D.A.2 may proceed.
+
+### D.A.2 ◆ boundary — 2026-06-08
+Discovery/flex: D.A.2 ◆ boundary-transform: still-on-intent. All five boundary checks passed (scope discipline, augmentation seam, C-Matrix compatibility, PARI oracle policy, design intent alignment). The D.A bridge arc (D.A.1 → D.A.2) is coherent and complete.
+Affected: none — no contract flex triggered
+Deferred: no — DLMatrix stores raw integers (not mod-ℓ reduced); D.B must handle reduction. This is a clean modular boundary, not a deferred problem.
+Texture: DLMatrix is a new type separate from C-Matrix (SparseMatrix); the two serve different purposes (GF(2) for factoring vs. raw integers for DL). C-Matrix is read-only in D.A.
 
 ---
 
