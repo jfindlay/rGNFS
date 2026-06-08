@@ -510,6 +510,8 @@ dependencies = [
  "criterion",
  "crypto-bigint",
  "num-bigint",
+ "num-integer",
+ "num-rational",
  "num-traits",
  "proptest",
  "shared-bigint",
