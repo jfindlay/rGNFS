@@ -1,5 +1,5 @@
-//! NFS discrete-logarithm (NFS-DL) substrate: Schirokauer map, DL relation format, and
-//! F_ℓ linear-algebra substrate.
+//! NFS discrete-logarithm (NFS-DL) substrate: Schirokauer map, DL relation format,
+//! F_ℓ linear-algebra substrate, and individual-logarithm descent.
 //!
 //! This module is the entry point for the NFS-DL bridge sub-track (Track D). It provides:
 //!
@@ -9,6 +9,9 @@
 //! - [`linalg`] — F_ℓ linear-algebra substrate: block vectors, sparse matrix, operator,
 //!   block Lanczos solver, scalar Wiedemann solver, and virtual-log recovery
 //!   (C-LinAlgFl contract, frozen D.B.1, extended D.B.2).
+//! - [`descent`] — individual-logarithm descent substrate: descent-tree node/frontier types
+//!   (C-Descent contract, frozen D.C.1) and the cross-track C2 `solve_dl` interface
+//!   (shape frozen D.C.1, finalized D.C.3).
 //!
 //! # Two-number-field setup
 //!
@@ -33,10 +36,16 @@
 //! See [`linalg`] module for the F_ℓ block-solver substrate interface. D.B.2 adds
 //! `block_wiedemann_fl` (scalar Wiedemann over F_ℓ) and `recover_virtual_logs` (virtual-log
 //! table extraction). D.C (individual-log descent) consumes this interface directly.
+//!
+//! # Contract C-Descent (frozen D.C.1) + C2 (shape frozen D.C.1, finalized D.C.3)
+//!
+//! See [`descent`] module for the descent substrate and the cross-track `solve_dl` interface.
+//! C-Descent is sub-track-internal; C2 is consumed by E.C (the MOV bridge).
 
 pub mod schirokauer;
 pub mod relation;
 pub mod linalg;
+pub mod descent;
 
 pub use schirokauer::{schirokauer as compute_schirokauer, PrimeIdeal, SchirokauerError};
 pub use relation::{augment_relation, collect_dl_relations, DLMatrix};
@@ -53,6 +62,17 @@ pub use linalg::{
     recover_virtual_logs,
     block_lanczos_fl,
     block_wiedemann_fl,
+};
+pub use descent::{
+    DescentFrontier,
+    DescentNode,
+    DescentTarget,
+    DescentStepError,
+    InitSmoothingError,
+    SolveDlError,
+    descend_node,
+    init_descent_frontier,
+    solve_dl,
 };
 
 use num_bigint::BigInt;
