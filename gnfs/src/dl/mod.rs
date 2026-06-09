@@ -7,7 +7,8 @@
 //! - [`DLRelation`] — the DL relation format: the factoring [`Relation`] augmented with
 //!   Schirokauer columns (C-DLRelation contract).
 //! - [`linalg`] — F_ℓ linear-algebra substrate: block vectors, sparse matrix, operator,
-//!   and block Lanczos solver (C-LinAlgFl contract, frozen D.B.1).
+//!   block Lanczos solver, scalar Wiedemann solver, and virtual-log recovery
+//!   (C-LinAlgFl contract, frozen D.B.1, extended D.B.2).
 //!
 //! # Two-number-field setup
 //!
@@ -27,10 +28,11 @@
 //! See [`schirokauer`] module for the map interface. The r > 1 multi-coordinate shape is
 //! carried even when toy instances use r = 1 (required for D.C descent and E.C solver).
 //!
-//! # Contract C-LinAlgFl (frozen D.B.1)
+//! # Contract C-LinAlgFl (frozen D.B.1; extended D.B.2)
 //!
-//! See [`linalg`] module for the F_ℓ block-solver substrate interface. D.B.2 (block Wiedemann
-//! + virtual-log recovery) and D.C (individual-log descent) consume this interface directly.
+//! See [`linalg`] module for the F_ℓ block-solver substrate interface. D.B.2 adds
+//! `block_wiedemann_fl` (scalar Wiedemann over F_ℓ) and `recover_virtual_logs` (virtual-log
+//! table extraction). D.C (individual-log descent) consumes this interface directly.
 
 pub mod schirokauer;
 pub mod relation;
@@ -45,9 +47,12 @@ pub use linalg::{
     FlSparseRow,
     FlMatrixOperator,
     FlSolution,
+    VirtualLogTable,
     bigint_to_fp,
     build_fl_matrix,
+    recover_virtual_logs,
     block_lanczos_fl,
+    block_wiedemann_fl,
 };
 
 use num_bigint::BigInt;

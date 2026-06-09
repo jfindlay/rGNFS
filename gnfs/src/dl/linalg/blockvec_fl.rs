@@ -474,6 +474,71 @@ fn deduplicate_entries<F: Fp<L>, const L: usize>(
     result
 }
 
+// ─── VirtualLogTable / recover_virtual_logs ───────────────────────────────────
+
+/// The virtual-log table extracted from an F_ℓ solver solution.
+///
+/// Maps factor-base element index → log_g(element) mod ℓ, as recovered from the
+/// kernel vector of the DL relation matrix. This is the table D.C's individual-log
+/// descent consumes.
+///
+/// # Column layout (matching DLMatrix / build_fl_matrix)
+///
+/// The DL relation matrix has columns:
+/// - `0..num_rational`: rational factor-base primes.
+/// - `num_rational..num_rational+num_algebraic`: algebraic factor-base ideals.
+/// - `num_rational+num_algebraic..`: Schirokauer correction columns.
+///
+/// The `rational_logs` and `algebraic_logs` vectors carry the virtual logs for the
+/// first two groups. The Schirokauer columns are not stored here (they are correction
+/// terms, not logs of factor-base elements).
+#[derive(Debug, Clone)]
+pub struct VirtualLogTable<F> {
+    /// Virtual logs of rational factor-base primes: `rational_logs[i] = log_g(p_i) mod ℓ`.
+    pub rational_logs: Vec<F>,
+    /// Virtual logs of algebraic factor-base ideals: `algebraic_logs[i] = log_g(φ_i) mod ℓ`.
+    pub algebraic_logs: Vec<F>,
+}
+
+/// Extract the virtual-log table from an F_ℓ solver solution.
+///
+/// The `FlSolution.coefficients` vector (length = num_cols of the F_ℓ matrix) contains
+/// the virtual logarithms:
+/// - Columns `0..num_rational`: virtual logs of rational factor-base primes.
+/// - Columns `num_rational..num_rational+num_algebraic`: virtual logs of algebraic ideals.
+/// - Columns `num_rational+num_algebraic..`: Schirokauer correction columns (not extracted).
+///
+/// # Arguments
+///
+/// - `solution`: The kernel vector from `block_lanczos_fl` or `block_wiedemann_fl`.
+/// - `num_rational`: Number of rational factor-base primes (rational exponent columns).
+/// - `num_algebraic`: Number of algebraic factor-base ideals (algebraic exponent columns).
+///
+/// # Panics
+///
+/// Panics if `solution.coefficients.len() < num_rational + num_algebraic`.
+pub fn recover_virtual_logs<F: Clone>(
+    solution: &FlSolution<F>,
+    num_rational: usize,
+    num_algebraic: usize,
+) -> VirtualLogTable<F> {
+    let total = num_rational + num_algebraic;
+    assert!(
+        solution.coefficients.len() >= total,
+        "recover_virtual_logs: solution has {} coefficients but need at least {} \
+         (num_rational={} + num_algebraic={})",
+        solution.coefficients.len(),
+        total,
+        num_rational,
+        num_algebraic,
+    );
+
+    let rational_logs = solution.coefficients[..num_rational].to_vec();
+    let algebraic_logs = solution.coefficients[num_rational..num_rational + num_algebraic].to_vec();
+
+    VirtualLogTable { rational_logs, algebraic_logs }
+}
+
 // ─── Unit tests ───────────────────────────────────────────────────────────────
 
 #[cfg(test)]

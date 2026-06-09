@@ -1,6 +1,7 @@
-//! Known-answer tests (KATs) for D.B.1: F_ℓ linear-algebra substrate + block Lanczos.
+//! Known-answer tests (KATs) for D.B.1 and D.B.2: F_ℓ linear-algebra substrate,
+//! block Lanczos, scalar Wiedemann, and virtual-log recovery.
 //!
-//! Three KATs are required by the D.B.1 session spec:
+//! D.B.1 KATs (three required):
 //!
 //! - **KAT (a) — F_ℓ arithmetic KAT**: `FlBlockVec` operations match hand-computed F_ℓ values.
 //!   Tests `inner_product_matrix` on a small known example with ℓ = 7, verifying the result
@@ -14,16 +15,25 @@
 //!   with a known right kernel), call `block_lanczos_fl`, verify A·x ≡ 0 mod ℓ for the
 //!   returned solution vector.
 //!
+//! D.B.2 KATs (added here):
+//!
+//! - **KAT (d) — Block-Wiedemann-F_ℓ KAT**: `block_wiedemann_fl` finds a kernel vector for
+//!   the same 4×3 F_ℓ system used in KAT (c), cross-validating the two solvers.
+//!
+//! - **KAT (e) — Virtual-log recovery KAT**: `recover_virtual_logs` correctly extracts the
+//!   rational and algebraic log entries from a known `FlSolution`.
+//!
 //! # Toy setup
 //!
 //! All KATs use `FpNaive4` (L=4, 256-bit) for simplicity. The modulus ℓ = 7 is used for
-//! KATs (a) and (c); ℓ = 5 is used for KAT (b) (matching the existing DL relation KATs).
+//! KATs (a), (c), (d), (e); ℓ = 5 is used for KAT (b) (matching the existing DL relation KATs).
 
 use crypto_bigint::Uint;
 use gnfs::dl::{
     DLMatrix, DLRelation,
-    FlBlockVec, FlMatrixOperator, FlSparseMatrix, FlSparseRow,
-    FL_BLOCK_WIDTH, bigint_to_fp, block_lanczos_fl, build_fl_matrix,
+    FlBlockVec, FlMatrixOperator, FlSparseMatrix, FlSparseRow, FlSolution,
+    VirtualLogTable, FL_BLOCK_WIDTH, bigint_to_fp, block_lanczos_fl, block_wiedemann_fl,
+    build_fl_matrix, recover_virtual_logs,
 };
 use num_bigint::BigInt;
 use shared_field::{Fp, FpNaive4};
@@ -486,4 +496,392 @@ fn kat_c4_block_lanczos_fl_empty_matrix() {
     let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
     let solutions = block_lanczos_fl::<FpNaive4, 4>(&op, &ell, 42);
     assert!(solutions.is_empty(), "empty matrix should return no solutions");
+}
+
+// ─── KAT (d): Block-Wiedemann-F_ℓ KAT ───────────────────────────────────────
+
+/// KAT (d): `block_wiedemann_fl` finds a kernel vector for the same 4×3 F_ℓ system
+/// used in KAT (c), cross-validating the two solvers.
+///
+/// # Setup
+///
+/// Same 4×3 matrix as KAT (c), ℓ = 7:
+///
+/// ```text
+///     col: 0  1  2
+/// row 0:   1  0  1
+/// row 1:   0  1  1
+/// row 2:   2  3  5
+/// row 3:   1  2  3
+/// ```
+///
+/// Known kernel vector: x = [1, 1, 6] (mod 7).
+///
+/// # Cross-validation
+///
+/// Both `block_lanczos_fl` and `block_wiedemann_fl` must find at least one nontrivial
+/// kernel vector, and every returned vector must satisfy A·x ≡ 0 mod ℓ.
+#[test]
+fn kat_d_block_wiedemann_fl_known_kernel() {
+    let ell = ell7();
+
+    // Same 4×3 F_ℓ sparse matrix as KAT (c).
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(2, &ell)), (1, fp(3, &ell)), (2, fp(5, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (1, fp(2, &ell)), (2, fp(3, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // Run block Wiedemann with multiple seeds to find the kernel.
+    let mut found_valid = false;
+    for seed in [0u64, 1, 2, 3, 42, 137, 999, 12345] {
+        let solutions = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+
+        for sol in &solutions {
+            assert!(sol.is_kernel, "all returned solutions should be kernel vectors");
+            assert_eq!(
+                sol.coefficients.len(),
+                3,
+                "solution vector should have length 3 (= num_cols)"
+            );
+
+            // Verify A·x = 0 mod ℓ.
+            let x_bv = FlBlockVec::<FpNaive4, 4>::from_columns(&[sol.coefficients.clone()], &ell);
+            let ax = op.apply(&x_bv, &ell);
+            for r in 0..4 {
+                assert!(
+                    ax.data[r][0].is_zero(&ell),
+                    "seed {seed}: A·x[{r}] should be 0 for returned kernel vector"
+                );
+            }
+
+            // Check that the solution is nontrivial (not all zero).
+            let is_nontrivial = sol.coefficients.iter().any(|c| !c.is_zero(&ell));
+            if is_nontrivial {
+                found_valid = true;
+            }
+        }
+    }
+
+    assert!(
+        found_valid,
+        "block_wiedemann_fl should find at least one nontrivial kernel vector across multiple seeds"
+    );
+}
+
+/// KAT (d2): `block_wiedemann_fl` returns empty for a matrix with trivial kernel.
+///
+/// A 3×3 identity matrix over F_ℓ has no nontrivial right kernel.
+/// Wiedemann should return no nontrivial solutions.
+#[test]
+fn kat_d2_block_wiedemann_fl_trivial_kernel() {
+    let ell = ell7();
+
+    // 3×3 identity matrix over F_7.
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(2, fp(1, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // For a full-rank matrix, no nontrivial kernel vectors should be found.
+    for seed in [0u64, 1, 42, 137] {
+        let solutions = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+
+        // All returned solutions must satisfy A·x = 0.
+        for sol in &solutions {
+            let x_bv = FlBlockVec::<FpNaive4, 4>::from_columns(&[sol.coefficients.clone()], &ell);
+            let ax = op.apply(&x_bv, &ell);
+            for r in 0..3 {
+                assert!(
+                    ax.data[r][0].is_zero(&ell),
+                    "seed {seed}: A·x[{r}] should be 0 for any returned solution"
+                );
+            }
+        }
+    }
+}
+
+/// KAT (d3): `block_wiedemann_fl` is deterministic for a fixed matrix and seed.
+#[test]
+fn kat_d3_block_wiedemann_fl_deterministic() {
+    let ell = ell7();
+
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(2, &ell)), (1, fp(3, &ell)), (2, fp(5, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (1, fp(2, &ell)), (2, fp(3, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // Run twice with the same seed; results must be identical.
+    for seed in [0u64, 1, 42, 137] {
+        let results1 = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+        let results2 = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+
+        assert_eq!(
+            results1.len(),
+            results2.len(),
+            "seed {seed}: both runs must return the same number of solutions"
+        );
+
+        for (i, (s1, s2)) in results1.iter().zip(results2.iter()).enumerate() {
+            assert_eq!(
+                s1.coefficients, s2.coefficients,
+                "seed {seed}: solution {i} must be identical across runs"
+            );
+        }
+    }
+}
+
+/// KAT (d4): `block_wiedemann_fl` handles an empty matrix gracefully.
+#[test]
+fn kat_d4_block_wiedemann_fl_empty_matrix() {
+    let ell = ell7();
+
+    let matrix = FlSparseMatrix::<FpNaive4> { rows: vec![], num_cols: 0 };
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+    let solutions = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, 42);
+    assert!(solutions.is_empty(), "empty matrix should return no solutions");
+}
+
+/// KAT (d5): Lanczos and Wiedemann cross-validation on the same 4×3 system.
+///
+/// Both solvers must find at least one nontrivial kernel vector, and every vector
+/// returned by either solver must satisfy A·x ≡ 0 mod ℓ. This cross-validates that
+/// the two independent implementations agree on the kernel.
+#[test]
+fn kat_d5_lanczos_wiedemann_cross_validation() {
+    let ell = ell7();
+
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(2, &ell)), (1, fp(3, &ell)), (2, fp(5, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (1, fp(2, &ell)), (2, fp(3, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // Collect all kernel vectors from both solvers across multiple seeds.
+    let mut lanczos_found = false;
+    let mut wiedemann_found = false;
+
+    for seed in [0u64, 1, 2, 3, 42, 137] {
+        let lanczos_sols = block_lanczos_fl::<FpNaive4, 4>(&op, &ell, seed);
+        let wiedemann_sols = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+
+        // Verify all Lanczos solutions.
+        for sol in &lanczos_sols {
+            let x_bv = FlBlockVec::<FpNaive4, 4>::from_columns(&[sol.coefficients.clone()], &ell);
+            let ax = op.apply(&x_bv, &ell);
+            for r in 0..4 {
+                assert!(
+                    ax.data[r][0].is_zero(&ell),
+                    "Lanczos seed {seed}: A·x[{r}] should be 0"
+                );
+            }
+            if sol.coefficients.iter().any(|c| !c.is_zero(&ell)) {
+                lanczos_found = true;
+            }
+        }
+
+        // Verify all Wiedemann solutions.
+        for sol in &wiedemann_sols {
+            let x_bv = FlBlockVec::<FpNaive4, 4>::from_columns(&[sol.coefficients.clone()], &ell);
+            let ax = op.apply(&x_bv, &ell);
+            for r in 0..4 {
+                assert!(
+                    ax.data[r][0].is_zero(&ell),
+                    "Wiedemann seed {seed}: A·x[{r}] should be 0"
+                );
+            }
+            if sol.coefficients.iter().any(|c| !c.is_zero(&ell)) {
+                wiedemann_found = true;
+            }
+        }
+    }
+
+    assert!(lanczos_found, "block_lanczos_fl should find at least one nontrivial kernel vector");
+    assert!(wiedemann_found, "block_wiedemann_fl should find at least one nontrivial kernel vector");
+}
+
+// ─── KAT (e): Virtual-log recovery KAT ───────────────────────────────────────
+
+/// KAT (e): `recover_virtual_logs` correctly extracts rational and algebraic log entries.
+///
+/// # Setup
+///
+/// Construct a known `FlSolution` with 5 coefficients:
+/// - Columns 0..2: rational logs (indices 0, 1).
+/// - Columns 2..4: algebraic logs (indices 0, 1).
+/// - Column 4: Schirokauer correction (not extracted).
+///
+/// # Verification
+///
+/// `recover_virtual_logs` with `num_rational=2, num_algebraic=2` should return:
+/// - `rational_logs = [3, 5]` (mod 7)
+/// - `algebraic_logs = [1, 6]` (mod 7)
+#[test]
+fn kat_e_recover_virtual_logs() {
+    let ell = ell7();
+
+    // Construct a known FlSolution with 5 coefficients.
+    // rational: [3, 5], algebraic: [1, 6], schirokauer: [2].
+    let solution = FlSolution::<FpNaive4> {
+        coefficients: vec![
+            fp(3, &ell), // rational[0]
+            fp(5, &ell), // rational[1]
+            fp(1, &ell), // algebraic[0]
+            fp(6, &ell), // algebraic[1]
+            fp(2, &ell), // schirokauer (not extracted)
+        ],
+        is_kernel: true,
+    };
+
+    let table: VirtualLogTable<FpNaive4> = recover_virtual_logs(&solution, 2, 2);
+
+    // Verify rational logs.
+    assert_eq!(table.rational_logs.len(), 2, "should have 2 rational logs");
+    assert_eq!(
+        table.rational_logs[0].to_uint(),
+        Uint::<4>::from(3u64),
+        "rational_logs[0] should be 3"
+    );
+    assert_eq!(
+        table.rational_logs[1].to_uint(),
+        Uint::<4>::from(5u64),
+        "rational_logs[1] should be 5"
+    );
+
+    // Verify algebraic logs.
+    assert_eq!(table.algebraic_logs.len(), 2, "should have 2 algebraic logs");
+    assert_eq!(
+        table.algebraic_logs[0].to_uint(),
+        Uint::<4>::from(1u64),
+        "algebraic_logs[0] should be 1"
+    );
+    assert_eq!(
+        table.algebraic_logs[1].to_uint(),
+        Uint::<4>::from(6u64),
+        "algebraic_logs[1] should be 6"
+    );
+}
+
+/// KAT (e2): `recover_virtual_logs` from a Lanczos-solved system.
+///
+/// Run `block_lanczos_fl` on the 4×3 system (num_rational=1, num_algebraic=1,
+/// schirokauer_rank=1), then call `recover_virtual_logs`. The recovered logs must
+/// be consistent with the kernel condition A·x = 0.
+#[test]
+fn kat_e2_recover_virtual_logs_from_lanczos() {
+    let ell = ell7();
+
+    // 4×3 matrix: num_rational=1, num_algebraic=1, schirokauer_rank=1.
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(2, &ell)), (1, fp(3, &ell)), (2, fp(5, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (1, fp(2, &ell)), (2, fp(3, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // Find a kernel vector via Lanczos.
+    let mut found_solution: Option<FlSolution<FpNaive4>> = None;
+    for seed in [0u64, 1, 2, 3, 42, 137, 999] {
+        let solutions = block_lanczos_fl::<FpNaive4, 4>(&op, &ell, seed);
+        for sol in solutions {
+            if sol.coefficients.iter().any(|c| !c.is_zero(&ell)) {
+                found_solution = Some(sol);
+                break;
+            }
+        }
+        if found_solution.is_some() {
+            break;
+        }
+    }
+
+    let sol = found_solution.expect("Lanczos should find a nontrivial kernel vector");
+
+    // Recover virtual logs: 1 rational, 1 algebraic, 1 schirokauer (ignored).
+    let table: VirtualLogTable<FpNaive4> = recover_virtual_logs(&sol, 1, 1);
+
+    assert_eq!(table.rational_logs.len(), 1, "should have 1 rational log");
+    assert_eq!(table.algebraic_logs.len(), 1, "should have 1 algebraic log");
+
+    // The recovered logs are the first two entries of the kernel vector.
+    // Verify they match the solution coefficients directly.
+    assert_eq!(table.rational_logs[0], sol.coefficients[0], "rational_logs[0] = coefficients[0]");
+    assert_eq!(table.algebraic_logs[0], sol.coefficients[1], "algebraic_logs[0] = coefficients[1]");
+}
+
+/// KAT (e3): `recover_virtual_logs` from a Wiedemann-solved system.
+///
+/// Same as KAT (e2) but using `block_wiedemann_fl`. Cross-validates that both solvers
+/// produce solutions from which virtual logs can be recovered.
+#[test]
+fn kat_e3_recover_virtual_logs_from_wiedemann() {
+    let ell = ell7();
+
+    let matrix = FlSparseMatrix::<FpNaive4> {
+        rows: vec![
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(1, fp(1, &ell)), (2, fp(1, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(2, &ell)), (1, fp(3, &ell)), (2, fp(5, &ell))] },
+            FlSparseRow { entries: vec![(0, fp(1, &ell)), (1, fp(2, &ell)), (2, fp(3, &ell))] },
+        ],
+        num_cols: 3,
+    };
+
+    let op = FlMatrixOperator::<FpNaive4, 4>::new(&matrix);
+
+    // Find a kernel vector via Wiedemann.
+    let mut found_solution: Option<FlSolution<FpNaive4>> = None;
+    for seed in [0u64, 1, 2, 3, 42, 137, 999] {
+        let solutions = block_wiedemann_fl::<FpNaive4, 4>(&op, &ell, seed);
+        for sol in solutions {
+            if sol.coefficients.iter().any(|c| !c.is_zero(&ell)) {
+                found_solution = Some(sol);
+                break;
+            }
+        }
+        if found_solution.is_some() {
+            break;
+        }
+    }
+
+    let sol = found_solution.expect("Wiedemann should find a nontrivial kernel vector");
+
+    // Recover virtual logs: 1 rational, 1 algebraic, 1 schirokauer (ignored).
+    let table: VirtualLogTable<FpNaive4> = recover_virtual_logs(&sol, 1, 1);
+
+    assert_eq!(table.rational_logs.len(), 1, "should have 1 rational log");
+    assert_eq!(table.algebraic_logs.len(), 1, "should have 1 algebraic log");
+
+    // The recovered logs are the first two entries of the kernel vector.
+    assert_eq!(table.rational_logs[0], sol.coefficients[0], "rational_logs[0] = coefficients[0]");
+    assert_eq!(table.algebraic_logs[0], sol.coefficients[1], "algebraic_logs[0] = coefficients[1]");
 }
