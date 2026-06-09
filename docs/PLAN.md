@@ -318,7 +318,7 @@ the ROADMAP Discoveries log.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | D.W.1 | NFS-DL code-tour chapter (PEDAGOGY.md §63+) + NFS-factoring comparison | done | 8c92260 | — (writeup; freezes nothing) |
-| D.W.2 ◆ | NFS-DL maths chapter (T.D) + L-notation payoff + Track-D design-statement verification | pending | — | — (writeup; obeys C-Textbook, freezes nothing) |
+| D.W.2 ◆ | NFS-DL maths chapter (T.D) + L-notation payoff + Track-D design-statement verification | done | 541be29 | — (writeup; obeys C-Textbook, freezes nothing) |
 
 Contracts frozen before this sub-track (read by D.W): C-NF (bdba6f5 / 20cd263), C-Ideal (05b27c8),
 C-Res (bcd63cd), C-Dedekind (7844773), C-Relation / C-FactorBase (c1dc0b6), C-Score (00aa32d),
@@ -330,7 +330,11 @@ sub-track is the Phase-γ writeup over the now-complete NFS-DL pipeline; **it fr
 
 ## Action-frame digest
 
-*(none yet)*
+### D.W.2 ◆ — 2026-06-09
+Discovery/flex: D.W.2 ◆ boundary juncture returned still-on-intent; all five @plan confirmation points satisfied (L-notation delta correct, design-statement verification passes 1/3/4, cross-references consistent, F_{p^k} debt annotated, ROADMAP integration identified).
+Affected: none — no contracts frozen, no contracts flexed; writeup sub-track complete.
+Deferred: no — ROADMAP Discoveries integration (Phase-γ complete, design-statement verdict, L-notation payoff delivered, F_{p^k} debt recorded) identified for integration into docs/ROADMAP.md at the Phase-γ boundary; not a halt condition.
+Texture: Both D.W sessions were clean green runs; the juncture fork confirmed the L-notation derivation is a proper delta on §GNFS §7 (same exponent 1/3, same constant (64/9)^{1/3}; DL deltas = F_ℓ-vs-GF(2) shape + descent subdominance). Track D / Phase γ complete; only Track E (MOV bridge consuming C2) lies beyond.
 
 ---
 
