@@ -295,7 +295,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.A.1 | Composite-order test curve + `factor_order` + prime-subgroup projection | done | 054df65 | C-CompositeCurve, C-FactorOrder (frozen) |
-| E.A.2 ◆ | Pohlig–Hellman prime-power lift + CRT combine + composite-order KAT | pending | — | C-Pohlig |
+| E.A.2 ◆ | Pohlig–Hellman prime-power lift + CRT combine + composite-order KAT | done | 51fd477 | C-Pohlig (frozen) |
 
 Contracts frozen before this sub-track (read by E.A): all Track-rho ECDLP/curve/field contracts
 (existing crate), `shared::numth` C1-family primitives (`is_prime`, `trial_smooth`,
@@ -306,7 +306,11 @@ three new contracts** (C-CompositeCurve, C-FactorOrder, C-Pohlig).
 
 ## Action-frame digest
 
-*(none yet)*
+### E.A.2 ◆ — 2026-06-09
+Discovery/flex: E.A.2 ◆ boundary juncture returned still-on-intent; all five @plan confirmation points satisfied (C-Pohlig signature correct for later Track-E consumers, lift+CRT correct with KAT exercising e>1 and multi-prime, rho substrate frozen unmodified, design-statement note passes 1/3/4, no E.B/E.C scaffolding).
+Affected: none — C-Pohlig frozen as specified; no contracts flexed.
+Deferred: no — sub-track complete; E.A is a clean leaf entry to Phase δ. `solve_small_dlog` helper (brute-force for p≤64) noted as pragmatic guard against rho degeneration on tiny groups; reconciled against principle 3 (rho substrate itself unmodified).
+Texture: Both E.A sessions were clean green runs. The inflection-design fork (pre-E.A.2 dispatch) also returned design-confident. Track-E attack scaffold (composite fixture n=60=2²·3·5, factor_order, project_to_subgroup, solve_ecdlp_composite, 6 composite KATs) is coherent and closed.
 
 ---
 
