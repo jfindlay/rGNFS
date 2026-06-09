@@ -2,91 +2,110 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-D continues (D.B — linear algebra over F_ℓ)
+# rGNFS — Current Plan: Track-D continues (D.C — individual logarithm + special-q descent)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **holds the default; does not opt down**, on a deliberate
-lever-4 call (recorded here, distinct from D.A's rationale). Applying the five-lever law to D.B:
-lever 3 (design-error cost) is **moderate** — the substrate frozen here (C-LinAlgFl) is
-*sub-track-internal* (consumed by D.B.2 and D.C, **not** E.C directly; the cross-track NFS-DL solver
-interface C2 freezes later, at D.C), so it does not carry D.A.1's cross-track weight. Lever 5
-(inner-loop bandwidth) is **strong** — mature `cargo test --workspace` gate, 18 KAT files, existing
-`lanczos_kat.rs` / `wiedemann_kat.rs` to mirror, a PARI discrete-log cross-check available, and the
-F_ℓ work *reuses G.E's already-understood block-solver structure*. Levers 3+5 would license opting
-the juncture tier **down** to Sonnet. **Lever 4 (correctness-criticality) overrides**: the F_ℓ
-kernel D.B produces *is* the virtual-logarithm table — a silently-wrong nullspace over F_ℓ corrupts
-every downstream DL solution (D.C's descent, ultimately E.C's MOV bridge), and the failure mode is
-silent (a plausible-looking but wrong log). On the conservative reading, the Opus register is held at
-the D.B.1 freeze confirmation and the D.B.2 ◆ boundary despite the strong inner loop. *(Contrast
-D.A, where juncture-tier held at Opus on levers 3+4 jointly — the cross-track freeze. Here it is
-lever 4 alone; lever 3 has relaxed.)*
+`juncture-tier: opus` (header above) — **holds the default; does not opt down**, on a joint
+**lever-3 + lever-4** call (recorded here; contrast D.B, which held on lever 4 *alone*). Applying the
+five-lever law to D.C: lever 3 (design-error cost) is **back up** — D.C freezes **C2, the cross-track
+NFS-DL solver interface** (`solve_dl`), consumed by **E.C** (the MOV bridge, the project's
+pedagogical climax). A wrong C2 shape propagates into a different track and is the most expensive
+freeze to get wrong in Track D — the same cross-track weight D.A.1 carried, which D.B explicitly did
+not. Lever 4 (correctness-criticality) is **also high** — an individual logarithm that returns a
+plausible-but-wrong value (the silent failure mode) is the worst outcome, and the descent's
+correctness rests on the virtual-log table being combined correctly. Lever 2 (irreducible
+complexity) is **high** — special-q descent is the part of NFS-DL with *no factoring analogue* and is
+"mathematically delicate" (ROADMAP); it is the FLOOR that holds D.C.2 whole. Lever 5 (inner-loop
+bandwidth) is **strong** — mature `cargo test --workspace` gate, the D.B end-to-end DL KAT to extend,
+a PARI discrete-log oracle, and the special-q sieve machinery (`special_q_sieve`, `lattice_sieve`)
+already KAT-verified in Track G. Levers 3+4 jointly **hold the Opus register** at the D.C.1
+C-Descent+C2-shape freeze and the D.C.3 ◆ C2 final freeze; the strong inner loop (lever 5) does
+**not** license opting down when a cross-track interface freezes. *(Contrast D.B: lever-4-only hold,
+lever 3 relaxed because C-LinAlgFl was sub-track-internal. Here lever 3 is restored by C2's
+cross-track reach.)*
 
-Last rewrite: D.A.2 ◆ boundary crossed (Track-D entry complete; the DL relation arc D.A.1 → D.A.2 is
-coherent, ledger reconciled 2026-06-08). This plan opens **Track D's second sub-track, D.B — linear
-algebra over F_ℓ**: solve the augmented DL relation matrix (from D.A.2) over the prime field F_ℓ to
-recover the virtual-logarithm table.
+Last rewrite: D.B.2 ◆ boundary crossed (Track-D linear-algebra arc D.B.1 → D.B.2 coherent; F_ℓ
+block Lanczos/Wiedemann + virtual-log recovery landed, ledger reconciled 2026-06-08, commits
+652cfa6 / a569049). This plan opens **Track D's third sub-track, D.C — individual logarithm +
+special-q descent**: take the virtual-log table D.B.2 recovered (factor-base element → log mod ℓ)
+and compute the discrete logarithm of an *arbitrary* target `h`, by smoothing `h` over progressively
+smaller primes (special-q descent) until it reduces to factor-base elements with known logs — then
+freeze the cross-track **C2 `solve_dl`** interface E.C consumes.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP: D.B is "Block Wiedemann generalised; block Lanczos with the F_ℓ care. KAT: cross-check
-with PARI's discrete-log functionality." It is the F_ℓ analogue of Track-G's GF(2) linear algebra
-(G.E): where factoring solves `A x = 0` over GF(2) to find a dependency, NFS-DL solves the augmented
-relation system over F_ℓ (ℓ = the target subgroup order) to recover the **virtual logarithms** of the
-factor-base elements. Two sessions:
+Per ROADMAP: D.C is "Individual logarithm + special-q descent. The part with no factoring analogue.
+Special-q descent is mathematically delicate. First session is Opus-tier." It is the step that turns
+NFS-DL from "logs of the factor-base elements" (D.B's `VirtualLogTable`) into "log of *any* target".
+The mathematics has three stages, which are the three sessions:
 
-1. **The F_ℓ linear-algebra substrate + block Lanczos (D.B.1).** A **parallel F_ℓ linalg module**
-   (`gnfs/src/dl/linalg/`), distinct from the frozen GF(2) C-LinAlg — *not* a generic refactor of
-   it (see the architecture decision in Discoveries). New F_ℓ-native types (an F_ℓ block vector over
-   `[Fp; BLOCK_WIDTH]` arrays rather than bit-packed `u64` words; an F_ℓ matrix operator), the
-   **matrix-build seam** that turns D.A.2's `DLMatrix` into a concrete F_ℓ system (reduce the `u32`
-   exponent columns mod ℓ; the Schirokauer columns arrive already in ℤ/ℓ), and **block Lanczos over
-   F_ℓ** as the primary solver — mirroring G.E's "block Lanczos as primary." **Freezes
-   C-LinAlgFl** (the F_ℓ block-solver substrate interface). This is the substrate session whose
-   interface binds D.B.2 (Wiedemann reuses the same vector/operator types) and D.C (descent reads
-   the recovered virtual-log table). Over-specify deliberately within reason.
+1. **Descent substrate + target initialization-smoothing + the C2 interface shape (D.C.1, Opus).**
+   The data structures of the descent (a descent-tree node; the frontier of medium primes not yet in
+   the factor base), the **target initialization step** (given `h ∈ F_p*`, randomized search for an
+   exponent `e` such that the number-field lift of `g^e·h` is *B'-smooth* into medium primes — the
+   first descent step, reusing the `trial_smooth` / `Relation::new` factor-over-the-factor-base
+   pattern), and the **C2 `solve_dl` interface shape**: signature `solve_dl(g, h, p, k) -> integer`
+   + the error type frozen, the **k = 1 (prime-field F_p) path live**, k > 1 returning a clean
+   `Unsupported` error. **Freezes C-Descent** (the internal descent substrate, sub-track-internal)
+   and **opens C2** (the cross-track public interface — shape frozen, error taxonomy settled at
+   D.C.3). This is the substrate session whose interface binds D.C.2 and D.C.3. Over-specify the
+   descent-node and C2 shape deliberately within reason.
 
-2. **Block Wiedemann over F_ℓ + virtual-log recovery (D.B.2 ◆).** Block Wiedemann as the **secondary**
-   solver (mirroring G.E's "block Wiedemann as secondary") — the F_ℓ generalisation needs
-   Berlekamp–Massey over F_ℓ, not GF(2). Then **recover the virtual-log table** from the F_ℓ kernel
-   (the solution vector's entries are the virtual logarithms of the factor-base elements mod ℓ), and
-   the **end-to-end toy-F_p DL KAT**: recover a known toy discrete log through the full
-   relation-collection → F_ℓ-solve → log-recovery path, cross-checked against a hand-computed
-   reference and (stub-gated) against PARI's discrete log. This session crosses the **D.B ◆
-   boundary**.
+2. **Special-q descent recursion (D.C.2, Sonnet, algorithm).** The recursive heart: each medium
+   prime `q` on the frontier (not in the factor base) is the root of a **special-q lattice sieve**
+   (reusing Track-G `special_q_sieve` / `lattice_sieve`) that produces a relation rewriting `log q`
+   as a combination of *smaller* primes' logs; recurse down the descent tree until every leaf is a
+   factor-base element with a known virtual log. Consumes C-Descent. The delicacy (lever 2): descent
+   must **terminate** (each step strictly reduces the largest prime), handle the **degree-of-freedom
+   / relation-selection** at each node, and not loop. Stays at demonstration fidelity (principle 2 —
+   the descent-tree breadth is an NFS-scale phenomenon, annotated, not engineered).
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing D.C's individual logarithm
-or special-q descent here — that is the next sub-track; D.B stops at the virtual-log table for
-factor-base elements) and **rigidity** (forcing the F_ℓ solver into the GF(2) C-LinAlg types when
-the field arithmetic genuinely needs the parallel `[Fp; W]` representation — the *confirmed*
-architecture, not a silent squeeze; and conversely, prematurely unifying GF(2) and F_ℓ behind a
-shared trait, which is explicitly **deferred**, see Discoveries).
+3. **Assembly + C2 final freeze + end-to-end individual-log KAT (D.C.3 ◆, Sonnet, integrative).**
+   Combine the virtual logs along the descent tree to recover `log_g(h)` mod ℓ; handle subgroup
+   recovery (if ℓ is a proper factor of `p−1`, the Pohlig–Hellman / CRT lift to the full order is
+   in-scope at demonstration fidelity, or annotated as deferred — decided at the boundary). **Freeze
+   C2** (the full error taxonomy now that descent reality is known). The **end-to-end toy-F_p
+   individual-log KAT**: recover a *known* discrete log of an arbitrary `h` through the full path
+   (relation collection → F_ℓ solve → virtual-log table → initialization → descent → assembly),
+   cross-checked against a hand-computed reference and (stub-gated) PARI. This session crosses the
+   **D.C ◆ boundary** (Track-D's algorithmic content complete; D.W writeup remains).
 
-**Scoping discipline (ROADMAP three-way split, applied here).** Block Lanczos and block Wiedemann
-over F_ℓ are **algorithmic content included in full** (principle 1) — the F_ℓ care (inner-product
-inversion, the self-orthogonal-vector degeneracy at small ℓ, Berlekamp–Massey over F_ℓ) is the
-defining difference from GF(2) and is implemented head-on. Wiedemann stays at the **scalar
-(single-pair) demonstration fidelity** the GF(2) version uses (principle 2 — the block-parallel
-payoff is an NFS-scale phenomenon, annotated, not engineered). No engineering optimisations
-(principle 3). PARI remains a dev-only oracle (D.B.2 cross-check, stub-gated), never on a build path.
-C1 `Uint<4>` stays as-is per the ROADMAP width policy (D.B touches factor-base *indices* and F_ℓ
-elements, not the smoothness width — the width is not in D.B's surface).
+Re-read this intent at the ◆ boundary to catch **defocus** (building the **F_{p^k} extension-field**
+NFS-DL solver here — that is genuine new mathematics D.B's F_p pipeline does not support; C2's k > 1
+path is a deliberately-deferred later ROADMAP-then-shard session, see Discoveries; and **building
+E.C / the MOV bridge** — that is Track E) and **rigidity** (forcing the descent to terminate by an
+artificial bound when a relation-selection fix is the real issue; or freezing C2's error taxonomy at
+D.C.1 before the descent in D.C.2 reveals the real failure modes — the shape freezes at D.C.1, the
+error taxonomy at D.C.3).
+
+**Scoping discipline (ROADMAP three-way split, applied here).** Special-q descent and individual
+logarithm are **algorithmic content included in full** (principle 1) — the descent recursion, the
+initialization-smoothing search, and the log-assembly are implemented head-on; this is the
+no-factoring-analogue core of NFS-DL. The descent stays at **demonstration fidelity** (principle 2):
+the descent-tree breadth and the medium-prime-bound tuning are NFS-scale phenomena, annotated, not
+engineered. No engineering optimisations (principle 3). PARI remains a dev-only oracle (D.C.3
+cross-check, stub-gated `#[ignore]`), never on a build path. **C2 is scoped to the prime field F_p
+(k = 1) now** — the F_{p^k} extension is genuine new mathematics deferred to an E.C-prep session
+(Discoveries); C2's *signature* is frozen in its full F_{p^k} shape so E.C's call site is stable,
+but only the k = 1 path is live. C1 `Uint<4>` stays as-is per the ROADMAP width policy (D.C touches
+factor-base indices, F_ℓ logs, and special-q ideals — not the smoothness width).
 
 ---
 
 ## Verify gate
 
-`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Confirmed by survey:
-no Makefile / justfile / xtask wrapper exists in the workspace; raw `cargo` is the only CI surface.
-Rust's compiler is the type gate; `cargo test` subsumes it on a clean build, so one green
-`cargo test --workspace` satisfies both. D.B is **code** — the gate is a real inner loop (this is
-lever 5, strong), which is exactly why the juncture-tier hold at Opus rests on lever 4 alone, not on
-a weak inner loop.
+`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Confirmed by the
+D.B survey and unchanged: no Makefile / justfile / xtask wrapper exists in the workspace; raw
+`cargo` is the only CI surface. Rust's compiler is the type gate; `cargo test` subsumes it on a
+clean build, so one green `cargo test --workspace` satisfies both. D.C is **code** — the gate is a
+real inner loop (lever 5, strong), which is why the juncture-tier hold at Opus rests on levers 3+4,
+not on a weak inner loop. `/run-plan` re-discovers these at preflight.
 
 ---
 
@@ -98,452 +117,284 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| D.B.1 `@plan` | F_ℓ linear-algebra substrate + block Lanczos: build F_ℓ matrix from DLMatrix, solve primary; freeze C-LinAlgFl | A | Sonnet | C-DLRelation (DLMatrix), C-LinAlg (GF(2) pattern, read-only), Fp (`shared-field`) | `gnfs/src/dl/linalg/mod.rs` (new), `gnfs/src/dl/linalg/blockvec_fl.rs` (new), `gnfs/src/dl/linalg/lanczos_fl.rs` (new), `gnfs/src/dl/mod.rs` (re-export), `gnfs/tests/dl_linalg_kat.rs` (new) |
-| D.B.2 ◆ | Block Wiedemann over F_ℓ + virtual-log recovery + toy-F_p DL KAT (PARI cross-check) | B | Sonnet | C-LinAlgFl, C-DLRelation, C-Schirokauer, (PARI oracle) | `gnfs/src/dl/linalg/wiedemann_fl.rs` (new), `gnfs/src/dl/linalg/mod.rs` (extend: virtual-log recovery), `gnfs/tests/dl_linalg_kat.rs` (extend), `gnfs/tests/dl_end_to_end_kat.rs` (new) |
+| D.C.1 `@plan` | Descent substrate + target initialization-smoothing + C2 `solve_dl` interface shape (F_p path live, F_{p^k} stubbed); freeze C-Descent, open C2 | A | **Opus** | C-LinAlgFl (VirtualLogTable), C-DLRelation (DLMatrix, collect_dl_relations), C-Schirokauer, C-FactorBase, C1 (trial_smooth), Fp (`shared-field`) | `gnfs/src/dl/descent/mod.rs` (new), `gnfs/src/dl/descent/node.rs` (new), `gnfs/src/dl/descent/solve.rs` (new: C2 `solve_dl` + init-smoothing), `gnfs/src/dl/mod.rs` (re-export), `gnfs/tests/dl_descent_kat.rs` (new) |
+| D.C.2 | Special-q descent recursion: rewrite each medium prime via reused special_q_sieve, recurse to factor-base leaves | B | Sonnet | C-Descent, C-FactorBase, special_q_sieve / lattice_sieve (read), C-LinAlgFl (VirtualLogTable) | `gnfs/src/dl/descent/recurse.rs` (new), `gnfs/src/dl/descent/mod.rs` (extend), `gnfs/tests/dl_descent_kat.rs` (extend) |
+| D.C.3 ◆ | Individual-log assembly + subgroup recovery + C2 final freeze + end-to-end toy-F_p DL KAT (PARI cross-check) | I | Sonnet | C-Descent, C2 (finalize), C-LinAlgFl, C-DLRelation, (PARI oracle) | `gnfs/src/dl/descent/solve.rs` (extend: assembly, C2 freeze), `gnfs/tests/dl_descent_kat.rs` (extend), `gnfs/tests/dl_individual_log_kat.rs` (new) |
 
-**Sequencing notes.** **D.B.1 must precede D.B.2** (D.B.2's Wiedemann reuses the F_ℓ vector/operator
-types and the virtual-log recovery reads the solved kernel). The single `@plan` marker sits on
-**D.B.1** — a post-landing freeze confirmation for C-LinAlgFl, lighter than D.A.1's cross-track
-confirmation because C-LinAlgFl is sub-track-internal (its first consumer is D.B.2, within this
-plan); confirm the substrate and the matrix-build correctness before D.B.2 is dispatched.
-**D.B.2 ◆** is the D.B sub-track boundary.
+**Sequencing notes.** Strictly serial: **D.C.1 → D.C.2 → D.C.3.** D.C.2's recursion consumes the
+C-Descent node/frontier types and the C2 init-smoothing entry that D.C.1 froze; D.C.3's assembly
+reads the descent tree D.C.2 produces and finalizes C2. The single `@plan` marker sits on **D.C.1** —
+a post-landing freeze confirmation for **C-Descent + the C2 shape**, weightier than D.B.1's
+(C2 is cross-track, consumed by E.C); confirm the descent substrate, the C2 signature/error shape,
+and the initialization-smoothing correctness before D.C.2 is dispatched. **D.C.3 ◆** is the D.C
+sub-track boundary *and* the C2 final freeze (the second halt under `@plan`-marker cadence).
 
-**Why 2 sessions (matches ROADMAP allotment).** The one-line-commit-title corollary: D.B.1
-("F_ℓ linalg substrate + block Lanczos") and D.B.2 ("block Wiedemann + virtual-log recovery") are
-two distinct commit titles, split on a **contract-sharp boundary** (D.B.1 freezes C-LinAlgFl; D.B.2
-consumes it). The split is the **solver-type split** (Lanczos-primary | Wiedemann-secondary +
-recovery), mirroring G.E's primary/secondary ordering — not the substrate/algorithm split, because
-the F_ℓ substrate and the primary solver share the same vector/operator design surface and the
-recovery step is the natural KAT vehicle for the *secondary* solver. They are **not** mergeable (the
-freeze boundary) and **not** further splittable below the floor — block Lanczos over F_ℓ is the
-irreducible substrate+primary unit (lever 2); fracturing the substrate from its first solver would
-split an irreducible unit just to hit a LOC number (forbidden). D.B.1 is a Sonnet substrate session;
-if the F_ℓ substrate + Lanczos overruns the band, the contract-sharp split surfaced at the D.B.1
-`@plan` juncture is the **F_ℓ substrate** (`blockvec_fl` + matrix-build + operator) vs **block
-Lanczos** (the solver) — not pre-committed.
+**Why 3 sessions (matches ROADMAP allotment).** The one-line-commit-title corollary: D.C.1 ("descent
+substrate + init-smoothing + C2 shape"), D.C.2 ("special-q descent recursion"), D.C.3 ("individual-log
+assembly + C2 freeze + end-to-end KAT") are three distinct commit titles, split on **contract-sharp
+boundaries** (D.C.1 freezes C-Descent and opens C2; D.C.2 consumes C-Descent; D.C.3 finalizes C2).
+The split follows the **three mathematical stages of NFS-DL individual logarithm** (initialization /
+descent / assembly). They are **not** mergeable — D.C.1 freezes the descent substrate D.C.2 consumes,
+and the C2 error taxonomy genuinely settles only after D.C.2's descent runs (so the shape-open /
+taxonomy-freeze split across D.C.1 → D.C.3 is load-bearing, not cosmetic). They are **not** further
+splittable below the floor — special-q descent (D.C.2) is the irreducible "mathematically delicate"
+unit (lever 2); fracturing it would split the recursion at a non-contract-sharp boundary just to hit
+a LOC number (forbidden). The **initialization-smoothing step stays in D.C.1** (not merged into
+D.C.2): it is the substrate's first exercise of the descent frontier and the natural KAT vehicle for
+the C-Descent node type — merging it into D.C.2 would fracture "rewrite the target over smaller
+primes" across the substrate/algorithm boundary.
 
 ---
 
 ## Session detail
 
-D.B.1 is crisp (its design surface is the C-LinAlgFl freeze + the DLMatrix→F_ℓ matrix-build seam,
-resolved in-session as the substrate's own work). D.B.2 is sketched at post-substrate fidelity —
-correct to leave its precise shape open until D.B.1 freezes the F_ℓ types and recovery seam.
+D.C.1 is crisp (its design surface is the C-Descent freeze + the C2 interface shape, resolved
+in-session as the substrate's own work). D.C.2 and D.C.3 are sketched at post-substrate fidelity —
+correct to leave their precise shape open until D.C.1 freezes the descent-node types and the C2
+shape.
 
-### D.B.1 — F_ℓ linear-algebra substrate + block Lanczos (Sonnet, substrate, `@plan`)
+### D.C.1 — Descent substrate + target initialization + C2 interface shape (Opus, substrate, `@plan`)
 
-**Deliverable:** the F_ℓ linear-algebra substrate and the primary solver.
-- **Parallel F_ℓ linalg module.** A new `gnfs/src/dl/linalg/` module, **separate from the frozen
-  GF(2) `gnfs/src/linalg/`** (architecture decision, Discoveries: parallel module, not a generic
-  refactor; GF(2) C-LinAlg stays frozen and untouched). The GF(2) module's own design notes
-  (`blockvec.rs:26–30`, `operator.rs:29–32`) anticipate exactly this seam.
-- **F_ℓ block vector.** An `FlBlockVec` (or similar) over `[Fp; BLOCK_WIDTH]` arrays (not bit-packed
-  `u64` words — F_ℓ scalars do not pack into bits). Uses the existing `shared-field` `Fp<L>` trait
-  (`FpNaive4` / `FpMonty4`), which already provides `add`, `mul`, `inv`, `from_u64`, `from_uint`.
-  The F_ℓ inner-product matrix is real field arithmetic (sum of products in F_ℓ), not the GF(2)
-  parity trick.
-- **The matrix-build seam (DLMatrix → F_ℓ system).** Build a concrete F_ℓ matrix from D.A.2's
-  `DLMatrix`: reduce each relation's `u32` rational+algebraic `ExponentVector` entries **mod ℓ**, and
-  append the `schirokauer_cols` (already in ℤ/ℓ — D.A.2 stored them reduced; the *exponents* are raw,
-  per the D.A.2 ◆ note "DLMatrix stores raw integers; D.B must handle reduction"). Column layout
-  follows `DLMatrix::num_cols`: `rational | algebraic | schirokauer`.
-- **Block Lanczos over F_ℓ** (primary). Generalise the GF(2) block Lanczos to F_ℓ: the inner-product
-  matrices are inverted in F_ℓ (Fermat `inv`), with the **self-orthogonal-vector degeneracy** care
-  block Lanczos needs over a field (the GF(2) version's parity pivot becomes an F_ℓ Gaussian pivot
-  with explicit inversion). Returns the F_ℓ solution / kernel basis.
-- **Freeze C-LinAlgFl** (the F_ℓ block-solver substrate interface — see Cross-session contracts).
+**Deliverable:** the descent data structures, the target initialization-smoothing step, and the
+cross-track C2 interface shape.
+- **Descent-tree substrate.** A `DescentNode` (the prime/ideal being descended, its provenance, the
+  relation that rewrote it, child frontier) and the descent frontier (the set of medium primes not
+  yet in the factor base, awaiting recursion). New module `gnfs/src/dl/descent/`. The
+  `gnfs/src/dl/mod.rs:85` anticipatory hook ("reusing line_sieve / special_q_sieve") names this seam.
+- **Target initialization-smoothing.** Given a target `h ∈ F_p*` and generator `g`: randomized
+  search over exponents `e` for one where the number-field lift of `g^e·h` is *B'-smooth* (smooth
+  into medium primes, B' > factor-base bound) — the first descent step. Reuses the `trial_smooth`
+  (`shared::numth`) / `Relation::new` (`gnfs/src/sieve/mod.rs:259`) factor-over-the-factor-base
+  pattern. Produces the initial descent frontier (the medium primes of `g^e·h`).
+- **C2 `solve_dl` interface shape.** Freeze the signature `solve_dl(g, h, p, k) -> Result<BigInt,
+  SolveDlError>` (E.C's call site) and the `SolveDlError` type, with the **k = 1 (prime-field)
+  path live** and **k > 1 returning `SolveDlError::Unsupported`** (the F_{p^k} extension deferred —
+  Discoveries). At D.C.1 the body wires init-smoothing → (descent stub) → (assembly stub); the
+  descent and assembly fill in at D.C.2 / D.C.3.
+- **Freeze C-Descent** (the descent substrate interface) and **open C2** (shape frozen, taxonomy at
+  D.C.3) — see Cross-session contracts.
 
-**Key design decisions (the C-LinAlgFl freeze surface — the `@plan` confirmation):**
-1. **F_ℓ block-vector representation & ℓ-handling:** the `[Fp; BLOCK_WIDTH]` layout vs a
-   `Vec<Fp>`-per-vector layout; how ℓ (and the `Uint<L>` modulus it implies) is threaded through the
-   types (`Fp<L>` carries the prime as a `&Uint<L>` parameter — the operator/vector must hold or
-   thread it). **The `BigInt` → `Uint<L>` / `Fp` conversion gap:** `Fp` has no `from_bigint`;
-   D.B.1 must convert the Schirokauer `BigInt` columns and the reduced exponents into `Fp` (decide:
-   `BigInt → Uint<L>` helper, or constrain toy ℓ to `u64` and use `from_u64`). Surface this at the
-   freeze.
-2. **C-LinAlgFl shape:** the operator trait/struct (`apply` / `apply_transpose` over `FlBlockVec`),
-   the solver entry signature (`block_lanczos_fl(op, ell, seed) -> FlSolution`), and the matrix-build
-   entry (`build_fl_matrix(&DLMatrix, ell) -> ...`). Over-specify lightly: carry the kernel/solution
-   shape D.B.2's recovery and D.C's descent will read.
-3. **Reuse vs parallel confirmation:** confirm the parallel-module decision held in implementation —
-   that no genuine unification opportunity emerged that should instead trigger the deferred
-   consolidation (Discoveries). If one did, surface it as a discovery, do not unify inline.
+**Key design decisions (the C-Descent + C2-shape freeze surface — the `@plan` confirmation):**
+1. **DescentNode shape & frontier representation:** what a node carries (the descended prime/ideal,
+   the rewriting relation, the child primes, the known-log flag once a leaf is a factor-base
+   element); how the frontier is ordered (largest-prime-first, to guarantee the descent strictly
+   reduces — the termination argument). Over-specify lightly: carry what D.C.2's recursion and
+   D.C.3's assembly will read.
+2. **C2 signature & error taxonomy (the cross-track surface):** `solve_dl(g, h, p, k)` — element
+   representation for `g`,`h` (prime-field: `Uint<L>` / `BigInt` mod p; the F_{p^k} element type is
+   the deferred shape), the `ell` / subgroup-order threading, and `SolveDlError` variants
+   (`Unsupported` for k > 1; the descent-failure / size variants are *opened* here, *finalized* at
+   D.C.3 once descent reveals them). This is the freeze E.C consumes — design it for stability.
+3. **Initialization-smoothing parameters:** the medium-prime bound B', the exponent-search strategy
+   and bound, the `threshold_scale` reuse (the G.C toy-scale log-sieve calibration discovery applies).
+4. **k = 1 / k > 1 boundary confirmation:** confirm the prime-field path is complete and the k > 1
+   `Unsupported` stub is clean (no panic, no silent wrong answer) — the deferred-F_{p^k} decision
+   held in implementation.
 
-**KAT (≥1 required, in `gnfs/tests/dl_linalg_kat.rs`):** (a) F_ℓ inner-product / arithmetic KAT —
-the `FlBlockVec` operations match hand-computed F_ℓ values; (b) matrix-build KAT — a small `DLMatrix`
-builds the expected F_ℓ matrix (exponents reduced mod ℓ, Schirokauer cols appended in the right
-columns); (c) **block-Lanczos-F_ℓ KAT** — solve a small known F_ℓ system and verify the solution
-(`A·x ≡ 0 mod ℓ` for a kernel vector, or the known solution for a non-degenerate system).
-`cargo test --workspace` green.
+**KAT (≥1 required, in `gnfs/tests/dl_descent_kat.rs`):** (a) DescentNode construction / frontier
+ordering KAT (largest-prime-first invariant); (b) **initialization-smoothing KAT** — for a toy `h`,
+the search finds an `e` with `g^e·h` B'-smooth, and the recovered frontier primes are correct
+(hand-checked); (c) C2-shape KAT — `solve_dl` with k > 1 returns `SolveDlError::Unsupported`; the
+k = 1 path is wired (may return a partial/stub result pending D.C.2/D.C.3, gated by a KAT that
+asserts the *shape*, not yet the full answer). `cargo test --workspace` green.
 
-**Subtlety:** the load-bearing F_ℓ-specific care is the **inner-product inversion + self-orthogonal
-degeneracy** (block Lanczos over a field can produce a singular inner-product block that GF(2)'s
-parity arithmetic masks) and the **`BigInt`/`Fp` conversion seam**. The matrix-build correctness
-(reducing the right columns mod ℓ, in the right order) is where a silent error enters the
-virtual-log table — KAT it explicitly (decision (b)).
+**Subtlety:** the load-bearing judgments are the **C2 cross-track shape** (a wrong signature/error
+taxonomy propagates into E.C — the Opus lever-3 case) and the **descent termination invariant**
+(the frontier ordering that guarantees each descent step strictly reduces the largest prime — set up
+here, exercised in D.C.2). The initialization-smoothing reuses verified machinery, so its risk is
+parameter calibration (B', threshold_scale), not new algebra.
 
-**Deferred:** block Wiedemann over F_ℓ (D.B.2); virtual-log recovery + end-to-end DL (D.B.2);
-individual logarithm + special-q descent (D.C); the C2 NFS-DL solver interface (D.C); any GF(2)↔F_ℓ
-code unification (deferred consolidation, Discoveries).
+**Deferred:** the special-q descent recursion (D.C.2); log-assembly + subgroup recovery + C2 final
+freeze (D.C.3); the **F_{p^k} extension-field NFS-DL** (k > 1 — its own E.C-prep ROADMAP-then-shard
+session, Discoveries); E.C / the MOV bridge (Track E).
 
 **`@plan` confirmation (post-landing, T0/Opus, one-shot).** Page a `@plan-juncture` fork to confirm
-the **C-LinAlgFl freeze** before D.B.2 is dispatched: (1) the F_ℓ substrate interface is complete and
-mutually consistent (vector/operator/solver signatures, ℓ-threading, the `BigInt`/`Fp` conversion
-resolved); (2) the matrix-build correctly reduces DLMatrix exponents mod ℓ and lays out the columns
-per `DLMatrix::num_cols` (KAT-confirmed); (3) block Lanczos over F_ℓ recovers a known small kernel
-(no self-orthogonal degeneracy mishandled); (4) the parallel-module decision held — no un-surfaced
-unification was forced inline. One-shot findings; does not implement. Held at **Opus** on lever 4
-(the kernel feeds the downstream virtual-log table), per the header.
+the **C-Descent + C2-shape freeze** before D.C.2 is dispatched: (1) the descent substrate is complete
+and consistent (DescentNode, frontier, ordering invariant); (2) the C2 signature + error taxonomy is
+stable and E.C-consumable, with k > 1 cleanly `Unsupported` and the F_{p^k} deferral recorded; (3)
+initialization-smoothing recovers a correct frontier for a known toy `h` (KAT-confirmed); (4) the
+k = 1 / k > 1 boundary held in implementation. One-shot findings; does not implement. Held at **Opus**
+on levers 3+4 (cross-track C2 + correctness), per the header.
 
-### D.B.2 ◆ — Block Wiedemann over F_ℓ + virtual-log recovery (Sonnet, algorithm, sketch)
+### D.C.2 — Special-q descent recursion (Sonnet, algorithm, sketch)
 
-**Deliverable:** the secondary F_ℓ solver and the virtual-log recovery, closing the D.B arc. Sketch
-(crisp shape resolved once D.B.1's C-LinAlgFl freezes):
-- **Block Wiedemann over F_ℓ** (secondary). Generalise the GF(2) scalar Wiedemann to F_ℓ: the Krylov
-  sequence `s_i = x^T B^i y` is over F_ℓ, and **Berlekamp–Massey runs over F_ℓ** (the GF(2) version's
-  bit arithmetic becomes F_ℓ field arithmetic in the minimal-polynomial recurrence — the genuine
-  generalisation). Reuses the D.B.1 `FlBlockVec` / operator. Stays scalar (single-pair)
-  demonstration fidelity, matching the GF(2) version (principle-4 annotation: block-parallel payoff
-  is NFS-scale).
-- **Virtual-log recovery.** From the solved F_ℓ system (D.B.1 Lanczos or D.B.2 Wiedemann), extract
-  the **virtual logarithms of the factor-base elements** mod ℓ — the solution-vector entries are the
-  `log_g` of each factor-base prime / ideal (plus the Schirokauer-column corrections). This is the
-  table D.C's individual-log descent consumes.
-- **End-to-end toy-F_p DL KAT** (◆ vehicle). Recover a known toy discrete log through the full path:
-  relation collection (D.A.2) → F_ℓ matrix-build (D.B.1) → solve (Lanczos and Wiedemann) →
-  virtual-log recovery, cross-checked against a hand-computed reference and (stub-gated) PARI.
+**Deliverable:** the recursive descent that drives every frontier prime down to factor-base leaves.
+Sketch (crisp shape resolved once D.C.1's C-Descent + C2-shape freeze):
+- **Per-node special-q descent.** For each medium prime `q` on the frontier: run a **special-q
+  lattice sieve** rooted at `q` (reuse `special_q_sieve` / `lattice_sieve`,
+  `gnfs/src/sieve/special_q.rs` / `lattice.rs`) to find a relation in which `q` appears alongside
+  *strictly smaller* primes; that relation rewrites `log q` as a combination of the smaller primes'
+  logs. Add the smaller non-factor-base primes as child nodes; recurse.
+- **Termination.** Each step strictly reduces the largest prime in the frontier (the D.C.1 ordering
+  invariant); recursion bottoms out when every leaf is a factor-base element (`fb.rational_index` /
+  `fb.algebraic_index` hits) with a known `VirtualLogTable` entry. Guard against non-termination
+  (a node that fails to descend after a bounded search → `SolveDlError` surfaced, not a loop).
+- Stays at demonstration fidelity (principle-2 annotation: descent-tree breadth and medium-prime
+  bound tuning are NFS-scale).
 
-Consumes C-LinAlgFl, C-DLRelation, C-Schirokauer, (PARI oracle). Freezes nothing new (it is the
-algorithm+integration session consuming D.B.1's substrate). Note: **D.B does *not* freeze the
-cross-track C2 NFS-DL solver interface** — that is D.C's, once individual-log + descent exist;
-D.B.2 produces the virtual-log *table*, not the `solve_dl(g, h, …)` entry point.
+Consumes C-Descent (node/frontier types + the descent entry), C-FactorBase (leaf detection),
+C-LinAlgFl (`VirtualLogTable` for leaf logs), and the Track-G special-q sieve (read-only reuse).
+Freezes nothing new (it is the algorithm session consuming D.C.1's substrate).
 
-**KAT (≥1 required):** (a) block-Wiedemann-F_ℓ KAT — Wiedemann recovers the same kernel/solution as
-Lanczos on a known small F_ℓ system (cross-validates the two solvers); (b) **end-to-end toy-F_p DL
-KAT** — recover a known toy discrete log, cross-checked against a hand-computed reference; (c) PARI
-cross-check — `#[ignore = "PARI not installed; run manually when available"]` stub (matching the
-established D.A.2 `kat_h_pari_oracle` pattern; no feature flag, no subprocess in CI). The
+**KAT (≥1 required):** (a) **single-node descent KAT** — one medium prime `q` descends to a relation
+over smaller primes (hand-checked); (b) **multi-level descent KAT** — a frontier prime descends
+through ≥2 levels to factor-base leaves; (c) **termination KAT** — a deliberately-undescendable input
+surfaces a `SolveDlError` rather than looping. `cargo test --workspace` green.
+
+**Subtlety:** the delicacy (lever 2) is **descent termination + relation selection** (which sieve
+relation to pick at each node so the descent strictly reduces and does not re-introduce a prime
+already descended) and the **special-q reuse seam** (the Track-G sieve was built for relation
+*collection*, not *descent of a specific q* — confirm it can be driven with a fixed target `q` rather
+than scanning a `[q_min, q_max]` range; if it cannot without modification, that is a **contract
+discovery** on the sieve surface, internal-continue if additive, surfaced at the ◆ boundary).
+
+### D.C.3 ◆ — Individual-log assembly + C2 freeze + end-to-end KAT (Sonnet, integrative, sketch)
+
+**Deliverable:** combine the descent tree into `log_g(h)`, finalize C2, close the D.C arc. Sketch:
+- **Log assembly.** Walk the descent tree from leaves (known virtual logs) up to the root,
+  accumulating `log q = Σ (exponent · log child)` mod ℓ at each node, until `log_g(g^e·h)` is known;
+  then `log_g(h) = log_g(g^e·h) − e` mod ℓ (back out the initialization exponent).
+- **Subgroup recovery.** If ℓ is a proper prime factor of the group order (`p−1`), the recovered log
+  is mod ℓ only; the full `log_g(h)` mod (p−1) requires Pohlig–Hellman / CRT across the order's
+  factors. **In-scope at demonstration fidelity** (the toy KAT picks ℓ = p−1 or a single prime
+  factor to keep this clean) **or annotated as deferred** — decided at the boundary. Surface the call.
+- **C2 final freeze.** Finalize `SolveDlError` (the descent-failure / size variants now known from
+  D.C.2) and confirm `solve_dl` end-to-end for k = 1. C2 is now the frozen cross-track interface E.C
+  will consume.
+- **End-to-end toy-F_p individual-log KAT** (◆ vehicle). Recover a *known* `log_g(h)` for an
+  arbitrary toy `h` through the full path: relation collection (D.A) → F_ℓ solve (D.B) →
+  `VirtualLogTable` → initialization (D.C.1) → descent (D.C.2) → assembly, cross-checked against a
+  hand-computed reference and (stub-gated) PARI.
+
+Consumes C-Descent, C-LinAlgFl, C-DLRelation, (PARI oracle). **Freezes C2.** Note: D.C delivers C2
+for the **prime field (k = 1)**; the F_{p^k} extension path is deferred (Discoveries) — C2's k > 1
+returns `Unsupported`, a known debt E.C-prep resolves.
+
+**KAT (≥1 required):** (a) **assembly KAT** — a small hand-built descent tree assembles to the
+correct `log_g(h)` mod ℓ; (b) **end-to-end individual-log KAT** — recover a known toy discrete log
+end-to-end (the ◆ vehicle), hand-checked; (c) PARI cross-check —
+`#[ignore = "PARI not installed; run manually when available"]` stub (matching the established
+`kat_h_pari_oracle` / `kat_pari_dl_oracle` pattern; no feature flag, no subprocess in CI). The
 deterministic non-PARI KATs carry the reproducibility burden. `cargo test --workspace` green.
 
-**Subtlety:** the load-bearing judgments are **Berlekamp–Massey over F_ℓ** (the GF(2)→F_ℓ
-generalisation of the minimal-polynomial recurrence — a real algebra change, not a wrapper) and the
-**virtual-log recovery correctness** (which solution-vector entries are which factor-base elements'
-logs, and how the Schirokauer columns enter the recovered log). If the recovery reveals the
-C-LinAlgFl solution shape can't carry what D.C needs, that is a **contract discovery**
-(additive-reshard) surfaced at the ◆ boundary, not a silent squeeze. This is the **D.B ◆ boundary** —
-re-read the Purpose intent and verify the D.B arc (D.B.1 → D.B.2) is coherent before crossing into
-D.C.
+**Subtlety:** the load-bearing judgments are the **log-assembly correctness** (sign/exponent
+bookkeeping along the descent tree — a sign error gives a plausible-but-wrong log, the silent
+lever-4 failure) and the **subgroup-recovery scope call** (whether toy ℓ = p−1 sidesteps
+Pohlig–Hellman or it is implemented at demonstration fidelity). If assembly reveals the C-Descent
+node shape can't carry what C2 needs, that is a **contract discovery** (additive-reshard) surfaced
+at the ◆ boundary. This is the **D.C ◆ boundary** — re-read the Purpose intent and verify the D.C
+arc (D.C.1 → D.C.2 → D.C.3) is coherent and that Track-D's algorithmic content is complete (D.W
+writeup remains) before crossing toward D.W.
 
 ---
 
 ## Cross-session contracts
 
-D.B freezes one new code contract (C-LinAlgFl) at D.B.1 and reads the frozen Track-G / Track-D
-contracts. **C-LinAlgFl is sub-track-internal** (consumed by D.B.2 and D.C), distinguishing it from
-D.A's cross-track C-Schirokauer / C-DLRelation.
+D.C freezes one new internal contract (C-Descent, at D.C.1) and the cross-track **C2** (shape at
+D.C.1, finalized at D.C.3), and reads the frozen Track-G / Track-D contracts. **C2 is cross-track**
+(consumed by E.C) — this is what restores lever 3 and holds the juncture tier at Opus.
 
-### C-LinAlgFl — F_ℓ block-solver substrate (compiler + KAT) — *frozen D.B.1*
+### C-Descent — individual-log descent substrate (compiler + KAT) — *frozen D.C.1*
 
-**Defined:** D.B.1. **Consumed by:** D.B.2 (Wiedemann reuses the vector/operator types; recovery
-reads the solved kernel), D.C (descent reads the recovered virtual-log table). Compiler-enforced
-(the vector/operator/solver signatures) + KAT-enforced (known-kernel solve + matrix-build
-correctness). **Not** consumed directly by E.C — the cross-track NFS-DL solver interface is C2,
-frozen at D.C.
+**Defined:** D.C.1. **Consumed by:** D.C.2 (recursion drives the frontier), D.C.3 (assembly walks the
+tree). Compiler-enforced (DescentNode / frontier / descent-entry signatures) + KAT-enforced (frontier
+ordering invariant + single-node descent). Sub-track-internal (not consumed outside Track D).
 
-**Frozen interface (`gnfs/src/dl/linalg/`):**
+**Frozen interface (`gnfs/src/dl/descent/`):** *(to be frozen at D.C.1 — the inflection-juncture
+fork writes the resolved DescentNode / frontier / descent-entry signatures here at execution time.)*
+Anticipated surface (over-specify lightly): a `DescentNode` carrying the descended prime/ideal, the
+rewriting relation, child references, and a known-log flag; a frontier type ordered largest-prime-
+first (termination invariant); a `descend_node(...)` entry D.C.2 implements and a frontier-init entry
+the initialization-smoothing feeds.
 
-#### Constants
+### C2 — NFS-DL solver interface (compiler + KAT) — *shape opened D.C.1, frozen D.C.3*
 
-```rust
-/// Block width for F_ℓ block vectors: 32 field elements per block.
-///
-/// Smaller than GF(2)'s BLOCK_WIDTH=64 because field elements are larger than bits.
-/// 32 balances memory footprint against blocking benefit. Principle-4 annotation:
-/// at toy scale the blocking overhead is invisible; at NFS scale this is the
-/// cache-friendly unit for the inner loop.
-pub const FL_BLOCK_WIDTH: usize = 32;
-```
+**Defined:** D.C (shape D.C.1, finalized D.C.3). **Consumed by:** E.C (MOV bridge — Track E). This is
+the project's most-visible cross-track contract (ROADMAP Contract C2). Compiler-enforced (the
+`solve_dl` signature + `SolveDlError`) + KAT-enforced (end-to-end individual log, k = 1).
 
-#### FlBlockVec — F_ℓ block vector
+**Frozen interface (`gnfs/src/dl/descent/solve.rs`):** *(shape to be frozen at D.C.1; error taxonomy
+finalized at D.C.3.)* Anticipated surface, per ROADMAP Contract C2:
 
 ```rust
-/// A block of FL_BLOCK_WIDTH F_ℓ vectors, each of length `num_rows`.
+/// Compute the discrete logarithm log_g(h) in F_{p^k} via NFS-DL.
 ///
-/// Representation: `data[row]` is an array `[F; FL_BLOCK_WIDTH]` where `data[row][j]`
-/// is the j-th vector's value at `row`. This is the F_ℓ analogue of GF(2)'s bit-packed
-/// BlockVec — the layout is identical (row-major with vectors interleaved), but each
-/// scalar is a field element rather than a bit.
-///
-/// Generic over `F: Fp<L>` and `L` (limb count). The modulus ℓ is passed to each
-/// arithmetic method (matching the Fp trait's pattern), not stored in the struct.
-#[derive(Debug, Clone)]
-pub struct FlBlockVec<F: Fp<L>, const L: usize> {
-    /// Row data: `data[row][j]` = vector j's value at row.
-    pub data: Vec<[F; FL_BLOCK_WIDTH]>,
-    /// Number of rows (vector dimension).
-    pub num_rows: usize,
-}
+/// k = 1 (prime field F_p) is implemented; k > 1 (extension field) returns
+/// SolveDlError::Unsupported — the F_{p^k} extension is a deferred E.C-prep session.
+pub fn solve_dl(
+    g: /* group element */,
+    h: /* group element */,
+    p: &BigInt,
+    k: usize,
+) -> Result<BigInt, SolveDlError>;
 
-impl<F: Fp<L>, const L: usize> FlBlockVec<F, L> {
-    /// Construct a zero block vector of the given dimension.
-    pub fn zeros(num_rows: usize, ell: &Uint<L>) -> Self;
-
-    /// Get element (row, col) where col < FL_BLOCK_WIDTH.
-    pub fn get(&self, row: usize, col: usize) -> &F;
-
-    /// Set element (row, col) to value.
-    pub fn set(&mut self, row: usize, col: usize, value: F);
-
-    /// Component-wise F_ℓ addition: self += other.
-    pub fn add_assign(&mut self, other: &Self, ell: &Uint<L>);
-
-    /// Compute the FL_BLOCK_WIDTH × FL_BLOCK_WIDTH inner-product matrix self^T · other.
-    ///
-    /// Returns `result[i][j] = ⟨self.col(i), other.col(j)⟩` over F_ℓ (sum of products).
-    /// This is the core primitive for block Lanczos's orthogonality check.
-    pub fn inner_product_matrix(&self, other: &Self, ell: &Uint<L>)
-        -> [[F; FL_BLOCK_WIDTH]; FL_BLOCK_WIDTH];
-
-    /// Extract column j as a dense Vec<F> (for solution extraction / KAT).
-    pub fn column(&self, j: usize) -> Vec<F>;
-
-    /// Construct from dense columns (for test construction).
-    pub fn from_columns(cols: &[Vec<F>], ell: &Uint<L>) -> Self;
+pub enum SolveDlError {
+    /// k > 1 (extension field F_{p^k}) not yet supported (deferred to E.C-prep).
+    Unsupported,
+    /// Descent failed to terminate within bounds for this target/size.
+    DescentFailed,
+    // … further size/failure variants finalized at D.C.3 once descent reality is known.
 }
 ```
 
-#### FlSparseMatrix — F_ℓ sparse matrix
+**Scope at freeze:** prime field (k = 1) live; F_{p^k} (k > 1) `Unsupported` — a recorded debt
+(Discoveries), not a silent gap. E.C must not be implemented against a PARI stub permanently
+(ROADMAP); the k > 1 path is built in a deliberate E.C-prep session before the MOV climax.
 
-```rust
-/// A sparse row in the F_ℓ matrix: (column_index, value) pairs.
-#[derive(Debug, Clone)]
-pub struct FlSparseRow<F> {
-    /// Sparse entries: (column index, F_ℓ value). Sorted by column index.
-    pub entries: Vec<(usize, F)>,
-}
+### Frozen contracts read by D.C (not amended)
 
-/// Sparse F_ℓ matrix in CSR-like format.
-///
-/// Built from DLMatrix by reducing exponent columns mod ℓ and converting
-/// Schirokauer BigInt columns to F_ℓ elements.
-#[derive(Debug, Clone)]
-pub struct FlSparseMatrix<F> {
-    /// Sparse rows.
-    pub rows: Vec<FlSparseRow<F>>,
-    /// Number of columns.
-    pub num_cols: usize,
-}
-```
+- **C-LinAlgFl** — F_ℓ block-solver substrate; provides `VirtualLogTable { rational_logs,
+  algebraic_logs }` (`gnfs/src/dl/linalg/blockvec_fl.rs`) and `recover_virtual_logs` — *frozen D.B.1
+  (652cfa6)*. D.C reads the virtual-log table for descent leaves.
+- **C-DLRelation** — `DLRelation` + `DLMatrix` (`collect_dl_relations`, `from_relations`, `num_cols`,
+  rational|algebraic|Schirokauer column layout) — *frozen D.A.1 (f2dbf0a), assembled D.A.2
+  (651c17e)*. D.C reuses relation collection for descent relations.
+- **C-Schirokauer** — Schirokauer map (`schirokauer` / `compute_schirokauer`, `PrimeIdeal`) —
+  *frozen D.A.1 (f2dbf0a)*. The descent's medium-prime relations carry Schirokauer columns; assembly
+  accounts for them.
+- **C-FactorBase** — `FactorBase` (`rational_primes`, `algebraic_ideals`, `rational_index`,
+  `algebraic_index`, `AlgebraicPrime`) — *frozen G.C.1 (c1dc0b6)*. Leaf detection (is this prime in
+  the factor base?) keys on the index lookups.
+- **Special-q / lattice sieve** — `special_q_sieve`, `lattice_sieve`, `SpecialQConfig`,
+  `SpecialQResult` (`gnfs/src/sieve/special_q.rs`, `lattice.rs`) — *frozen G.C (toy-scale)*. **Read /
+  reuse** for per-node descent. D.C.2 confirms the sieve can be driven at a fixed target `q` (a
+  possible additive contract discovery on the sieve surface).
+- **C1** — `shared::numth` smoothness (`trial_smooth`, `SmoothWitness`, `Uint<4>`,
+  `norm_to_uint`) — *frozen α.2 / width-policy D.A*. The initialization-smoothing and per-node
+  descent reuse `trial_smooth`. **Width not in D.C's surface** (D.C touches FB indices, F_ℓ logs,
+  special-q ideals); the ROADMAP width policy is untouched.
+- **`Fp<L>` (`shared-field`)** — prime-field trait (`FpNaive4`); the F_ℓ logs live here — *Phase α
+  substrate*. `bigint_to_fp` (D.B.1) reused where a `BigInt` log re-enters `Fp`.
 
-#### FlMatrixOperator — F_ℓ matrix as linear operator
-
-```rust
-/// A view of an FlSparseMatrix as a linear operator over F_ℓ.
-///
-/// Provides apply (A·V) and apply_transpose (Aᵀ·V) for block vectors.
-/// Mirrors the GF(2) MatrixOperator interface.
-pub struct FlMatrixOperator<'a, F> {
-    matrix: &'a FlSparseMatrix<F>,
-}
-
-impl<'a, F: Fp<L>, const L: usize> FlMatrixOperator<'a, F> {
-    pub fn new(matrix: &'a FlSparseMatrix<F>) -> Self;
-
-    pub fn num_rows(&self) -> usize;
-    pub fn num_cols(&self) -> usize;
-
-    /// Compute A·V: multiply the matrix by a block vector.
-    /// Input v has dimension num_cols; output has dimension num_rows.
-    pub fn apply(&self, v: &FlBlockVec<F, L>, ell: &Uint<L>) -> FlBlockVec<F, L>;
-
-    /// Compute Aᵀ·V: multiply the transpose by a block vector.
-    /// Input v has dimension num_rows; output has dimension num_cols.
-    pub fn apply_transpose(&self, v: &FlBlockVec<F, L>, ell: &Uint<L>) -> FlBlockVec<F, L>;
-}
-```
-
-#### Matrix-build entry
-
-```rust
-/// Build an F_ℓ sparse matrix from a DLMatrix.
-///
-/// Column layout: rational exponents | algebraic exponents | Schirokauer columns
-/// (matching DLMatrix::num_cols).
-///
-/// - Rational/algebraic exponents (u32) are reduced mod ℓ via from_u64.
-/// - Schirokauer columns (BigInt, already in ℤ/ℓ) are converted via bigint_to_fp.
-///
-/// # Type parameters
-/// - F: the Fp implementation (FpNaive4 or FpMonty4)
-/// - L: limb count (4 for 256-bit)
-pub fn build_fl_matrix<F: Fp<L>, const L: usize>(
-    dl_matrix: &DLMatrix,
-    ell: &Uint<L>,
-) -> FlSparseMatrix<F>;
-```
-
-#### BigInt→Fp conversion helper
-
-```rust
-/// Convert a BigInt (assumed to be in [0, ℓ) or reducible mod ℓ) to an Fp element.
-///
-/// The conversion path: BigInt → bytes → Uint<L> → Fp::from_uint.
-/// Handles negative BigInt values by reducing mod ℓ (adding ℓ if negative).
-///
-/// # Panics
-/// Panics if the BigInt's absolute value exceeds L*64 bits (cannot fit in Uint<L>).
-/// For toy ℓ (≤256 bits with L=4), this is not a constraint.
-pub fn bigint_to_fp<F: Fp<L>, const L: usize>(bi: &BigInt, ell: &Uint<L>) -> F;
-```
-
-#### FlSolution — solver return type
-
-```rust
-/// Solution from the F_ℓ block solver: a kernel vector over F_ℓ.
-///
-/// For NFS-DL, the kernel of the augmented relation matrix over F_ℓ gives the
-/// virtual logarithms of the factor-base elements. The solution vector's entries
-/// (indexed by column = factor-base element) are the virtual logs mod ℓ.
-///
-/// # Fields
-/// - `coefficients`: the solution vector, length = num_cols of the matrix.
-///   Entry i is the virtual log of factor-base element i (or Schirokauer correction).
-/// - `is_kernel`: true if this is a kernel vector (A·x = 0), false if particular solution.
-#[derive(Debug, Clone)]
-pub struct FlSolution<F> {
-    /// Solution vector: coefficients[i] = virtual log of column i.
-    pub coefficients: Vec<F>,
-    /// True if this is a kernel vector (homogeneous solution).
-    pub is_kernel: bool,
-}
-```
-
-#### Solver entries
-
-```rust
-/// Block Lanczos over F_ℓ: find the kernel of the matrix.
-///
-/// Returns a (possibly empty) list of kernel vectors — vectors x such that A·x = 0 over F_ℓ.
-/// The algorithm is randomized (via rng_seed); different seeds may find different vectors.
-///
-/// # Self-orthogonality handling (F_ℓ care)
-///
-/// Over F_ℓ (ℓ > 2), the inner-product matrix S = V^T·B·V can be singular even when
-/// V has full column rank (unlike GF(2) where singularity implies linear dependence).
-/// The F_ℓ block Lanczos handles this via Gaussian elimination with explicit F_ℓ
-/// inversion (Fermat inv), pivoting on nonzero entries rather than GF(2) parity.
-///
-/// # Arguments
-/// - op: the F_ℓ matrix operator
-/// - ell: the prime modulus (as Uint<L>)
-/// - rng_seed: seed for random initial vector
-pub fn block_lanczos_fl<F: Fp<L>, const L: usize>(
-    op: &FlMatrixOperator<'_, F>,
-    ell: &Uint<L>,
-    rng_seed: u64,
-) -> Vec<FlSolution<F>>;
-
-/// Block Wiedemann over F_ℓ (D.B.2 — same return shape as Lanczos).
-///
-/// Scalar (single-pair) demonstration fidelity, matching the GF(2) version.
-/// Uses Berlekamp–Massey over F_ℓ for the minimal polynomial.
-pub fn block_wiedemann_fl<F: Fp<L>, const L: usize>(
-    op: &FlMatrixOperator<'_, F>,
-    ell: &Uint<L>,
-    rng_seed: u64,
-) -> Vec<FlSolution<F>>;
-```
-
-#### Design decisions recorded at freeze
-
-1. **Block width FL_BLOCK_WIDTH = 32.** Smaller than GF(2)'s 64 because field elements are ~256 bits
-   vs 1 bit. 32 is a power of two that fits well in cache lines and provides sufficient blocking
-   benefit at toy scale. Not parameterised (const generic would complicate the interface for no
-   toy-scale benefit).
-
-2. **ℓ-threading via method parameters.** The modulus `ell: &Uint<L>` is passed to each arithmetic
-   method rather than stored in the struct. This matches the `Fp` trait's pattern and avoids
-   lifetime complexity. The caller (solver) holds the modulus and threads it through.
-
-3. **BigInt→Fp via `bigint_to_fp` helper.** The Schirokauer columns are `Vec<BigInt>` (already
-   reduced mod ℓ by D.A). The helper converts `BigInt → Uint<L> → Fp::from_uint`. Negative BigInt
-   values (possible from the Schirokauer map) are handled by adding ℓ. No `from_bigint` method is
-   added to the `Fp` trait — the helper is local to `dl/linalg/` and the conversion is a one-time
-   matrix-build cost, not an inner-loop operation.
-
-4. **FlSolution carries the full coefficient vector.** Unlike GF(2)'s `KernelVector` (row indices
-   only, since all nonzero entries are 1), the F_ℓ solution needs the actual field-element
-   coefficients. The `coefficients` vector is indexed by column (factor-base element index), and
-   its entries are the virtual logarithms mod ℓ. D.B.2's recovery reads this directly.
-
-5. **Parallel module confirmed.** The F_ℓ types (`FlBlockVec`, `FlSparseMatrix`, `FlMatrixOperator`)
-   are distinct from the GF(2) types (`BlockVec`, `SparseMatrix`, `MatrixOperator`). No shared
-   trait is introduced. The GF(2) C-LinAlg remains frozen and untouched. The duplication is
-   intentional (see Discoveries: parallel module, not generic refactor).
-
-### Frozen contracts read by D.B (not amended)
-
-These are stable; D.B consumes them and amends none.
-
-- **C-DLRelation** — DL relation format (`DLRelation` wrapper + `DLMatrix`) — *frozen D.A.1
-  (f2dbf0a), `DLMatrix` assembled D.A.2 (651c17e)*. D.B.1's matrix-build consumes `DLMatrix`
-  directly (raw `u32` exponents to reduce mod ℓ + already-reduced Schirokauer cols).
-- **C-Schirokauer** — Schirokauer map interface — *frozen D.A.1 (f2dbf0a)*. D.B reads the
-  Schirokauer columns through `DLMatrix`; the recovery step (D.B.2) accounts for them in the
-  virtual-log. Not re-invoked (the columns are already computed in D.A.2).
-- **C-LinAlg** — GF(2) block-solver substrate (`BlockVec`, `MatrixOperator`, `KernelVector`,
-  `block_lanczos`, `block_wiedemann`) — *frozen G.E.1 (416f6db)*. **Read-only / pattern reference.**
-  D.B builds a parallel F_ℓ module mirroring its structure; C-LinAlg is **not amended or
-  generalised** (the parallel-module architecture decision — see Discoveries).
-- **`Fp<L>` (`shared-field`)** — prime-field trait (`add`, `mul`, `inv`, `pow`, `from_u64`,
-  `from_uint`; `FpNaive4` / `FpMonty4`) — *Phase α substrate*. D.B's F_ℓ arithmetic builds on it.
-  Gap: no `from_bigint` — D.B.1 resolves the `BigInt`→`Fp` conversion (recorded in C-LinAlgFl).
-- **C-FactorBase** — factor base (rational/algebraic sizes) — *frozen G.C.1 (c1dc0b6)*. Read for the
-  column-count layout via `DLMatrix`.
-- **C1** — `shared::numth` smoothness (`Uint<4>`) — *frozen α.2*. **Not in D.B's surface** (D.B
-  touches factor-base indices and F_ℓ elements, not smoothness width); the ROADMAP width policy is
-  untouched.
-
-(Plus the remaining frozen Track-G/Track-D contracts — C-NF, C-Ideal, C-Res, C-Dedekind, C-Score,
-C-Matrix, C-AlgSqrt — read where relevant but not foregrounded in D.B.)
+(Plus the remaining frozen Track-G / Track-D contracts — C-NF, C-Ideal, C-Res, C-Dedekind, C-Score,
+C-Matrix, C-LinAlg, C-AlgSqrt — read where relevant but not foregrounded in D.C.)
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
-names contracts this session locked. The D.B.1 `@plan` confirmation is not a ledger row (a paged fork
+names contracts this session locked. The D.C.1 `@plan` confirmation is not a ledger row (a paged fork
 with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.B.1 | F_ℓ linalg substrate + block Lanczos; freeze C-LinAlgFl | done | 652cfa6 | C-LinAlgFl |
-| D.B.2 | Block Wiedemann over F_ℓ + virtual-log recovery + toy-F_p DL KAT | done | a569049 | — |
+| D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | pending | — | — |
+| D.C.2 | Special-q descent recursion | pending | — | — |
+| D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | pending | — | — |
 
-Extras allowed in D.B.1 commit: `gnfs/Cargo.toml` (added shared-field dependency, plainly part of the unit), `Cargo.lock` (auto-updated by Cargo). `FlMatrixOperator` carries `L` as a const generic (`FlMatrixOperator<'a, F, const L: usize>`) — Rust type-system constraint, internal-continue, D.B.2 aware.
-
-Contracts frozen before this sub-track (read by D.B): C-NF (bdba6f5 / extended 20cd263), C-Ideal
+Contracts frozen before this sub-track (read by D.C): C-NF (bdba6f5 / extended 20cd263), C-Ideal
 (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
 C-Score (00aa32d), C-Matrix (a0e854b), C-LinAlg (416f6db), C-AlgSqrt (c80a855 + ec69a1f), C1 (α.2),
-C-Textbook (5c9b783), C-Schirokauer (f2dbf0a), C-DLRelation (f2dbf0a). This sub-track continues
-Phase γ over the frozen GNFS factoring pipeline and the D.A DL relation substrate, and freezes one
-new F_ℓ-linalg contract (C-LinAlgFl, at D.B.1).
+C-Textbook (5c9b783), C-Schirokauer (f2dbf0a), C-DLRelation (f2dbf0a), C-LinAlgFl (652cfa6). This
+sub-track continues Phase γ over the frozen GNFS pipeline and the D.A/D.B DL substrate, and freezes
+one new internal contract (C-Descent, D.C.1) plus the cross-track **C2** (shape D.C.1, frozen D.C.3).
 
 ---
 
 ## Action-frame digest
 
-### D.B.1 — 2026-06-08
-Discovery/flex: `FlMatrixOperator` requires `L` as a const generic in the struct (`FlMatrixOperator<'a, F, const L: usize>`) — Rust type-system constraint; the contract name and interface are otherwise identical.
-Affected: C-LinAlgFl (minor shape deviation, internal-continue; D.B.2 consumes the same types)
-Deferred: no
-Texture: Inflection fork returned design-confident; parallel-module decision confirmed in implementation (GF(2) linalg untouched). BigInt→Fp resolved via local helper (bigint_to_fp). Block Lanczos KAT at toy scale takes ~22s due to FpNaive4 256-bit arithmetic — expected, not a correctness issue.
-
-### D.B.2 — 2026-06-08
-Discovery/flex: Scalar Wiedemann over F_ℓ with B = A^T·A fails for small matrices over small fields — the BM minimal polynomial of the Krylov sequence does not have z as a factor for random (x,y), so f(B)·y is not in the kernel. Fix: block_wiedemann_fl uses Gaussian elimination at toy scale (correct, deterministic); BM/Krylov code retained as the production building block with a principle-4 annotation.
-Affected: C-LinAlgFl (internal-continue — block_wiedemann_fl signature unchanged; D.C consumes the virtual-log table, not solver internals)
-Deferred: no — the production Wiedemann (BM/Krylov) is annotated as the NFS-scale path; toy scale uses Gaussian elimination. No downstream contract is affected.
-Texture: Fix-loop fired once (1 of 2 iterations). Virtual-log recovery (recover_virtual_logs) and end-to-end toy-F_p DL KAT pass. PARI stub present with #[ignore]. GF(2) linalg untouched throughout D.B.
+*(none yet)*
 
 ---
 
@@ -552,87 +403,98 @@ Texture: Fix-loop fired once (1 of 2 iterations). Virtual-log recovery (recover_
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **F_ℓ linalg architecture: parallel module, NOT a generic refactor of GF(2) C-LinAlg
-  (decided at D.B sharding, 2026-06-08).** D.B builds a *separate* `gnfs/src/dl/linalg/` module with
-  F_ℓ-native types (`FlBlockVec` over `[Fp; W]`, F_ℓ operator + solvers); the frozen GF(2) C-LinAlg
-  (G.E.1) stays **untouched**. *Rationale:* (1) zero risk to the verified GF(2) factoring pipeline
-  (G.E–G.F); (2) the GF(2) bit-packing (64 scalars/`u64`, parity inner products) does not fit a
-  uniform `Scalar` trait cleanly — a generic refactor would leak the abstraction and re-touch a
-  frozen, KAT-verified substrate (a destructive reshard); (3) the two algorithms read more clearly as
-  themselves side-by-side (pedagogy). *Tradeoff named:* some duplication of the block-solver skeleton
-  (Lanczos/Wiedemann control flow re-expressed over F_ℓ), and the GF(2)↔F_ℓ commonality is documented
-  in prose rather than compiler-enforced. **Deferred consolidation (user-directed):** *if* a genuine
-  unification condition emerges during D.B implementation (the F_ℓ and GF(2) skeletons prove
-  near-identical and the abstraction does *not* leak), do **not** unify inline — surface it as a
-  discovery and defer the GF(2)↔F_ℓ unification to a deliberate later consolidation session (the
-  C3-style "premature abstraction is the greater risk than late refactor" pattern). An inline
-  unification that re-touches frozen C-LinAlg is a **destructive-HALT**.
+- **C2 scoped to the prime field F_p (k = 1); F_{p^k} extension deferred (decided at D.C sharding,
+  2026-06-08).** D.B's virtual-log pipeline solves DL in **F_p** (the D.B.2 end-to-end KAT is p = 11,
+  prime field). The ROADMAP C2 signature is `solve_dl(g, h: F_pk_element, p, k)` — DL in **F_{p^k}**
+  (E.C's MOV bridge lands ECDLP in an extension field). Extending NFS-DL from F_p to F_{p^k} is
+  *genuine new mathematics* (extension-field / tower number-field setup) D.B's substrate does not
+  support. *Decision:* D.C freezes the **C2 signature in its full F_{p^k} shape** (so E.C's call site
+  is stable) but implements only the **k = 1 (prime-field) path**; k > 1 returns
+  `SolveDlError::Unsupported`. The F_{p^k} extension is its own deliberate **E.C-prep
+  ROADMAP-then-shard session** before the MOV climax — the same "freeze the interface/trigger, defer
+  the generality" discipline as the C1 width policy. *Tradeoff named:* E.C will need the k > 1 path
+  built before the MOV bridge can call a *real* solver (the ROADMAP forbids a permanent PARI stub at
+  E.C) — a **known, surfaced debt**, not a silent gap. **internal-continue** within D.C scope;
+  building the F_{p^k} path here is **defocus** (additive-reshard at most, never inline). A genuine
+  discovery that the C2 *signature* itself can't accommodate F_{p^k} cleanly (not just the body) is
+  an **additive-reshard** at the D.C.1 `@plan` freeze, surfaced to the human.
 
-- **`BigInt` → `Fp` conversion gap (resolve at D.B.1).** `shared-field`'s `Fp<L>` has `from_u64` /
-  `from_uint` but **no `from_bigint`**. The Schirokauer columns are `Vec<BigInt>` and the reduced
-  exponents are integers; D.B.1 must bridge `BigInt` → `Uint<L>` → `Fp`. Options: a conversion
-  helper, or constraining toy ℓ to fit `u64` (`from_u64`). This is **internal-continue** (a D.B.1
-  in-session decision, recorded in C-LinAlgFl), not a contract flex on `shared-field` — unless toy ℓ
-  genuinely needs > 64 bits, in which case a `from_bigint`/`from_uint` path on `Fp` is an
-  **additive** extension to surface at the freeze.
+- **C2 shape opens at D.C.1, error taxonomy freezes at D.C.3 (not all at D.C.1).** The cross-track
+  C2 *signature* freezes at D.C.1 (E.C's call site stability), but the `SolveDlError` *taxonomy*
+  (descent-failure / size variants) is genuinely known only after D.C.2's descent runs. Freezing the
+  full taxonomy at D.C.1 would risk a freeze D.C.2/D.C.3 must reopen. **internal-continue:** the
+  shape/taxonomy split is deliberate; a taxonomy addition at D.C.3 is **additive** (C2 is D.C's own
+  until E.C consumes it), not a destructive reopen.
 
-- **C-LinAlgFl is sub-track-internal — over-specify lightly, surface flexes (lever 4, not lever 3).**
-  Frozen at D.B.1, consumed by D.B.2 and D.C. Unlike D.A's cross-track contracts, C-LinAlgFl does
-  not bind E.C directly (the cross-track C2 solver interface freezes at D.C). The freeze register is
-  Opus on lever 4 (correctness of the virtual-log table), not on cross-track reach. A D.C need the
-  D.B.1 solution-shape can't carry is an **additive-reshard** at the D.B ◆ boundary, not a
-  destructive-HALT (C-LinAlgFl is D.B's own, freely extensible by its definer's track).
+- **Special-q sieve reuse seam (resolve at D.C.2).** The Track-G `special_q_sieve` was built for
+  relation *collection* (scan `[q_min, q_max]`), not *descent of a specific `q`*. D.C.2's per-node
+  descent needs to drive the sieve at a **fixed target `q`**. If the existing entry supports this
+  (or a thin wrapper does), **internal-continue**. If it needs a genuine signature change to the
+  Track-G sieve surface, that is an **additive** contract discovery surfaced at the ◆ boundary —
+  never a destructive edit to the frozen G.C sieve contract (an inline change that breaks the G.C
+  sieve KATs is a **destructive-HALT**).
 
-- **Virtual-log recovery shape vs C2 (additive-reshard risk, D.B.2 ◆).** D.B.2 produces the
-  virtual-log *table* (factor-base element → log mod ℓ); D.C wraps it into the C2 `solve_dl(g, h, …)`
-  interface. If D.B.2's recovery reveals the table shape can't feed D.C's individual-log descent,
-  that is an **additive-reshard** discovery at the ◆ boundary — surface it, do not pre-build C2 in
-  D.B (defocus).
+- **Descent termination is the delicacy (lever 2, D.C.2).** Special-q descent must strictly reduce
+  the largest prime at each step and not loop. The frontier-ordering invariant (largest-first, set
+  at D.C.1) is the termination argument; a node that fails to descend within a bounded search
+  surfaces `SolveDlError::DescentFailed`, never an infinite loop. A toy instance where descent
+  legitimately cannot terminate (no relation found) is **internal-continue** (a clean error), not a
+  contract break.
 
-- **No descent / no C2 in D.B (defocus guard).** D.B stops at the virtual-log table for factor-base
-  elements. Individual logarithm + special-q descent and the C2 NFS-DL solver interface are **D.C**.
-  Implementing either here is **defocus** — internal-continue only within the D.B scope.
+- **Subgroup recovery scope (decide at D.C.3 ◆).** The descent recovers `log_g(h)` **mod ℓ**. If ℓ
+  is a proper factor of `p−1`, the full log mod (p−1) needs Pohlig–Hellman / CRT. **In-scope at
+  demonstration fidelity** (or the toy KAT picks ℓ = p−1 to sidestep it) — decided at the boundary.
+  Deferring full-order recovery with a principle-4 annotation is **internal-continue**; it is not a
+  contract break (C2 returns the log in the target subgroup, documented).
 
-- **PARI oracle gating (resolved policy, D.A boundary — apply uniformly).** D.B.2's DL KAT
-  cross-checks against PARI's discrete log. Per the resolved project-wide policy (ROADMAP D.A-boundary
-  dev-oracle entry): oracles are **absent-by-default, opt-in, skip cleanly** — the PARI KAT is
-  `#[ignore = "PARI not installed; run manually when available"]` (matching the D.A.2
-  `kat_h_pari_oracle` stub pattern: no feature flag, no subprocess in CI), and a deterministic
-  non-PARI KAT carries the reproducibility burden. No new policy decision is owed (it was resolved at
-  D.A).
+- **No F_{p^k}, no E.C in D.C (defocus guard).** D.C stops at a prime-field individual logarithm and
+  the C2 shape. The F_{p^k} extension-field solver and the E.C MOV bridge are **out of D.C**.
+  Implementing either here is **defocus** — internal-continue only within D.C scope.
+
+- **PARI oracle gating (resolved policy, D.A boundary — apply uniformly).** D.C.3's individual-log
+  KAT cross-checks against PARI's discrete log. Per the resolved project-wide policy: oracles are
+  **absent-by-default, opt-in, skip cleanly** — the PARI KAT is `#[ignore = "PARI not installed;
+  run manually when available"]` (matching the `kat_h_pari_oracle` / `kat_pari_dl_oracle` stubs: no
+  feature flag, no subprocess in CI), and a deterministic non-PARI KAT carries the reproducibility
+  burden. No new policy decision is owed.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (the D.B spec under Phase γ — "Linear algebra over F_ℓ"; **Contract C2** —
-  the NFS-DL solver interface D.B's virtual-log table ultimately feeds, frozen at D.C, *not* D.B;
-  **Contract C1 → Width policy** to confirm D.B does not touch the smoothness width) and this PLAN
-  before any session.
-- Read the substrate D.B adapts: `gnfs/src/linalg/` (the GF(2) C-LinAlg pattern — `blockvec.rs`
-  with its D.B generalisation notes at lines 26–30, `operator.rs:29–32`, `lanczos.rs`,
-  `wiedemann.rs`; **read-only, the parallel-module template**), `gnfs/src/dl/relation.rs`
-  (`DLMatrix`, `DLMatrix::from_relations`, `num_cols`), `gnfs/src/dl/mod.rs` (`DLRelation`),
-  `shared/field/src/lib.rs` (the `Fp<L>` trait — note the missing `from_bigint`),
-  `gnfs/src/filter/matrix.rs` (`SparseMatrix` — the GF(2) matrix for comparison). The G.E
-  linear-algebra code-tour (`gnfs/docs/PEDAGOGY.md`, block Lanczos / Wiedemann sections) gives the
-  mathematical background; the T.G textbook chapter covers the linear-algebra payoff.
-- **Register:** D.B is **code** (Rust, `STYLE-CODE-RUST.md`), with KATs in `gnfs/tests/*_kat.rs`
-  following the existing naming convention (`dl_linalg_kat.rs`, `dl_end_to_end_kat.rs`). No PEDAGOGY
-  chapter in D.B — the NFS-DL writeup is D.W (later), paired with T.D.
-- **Tier routing:** both D.B.1 and D.B.2 are **Sonnet** (`@build`) per the ROADMAP allotment (the
-  Opus table lists D.A.1 and D.C.1, not any D.B session). D.B.1 carries one `@plan` marker: a T0/Opus
-  post-landing C-LinAlgFl freeze confirmation (page `@plan-juncture`) before D.B.2 is dispatched —
-  held at Opus on lever 4 (correctness of the virtual-log table) despite the strong inner loop. The
-  juncture-tier (header) is **opus** on the same lever-4 call.
-- **Invariants to preserve:** all Track-G code contracts and the D.A DL contracts (C-Schirokauer,
-  C-DLRelation, C-Matrix, C-LinAlg) are **frozen** — D.B reads and mirrors them; it amends none.
-  **GF(2) C-LinAlg stays untouched** (parallel F_ℓ module, not a generic refactor — Discoveries).
-  **C1 `Uint<4>` stays as-is** (not in D.B's surface). The new contract is C-LinAlgFl (D.B.1).
+- Read `docs/ROADMAP.md` (the D.C spec under Phase γ — "Individual logarithm + special-q descent";
+  **Contract C2** — the NFS-DL solver interface this sub-track freezes, consumed by E.C; **Contract
+  C1 → Width policy** to confirm D.C does not touch the smoothness width) and this PLAN before any
+  session.
+- Read the substrate D.C consumes: `gnfs/src/dl/linalg/blockvec_fl.rs` (`VirtualLogTable`,
+  `recover_virtual_logs`, `FlSolution`), `gnfs/src/dl/relation.rs` (`DLMatrix`, `collect_dl_relations`,
+  `num_cols`), `gnfs/src/dl/schirokauer.rs` (the Schirokauer map, `PrimeIdeal`), `gnfs/src/dl/mod.rs`
+  (`DLRelation`, the `mod.rs:85` descent hook), `gnfs/src/sieve/factor_base.rs` (`FactorBase`,
+  `rational_index` / `algebraic_index`, `AlgebraicPrime`), `gnfs/src/sieve/special_q.rs` +
+  `gnfs/src/sieve/lattice.rs` (the special-q / lattice sieve to reuse for descent),
+  `gnfs/src/sieve/mod.rs:259` (`Relation::new` — the factor-over-the-factor-base pattern),
+  `shared/numth/src/smooth.rs` (`trial_smooth`, `SmoothWitness`). The G.C sieving and D.B linalg
+  PEDAGOGY/MATHEMATICS sections give the mathematical background; the NFS-DL writeup is D.W (later,
+  paired with T.D) — **no PEDAGOGY chapter in D.C**.
+- **Register:** D.C is **code** (Rust, `STYLE-CODE-RUST.md`), with KATs in `gnfs/tests/*_kat.rs`
+  following the existing naming convention (`dl_descent_kat.rs`, `dl_individual_log_kat.rs`).
+- **Tier routing:** **D.C.1 is Opus** (`@build` on Opus, per the ROADMAP Opus-flagged table —
+  "D.C.1 special-q descent design"); **D.C.2 and D.C.3 are Sonnet**. D.C.1 carries one `@plan`
+  marker: a T0/Opus post-landing C-Descent + C2-shape freeze confirmation (page `@plan-juncture`)
+  before D.C.2 is dispatched — held at Opus on **levers 3+4** (cross-track C2 + correctness). The
+  juncture-tier (header) is **opus** on the same lever-3+4 call.
+- **Invariants to preserve:** all Track-G code contracts and the D.A/D.B DL contracts (C-Schirokauer,
+  C-DLRelation, C-LinAlgFl, C-FactorBase, the special-q sieve) are **frozen** — D.C reads and reuses
+  them; it amends none. **The Track-G special-q sieve stays untouched** (reuse, not modify — a
+  needed signature change is an additive discovery, not an inline edit; breaking the G.C sieve KATs
+  is a destructive-HALT). **C1 `Uint<4>` stays as-is** (not in D.C's surface). New contracts: C-Descent
+  (D.C.1, internal) and C2 (D.C.1 shape → D.C.3 freeze, cross-track).
 - **PARI remains a dev-only oracle**, never on a build path; the project-wide gating policy is
-  already resolved (D.A boundary) — apply the `#[ignore]` stub pattern uniformly.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — D.B introduces a new
-  F_ℓ-linalg substrate on a parallel-module pattern (unproven for this codebase) and freezes a new
-  contract (C-LinAlgFl), so halt at every juncture. With the D.B.1 `@plan` marker and the D.B.2 ◆
-  boundary it halts **twice**: the **D.B.1 C-LinAlgFl freeze confirmation** (before D.B.2 consumes
-  it) and the **D.B.2 ◆ boundary** (D.B sub-track close).
+  resolved (D.A boundary) — apply the `#[ignore]` stub pattern uniformly.
+- Suggested first invocation: **`/run-plan docs/PLAN.md`** (default cadence). The two `@plan`/◆
+  junctures already force the halts that matter — the **D.C.1 C-Descent + C2-shape freeze
+  confirmation** (before D.C.2 consumes it) and the **D.C.3 ◆ C2 final freeze + sub-track close** —
+  so no additional boundary halts beyond those preconditioned ones are needed. *(Tradeoff: this is
+  one notch less conservative than D.B's `halt-at-boundaries`; it is justified because the two
+  cross-track-critical freezes are already `@plan`-gated, and the descent pattern, while new, is
+  exercised against a mature test suite — lever 5 strong.)*
