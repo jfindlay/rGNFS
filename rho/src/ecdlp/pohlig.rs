@@ -1,10 +1,23 @@
-//! Pohlig–Hellman ECDLP substrate: order factorization and prime-subgroup projection.
+//! Pohlig–Hellman ECDLP: order factorization, prime-subgroup projection, and composite-order
+//! ECDLP reduction.
 //!
-//! This module provides the substrate E.A.2 builds on:
+//! This module provides the full Pohlig–Hellman reduction:
 //!
 //! - [`factor_order`] — prime-power decomposition of a u64 group order.
 //! - [`project_to_subgroup`] — map `(G, Q)` to the order-`p^e` subgroup via
 //!   `[n / p^e]`-scalar-multiplication.
+//! - [`solve_ecdlp_composite`] — composite-order ECDLP via prime-power lift + CRT combine.
+//!
+//! # Algorithm
+//!
+//! [`solve_ecdlp_composite`] decomposes the DLP `Q = k·G` in a group of composite order
+//! `n = ∏ pᵢ^{eᵢ}` into independent DLPs in each prime-power subgroup, solves each by
+//! handing off to the frozen rho solvers (which require a **prime** order), and reassembles
+//! the answer by the Chinese Remainder Theorem.
+//!
+//! The prime-power lift (for `eᵢ > 1`) recovers `k mod pᵢ^{eᵢ}` digit-by-digit in base `pᵢ`:
+//! at each digit step, the current remainder is projected to the order-`pᵢ` sub-subgroup and
+//! solved by a single rho call with prime order `pᵢ`.
 //!
 //! # Scope
 //!
@@ -18,7 +31,8 @@ use crypto_bigint::Uint;
 
 use shared_numth::{factor_base_up_to, is_prime, trial_smooth};
 
-use crate::curve::{AffinePoint, Curve};
+use crate::curve::{AffinePoint, Curve, JacobianPoint};
+use crate::ecdlp::solve_brent;
 use crate::field::Fp;
 
 // ── factor_order ──────────────────────────────────────────────────────────────
@@ -115,6 +129,203 @@ pub fn project_to_subgroup<F: Fp<4>>(
     let g_sub = curve.scalar_mul(g, &cofactor_uint);
     let q_sub = curve.scalar_mul(q, &cofactor_uint);
     (g_sub, q_sub)
+}
+
+// ── solve_ecdlp_composite ─────────────────────────────────────────────────────
+
+/// Solve `Q = k·G` on a curve whose generator has composite order `n`.
+///
+/// Decomposes the DLP into independent DLPs in each prime-power subgroup via
+/// Pohlig–Hellman, solves each with the frozen rho solver (`solve_brent`), and
+/// reassembles the answer by the Chinese Remainder Theorem.
+///
+/// # Algorithm
+///
+/// For each prime power `pᵢ^{eᵢ}` in the factorization of `n`:
+/// 1. Project `(G, Q)` to the order-`pᵢ^{eᵢ}` subgroup.
+/// 2. Recover `k mod pᵢ^{eᵢ}` digit-by-digit in base `pᵢ` (the prime-power lift).
+///    Each digit is solved by a rho call with prime order `pᵢ` — never `pᵢ^{eᵢ}`,
+///    because `inv_mod_prime` inside the rho solver uses Fermat's little theorem and
+///    is silently wrong on composite moduli.
+/// 3. CRT-combine the per-prime-power residues into `k mod n`.
+///
+/// # Returns
+///
+/// `Some(k)` with `k·G = Q`, or `None` if any per-subgroup rho call fails.
+///
+/// # Preconditions
+///
+/// - `G` must have full order `n` (not a subgroup generator).
+/// - `n` must equal the product of the prime powers returned by `factor_order(n)`.
+pub fn solve_ecdlp_composite<F: Fp<4>>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+) -> Option<u64> {
+    // Handle the trivial case: Q = ∞ means k = 0 (or n, but 0 is canonical).
+    if q.is_infinity() {
+        return Some(0);
+    }
+
+    let factors = factor_order(n);
+
+    // Collect (x_i mod p_i^e_i, p_i^e_i) for each prime power.
+    let mut residues: Vec<(u64, u64)> = Vec::with_capacity(factors.len());
+
+    for &(p, e) in &factors {
+        let p_power = p.pow(e); // pᵢ^{eᵢ}
+        let x_pe = solve_prime_power(curve, g, q, n, p, e, p_power)?;
+        residues.push((x_pe, p_power));
+    }
+
+    // CRT-combine all residues into k mod n.
+    Some(crt_combine(&residues, n))
+}
+
+/// Solve `d · G = Q` by brute force for small prime order `p` (p ≤ 64).
+///
+/// Iterates `d = 1, 2, …, p-1`, computing `d·G` by repeated addition.
+/// Returns `Some(d)` when `d·G = Q`, or `None` if no solution exists in `[0, p)`.
+///
+/// Used instead of `solve_brent` when `p` is small enough that the rho walk
+/// table (20 entries) would exceed the group size, causing excessive degeneration.
+fn solve_small_dlog<F: Fp<4>>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    p: u64,
+) -> Option<u64> {
+    // d=0: G·0 = ∞; caller already handles the ∞ case before calling here.
+    let mut acc = g.clone(); // 1·G
+    for d in 1..p {
+        if &acc == q {
+            return Some(d);
+        }
+        // acc ← acc + G
+        let acc_jac = JacobianPoint::from_affine(&acc, &curve.p);
+        acc = curve.add_mixed(&acc_jac, g).to_affine(&curve.p);
+    }
+    // d = p: p·G = ∞ (group order), which is the identity — not a valid solution
+    // for a non-identity Q (caller checks Q ≠ ∞ before calling).
+    None
+}
+
+/// Recover `k mod p^e` by the digit-by-digit Pohlig–Hellman prime-power lift.
+///
+/// Projects `(G, Q)` to the order-`p^e` subgroup, then iteratively recovers each
+/// base-`p` digit of `k mod p^e` by projecting the current remainder to the
+/// order-`p` sub-subgroup and solving a prime-order DLP with `solve_brent`.
+///
+/// Every rho call receives the prime order `p`, never `p^e` — the prime-only
+/// precondition of `inv_mod_prime` (Fermat) is honoured throughout.
+fn solve_prime_power<F: Fp<4>>(
+    curve: &Curve,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    p: u64,
+    e: u32,
+    p_power: u64, // p^e
+) -> Option<u64> {
+    // Project (G, Q) to the order-p^e subgroup.
+    let (g_pe, q_pe) = project_to_subgroup(curve, g, q, n, p_power);
+
+    // γ = p^(e-1)·G_pe has order p — the generator of the order-p sub-subgroup.
+    let p_e_minus_1 = p.pow(e - 1); // p^(e-1)
+    let gamma = curve.scalar_mul(&g_pe, &Uint::<4>::from(p_e_minus_1));
+
+    // Accumulate x mod p^e digit by digit.
+    let mut x_pe: u64 = 0;
+    // Q_curr tracks the "remaining" target after subtracting known digits.
+    let mut q_curr = q_pe.clone();
+
+    for j in 0..e {
+        // Project Q_curr to the order-p sub-subgroup: rhs = p^(e-1-j) · Q_curr.
+        // For j = e-1, the exponent is 0 and rhs = Q_curr (already order-p).
+        let exp = p.pow(e - 1 - j); // p^(e-1-j)
+        let rhs = curve.scalar_mul(&q_curr, &Uint::<4>::from(exp));
+
+        // Solve d_j · γ = rhs with prime order p.
+        // γ has order p (prime), so solve_brent is valid here.
+        // For small p (≤ 64), brute-force is faster and avoids rho walk degeneration
+        // on tiny groups where the walk table (20 entries) exceeds the group size.
+        let d_j = if rhs.is_infinity() {
+            // rhs = ∞ means d_j = 0.
+            0u64
+        } else if p <= 64 {
+            solve_small_dlog(curve, &gamma, &rhs, p)?
+        } else {
+            solve_brent(curve, &gamma, &rhs, p, 0, 50)?
+        };
+
+        // Accumulate: x_pe += d_j · p^j.
+        x_pe += d_j * p.pow(j);
+
+        // Update Q_curr: subtract d_j · p^j · G_pe.
+        // Q_curr ← Q_curr − d_j · p^j · G_pe
+        if d_j != 0 {
+            let scalar = d_j * p.pow(j); // d_j · p^j, fits in u64 since < p^e ≤ n
+            let correction = curve.scalar_mul(&g_pe, &Uint::<4>::from(scalar));
+            let neg_correction = curve.negate(&correction);
+            let q_curr_jac = JacobianPoint::from_affine(&q_curr, &curve.p);
+            q_curr = curve.add_mixed(&q_curr_jac, &neg_correction).to_affine(&curve.p);
+        }
+        // If d_j == 0, Q_curr is unchanged (subtracting 0·G_pe = ∞ is a no-op).
+    }
+
+    Some(x_pe)
+}
+
+/// Combine residues `{(xᵢ, mᵢ)}` into `x mod M` by the Chinese Remainder Theorem.
+///
+/// `mᵢ` are pairwise coprime (they are distinct prime powers), and `M = ∏ mᵢ`.
+/// Uses the standard constructive CRT formula:
+/// `x = Σ xᵢ · Mᵢ · (Mᵢ⁻¹ mod mᵢ) mod M`, where `Mᵢ = M / mᵢ`.
+fn crt_combine(residues: &[(u64, u64)], modulus: u64) -> u64 {
+    let mut x: u64 = 0;
+    for &(xi, mi) in residues {
+        let big_mi = modulus / mi; // Mᵢ = M / mᵢ
+        // Mᵢ⁻¹ mod mᵢ: since gcd(Mᵢ, mᵢ) = 1, the inverse exists.
+        let mi_inv = mod_inv(big_mi % mi, mi);
+        // Contribution: xᵢ · Mᵢ · (Mᵢ⁻¹ mod mᵢ) mod M.
+        // Use u128 arithmetic to avoid overflow (all values ≤ n ≤ u64::MAX).
+        let term = ((xi as u128 * (big_mi as u128 % modulus as u128) % modulus as u128)
+            * mi_inv as u128)
+            % modulus as u128;
+        x = ((x as u128 + term) % modulus as u128) as u64;
+    }
+    x
+}
+
+/// Modular inverse of `a` mod `m` via the extended Euclidean algorithm.
+///
+/// Requires `gcd(a, m) = 1`. Returns `r` such that `a · r ≡ 1 (mod m)`.
+///
+/// # Panics
+///
+/// Panics if `a == 0` or `m == 0`.
+fn mod_inv(a: u64, m: u64) -> u64 {
+    assert!(a != 0 && m != 0, "mod_inv: zero input");
+    // Extended Euclidean algorithm over i128 to handle signed intermediates.
+    let mut old_r = a as i128;
+    let mut r = m as i128;
+    let mut old_s: i128 = 1;
+    let mut s: i128 = 0;
+
+    while r != 0 {
+        let q = old_r / r;
+        let tmp_r = r;
+        r = old_r - q * r;
+        old_r = tmp_r;
+        let tmp_s = s;
+        s = old_s - q * s;
+        old_s = tmp_s;
+    }
+
+    // old_r is gcd; old_s is the Bézout coefficient for a.
+    debug_assert_eq!(old_r, 1, "mod_inv: gcd({a}, {m}) ≠ 1");
+    ((old_s % m as i128 + m as i128) % m as i128) as u64
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

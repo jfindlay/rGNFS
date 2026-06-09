@@ -29,7 +29,8 @@ use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, Curve, JacobianPoint};
 use rho::curve::generic::generic_curve;
 use rho::curve::secp_k1_toy::{secp_k1_toy, GX, LAMBDA};
-use rho::curve::test_curves::{tiny_a, tiny_b, TINY_A_N, TINY_B_N};
+use rho::curve::test_curves::{composite_toy, tiny_a, tiny_b, COMPOSITE_TOY_N, TINY_A_N, TINY_B_N};
+use rho::ecdlp::pohlig::solve_ecdlp_composite;
 use rho::ecdlp::solve_brent;
 use rho::field::{Fp, FpMonty};
 
@@ -346,4 +347,95 @@ fn tiny_b_dlog_k42() {
 #[test]
 fn tiny_b_dlog_k99991() {
     check_solver_on_curve(&tiny_b(), TINY_B_N, 99_991, "tiny_b");
+}
+
+// ── Phase E.A.2 — Pohlig–Hellman composite-order ECDLP KATs ──────────────────
+//
+// These tests verify `solve_ecdlp_composite` on the C-CompositeCurve fixture:
+// y² = x³ + x + 33 mod 47, generator G = (10, 3), order n = 60 = 2² · 3 · 5.
+//
+// The solver is not required to return the specific k used to construct Q;
+// any k' ∈ [0, n) with k'·G = Q is a valid solution.  The assertion checks Q.
+//
+// Coverage requirements (from E.A.2 contract):
+// - At least one case exercises the e>1 lift (the 2² factor).
+// - At least one case exercises the multi-prime CRT (all three primes 2, 3, 5).
+
+/// Helper: verify solve_ecdlp_composite finds a valid DLP solution on composite_toy.
+fn check_composite_solver(k_target: u64, label: &str) {
+    let curve = composite_toy();
+    let g: AffinePoint<FpMonty> = curve.generator();
+    let q = curve.scalar_mul(&g, &Uint::<4>::from(k_target));
+
+    let k = solve_ecdlp_composite(&curve, &g, &q, COMPOSITE_TOY_N)
+        .unwrap_or_else(|| panic!("{label}: solve_ecdlp_composite failed for k_target={k_target}"));
+
+    let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
+    assert_eq!(
+        check, q,
+        "{label}: recovered k={k} gives k·G ≠ Q (k_target={k_target})"
+    );
+}
+
+/// k=1: trivial case, exercises all three prime subgroups.
+///
+/// k=1 has residues: 1 mod 4, 1 mod 3, 1 mod 5. All primes (2, 3, 5) participate
+/// in the CRT combine, and the 2² factor exercises the e>1 lift.
+#[test]
+fn composite_dlog_k1() {
+    check_composite_solver(1, "composite_toy");
+}
+
+/// k=7: exercises the e>1 lift (2² factor) and multi-prime CRT.
+///
+/// k=7 mod 4 = 3 (nontrivial in the 2² subgroup, requiring both digits d_0=1, d_1=1
+/// in the base-2 expansion: 3 = 1 + 1·2). Also nontrivial mod 3 (7 mod 3 = 1) and
+/// mod 5 (7 mod 5 = 2). All three primes participate in the CRT.
+#[test]
+fn composite_dlog_k7() {
+    check_composite_solver(7, "composite_toy");
+}
+
+/// k=11: nontrivial residue in the 2² subgroup (11 mod 4 = 3) and multi-prime CRT.
+///
+/// 11 mod 4 = 3 = 1 + 1·2 (both base-2 digits nonzero — exercises the full e=2 lift).
+/// 11 mod 3 = 2, 11 mod 5 = 1. All three prime-power subgroups contribute.
+#[test]
+fn composite_dlog_k11() {
+    check_composite_solver(11, "composite_toy");
+}
+
+/// k=30: exercises the e>1 lift with d_0=0 (30 mod 4 = 2 = 0 + 1·2).
+///
+/// 30 mod 4 = 2: the first digit d_0 = 0, second digit d_1 = 1 — verifies that the
+/// lift handles a zero leading digit correctly. 30 mod 3 = 0, 30 mod 5 = 0.
+#[test]
+fn composite_dlog_k30() {
+    check_composite_solver(30, "composite_toy");
+}
+
+/// k=59: largest non-identity scalar, exercises all subgroups with nontrivial residues.
+///
+/// 59 mod 4 = 3, 59 mod 3 = 2, 59 mod 5 = 4. All three prime-power subgroups have
+/// nontrivial residues. The 2² lift must recover both digits (3 = 1 + 1·2).
+#[test]
+fn composite_dlog_k59() {
+    check_composite_solver(59, "composite_toy");
+}
+
+/// k=0 (Q = ∞): the identity case returns 0.
+#[test]
+fn composite_dlog_k0_identity() {
+    let curve = composite_toy();
+    let g: AffinePoint<FpMonty> = curve.generator();
+    let q = AffinePoint::Infinity;
+
+    let k = solve_ecdlp_composite(&curve, &g, &q, COMPOSITE_TOY_N)
+        .expect("composite_dlog_k0_identity: solve_ecdlp_composite failed for Q=∞");
+
+    let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
+    assert!(
+        check.is_infinity(),
+        "composite_dlog_k0_identity: k={k} gives k·G ≠ ∞"
+    );
 }
