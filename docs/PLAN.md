@@ -2,110 +2,105 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-D continues (D.C — individual logarithm + special-q descent)
+# rGNFS — Current Plan: Track-D closes (D.W / T.D — NFS-DL writeup + maths chapter)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **holds the default; does not opt down**, on a joint
-**lever-3 + lever-4** call (recorded here; contrast D.B, which held on lever 4 *alone*). Applying the
-five-lever law to D.C: lever 3 (design-error cost) is **back up** — D.C freezes **C2, the cross-track
-NFS-DL solver interface** (`solve_dl`), consumed by **E.C** (the MOV bridge, the project's
-pedagogical climax). A wrong C2 shape propagates into a different track and is the most expensive
-freeze to get wrong in Track D — the same cross-track weight D.A.1 carried, which D.B explicitly did
-not. Lever 4 (correctness-criticality) is **also high** — an individual logarithm that returns a
-plausible-but-wrong value (the silent failure mode) is the worst outcome, and the descent's
-correctness rests on the virtual-log table being combined correctly. Lever 2 (irreducible
-complexity) is **high** — special-q descent is the part of NFS-DL with *no factoring analogue* and is
-"mathematically delicate" (ROADMAP); it is the FLOOR that holds D.C.2 whole. Lever 5 (inner-loop
-bandwidth) is **strong** — mature `cargo test --workspace` gate, the D.B end-to-end DL KAT to extend,
-a PARI discrete-log oracle, and the special-q sieve machinery (`special_q_sieve`, `lattice_sieve`)
-already KAT-verified in Track G. Levers 3+4 jointly **hold the Opus register** at the D.C.1
-C-Descent+C2-shape freeze and the D.C.3 ◆ C2 final freeze; the strong inner loop (lever 5) does
-**not** license opting down when a cross-track interface freezes. *(Contrast D.B: lever-4-only hold,
-lever 3 relaxed because C-LinAlgFl was sub-track-internal. Here lever 3 is restored by C2's
-cross-track reach.)*
+`juncture-tier: opus` (header above) — **holds the default, but on a different lever than D.C.**
+D.W is a **writeup** sub-track: it freezes no code contract (lever 3 absent), and a wrong sentence is
+an editable doc bug, not a silent propagating failure (lever 4 low at the chapter level). On the
+writeup levers alone this would opt **down** to Sonnet. It does **not**, for one reason: D.W.2 carries
+the **L-notation NFS-DL derivation — a ROADMAP-designated payoff proof**, tiered Opus by explicit
+ROADMAP flag, and D.W.2 is the **Track-D / Phase-γ ◆ close**. The boundary juncture therefore
+ratifies (a) the payoff proof's DL-vs-factoring asymptotic comparison — the pedagogical-correctness
+apex of the whole NFS-DL arc — and (b) the design-statement verification for *all* of Track D
+(principles 1/3/4, mirroring G.W's verification role), then integrates D.W discoveries into the
+ROADMAP at the Phase-γ boundary. That ratification is a ROADMAP-frame, correctness-critical judgment
+— the lever-4 register the ROADMAP asserts on the payoff carries to the boundary that signs it off.
+**The juncture-tier hold is scoped to D.W.2's ◆ close; D.W.1 (the code-tour) needs no Opus juncture**
+(it freezes nothing and cites only frozen contracts). *(Contrast D.C: held Opus on a live cross-track
+interface freeze, C2. D.W has no interface to freeze — it holds Opus on a designated payoff + the
+phase-closing design-statement verification, the same role G.W played for Track G.)*
 
-Last rewrite: D.B.2 ◆ boundary crossed (Track-D linear-algebra arc D.B.1 → D.B.2 coherent; F_ℓ
-block Lanczos/Wiedemann + virtual-log recovery landed, ledger reconciled 2026-06-08, commits
-652cfa6 / a569049). This plan opens **Track D's third sub-track, D.C — individual logarithm +
-special-q descent**: take the virtual-log table D.B.2 recovered (factor-base element → log mod ℓ)
-and compute the discrete logarithm of an *arbitrary* target `h`, by smoothing `h` over progressively
-smaller primes (special-q descent) until it reduces to factor-base elements with known logs — then
-freeze the cross-track **C2 `solve_dl`** interface E.C consumes.
+Last rewrite: D.C.3 ◆ boundary crossed (Track-D's algorithmic content complete — D.C.1 → D.C.2 →
+D.C.3 coherent; individual logarithm + special-q descent landed, C2 `solve_dl` frozen at 9d07c51,
+ledger reconciled 2026-06-09, commits 1651993 / 52ee232 / 9d07c51). This plan opens **Track D's final
+sub-track, D.W — the NFS-DL writeup**: the code-tour chapter (D.W.1, appended to
+`gnfs/docs/PEDAGOGY.md`) and the maths-first textbook chapter (D.W.2 / **T.D**, appended to
+`docs/MATHEMATICS.md`), paired per the ROADMAP τ-threading rule. Crossing D.W.2 ◆ closes Phase γ
+(NFS-DL) end-to-end; only Track E (the MOV bridge E.C consumes C2) lies beyond.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP: D.C is "Individual logarithm + special-q descent. The part with no factoring analogue.
-Special-q descent is mathematically delicate. First session is Opus-tier." It is the step that turns
-NFS-DL from "logs of the factor-base elements" (D.B's `VirtualLogTable`) into "log of *any* target".
-The mathematics has three stages, which are the three sessions:
+Per ROADMAP: D.W is "the NFS-DL writeup — the NFS-DL chapter; explicit comparison with the
+NFS-factoring chapter." Per the Phase-τ threading rule, the writeup session produces **two siblings**
+at the Track-D ◆ boundary — the code-tour chapter (`PEDAGOGY.md`, organised by the implementation)
+**and** the maths-first textbook chapter (`MATHEMATICS.md` / **T.D**, learnable on its own,
+maths-first). Both already have reserved skeletons: `MATHEMATICS.md` TOC entry 9
+("NFS-DL: Discrete Logarithm via the Number Field Sieve *(T.D — to be appended)*") and the
+`PEDAGOGY.md` §63+ slot after the G.W integrative chapter (§52–§62). The work has two stages, which
+are the two sessions:
 
-1. **Descent substrate + target initialization-smoothing + the C2 interface shape (D.C.1, Opus).**
-   The data structures of the descent (a descent-tree node; the frontier of medium primes not yet in
-   the factor base), the **target initialization step** (given `h ∈ F_p*`, randomized search for an
-   exponent `e` such that the number-field lift of `g^e·h` is *B'-smooth* into medium primes — the
-   first descent step, reusing the `trial_smooth` / `Relation::new` factor-over-the-factor-base
-   pattern), and the **C2 `solve_dl` interface shape**: signature `solve_dl(g, h, p, k) -> integer`
-   + the error type frozen, the **k = 1 (prime-field F_p) path live**, k > 1 returning a clean
-   `Unsupported` error. **Freezes C-Descent** (the internal descent substrate, sub-track-internal)
-   and **opens C2** (the cross-track public interface — shape frozen, error taxonomy settled at
-   D.C.3). This is the substrate session whose interface binds D.C.2 and D.C.3. Over-specify the
-   descent-node and C2 shape deliberately within reason.
+1. **NFS-DL code-tour chapter (D.W.1, Sonnet, integrative-writeup).** Append the NFS-DL chapter to
+   `gnfs/docs/PEDAGOGY.md` (§63+), mirroring the G.W integrative chapter (§52–§62) one phase over:
+   the NFS-DL pipeline at a glance, stage-by-stage against the **frozen** Track-D contracts
+   (C-DLRelation, C-Schirokauer, C-LinAlgFl, C-Descent, C2), the **explicit comparison with the
+   NFS-factoring code-tour** (what changes when the target is `log_g(h)` rather than a factor: the
+   two-number-field setup, Schirokauer maps replacing quadratic characters, F_ℓ linear algebra
+   replacing GF(2), and the individual-logarithm descent that has *no factoring analogue*), the
+   principle-4 annotations (toy-scale DL phenomenology), and the KAT summary citing the existing DL
+   KATs (no new KATs — a code-tour, not an implementation). Cites the T.D maths chapter for the
+   mathematics.
 
-2. **Special-q descent recursion (D.C.2, Sonnet, algorithm).** The recursive heart: each medium
-   prime `q` on the frontier (not in the factor base) is the root of a **special-q lattice sieve**
-   (reusing Track-G `special_q_sieve` / `lattice_sieve`) that produces a relation rewriting `log q`
-   as a combination of *smaller* primes' logs; recurse down the descent tree until every leaf is a
-   factor-base element with a known virtual log. Consumes C-Descent. The delicacy (lever 2): descent
-   must **terminate** (each step strictly reduces the largest prime), handle the **degree-of-freedom
-   / relation-selection** at each node, and not loop. Stays at demonstration fidelity (principle 2 —
-   the descent-tree breadth is an NFS-scale phenomenon, annotated, not engineered).
+2. **NFS-DL maths chapter + L-notation payoff (D.W.2 / T.D ◆, Opus, integrative-payoff).** Append the
+   NFS-DL chapter to `docs/MATHEMATICS.md` (TOC entry 9), mirroring the §GNFS chapter (§1–§8) one
+   phase over: the DL problem and the number-field bridge for DL, the factor-base / virtual-logarithm
+   construction, **Schirokauer maps** (the obstruction-to-principality correction the DL setting
+   needs, with proof-sketch depth), the **F_ℓ linear algebra** (block Wiedemann/Lanczos over a prime
+   field vs GF(2)), and the **individual-logarithm special-q descent** (the no-factoring-analogue
+   core). The **designated payoff proof**: the **L-notation complexity of NFS-DL** as a *delta on the
+   already-written §GNFS L_N[1/3, (64/9)^{1/3}] derivation* — same exponent 1/3, same constant; the
+   DL-specific content is that the descent cost is asymptotically subdominant and the F_ℓ linear
+   algebra carries the same complexity shape as GF(2). This session **crosses the D.W ◆ boundary**
+   (Track-D / Phase-γ complete) and runs the **design-statement verification for the whole NFS-DL
+   arc** (principles 1/3/4, mirroring G.W §59).
 
-3. **Assembly + C2 final freeze + end-to-end individual-log KAT (D.C.3 ◆, Sonnet, integrative).**
-   Combine the virtual logs along the descent tree to recover `log_g(h)` mod ℓ; handle subgroup
-   recovery (if ℓ is a proper factor of `p−1`, the Pohlig–Hellman / CRT lift to the full order is
-   in-scope at demonstration fidelity, or annotated as deferred — decided at the boundary). **Freeze
-   C2** (the full error taxonomy now that descent reality is known). The **end-to-end toy-F_p
-   individual-log KAT**: recover a *known* discrete log of an arbitrary `h` through the full path
-   (relation collection → F_ℓ solve → virtual-log table → initialization → descent → assembly),
-   cross-checked against a hand-computed reference and (stub-gated) PARI. This session crosses the
-   **D.C ◆ boundary** (Track-D's algorithmic content complete; D.W writeup remains).
+Re-read this intent at the ◆ boundary to catch **defocus** (writing the **F_{p^k} extension-field**
+mathematics — that is the deferred E.C-prep content, not D.W; or writing **E.C / the MOV bridge**
+mathematics — that is Track E / the T.E chapter) and **rigidity** (re-deriving the L_N[1/3] exponent
+from scratch when §GNFS already carries it and T.D needs only the DL *delta*; or letting the code-tour
+and maths chapter drift apart — they must cross-reference, the same consistency the G.W↔T.G pair holds).
 
-Re-read this intent at the ◆ boundary to catch **defocus** (building the **F_{p^k} extension-field**
-NFS-DL solver here — that is genuine new mathematics D.B's F_p pipeline does not support; C2's k > 1
-path is a deliberately-deferred later ROADMAP-then-shard session, see Discoveries; and **building
-E.C / the MOV bridge** — that is Track E) and **rigidity** (forcing the descent to terminate by an
-artificial bound when a relation-selection fix is the real issue; or freezing C2's error taxonomy at
-D.C.1 before the descent in D.C.2 reveals the real failure modes — the shape freezes at D.C.1, the
-error taxonomy at D.C.3).
-
-**Scoping discipline (ROADMAP three-way split, applied here).** Special-q descent and individual
-logarithm are **algorithmic content included in full** (principle 1) — the descent recursion, the
-initialization-smoothing search, and the log-assembly are implemented head-on; this is the
-no-factoring-analogue core of NFS-DL. The descent stays at **demonstration fidelity** (principle 2):
-the descent-tree breadth and the medium-prime-bound tuning are NFS-scale phenomena, annotated, not
-engineered. No engineering optimisations (principle 3). PARI remains a dev-only oracle (D.C.3
-cross-check, stub-gated `#[ignore]`), never on a build path. **C2 is scoped to the prime field F_p
-(k = 1) now** — the F_{p^k} extension is genuine new mathematics deferred to an E.C-prep session
-(Discoveries); C2's *signature* is frozen in its full F_{p^k} shape so E.C's call site is stable,
-but only the k = 1 path is live. C1 `Uint<4>` stays as-is per the ROADMAP width policy (D.C touches
-factor-base indices, F_ℓ logs, and special-q ideals — not the smoothness width).
+**Scoping discipline (Phase-τ register, applied here).** Both chapters obey **C-Textbook** (frozen at
+T.0, 5c9b783): audience = undergraduate maths background; depth = survey-with-proof-sketch (complete
+and clinical, not exhaustive, not inscrutable; full proofs only at the designated payoff — here, the
+L-notation DL derivation); through-line = structure-based escape from search; markup = Markdown +
+MathJax; location = `docs/MATHEMATICS.md` (single-file). The textbook chapter is **maths-first**
+(learnable without the code); the code-tour is **code-first** (assumes the reader knows the maths,
+cites T.D). **No new code, no new contracts, no new KATs** — D.W documents the frozen Track-D
+substrate; it amends nothing. The **F_{p^k} extension** stays out of scope (C2's k > 1 `Unsupported`
+debt is *recorded* in T.D as a principle-4 annotation, not *resolved* — that is the deferred E.C-prep
+session, see Discoveries). The L-notation derivation is a **delta**, not a re-derivation (rigidity guard).
 
 ---
 
 ## Verify gate
 
-`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Confirmed by the
-D.B survey and unchanged: no Makefile / justfile / xtask wrapper exists in the workspace; raw
-`cargo` is the only CI surface. Rust's compiler is the type gate; `cargo test` subsumes it on a
-clean build, so one green `cargo test --workspace` satisfies both. D.C is **code** — the gate is a
-real inner loop (lever 5, strong), which is why the juncture-tier hold at Opus rests on levers 3+4,
-not on a weak inner loop. `/run-plan` re-discovers these at preflight.
+`VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Unchanged from D.C
+and confirmed: no Makefile / justfile / xtask wrapper; raw `cargo` is the only CI surface; **no doc
+build toolchain** (MathJax renders client-side in GitHub/standard Markdown viewers — confirmed in the
+ROADMAP C-Textbook freeze; there is no Sphinx/`.. math::` build to run). D.W is a **writeup** —
+it adds **no new code and no new KATs** (per G.W §62, the integrative chapter adds none), so the gate's
+role here is a **regression guard**: `cargo test --workspace` must stay green (a doc edit must not
+break a citation-referenced code path or the existing DL KATs the chapters cite). Discovery is
+unambiguous; `/run-plan` re-discovers at preflight. *(The "inner loop" for prose correctness is human
++ the Opus ◆ juncture, not the test suite — which is why the writeup levers, not lever 5, drive the
+tier story.)*
 
 ---
 
@@ -117,603 +112,225 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| D.C.1 `@plan` | Descent substrate + target initialization-smoothing + C2 `solve_dl` interface shape (F_p path live, F_{p^k} stubbed); freeze C-Descent, open C2 | A | **Opus** | C-LinAlgFl (VirtualLogTable), C-DLRelation (DLMatrix, collect_dl_relations), C-Schirokauer, C-FactorBase, C1 (trial_smooth), Fp (`shared-field`) | `gnfs/src/dl/descent/mod.rs` (new), `gnfs/src/dl/descent/node.rs` (new), `gnfs/src/dl/descent/solve.rs` (new: C2 `solve_dl` + init-smoothing), `gnfs/src/dl/mod.rs` (re-export), `gnfs/tests/dl_descent_kat.rs` (new) |
-| D.C.2 | Special-q descent recursion: rewrite each medium prime via reused special_q_sieve, recurse to factor-base leaves | B | Sonnet | C-Descent, C-FactorBase, special_q_sieve / lattice_sieve (read), C-LinAlgFl (VirtualLogTable) | `gnfs/src/dl/descent/recurse.rs` (new), `gnfs/src/dl/descent/mod.rs` (extend), `gnfs/tests/dl_descent_kat.rs` (extend) |
-| D.C.3 ◆ | Individual-log assembly + subgroup recovery + C2 final freeze + end-to-end toy-F_p DL KAT (PARI cross-check) | I | Sonnet | C-Descent, C2 (finalize), C-LinAlgFl, C-DLRelation, (PARI oracle) | `gnfs/src/dl/descent/solve.rs` (extend: assembly, C2 freeze), `gnfs/tests/dl_descent_kat.rs` (extend), `gnfs/tests/dl_individual_log_kat.rs` (new) |
+| D.W.1 | NFS-DL code-tour chapter: stage-by-stage against frozen Track-D contracts + explicit comparison with the NFS-factoring code-tour | I | Sonnet | C-DLRelation, C-Schirokauer, C-LinAlgFl, C-Descent, C2 (all frozen, read), G.W code-tour (§52–§62, parallel), C-Textbook (obeyed) | `gnfs/docs/PEDAGOGY.md` (append §63+) |
+| D.W.2 ◆ `@plan` | NFS-DL maths chapter (T.D) + L-notation DL derivation (designated payoff) + Track-D design-statement verification | I | **Opus** | C-Textbook (obeyed), MATHEMATICS.md §GNFS (§1–§8, parallel + L-notation §7 template), D.W.1 code-tour (cross-ref), all frozen Track-D contracts (read) | `docs/MATHEMATICS.md` (append ch. 9), `gnfs/docs/PEDAGOGY.md` (cross-ref backlink to T.D, if needed) |
 
-**Sequencing notes.** Strictly serial: **D.C.1 → D.C.2 → D.C.3.** D.C.2's recursion consumes the
-C-Descent node/frontier types and the C2 init-smoothing entry that D.C.1 froze; D.C.3's assembly
-reads the descent tree D.C.2 produces and finalizes C2. The single `@plan` marker sits on **D.C.1** —
-a post-landing freeze confirmation for **C-Descent + the C2 shape**, weightier than D.B.1's
-(C2 is cross-track, consumed by E.C); confirm the descent substrate, the C2 signature/error shape,
-and the initialization-smoothing correctness before D.C.2 is dispatched. **D.C.3 ◆** is the D.C
-sub-track boundary *and* the C2 final freeze (the second halt under `@plan`-marker cadence).
+**Sequencing notes.** Strictly serial: **D.W.1 → D.W.2.** The code-tour lands first (it fixes the
+section structure and the contract-by-contract narrative the maths chapter cross-references); D.W.2's
+maths chapter then cites the code-tour for the realisation and carries the payoff. The single `@plan`
+marker sits on **D.W.2 ◆** — the Opus boundary juncture that ratifies the L-notation payoff and runs
+the whole-Track-D design-statement verification before Phase γ is declared closed. D.W.1 carries **no**
+`@plan` (it freezes nothing; default cadence suffices to land it).
 
-**Why 3 sessions (matches ROADMAP allotment).** The one-line-commit-title corollary: D.C.1 ("descent
-substrate + init-smoothing + C2 shape"), D.C.2 ("special-q descent recursion"), D.C.3 ("individual-log
-assembly + C2 freeze + end-to-end KAT") are three distinct commit titles, split on **contract-sharp
-boundaries** (D.C.1 freezes C-Descent and opens C2; D.C.2 consumes C-Descent; D.C.3 finalizes C2).
-The split follows the **three mathematical stages of NFS-DL individual logarithm** (initialization /
-descent / assembly). They are **not** mergeable — D.C.1 freezes the descent substrate D.C.2 consumes,
-and the C2 error taxonomy genuinely settles only after D.C.2's descent runs (so the shape-open /
-taxonomy-freeze split across D.C.1 → D.C.3 is load-bearing, not cosmetic). They are **not** further
-splittable below the floor — special-q descent (D.C.2) is the irreducible "mathematically delicate"
-unit (lever 2); fracturing it would split the recursion at a non-contract-sharp boundary just to hit
-a LOC number (forbidden). The **initialization-smoothing step stays in D.C.1** (not merged into
-D.C.2): it is the substrate's first exercise of the descent frontier and the natural KAT vehicle for
-the C-Descent node type — merging it into D.C.2 would fracture "rewrite the target over smaller
-primes" across the substrate/algorithm boundary.
+**Why 2 sessions (one over the ROADMAP's literal allotment — split decided at this boundary).** The
+ROADMAP allots D.W = 1 session with T.D folded in (effort-neutral), but flags two escape hatches: the
+textbook chapter "is the larger of the two and may split into a dedicated follow-on if it overruns,"
+and the T.D L-notation derivation is a "designated payoff → Opus-tier." Both hatches fire here, and
+the split is taken **up-front** rather than discovered mid-session:
+- **One-line-commit-title corollary.** "NFS-DL code-tour chapter" and "NFS-DL maths chapter +
+  L-notation derivation" are **two distinct commit titles** — and folding both into one would also
+  fold two *registers* (code-first vs maths-first) and two *artifacts* into one session.
+- **Contract-sharp doc boundary (the split is legitimate, not LOC-driven).** D.W.1 produces the
+  code-tour the maths chapter *consumes* as a cross-reference; D.W.2 consumes it. The split is at a
+  real produce/consume seam, exactly as the G.W↔T.G pairing split code-tour from maths chapter.
+- **Tier boundary.** D.W.1 is Sonnet (code-tour against frozen contracts — mechanical, lever-3/4
+  low); D.W.2 is **Opus** (the ROADMAP-designated payoff + the phase-closing design-statement
+  verification). A single session cannot be both tiers; the tier seam *is* the session seam.
+- **Size precedent.** The T.G maths sibling ran ~660 lines (`MATHEMATICS.md` §GNFS, §1229–§1892);
+  the G.W code-tour ran ~930 lines (§52–§62). Folding the DL equivalents of both into one session
+  would push it well past the band — the "may split if it overruns" hatch, taken before the overrun.
+
+They are **not** further splittable: the L-notation DL derivation is a *delta* on the written §GNFS
+derivation (same exponent, same constant — the DL difference is descent-cost-subdominance + the F_ℓ
+linear-algebra shape), so fracturing it into its own third session would split a single coherent
+payoff-proof at a non-contract-sharp boundary just to isolate the Opus unit — forbidden. D.W.2 holds
+the maths chapter *and* its payoff whole.
 
 ---
 
 ## Session detail
 
-D.C.1 is crisp (its design surface is the C-Descent freeze + the C2 interface shape, resolved
-in-session as the substrate's own work). D.C.2 and D.C.3 are sketched at post-substrate fidelity —
-correct to leave their precise shape open until D.C.1 freezes the descent-node types and the C2
-shape.
+D.W.1 is crisply specified (it mirrors the frozen G.W integrative chapter one phase over, against
+already-frozen contracts). D.W.2 is specified at full fidelity too (its template — the §GNFS chapter
+and its §7 L-notation derivation — is frozen and in-tree), with the one open judgment (the depth of
+the F_{p^k}-deferral annotation) flagged for the ◆ juncture.
 
-### D.C.1 — Descent substrate + target initialization + C2 interface shape (Opus, substrate, `@plan`)
+### D.W.1 — NFS-DL code-tour chapter (Sonnet, integrative-writeup)
 
-**Deliverable:** the descent data structures, the target initialization-smoothing step, and the
-cross-track C2 interface shape.
-- **Descent-tree substrate.** A `DescentNode` (the prime/ideal being descended, its provenance, the
-  relation that rewrote it, child frontier) and the descent frontier (the set of medium primes not
-  yet in the factor base, awaiting recursion). New module `gnfs/src/dl/descent/`. The
-  `gnfs/src/dl/mod.rs:85` anticipatory hook ("reusing line_sieve / special_q_sieve") names this seam.
-- **Target initialization-smoothing.** Given a target `h ∈ F_p*` and generator `g`: randomized
-  search over exponents `e` for one where the number-field lift of `g^e·h` is *B'-smooth* (smooth
-  into medium primes, B' > factor-base bound) — the first descent step. Reuses the `trial_smooth`
-  (`shared::numth`) / `Relation::new` (`gnfs/src/sieve/mod.rs:259`) factor-over-the-factor-base
-  pattern. Produces the initial descent frontier (the medium primes of `g^e·h`).
-- **C2 `solve_dl` interface shape.** Freeze the signature `solve_dl(g, h, p, k) -> Result<BigInt,
-  SolveDlError>` (E.C's call site) and the `SolveDlError` type, with the **k = 1 (prime-field)
-  path live** and **k > 1 returning `SolveDlError::Unsupported`** (the F_{p^k} extension deferred —
-  Discoveries). At D.C.1 the body wires init-smoothing → (descent stub) → (assembly stub); the
-  descent and assembly fill in at D.C.2 / D.C.3.
-- **Freeze C-Descent** (the descent substrate interface) and **open C2** (shape frozen, taxonomy at
-  D.C.3) — see Cross-session contracts.
+**Deliverable:** the NFS-DL code-tour chapter appended to `gnfs/docs/PEDAGOGY.md` (§63+), the
+code-first sibling to the T.D maths chapter. Mirrors the G.W integrative chapter (§52–§62) one phase
+over. Structure (parallel to §52–§62):
+- **The NFS-DL pipeline at a glance** (parallel to §52) — relation collection (D.A) → F_ℓ linear
+  algebra (D.B) → virtual-log table → individual-logarithm descent (D.C) → `solve_dl`.
+- **Stage-by-stage against the frozen contracts** (parallel to §53–§57): C-DLRelation (`DLMatrix`,
+  `collect_dl_relations`, the rational|algebraic|Schirokauer column layout), C-Schirokauer (the
+  Schirokauer map, `PrimeIdeal`), C-LinAlgFl (`VirtualLogTable`, `recover_virtual_logs`), C-Descent
+  (`DescentNode`, `DescentFrontier`, `init_descent_frontier`, `descend_node`, `run_descent`), and
+  **C2** (`solve_dl` — the cross-track interface E.C will consume, k = 1 live / k > 1 `Unsupported`).
+- **The explicit NFS-factoring comparison** (the ROADMAP's named requirement; parallel to §58's
+  unified-contract view) — a side-by-side: *what changes when the target is `log_g(h)`*: two number
+  fields and the shared rational side; Schirokauer maps replacing the quadratic-character columns;
+  F_ℓ (prime-field) linear algebra replacing GF(2); virtual logs replacing the congruence of squares;
+  and the **individual-logarithm special-q descent — the stage with no factoring analogue**.
+- **Design-statement note + principle-4 annotations** (parallel to §59 — the *full* verification is
+  D.W.2's, but the code-tour carries its toy-scale annotations): the descent-tree breadth and
+  medium-prime tuning as NFS-scale phenomena annotated at demonstration fidelity; the C2 F_{p^k}
+  k > 1 `Unsupported` debt noted as an engineering-scale, not mathematical, boundary.
+- **KAT summary** (parallel to §62) — cites the **existing** DL KATs (`dl_descent_kat.rs`,
+  `dl_individual_log_kat.rs`, the D.B end-to-end DL KAT); **no new KATs** (a code-tour adds none).
+- **Cross-references + Further Reading** (parallel to §61 / §GNFS-references) — cite the T.D maths
+  chapter for the mathematics; the D.A/D.B/D.C contract definitions; the G.W code-tour for the
+  factoring sibling.
 
-**Key design decisions (the C-Descent + C2-shape freeze surface — the `@plan` confirmation):**
-1. **DescentNode shape & frontier representation:** what a node carries (the descended prime/ideal,
-   the rewriting relation, the child primes, the known-log flag once a leaf is a factor-base
-   element); how the frontier is ordered (largest-prime-first, to guarantee the descent strictly
-   reduces — the termination argument). Over-specify lightly: carry what D.C.2's recursion and
-   D.C.3's assembly will read.
-2. **C2 signature & error taxonomy (the cross-track surface):** `solve_dl(g, h, p, k)` — element
-   representation for `g`,`h` (prime-field: `Uint<L>` / `BigInt` mod p; the F_{p^k} element type is
-   the deferred shape), the `ell` / subgroup-order threading, and `SolveDlError` variants
-   (`Unsupported` for k > 1; the descent-failure / size variants are *opened* here, *finalized* at
-   D.C.3 once descent reveals them). This is the freeze E.C consumes — design it for stability.
-3. **Initialization-smoothing parameters:** the medium-prime bound B', the exponent-search strategy
-   and bound, the `threshold_scale` reuse (the G.C toy-scale log-sieve calibration discovery applies).
-4. **k = 1 / k > 1 boundary confirmation:** confirm the prime-field path is complete and the k > 1
-   `Unsupported` stub is clean (no panic, no silent wrong answer) — the deferred-F_{p^k} decision
-   held in implementation.
+Consumes the frozen Track-D contracts (read-only narration) and the G.W code-tour (the parallel to
+mirror). Freezes nothing. Obeys C-Textbook (markup, register).
 
-**KAT (≥1 required, in `gnfs/tests/dl_descent_kat.rs`):** (a) DescentNode construction / frontier
-ordering KAT (largest-prime-first invariant); (b) **initialization-smoothing KAT** — for a toy `h`,
-the search finds an `e` with `g^e·h` B'-smooth, and the recovered frontier primes are correct
-(hand-checked); (c) C2-shape KAT — `solve_dl` with k > 1 returns `SolveDlError::Unsupported`; the
-k = 1 path is wired (may return a partial/stub result pending D.C.2/D.C.3, gated by a KAT that
-asserts the *shape*, not yet the full answer). `cargo test --workspace` green.
+**KAT:** none new (writeup). **Regression gate:** `cargo test --workspace` green — no citation edit
+breaks a referenced code path or an existing DL KAT.
 
-**Subtlety:** the load-bearing judgments are the **C2 cross-track shape** (a wrong signature/error
-taxonomy propagates into E.C — the Opus lever-3 case) and the **descent termination invariant**
-(the frontier ordering that guarantees each descent step strictly reduces the largest prime — set up
-here, exercised in D.C.2). The initialization-smoothing reuses verified machinery, so its risk is
-parameter calibration (B', threshold_scale), not new algebra.
+**Subtlety:** the load-bearing judgment is the **NFS-factoring comparison** (the chapter's reason to
+exist per the ROADMAP — it must be *explicit and structural*, not a passing mention) and **fidelity
+to the frozen contracts** (every signature the chapter narrates must match the in-tree code — a
+code-tour that describes a stale interface is the failure mode). Mechanical otherwise: the §52–§62
+template is frozen and high-quality.
 
-**Deferred:** the special-q descent recursion (D.C.2); log-assembly + subgroup recovery + C2 final
-freeze (D.C.3); the **F_{p^k} extension-field NFS-DL** (k > 1 — its own E.C-prep ROADMAP-then-shard
-session, Discoveries); E.C / the MOV bridge (Track E).
+**Deferred:** the maths chapter + L-notation payoff (D.W.2); the F_{p^k} mathematics (E.C-prep,
+Discoveries); the MOV-bridge / T.E mathematics (Track E).
 
-**`@plan` confirmation (post-landing, T0/Opus, one-shot).** Page a `@plan-juncture` fork to confirm
-the **C-Descent + C2-shape freeze** before D.C.2 is dispatched: (1) the descent substrate is complete
-and consistent (DescentNode, frontier, ordering invariant); (2) the C2 signature + error taxonomy is
-stable and E.C-consumable, with k > 1 cleanly `Unsupported` and the F_{p^k} deferral recorded; (3)
-initialization-smoothing recovers a correct frontier for a known toy `h` (KAT-confirmed); (4) the
-k = 1 / k > 1 boundary held in implementation. One-shot findings; does not implement. Held at **Opus**
-on levers 3+4 (cross-track C2 + correctness), per the header.
+### D.W.2 ◆ — NFS-DL maths chapter (T.D) + L-notation payoff + design-statement verification (Opus, integrative-payoff, `@plan`)
 
-### D.C.2 — Special-q descent recursion (Sonnet, algorithm, sketch)
+**Deliverable:** the NFS-DL maths-first chapter appended to `docs/MATHEMATICS.md` (TOC entry 9,
+"NFS-DL: Discrete Logarithm via the Number Field Sieve"), the maths-first sibling to D.W.1, learnable
+on its own. Mirrors the §GNFS chapter (§1–§8) one phase over. Structure (parallel to §GNFS):
+- **Introduction + through-line** (parallel to §1) — the DLP as a search problem; the structure NFS-DL
+  exploits (smoothness in two number fields + the homomorphism to F_p*); how it escapes the generic
+  √n bound (the C-Textbook through-line).
+- **The number-field bridge for DL** (parallel to §3) — two number fields sharing the rational side;
+  the maps to F_p*; the factor-base / **virtual-logarithm** construction (logs of factor-base
+  elements as the unknowns of an F_ℓ linear system).
+- **Schirokauer maps** (the DL-specific algebra, proof-sketch depth) — the obstruction to
+  principality that the unit group introduces, and the Schirokauer-map correction that the factoring
+  setting (with its quadratic characters) does not need. The clearest single "what's different about
+  DL" moment.
+- **F_ℓ linear algebra** (parallel to §5) — recovering virtual logs as the kernel/solution of a
+  linear system over the prime field F_ℓ (vs GF(2) for factoring); block Wiedemann/Lanczos with the
+  F_ℓ care.
+- **Individual-logarithm special-q descent** (the no-factoring-analogue core) — initialization-
+  smoothing, the special-q descent recursion, log-assembly along the descent tree; subgroup recovery
+  (the log mod ℓ vs mod p−1 note).
+- **§ The L-Notation Complexity of NFS-DL (the designated payoff proof)** (parallel to §7) — **a delta
+  on the §GNFS L_N[1/3, (64/9)^{1/3}] derivation, not a re-derivation**: the relation-collection +
+  linear-algebra balance gives the **same exponent 1/3 and the same constant** as factoring; the DL
+  delta is (a) the individual-logarithm descent is **asymptotically subdominant** (a lower-order term
+  in the L-notation), so it does not change the leading complexity, and (b) the F_ℓ linear algebra
+  carries the same complexity shape as GF(2). The payoff is the *explicit asymptotic comparison*:
+  *why NFS-DL and NFS-factoring share the same L_N[1/3] complexity despite solving different
+  problems* — the structure-based-escape-from-search through-line at its sharpest.
+- **§ Cross-References + References** (parallel to §8 / §GNFS-references) — cite D.W.1 for the code
+  realisation; §GNFS §7 for the shared derivation core; §Prerequisites for the L-notation /
+  Canfield–Erdős–Pomerance engine; §On Scale for the F_{p^k} / toy-scale annotations.
 
-**Deliverable:** the recursive descent that drives every frontier prime down to factor-base leaves.
-Sketch (crisp shape resolved once D.C.1's C-Descent + C2-shape freeze):
-- **Per-node special-q descent.** For each medium prime `q` on the frontier: run a **special-q
-  lattice sieve** rooted at `q` (reuse `special_q_sieve` / `lattice_sieve`,
-  `gnfs/src/sieve/special_q.rs` / `lattice.rs`) to find a relation in which `q` appears alongside
-  *strictly smaller* primes; that relation rewrites `log q` as a combination of the smaller primes'
-  logs. Add the smaller non-factor-base primes as child nodes; recurse.
-- **Termination.** Each step strictly reduces the largest prime in the frontier (the D.C.1 ordering
-  invariant); recursion bottoms out when every leaf is a factor-base element (`fb.rational_index` /
-  `fb.algebraic_index` hits) with a known `VirtualLogTable` entry. Guard against non-termination
-  (a node that fails to descend after a bounded search → `SolveDlError` surfaced, not a loop).
-- Stays at demonstration fidelity (principle-2 annotation: descent-tree breadth and medium-prime
-  bound tuning are NFS-scale).
+**Design-statement verification for the whole NFS-DL arc** (the G.W §59 analogue, the ROADMAP's
+"verified against the actual implementation" role for Track D): principle 1 (algorithmic content
+complete — relation adaptation, F_ℓ linalg, special-q descent all implemented head-on); principle 3
+(no engineering optimisations crept into D.A–D.C); principle 4 (scale-only at demonstration fidelity
+— the descent breadth, medium-prime tuning, and the **F_{p^k} k > 1 `Unsupported` debt** annotated as
+engineering-scale, not mathematical, boundaries). Verdict recorded in the action-frame digest and
+integrated into the ROADMAP Discoveries log at the Phase-γ ◆.
 
-Consumes C-Descent (node/frontier types + the descent entry), C-FactorBase (leaf detection),
-C-LinAlgFl (`VirtualLogTable` for leaf logs), and the Track-G special-q sieve (read-only reuse).
-Freezes nothing new (it is the algorithm session consuming D.C.1's substrate).
+Consumes C-Textbook (obeyed), the §GNFS chapter (parallel + the §7 L-notation template), D.W.1 (cross-
+reference), and the frozen Track-D contracts (read). Freezes nothing (C-Textbook is obeyed, not amended).
 
-**KAT (≥1 required):** (a) **single-node descent KAT** — one medium prime `q` descends to a relation
-over smaller primes (hand-checked); (b) **multi-level descent KAT** — a frontier prime descends
-through ≥2 levels to factor-base leaves; (c) **termination KAT** — a deliberately-undescendable input
-surfaces a `SolveDlError` rather than looping. `cargo test --workspace` green.
+**KAT:** none new (writeup). **Regression gate:** `cargo test --workspace` green.
 
-**Subtlety:** the delicacy (lever 2) is **descent termination + relation selection** (which sieve
-relation to pick at each node so the descent strictly reduces and does not re-introduce a prime
-already descended) and the **special-q reuse seam** (the Track-G sieve was built for relation
-*collection*, not *descent of a specific q* — confirm it can be driven with a fixed target `q` rather
-than scanning a `[q_min, q_max]` range; if it cannot without modification, that is a **contract
-discovery** on the sieve surface, internal-continue if additive, surfaced at the ◆ boundary).
+**Subtlety:** the load-bearing judgments are (1) the **L-notation DL-vs-factoring comparison** — the
+designated payoff, where a subtly-wrong asymptotic claim (e.g. mis-stating the descent cost as
+leading-order, or the F_ℓ vs GF(2) complexity difference) is the silent pedagogical-correctness
+failure the Opus tier guards against; (2) the **delta discipline** (re-using the §GNFS §7 derivation
+rather than re-deriving — rigidity guard); and (3) the **F_{p^k}-deferral annotation depth** — how much
+of the extension-field gap to surface here as a principle-4 annotation vs leave to the T.E chapter
+(decided at the ◆ juncture). This is the **D.W ◆ / Phase-γ boundary** — re-read the Purpose intent and
+verify the whole Track-D arc (D.A → D.B → D.C → D.W) is coherent and that NFS-DL is complete (only
+Track E, the MOV bridge consuming C2, lies beyond) before crossing.
 
-### D.C.3 ◆ — Individual-log assembly + C2 freeze + end-to-end KAT (Sonnet, integrative, sketch)
-
-**Deliverable:** combine the descent tree into `log_g(h)`, finalize C2, close the D.C arc. Sketch:
-- **Log assembly.** Walk the descent tree from leaves (known virtual logs) up to the root,
-  accumulating `log q = Σ (exponent · log child)` mod ℓ at each node, until `log_g(g^e·h)` is known;
-  then `log_g(h) = log_g(g^e·h) − e` mod ℓ (back out the initialization exponent).
-- **Subgroup recovery.** If ℓ is a proper prime factor of the group order (`p−1`), the recovered log
-  is mod ℓ only; the full `log_g(h)` mod (p−1) requires Pohlig–Hellman / CRT across the order's
-  factors. **In-scope at demonstration fidelity** (the toy KAT picks ℓ = p−1 or a single prime
-  factor to keep this clean) **or annotated as deferred** — decided at the boundary. Surface the call.
-- **C2 final freeze.** Finalize `SolveDlError` (the descent-failure / size variants now known from
-  D.C.2) and confirm `solve_dl` end-to-end for k = 1. C2 is now the frozen cross-track interface E.C
-  will consume.
-- **End-to-end toy-F_p individual-log KAT** (◆ vehicle). Recover a *known* `log_g(h)` for an
-  arbitrary toy `h` through the full path: relation collection (D.A) → F_ℓ solve (D.B) →
-  `VirtualLogTable` → initialization (D.C.1) → descent (D.C.2) → assembly, cross-checked against a
-  hand-computed reference and (stub-gated) PARI.
-
-Consumes C-Descent, C-LinAlgFl, C-DLRelation, (PARI oracle). **Freezes C2.** Note: D.C delivers C2
-for the **prime field (k = 1)**; the F_{p^k} extension path is deferred (Discoveries) — C2's k > 1
-returns `Unsupported`, a known debt E.C-prep resolves.
-
-**KAT (≥1 required):** (a) **assembly KAT** — a small hand-built descent tree assembles to the
-correct `log_g(h)` mod ℓ; (b) **end-to-end individual-log KAT** — recover a known toy discrete log
-end-to-end (the ◆ vehicle), hand-checked; (c) PARI cross-check —
-`#[ignore = "PARI not installed; run manually when available"]` stub (matching the established
-`kat_h_pari_oracle` / `kat_pari_dl_oracle` pattern; no feature flag, no subprocess in CI). The
-deterministic non-PARI KATs carry the reproducibility burden. `cargo test --workspace` green.
-
-**Subtlety:** the load-bearing judgments are the **log-assembly correctness** (sign/exponent
-bookkeeping along the descent tree — a sign error gives a plausible-but-wrong log, the silent
-lever-4 failure) and the **subgroup-recovery scope call** (whether toy ℓ = p−1 sidesteps
-Pohlig–Hellman or it is implemented at demonstration fidelity). If assembly reveals the C-Descent
-node shape can't carry what C2 needs, that is a **contract discovery** (additive-reshard) surfaced
-at the ◆ boundary. This is the **D.C ◆ boundary** — re-read the Purpose intent and verify the D.C
-arc (D.C.1 → D.C.2 → D.C.3) is coherent and that Track-D's algorithmic content is complete (D.W
-writeup remains) before crossing toward D.W.
+**`@plan` confirmation (post-landing, T0/Opus, one-shot).** Page a `@plan-juncture` fork at the D.W.2
+◆ to confirm: (1) the L-notation DL payoff is correct and is a *delta* on §GNFS (not a flawed
+re-derivation), with the DL-vs-factoring asymptotic comparison sound; (2) the design-statement
+verification for the whole NFS-DL arc passes on principles 1/3/4 (the G.W §59 analogue); (3) the
+code-tour (D.W.1) and maths chapter (T.D) cross-reference consistently and neither drifts from the
+frozen contracts; (4) the F_{p^k} deferral is annotated as a recorded debt, not silently dropped; (5)
+the Phase-γ ◆ ROADMAP Discoveries integration is identified. One-shot findings; does not implement.
+Held at **Opus** on the designated-payoff flag + the phase-closing design-statement verification, per
+the header.
 
 ---
 
 ## Cross-session contracts
 
-D.C freezes one new internal contract (C-Descent, at D.C.1) and the cross-track **C2** (shape at
-D.C.1, finalized at D.C.3), and reads the frozen Track-G / Track-D contracts. **C2 is cross-track**
-(consumed by E.C) — this is what restores lever 3 and holds the juncture tier at Opus.
+D.W is a **writeup** sub-track: it **freezes no new contract** and **amends none**. The only
+contract-shaped object in scope is **C-Textbook**, which both chapters **obey** (it is already
+frozen). All Track-D code contracts are **read** (narrated), not touched.
 
-### C-Descent — individual-log descent substrate (compiler + KAT) — *frozen D.C.1*
+### C-Textbook — documentation-register contract (prose-enforced) — *frozen T.0 (5c9b783); obeyed, not amended*
 
-**Defined:** D.C.1. **Consumed by:** D.C.2 (recursion drives the frontier), D.C.3 (assembly walks the
-tree). Compiler-enforced (DescentNode / frontier / descent-entry signatures) + KAT-enforced (frontier
-ordering invariant + single-node descent). Sub-track-internal (not consumed outside Track D).
+**Defined:** T.0. **Consumed by:** every textbook chapter, here T.D (D.W.2) and — for register
+consistency — the D.W.1 code-tour. Prose-enforced (the chapters' register is checked at the ◆
+juncture against the contract). **D.W obeys it; it does not flex it.** A chapter that needed to break
+the register (a topic requiring graduate background) would surface that as a discovery and flex
+C-Textbook at the next inflection — D.W has no such need (NFS-DL sits within the undergraduate-plus
+floor the contract sets). The register: audience = undergraduate maths background; depth =
+survey-with-proof-sketch (complete, clinical, not exhaustive, not inscrutable; full proofs only at
+designated payoffs — here the L-notation DL derivation); through-line = structure-based escape from
+search; markup = Markdown + MathJax (`$…$` / `$$…$$`); location = `docs/MATHEMATICS.md` (single-file).
 
-**Frozen interface (`gnfs/src/dl/descent/`):**
+### Frozen contracts read by D.W (narrated, not amended)
 
-```rust
-// ─── DescentTarget ────────────────────────────────────────────────────────────
+The D.W chapters narrate these; none is touched. (Full definitions in the D.C plan's
+Cross-session-contracts section and the source.)
 
-/// A prime or ideal being descended.
-///
-/// For the rational side, this is a prime `p` (represented as `u64`).
-/// For the algebraic side, this is a degree-1 prime ideal `(p, r)` where `f(r) ≡ 0 (mod p)`.
-///
-/// The `norm_contribution` is the prime `p` in both cases — the value that must strictly
-/// decrease at each descent step (the termination invariant).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DescentTarget {
-    /// A rational prime `p`.
-    Rational(u64),
-    /// An algebraic prime ideal `(p, r)` with `f(r) ≡ 0 (mod p)`.
-    Algebraic { p: u64, r: u64 },
-}
-
-impl DescentTarget {
-    /// The prime `p` — the value that must strictly decrease at each descent step.
-    pub fn prime(&self) -> u64;
-}
-
-// Ord implementation: ordered by prime() descending (largest-first for the frontier).
-
-// ─── DescentNode ──────────────────────────────────────────────────────────────
-
-/// A node in the descent tree: a prime/ideal being descended, its rewriting relation,
-/// and references to child nodes.
-///
-/// The descent tree is built top-down: the root is the target `h` (after initialization-
-/// smoothing), interior nodes are medium primes rewritten via special-q descent, and
-/// leaves are factor-base elements with known virtual logs.
-///
-/// # Invariants
-///
-/// - `target.prime() > child.prime()` for all children (strict descent — termination).
-/// - `known_log.is_some()` iff `target` is a factor-base element (leaf node).
-/// - `rewriting_relation.is_some()` iff this is an interior node (not a leaf).
-#[derive(Debug, Clone)]
-pub struct DescentNode<F> {
-    /// The prime/ideal being descended.
-    pub target: DescentTarget,
-
-    /// The DL relation that rewrites `log(target)` as a combination of smaller primes' logs.
-    ///
-    /// `None` for leaf nodes (factor-base elements with known logs).
-    /// `Some(rel)` for interior nodes: the relation from special-q descent.
-    pub rewriting_relation: Option<DLRelation>,
-
-    /// Child nodes: the smaller primes from the rewriting relation.
-    ///
-    /// Empty for leaf nodes. For interior nodes, each child's `target.prime()` is strictly
-    /// less than `self.target.prime()` (the termination invariant).
-    pub children: Vec<DescentNode<F>>,
-
-    /// The known virtual log of this target, if it is a factor-base element.
-    ///
-    /// `Some(log)` for leaves (looked up from `VirtualLogTable`).
-    /// `None` for interior nodes (computed during assembly by combining children's logs).
-    pub known_log: Option<F>,
-}
-
-// ─── DescentFrontier ──────────────────────────────────────────────────────────
-
-/// The frontier of medium primes awaiting descent: a max-heap ordered by prime (largest-first).
-///
-/// The largest-first ordering is the termination invariant: each descent step pops the
-/// largest prime `q` from the frontier, finds a relation rewriting `q` as smaller primes,
-/// and pushes those smaller primes back onto the frontier. Since each step strictly reduces
-/// the largest prime, the descent terminates when all frontier elements are factor-base
-/// leaves.
-///
-/// # Type parameter
-///
-/// `F` is the field element type for virtual logs (e.g., `FpNaive4`).
-pub struct DescentFrontier<F> {
-    /// Max-heap of (target, partial_node) pairs, ordered by target.prime() descending.
-    heap: BinaryHeap<(DescentTarget, DescentNode<F>)>,
-}
-
-impl<F> DescentFrontier<F> {
-    /// Create an empty frontier.
-    pub fn new() -> Self;
-
-    /// Push a target onto the frontier with an initial (leaf-candidate) node.
-    pub fn push(&mut self, target: DescentTarget, node: DescentNode<F>);
-
-    /// Pop the largest-prime target from the frontier.
-    ///
-    /// Returns `None` if the frontier is empty.
-    pub fn pop_largest(&mut self) -> Option<(DescentTarget, DescentNode<F>)>;
-
-    /// Returns `true` if the frontier is empty (all targets descended to leaves).
-    pub fn is_empty(&self) -> bool;
-
-    /// The number of targets remaining on the frontier.
-    pub fn len(&self) -> usize;
-}
-
-// ─── Entry signatures ─────────────────────────────────────────────────────────
-
-/// Initialize the descent frontier by finding an exponent `e` such that `g^e · h` is
-/// B'-smooth over medium primes.
-///
-/// This is the first descent step: randomized search over exponents `e` for one where
-/// the number-field lift of `g^e · h` factors into medium primes (primes > factor-base
-/// bound but ≤ B'). The medium primes become the initial descent frontier.
-///
-/// # Arguments
-///
-/// - `g`: Generator of the multiplicative group (as `BigInt` mod p).
-/// - `h`: Target element (as `BigInt` mod p).
-/// - `p`: The prime modulus.
-/// - `poly`: The NFS polynomial pair (for norm computation).
-/// - `fb`: The factor base (for leaf detection).
-/// - `medium_bound`: The medium-prime bound B' (primes ≤ B' are considered smooth).
-/// - `max_attempts`: Maximum exponent-search iterations before giving up.
-///
-/// # Returns
-///
-/// `Ok((e, frontier))` where `e` is the smoothing exponent and `frontier` is the initial
-/// descent frontier (the medium primes of `g^e · h`).
-///
-/// `Err(InitSmoothingError)` if no smooth exponent is found within `max_attempts`.
-pub fn init_descent_frontier<F: Fp<L>, const L: usize>(
-    g: &BigInt,
-    h: &BigInt,
-    p: &BigInt,
-    poly: &PolyPair,
-    fb: &FactorBase,
-    medium_bound: u64,
-    max_attempts: u64,
-) -> Result<(BigInt, DescentFrontier<F>), InitSmoothingError>;
-
-/// Descend a single frontier node: find a relation rewriting `target` as smaller primes.
-///
-/// Runs a special-q sieve rooted at `target.prime()` to find a relation in which `target`
-/// appears alongside strictly smaller primes. The relation rewrites `log(target)` as a
-/// combination of the smaller primes' logs.
-///
-/// # Arguments
-///
-/// - `target`: The prime/ideal to descend.
-/// - `poly`: The NFS polynomial pair.
-/// - `fb`: The factor base (for leaf detection).
-/// - `sieve_config`: Special-q sieve parameters.
-/// - `nf`: The number field (for Schirokauer map).
-/// - `ell`: The subgroup order ℓ.
-/// - `schirokauer_ideals`: Prime ideals above ℓ for the Schirokauer map.
-///
-/// # Returns
-///
-/// `Ok(node)` with `node.rewriting_relation = Some(rel)` and `node.children` populated.
-///
-/// `Err(DescentStepError)` if no suitable relation is found within the sieve bounds.
-///
-/// # Contract note
-///
-/// D.C.2 implements this function. The signature is frozen at D.C.1; the body is D.C.2's
-/// deliverable.
-pub fn descend_node<'a, F: Fp<L>, const L: usize>(
-    target: DescentTarget,
-    poly: &PolyPair,
-    fb: &FactorBase,
-    sieve_config: &SpecialQConfig,
-    nf: &'a NumberField,
-    ell: &BigInt,
-    schirokauer_ideals: &[PrimeIdeal<'a>],
-) -> Result<DescentNode<F>, DescentStepError>;
-
-// ─── Error types ──────────────────────────────────────────────────────────────
-
-/// Error from initialization-smoothing.
-#[derive(Debug, Clone)]
-pub enum InitSmoothingError {
-    /// No smooth exponent found within the attempt limit.
-    NoSmoothExponent { attempts: u64 },
-}
-
-/// Error from a single descent step.
-#[derive(Debug, Clone)]
-pub enum DescentStepError {
-    /// No relation found that rewrites the target as smaller primes.
-    NoRelationFound { target: DescentTarget },
-    /// The sieve produced relations, but none strictly reduced the largest prime.
-    NoStrictReduction { target: DescentTarget },
-}
-```
-
-**Design notes (for D.C.1 implementor):**
-
-- `DescentTarget` distinguishes rational primes from algebraic ideals; both carry the prime `p`
-  that must strictly decrease (the termination invariant).
-- `DescentNode<F>` is generic over the field element type `F` (e.g., `FpNaive4`) so that
-  `known_log` can hold the virtual log in the correct field.
-- `DescentFrontier<F>` is a max-heap ordered by `target.prime()` descending — popping always
-  yields the largest prime, ensuring each descent step strictly reduces the maximum.
-- `init_descent_frontier` returns the smoothing exponent `e` alongside the frontier; D.C.3's
-  assembly needs `e` to compute `log_g(h) = log_g(g^e · h) − e`.
-- `descend_node` is the D.C.2 entry point; D.C.1 declares the signature, D.C.2 implements.
-- The special-q sieve reuse seam (Discoveries): `descend_node` will need to drive the sieve at
-  a fixed target `q` that may not be in the factor base. D.C.2 resolves this — either the
-  existing `special_q_sieve` can be parameterized, or a thin wrapper is added. This is an
-  anticipated additive discovery, not a destructive change to the frozen G.C sieve contract.
-
-### C2 — NFS-DL solver interface (compiler + KAT) — *shape opened D.C.1, frozen D.C.3*
-
-**Defined:** D.C (shape D.C.1, finalized D.C.3). **Consumed by:** E.C (MOV bridge — Track E). This is
-the project's most-visible cross-track contract (ROADMAP Contract C2). Compiler-enforced (the
-`solve_dl` signature + `SolveDlError`) + KAT-enforced (end-to-end individual log, k = 1).
-
-**Frozen interface (`gnfs/src/dl/descent/solve.rs`):**
-
-```rust
-use num_bigint::BigInt;
-
-// ─── solve_dl ─────────────────────────────────────────────────────────────────
-
-/// Compute the discrete logarithm log_g(h) in F_{p^k}* via NFS-DL.
-///
-/// Returns `x` such that `g^x ≡ h (mod p^k)` in the subgroup of order `ell`, or an error
-/// if the computation fails.
-///
-/// # Arguments
-///
-/// - `g`: Generator of the multiplicative group, as a `BigInt` in `[1, p^k)`.
-/// - `h`: Target element, as a `BigInt` in `[1, p^k)`.
-/// - `p`: The prime base of the field.
-/// - `k`: The extension degree. `k = 1` is the prime field F_p; `k > 1` is F_{p^k}.
-/// - `ell`: The subgroup order (a prime dividing `p^k − 1`). The returned log is mod `ell`.
-///
-/// # Returns
-///
-/// `Ok(x)` where `x ∈ [0, ell)` and `g^x ≡ h (mod p^k)`.
-///
-/// `Err(SolveDlError)` if the computation fails (see error variants).
-///
-/// # Scope (D.C.1 freeze)
-///
-/// - **k = 1 (prime field F_p):** Fully implemented. The NFS-DL pipeline (relation collection,
-///   F_ℓ linear algebra, virtual-log table, initialization-smoothing, special-q descent,
-///   log assembly) is exercised end-to-end.
-/// - **k > 1 (extension field F_{p^k}):** Returns `SolveDlError::Unsupported`. The F_{p^k}
-///   extension is genuine new mathematics (tower number-field setup) deferred to an E.C-prep
-///   session before the MOV bridge. This is a recorded debt (Discoveries), not a silent gap.
-///
-/// # Threading note
-///
-/// The `ell` parameter threads the subgroup order through the entire pipeline: the F_ℓ linear
-/// algebra, the virtual-log table, and the descent all operate mod `ell`. The returned log is
-/// in `[0, ell)`. If the full group order `p^k − 1` is needed, the caller applies Pohlig–Hellman
-/// / CRT across the order's prime factors (out of D.C scope; see D.C.3 subgroup-recovery note).
-pub fn solve_dl(
-    g: &BigInt,
-    h: &BigInt,
-    p: &BigInt,
-    k: usize,
-    ell: &BigInt,
-) -> Result<BigInt, SolveDlError>;
-
-// ─── SolveDlError ─────────────────────────────────────────────────────────────
-
-/// Error type for `solve_dl`.
-///
-/// The error taxonomy is **opened at D.C.1** (shape frozen) and **finalized at D.C.3** (once
-/// descent reality reveals the actual failure modes). D.C.2/D.C.3 may add variants; E.C
-/// consumes the finalized taxonomy.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SolveDlError {
-    /// Extension field F_{p^k} (k > 1) is not yet supported.
-    ///
-    /// The F_{p^k} NFS-DL extension is deferred to an E.C-prep session. This variant is
-    /// returned immediately for k > 1 without attempting any computation.
-    Unsupported { k: usize },
-
-    /// Initialization-smoothing failed: no exponent `e` found such that `g^e · h` is smooth.
-    ///
-    /// This can occur for pathological inputs or if the medium-prime bound / attempt limit
-    /// is too restrictive. The caller may retry with relaxed parameters.
-    InitSmoothingFailed {
-        /// Number of exponents tried before giving up.
-        attempts: u64,
-    },
-
-    /// Descent failed: a medium prime could not be rewritten as smaller primes.
-    ///
-    /// This occurs when the special-q sieve fails to find a suitable relation for some
-    /// frontier prime within the sieve bounds. At toy scale, this may indicate the sieve
-    /// region is too small; at NFS scale, it is rare for well-chosen parameters.
-    DescentFailed {
-        /// The prime that could not be descended.
-        stuck_prime: u64,
-    },
-
-    // ─── Variants to be finalized at D.C.3 ────────────────────────────────────
-    //
-    // The following are placeholders for failure modes that D.C.2/D.C.3 may reveal:
-    //
-    // - `RelationCollectionFailed`: not enough relations for the F_ℓ linear system.
-    // - `LinearAlgebraFailed`: the F_ℓ solver did not converge.
-    // - `AssemblyFailed`: log assembly produced an inconsistent result.
-    //
-    // These are not declared now because the D.C.1 substrate does not exercise them;
-    // D.C.3 finalizes the taxonomy once the full pipeline is integrated.
-}
-
-impl std::fmt::Display for SolveDlError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Unsupported { k } => {
-                write!(f, "extension field F_{{p^{k}}} (k > 1) not yet supported")
-            }
-            Self::InitSmoothingFailed { attempts } => {
-                write!(f, "initialization-smoothing failed after {attempts} attempts")
-            }
-            Self::DescentFailed { stuck_prime } => {
-                write!(f, "descent failed: could not rewrite prime {stuck_prime}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for SolveDlError {}
-```
-
-**Design notes (for D.C.1 implementor and E.C consumer):**
-
-- **Element representation:** `g` and `h` are `&BigInt` — the canonical representation for
-  arbitrary-precision integers. For k = 1, these are elements of F_p* (integers in `[1, p)`).
-  For k > 1 (deferred), the representation would need to encode F_{p^k} elements; the `BigInt`
-  signature is forward-compatible (a polynomial over F_p can be serialized as a BigInt via
-  coefficient packing, or the signature can be extended with a type parameter at E.C-prep).
-- **ℓ threading:** The `ell` parameter is explicit in the signature. The entire pipeline
-  (F_ℓ linear algebra, virtual-log table, descent) operates mod ℓ. The returned log is in
-  `[0, ell)`. Pohlig–Hellman / CRT for the full group order is out of D.C scope.
-- **Error taxonomy:** `Unsupported`, `InitSmoothingFailed`, `DescentFailed` are frozen at D.C.1.
-  D.C.3 may add variants for relation-collection / linear-algebra / assembly failures once the
-  full pipeline is integrated. The taxonomy is **additive** (new variants, not changed existing
-  ones) — E.C can pattern-match on the D.C.1 variants and handle new D.C.3 variants via a
-  catch-all or explicit extension.
-- **k > 1 returns immediately:** The `Unsupported` check is the first thing `solve_dl` does;
-  no NFS-DL machinery is invoked for k > 1. This is a clean stub, not a panic or silent failure.
-
-**Scope at freeze:** prime field (k = 1) live; F_{p^k} (k > 1) `Unsupported` — a recorded debt
-(Discoveries), not a silent gap. E.C must not be implemented against a PARI stub permanently
-(ROADMAP); the k > 1 path is built in a deliberate E.C-prep session before the MOV climax.
-
-### Frozen contracts read by D.C (not amended)
-
-- **C-LinAlgFl** — F_ℓ block-solver substrate; provides `VirtualLogTable { rational_logs,
-  algebraic_logs }` (`gnfs/src/dl/linalg/blockvec_fl.rs`) and `recover_virtual_logs` — *frozen D.B.1
-  (652cfa6)*. D.C reads the virtual-log table for descent leaves.
-- **C-DLRelation** — `DLRelation` + `DLMatrix` (`collect_dl_relations`, `from_relations`, `num_cols`,
-  rational|algebraic|Schirokauer column layout) — *frozen D.A.1 (f2dbf0a), assembled D.A.2
-  (651c17e)*. D.C reuses relation collection for descent relations.
-- **C-Schirokauer** — Schirokauer map (`schirokauer` / `compute_schirokauer`, `PrimeIdeal`) —
-  *frozen D.A.1 (f2dbf0a)*. The descent's medium-prime relations carry Schirokauer columns; assembly
-  accounts for them.
-- **C-FactorBase** — `FactorBase` (`rational_primes`, `algebraic_ideals`, `rational_index`,
-  `algebraic_index`, `AlgebraicPrime`) — *frozen G.C.1 (c1dc0b6)*. Leaf detection (is this prime in
-  the factor base?) keys on the index lookups.
-- **Special-q / lattice sieve** — `special_q_sieve`, `lattice_sieve`, `SpecialQConfig`,
-  `SpecialQResult` (`gnfs/src/sieve/special_q.rs`, `lattice.rs`) — *frozen G.C (toy-scale)*. **Read /
-  reuse** for per-node descent. D.C.2 confirms the sieve can be driven at a fixed target `q` (a
-  possible additive contract discovery on the sieve surface).
-- **C1** — `shared::numth` smoothness (`trial_smooth`, `SmoothWitness`, `Uint<4>`,
-  `norm_to_uint`) — *frozen α.2 / width-policy D.A*. The initialization-smoothing and per-node
-  descent reuse `trial_smooth`. **Width not in D.C's surface** (D.C touches FB indices, F_ℓ logs,
-  special-q ideals); the ROADMAP width policy is untouched.
-- **`Fp<L>` (`shared-field`)** — prime-field trait (`FpNaive4`); the F_ℓ logs live here — *Phase α
-  substrate*. `bigint_to_fp` (D.B.1) reused where a `BigInt` log re-enters `Fp`.
-
-(Plus the remaining frozen Track-G / Track-D contracts — C-NF, C-Ideal, C-Res, C-Dedekind, C-Score,
-C-Matrix, C-LinAlg, C-AlgSqrt — read where relevant but not foregrounded in D.C.)
+- **C2** — NFS-DL solver interface (`solve_dl(g, h, p, k, ell) -> Result<BigInt, SolveDlError>`;
+  `gnfs/src/dl/descent/solve.rs`) — *frozen D.C.3 (9d07c51)*. The cross-track interface E.C consumes;
+  the code-tour narrates its shape and the k > 1 `Unsupported` debt; the maths chapter annotates the
+  F_{p^k} deferral.
+- **C-Descent** — individual-log descent substrate (`DescentNode`, `DescentFrontier`,
+  `init_descent_frontier`, `descend_node`, `run_descent`; `gnfs/src/dl/descent/`) — *frozen D.C.1
+  (1651993)*. Narrated as the no-factoring-analogue stage.
+- **C-LinAlgFl** — F_ℓ block-solver substrate (`VirtualLogTable`, `recover_virtual_logs`;
+  `gnfs/src/dl/linalg/blockvec_fl.rs`) — *frozen D.B.1 (652cfa6)*. Narrated as the F_ℓ-vs-GF(2) stage.
+- **C-DLRelation** — `DLRelation` + `DLMatrix` (`collect_dl_relations`, the rational|algebraic|
+  Schirokauer column layout; `gnfs/src/dl/relation.rs`) — *frozen D.A.1 (f2dbf0a)*.
+- **C-Schirokauer** — the Schirokauer map (`schirokauer` / `compute_schirokauer`, `PrimeIdeal`;
+  `gnfs/src/dl/schirokauer.rs`) — *frozen D.A.1 (f2dbf0a)*. The maths chapter's "what's different
+  about DL" payoff-adjacent section.
+- **The G.W code-tour (§52–§62) and the §GNFS maths chapter (§1–§8, incl. the §7 L-notation
+  derivation)** — *frozen at G.W (76f3633) / T.G (a896198)*. The **templates** D.W.1 and D.W.2 mirror
+  one phase over, and the L-notation derivation D.W.2 takes a delta on.
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
-names contracts this session locked. The D.C.1 `@plan` confirmation is not a ledger row (a paged fork
-with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
+names contracts this session locked. The D.W.2 ◆ `@plan` confirmation is not a separate ledger row (a
+paged fork with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest and
+the ROADMAP Discoveries log.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | done | 1651993 | C-Descent (frozen), C2 (shape opened) |
-| D.C.2 | Special-q descent recursion | done | 52ee232 | — (sieve seam resolved additively in recurse.rs; solve.rs stub replaced) |
-| D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | done | 9d07c51 | C2 (frozen — SolveDlError taxonomy: Unsupported, InitSmoothingFailed, DescentFailed) |
+| D.W.1 | NFS-DL code-tour chapter (PEDAGOGY.md §63+) + NFS-factoring comparison | pending | — | — (writeup; freezes nothing) |
+| D.W.2 ◆ | NFS-DL maths chapter (T.D) + L-notation payoff + Track-D design-statement verification | pending | — | — (writeup; obeys C-Textbook, freezes nothing) |
 
-Contracts frozen before this sub-track (read by D.C): C-NF (bdba6f5 / extended 20cd263), C-Ideal
-(05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
-C-Score (00aa32d), C-Matrix (a0e854b), C-LinAlg (416f6db), C-AlgSqrt (c80a855 + ec69a1f), C1 (α.2),
-C-Textbook (5c9b783), C-Schirokauer (f2dbf0a), C-DLRelation (f2dbf0a), C-LinAlgFl (652cfa6). This
-sub-track continues Phase γ over the frozen GNFS pipeline and the D.A/D.B DL substrate, and freezes
-one new internal contract (C-Descent, D.C.1) plus the cross-track **C2** (shape D.C.1, frozen D.C.3).
+Contracts frozen before this sub-track (read by D.W): C-NF (bdba6f5 / 20cd263), C-Ideal (05b27c8),
+C-Res (bcd63cd), C-Dedekind (7844773), C-Relation / C-FactorBase (c1dc0b6), C-Score (00aa32d),
+C-Matrix (a0e854b), C-LinAlg (416f6db), C-AlgSqrt (c80a855 + ec69a1f), C1 (α.2), C-Textbook (5c9b783),
+C-Schirokauer / C-DLRelation (f2dbf0a), C-LinAlgFl (652cfa6), C-Descent (1651993), C2 (9d07c51). This
+sub-track is the Phase-γ writeup over the now-complete NFS-DL pipeline; **it freezes no new contract.**
 
 ---
 
 ## Action-frame digest
 
-### D.C.3 — 2026-06-09
-Discovery/flex: C2 taxonomy confirmed sufficient with D.C.1 variants (no new failure modes from D.C.2 descent); C2 frozen at 9d07c51.
-Affected: C2 (frozen — final taxonomy: Unsupported, InitSmoothingFailed, DescentFailed)
-Deferred: no — subgroup recovery (Pohlig-Hellman for full log mod p-1) documented as out-of-scope; toy KAT uses ell=5 (prime factor of p-1=10), log recovered mod 5 only. solve_dl_full is the context-bearing variant; frozen C2 solve_dl signature unchanged.
-Texture: Assembly uses flat completed-list from run_descent in reverse order; multiplicity encoded in children list (one child per unit of exponent). SolveDlContext bundles poly/fb/vtable/sieve_cfg for the full pipeline without changing the frozen C2 signature.
-
-### D.C.1 — 2026-06-09
-Discovery/flex: Inflection-design juncture resolved C-Descent and C2 interfaces; design-confident verdict, self-continued.
-Affected: C-Descent (frozen 1651993), C2 (shape opened, taxonomy to finalize at D.C.3)
-Deferred: no — special-q sieve reuse seam (fixed-target-q vs range-scan) remains an anticipated additive discovery for D.C.2, already documented in Discoveries & risks.
-Texture: init_descent_frontier uses option-C (no FactorBase dependency at D.C.1 — trial-divides g^e*h mod p by all primes up to medium_bound); DescentFrontier uses HeapEntry<F> wrapper to avoid F: Ord bound on BinaryHeap.
+*(none yet)*
 
 ---
 
@@ -722,98 +339,78 @@ Texture: init_descent_frontier uses option-C (no FactorBase dependency at D.C.1 
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **C2 scoped to the prime field F_p (k = 1); F_{p^k} extension deferred (decided at D.C sharding,
-  2026-06-08).** D.B's virtual-log pipeline solves DL in **F_p** (the D.B.2 end-to-end KAT is p = 11,
-  prime field). The ROADMAP C2 signature is `solve_dl(g, h: F_pk_element, p, k)` — DL in **F_{p^k}**
-  (E.C's MOV bridge lands ECDLP in an extension field). Extending NFS-DL from F_p to F_{p^k} is
-  *genuine new mathematics* (extension-field / tower number-field setup) D.B's substrate does not
-  support. *Decision:* D.C freezes the **C2 signature in its full F_{p^k} shape** (so E.C's call site
-  is stable) but implements only the **k = 1 (prime-field) path**; k > 1 returns
-  `SolveDlError::Unsupported`. The F_{p^k} extension is its own deliberate **E.C-prep
-  ROADMAP-then-shard session** before the MOV climax — the same "freeze the interface/trigger, defer
-  the generality" discipline as the C1 width policy. *Tradeoff named:* E.C will need the k > 1 path
-  built before the MOV bridge can call a *real* solver (the ROADMAP forbids a permanent PARI stub at
-  E.C) — a **known, surfaced debt**, not a silent gap. **internal-continue** within D.C scope;
-  building the F_{p^k} path here is **defocus** (additive-reshard at most, never inline). A genuine
-  discovery that the C2 *signature* itself can't accommodate F_{p^k} cleanly (not just the body) is
-  an **additive-reshard** at the D.C.1 `@plan` freeze, surfaced to the human.
+- **D.W freezes nothing; the discovery surface is documentation fidelity, not contract drift.** A D.W
+  session "discovering" that a frozen contract's narrated shape is wrong means the *chapter* is wrong
+  (fix the prose — **internal-continue**), not that the contract changed. A genuine discovery that an
+  in-tree contract is itself broken (a code bug the writeup exposes) is **additive** at most (a fix
+  session), and a *destructive* edit to a frozen Track-D contract to make a chapter's claim true is a
+  **destructive-HALT** — the writeup documents the code, never the reverse.
 
-- **C2 shape opens at D.C.1, error taxonomy freezes at D.C.3 (not all at D.C.1).** The cross-track
-  C2 *signature* freezes at D.C.1 (E.C's call site stability), but the `SolveDlError` *taxonomy*
-  (descent-failure / size variants) is genuinely known only after D.C.2's descent runs. Freezing the
-  full taxonomy at D.C.1 would risk a freeze D.C.2/D.C.3 must reopen. **internal-continue:** the
-  shape/taxonomy split is deliberate; a taxonomy addition at D.C.3 is **additive** (C2 is D.C's own
-  until E.C consumes it), not a destructive reopen.
+- **F_{p^k} extension deferral — annotate, do not resolve (decided at D.C, carried into D.W).** C2's
+  k > 1 path returns `Unsupported`; the F_{p^k} NFS-DL extension is genuine new mathematics deferred
+  to an E.C-prep ROADMAP-then-shard session. In D.W this is an **annotation target**, not a work item:
+  the code-tour notes the debt; the maths chapter (T.D) carries a principle-4 annotation
+  (engineering-/mathematical-dimension-scale boundary, not a toy-scale artifact). Writing the F_{p^k}
+  mathematics *here* is **defocus** — internal-continue only within the annotation scope. The depth of
+  the annotation (how much of the extension-field picture to sketch vs leave to T.E) is the one open
+  judgment, resolved at the D.W.2 ◆ juncture.
 
-- **Special-q sieve reuse seam (resolve at D.C.2).** The Track-G `special_q_sieve` was built for
-  relation *collection* (scan `[q_min, q_max]`), not *descent of a specific `q`*. D.C.2's per-node
-  descent needs to drive the sieve at a **fixed target `q`**. If the existing entry supports this
-  (or a thin wrapper does), **internal-continue**. If it needs a genuine signature change to the
-  Track-G sieve surface, that is an **additive** contract discovery surfaced at the ◆ boundary —
-  never a destructive edit to the frozen G.C sieve contract (an inline change that breaks the G.C
-  sieve KATs is a **destructive-HALT**).
+- **L-notation DL derivation is a delta, not a re-derivation (rigidity guard, D.W.2).** The §GNFS §7
+  chapter already derives L_N[1/3, (64/9)^{1/3}] in full. T.D must **re-use** it: same exponent, same
+  constant; the DL content is descent-cost-subdominance + the F_ℓ-vs-GF(2) linear-algebra shape.
+  Re-deriving the exponent from scratch is rigidity (wasted Opus budget on settled mathematics);
+  **internal-continue** is to write the delta and cross-reference §7. A genuine finding that the DL
+  complexity *differs* from factoring at leading order (it does not, at this fidelity) would be a real
+  discovery — surface it, do not paper over it.
 
-- **Descent termination is the delicacy (lever 2, D.C.2).** Special-q descent must strictly reduce
-  the largest prime at each step and not loop. The frontier-ordering invariant (largest-first, set
-  at D.C.1) is the termination argument; a node that fails to descend within a bounded search
-  surfaces `SolveDlError::DescentFailed`, never an infinite loop. A toy instance where descent
-  legitimately cannot terminate (no relation found) is **internal-continue** (a clean error), not a
-  contract break.
+- **Code-tour ↔ maths-chapter consistency (D.W.1 → D.W.2).** The two siblings must cross-reference and
+  not drift (the G.W↔T.G consistency requirement, one phase over). D.W.1 fixes the structure D.W.2
+  cites; if D.W.2 finds the code-tour's stage decomposition awkward for the maths narrative, adjusting
+  the *maths chapter's* framing is **internal-continue**; reopening D.W.1 to re-structure the code-tour
+  is an **additive-reshard** (a small follow-on), surfaced at the ◆.
 
-- **Subgroup recovery scope (decide at D.C.3 ◆).** The descent recovers `log_g(h)` **mod ℓ**. If ℓ
-  is a proper factor of `p−1`, the full log mod (p−1) needs Pohlig–Hellman / CRT. **In-scope at
-  demonstration fidelity** (or the toy KAT picks ℓ = p−1 to sidestep it) — decided at the boundary.
-  Deferring full-order recovery with a principle-4 annotation is **internal-continue**; it is not a
-  contract break (C2 returns the log in the target subgroup, documented).
+- **Phase-γ ◆ is a ROADMAP-frame event (design-statement verification + Discoveries integration).**
+  D.W.2 ◆ closes Track D / Phase γ. Per the ROADMAP, a phase-closing design-statement verification and
+  the Discoveries-log integration are **inflection-point Opus** work (the G.W precedent) — this is why
+  the ◆ carries an `@plan` Opus juncture, not default cadence. The juncture's verdict (principles
+  1/3/4 for the whole NFS-DL arc) is integrated into the ROADMAP at the boundary, not mid-session.
 
-- **No F_{p^k}, no E.C in D.C (defocus guard).** D.C stops at a prime-field individual logarithm and
-  the C2 shape. The F_{p^k} extension-field solver and the E.C MOV bridge are **out of D.C**.
-  Implementing either here is **defocus** — internal-continue only within D.C scope.
-
-- **PARI oracle gating (resolved policy, D.A boundary — apply uniformly).** D.C.3's individual-log
-  KAT cross-checks against PARI's discrete log. Per the resolved project-wide policy: oracles are
-  **absent-by-default, opt-in, skip cleanly** — the PARI KAT is `#[ignore = "PARI not installed;
-  run manually when available"]` (matching the `kat_h_pari_oracle` / `kat_pari_dl_oracle` stubs: no
-  feature flag, no subprocess in CI), and a deterministic non-PARI KAT carries the reproducibility
-  burden. No new policy decision is owed.
+- **No new KATs, regression-gate only (writeup invariant).** D.W adds no KATs (G.W §62 precedent:
+  the integrative chapter adds none). The gate's role is to confirm no doc edit breaks a referenced
+  code path. A "discovery" that a cited KAT fails is a real regression — **HALT and surface**, not a
+  prose fix.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (the D.C spec under Phase γ — "Individual logarithm + special-q descent";
-  **Contract C2** — the NFS-DL solver interface this sub-track freezes, consumed by E.C; **Contract
-  C1 → Width policy** to confirm D.C does not touch the smoothness width) and this PLAN before any
-  session.
-- Read the substrate D.C consumes: `gnfs/src/dl/linalg/blockvec_fl.rs` (`VirtualLogTable`,
-  `recover_virtual_logs`, `FlSolution`), `gnfs/src/dl/relation.rs` (`DLMatrix`, `collect_dl_relations`,
-  `num_cols`), `gnfs/src/dl/schirokauer.rs` (the Schirokauer map, `PrimeIdeal`), `gnfs/src/dl/mod.rs`
-  (`DLRelation`, the `mod.rs:85` descent hook), `gnfs/src/sieve/factor_base.rs` (`FactorBase`,
-  `rational_index` / `algebraic_index`, `AlgebraicPrime`), `gnfs/src/sieve/special_q.rs` +
-  `gnfs/src/sieve/lattice.rs` (the special-q / lattice sieve to reuse for descent),
-  `gnfs/src/sieve/mod.rs:259` (`Relation::new` — the factor-over-the-factor-base pattern),
-  `shared/numth/src/smooth.rs` (`trial_smooth`, `SmoothWitness`). The G.C sieving and D.B linalg
-  PEDAGOGY/MATHEMATICS sections give the mathematical background; the NFS-DL writeup is D.W (later,
-  paired with T.D) — **no PEDAGOGY chapter in D.C**.
-- **Register:** D.C is **code** (Rust, `STYLE-CODE-RUST.md`), with KATs in `gnfs/tests/*_kat.rs`
-  following the existing naming convention (`dl_descent_kat.rs`, `dl_individual_log_kat.rs`).
-- **Tier routing:** **D.C.1 is Opus** (`@build` on Opus, per the ROADMAP Opus-flagged table —
-  "D.C.1 special-q descent design"); **D.C.2 and D.C.3 are Sonnet**. D.C.1 carries one `@plan`
-  marker: a T0/Opus post-landing C-Descent + C2-shape freeze confirmation (page `@plan-juncture`)
-  before D.C.2 is dispatched — held at Opus on **levers 3+4** (cross-track C2 + correctness). The
-  juncture-tier (header) is **opus** on the same lever-3+4 call.
-- **Invariants to preserve:** all Track-G code contracts and the D.A/D.B DL contracts (C-Schirokauer,
-  C-DLRelation, C-LinAlgFl, C-FactorBase, the special-q sieve) are **frozen** — D.C reads and reuses
-  them; it amends none. **The Track-G special-q sieve stays untouched** (reuse, not modify — a
-  needed signature change is an additive discovery, not an inline edit; breaking the G.C sieve KATs
-  is a destructive-HALT). **C1 `Uint<4>` stays as-is** (not in D.C's surface). New contracts: C-Descent
-  (D.C.1, internal) and C2 (D.C.1 shape → D.C.3 freeze, cross-track).
-- **PARI remains a dev-only oracle**, never on a build path; the project-wide gating policy is
-  resolved (D.A boundary) — apply the `#[ignore]` stub pattern uniformly.
-- Suggested first invocation: **`/run-plan docs/PLAN.md`** (default cadence). The two `@plan`/◆
-  junctures already force the halts that matter — the **D.C.1 C-Descent + C2-shape freeze
-  confirmation** (before D.C.2 consumes it) and the **D.C.3 ◆ C2 final freeze + sub-track close** —
-  so no additional boundary halts beyond those preconditioned ones are needed. *(Tradeoff: this is
-  one notch less conservative than D.B's `halt-at-boundaries`; it is justified because the two
-  cross-track-critical freezes are already `@plan`-gated, and the descent pattern, while new, is
-  exercised against a mature test suite — lever 5 strong.)*
+- Read `docs/ROADMAP.md` (Phase γ — "D.W — NFS-DL writeup"; Phase τ — the chapter-pairing rule and the
+  **C-Textbook** scope contract every chapter obeys; the "On scale" section feeding the principle-4
+  annotations) and this PLAN before any session.
+- Read the **templates to mirror**: `gnfs/docs/PEDAGOGY.md` §52–§62 (the G.W integrative code-tour —
+  D.W.1's one-phase-over model) and `docs/MATHEMATICS.md` §GNFS §1–§8 incl. the §7 L-notation
+  derivation (the T.G maths chapter — D.W.2's model and the derivation D.W.2 deltas on). Read the
+  **frozen substrate D.W narrates**: `gnfs/src/dl/relation.rs`, `gnfs/src/dl/schirokauer.rs`,
+  `gnfs/src/dl/linalg/blockvec_fl.rs`, `gnfs/src/dl/descent/` (node, recurse, solve), and the existing
+  DL KATs (`gnfs/tests/dl_descent_kat.rs`, `gnfs/tests/dl_individual_log_kat.rs`).
+- **Register:** D.W is **documentation** (Markdown + MathJax, `STYLE-DOC.md`), obeying **C-Textbook**.
+  The code-tour is code-first (cites the maths chapter); the maths chapter is maths-first (learnable
+  on its own). 100-char wrap, MathJax for non-trivial display math, Unicode glyphs for trivial inline.
+- **Tier routing:** **D.W.1 is Sonnet** (code-tour against frozen contracts — mechanical, lever-3/4
+  low). **D.W.2 is Opus** (`@build` on Opus) — the ROADMAP-designated L-notation payoff + the
+  phase-closing design-statement verification. D.W.2 carries the single `@plan` marker: a T0/Opus
+  ◆-boundary juncture (page `@plan-juncture`) ratifying the payoff and the whole-Track-D verification
+  before Phase γ is closed. The juncture-tier (header) is **opus** on the same designated-payoff +
+  design-statement-verification call.
+- **Invariants to preserve:** **all Track-D and Track-G code contracts are frozen — D.W reads and
+  narrates them; it amends none.** No new code, no new KATs. The writeup documents the code, never the
+  reverse (a destructive contract edit to satisfy a chapter claim is a destructive-HALT). C-Textbook
+  is obeyed, not flexed. The F_{p^k} debt is **annotated, not resolved** (E.C-prep owns it).
+- **PARI / CADO remain dev-only oracles** — D.W narrates the resolved gating policy where relevant
+  (the D.C.3 PARI cross-check stub), introduces no new oracle dependency.
+- Suggested first invocation: **`/run-plan docs/PLAN.md`** (default cadence). The single `@plan`/◆
+  juncture on D.W.2 forces the one halt that matters — the Opus payoff + Phase-γ design-statement
+  verification before Track D is declared closed. D.W.1 is a clean Sonnet writeup against frozen
+  contracts and needs no boundary halt. *(Tradeoff: this is one notch less conservative than a
+  `halt-at-boundaries` run, justified because the only correctness-critical juncture — the payoff
+  ratification — is already `@plan`-gated, and D.W.1 freezes nothing.)*
