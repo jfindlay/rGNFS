@@ -70,11 +70,14 @@ pub use descent::{
     DescentStepError,
     DescentSieveConfig,
     InitSmoothingError,
+    SolveDlContext,
     SolveDlError,
+    assemble_log,
     descend_node,
     init_descent_frontier,
     run_descent,
     solve_dl,
+    solve_dl_full,
 };
 
 use num_bigint::BigInt;

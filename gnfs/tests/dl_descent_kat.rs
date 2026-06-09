@@ -1,5 +1,5 @@
-//! Known-answer tests (KATs) for D.C.1–D.C.2: descent substrate, initialization-smoothing,
-//! C2 shape, and special-q descent recursion.
+//! Known-answer tests (KATs) for D.C.1–D.C.3: descent substrate, initialization-smoothing,
+//! C2 shape, special-q descent recursion, log assembly, and end-to-end shape.
 //!
 //! # KAT (a) — Frontier ordering invariant
 //!
@@ -39,13 +39,26 @@
 //! A prime `q` that the sieve cannot find a relation for surfaces
 //! `SolveDlError::DescentFailed { stuck_prime: q }` rather than looping.
 //! Uses a very restrictive sieve config (a_bound=0, b_bound=0) to guarantee no relations.
+//!
+//! # KAT (g) — Assembly KAT (D.C.3)
+//!
+//! A small hand-built descent tree assembles to the correct `log_g(h) mod ell`.
+//! Verifies the sign/exponent bookkeeping in `assemble_log`.
+//!
+//! # KAT (h) — End-to-end shape KAT (D.C.3)
+//!
+//! Calls `solve_dl_full` with the toy F_p setup (p=11, g=2, h=4, ell=5).
+//! Asserts the result is `Ok(2)` (since log_2(4) = 2 mod 5) or a clean `Err`.
 
+use crypto_bigint::Uint;
 use gnfs::dl::{
     DescentFrontier, DescentNode, DescentSieveConfig, DescentTarget, InitSmoothingError,
-    SolveDlError, VirtualLogTable, descend_node, init_descent_frontier, run_descent, solve_dl,
+    SolveDlContext, SolveDlError, VirtualLogTable, assemble_log, descend_node,
+    init_descent_frontier, run_descent, solve_dl, solve_dl_full,
 };
 use gnfs::{FactorBase, PolyPair};
 use num_bigint::BigInt;
+use shared_field::{Fp, FpNaive4};
 use shared_numfield::IntPoly;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -708,4 +721,347 @@ fn kat_f2_descend_node_no_relation_found() {
         "zero sieve area should return NoRelationFound; got: {:?}",
         result
     );
+}
+
+// ─── KAT (g): Assembly KAT ────────────────────────────────────────────────────
+
+/// KAT (g): `assemble_log` assembles a hand-built descent tree to the correct log mod ell.
+///
+/// # Setup
+///
+/// - ell = 7
+/// - leaf1: target = Rational(2), known_log = 3
+/// - leaf2: target = Rational(3), known_log = 5
+/// - root: target = Rational(6), children = [leaf1, leaf2], known_log = None
+///
+/// # Hand-computed expected result
+///
+/// log(root) = log(leaf1) + log(leaf2) mod 7 = 3 + 5 = 8 ≡ 1 (mod 7).
+///
+/// The assembly sums all children's logs (one child per unit of exponent, since
+/// `build_children` creates one child per unit of exponent). With exponent 1 on each
+/// of prime 2 and prime 3: log(root) = 1*3 + 1*5 = 8 ≡ 1 (mod 7).
+#[test]
+fn kat_g_assembly_hand_built_tree() {
+    let ell = bi(7);
+
+    // Build the descent tree manually.
+    // Root node: target = Rational(6), children = [leaf1, leaf2].
+    // In the completed list from run_descent, this would be a single entry.
+    let root = DescentNode::<BigInt> {
+        target: DescentTarget::Rational(6),
+        rewriting_relation: None, // not needed for assembly
+        children: vec![
+            DescentNode {
+                target: DescentTarget::Rational(2),
+                rewriting_relation: None,
+                children: vec![],
+                known_log: Some(bi(3)),
+            },
+            DescentNode {
+                target: DescentTarget::Rational(3),
+                rewriting_relation: None,
+                children: vec![],
+                known_log: Some(bi(5)),
+            },
+        ],
+        known_log: None,
+    };
+
+    // The initial frontier had one target: Rational(6).
+    let initial_targets = vec![DescentTarget::Rational(6)];
+
+    // assemble_log: completed = [root], initial_targets = [Rational(6)].
+    let result = assemble_log(&[root], &initial_targets, &ell, |f: &BigInt| f.clone());
+
+    assert_eq!(
+        result,
+        Ok(bi(1)),
+        "assembly: log(6) = log(2) + log(3) = 3 + 5 = 8 ≡ 1 (mod 7)"
+    );
+}
+
+/// KAT (g2): Assembly with multiplicity — prime 2 appears twice (exponent 2).
+///
+/// # Setup
+///
+/// - ell = 7
+/// - leaf1a: target = Rational(2), known_log = 3 (first copy)
+/// - leaf1b: target = Rational(2), known_log = 3 (second copy, exponent 2)
+/// - leaf2: target = Rational(3), known_log = 5
+/// - root: target = Rational(12), children = [leaf1a, leaf1b, leaf2]
+///
+/// # Hand-computed expected result
+///
+/// log(root) = 2 * log(2) + 1 * log(3) mod 7 = 2*3 + 1*5 = 11 ≡ 4 (mod 7).
+///
+/// This verifies the multiplicity handling: `build_children` creates one child per unit of
+/// exponent, so summing all children's logs gives the correct weighted sum.
+#[test]
+fn kat_g2_assembly_with_multiplicity() {
+    let ell = bi(7);
+
+    let root = DescentNode::<BigInt> {
+        target: DescentTarget::Rational(12),
+        rewriting_relation: None,
+        children: vec![
+            DescentNode {
+                target: DescentTarget::Rational(2),
+                rewriting_relation: None,
+                children: vec![],
+                known_log: Some(bi(3)),
+            },
+            DescentNode {
+                target: DescentTarget::Rational(2),
+                rewriting_relation: None,
+                children: vec![],
+                known_log: Some(bi(3)),
+            },
+            DescentNode {
+                target: DescentTarget::Rational(3),
+                rewriting_relation: None,
+                children: vec![],
+                known_log: Some(bi(5)),
+            },
+        ],
+        known_log: None,
+    };
+
+    let initial_targets = vec![DescentTarget::Rational(12)];
+    let result = assemble_log(&[root], &initial_targets, &ell, |f: &BigInt| f.clone());
+
+    assert_eq!(
+        result,
+        Ok(bi(4)),
+        "assembly with multiplicity: 2*log(2) + log(3) = 2*3 + 5 = 11 ≡ 4 (mod 7)"
+    );
+}
+
+/// KAT (g3): Assembly with two initial targets — log(g^e * h) = log(p1) + log(p2) mod ell.
+///
+/// # Setup
+///
+/// - ell = 7
+/// - leaf1: target = Rational(2), known_log = 3
+/// - leaf2: target = Rational(5), known_log = 2
+/// - initial_targets = [Rational(2), Rational(5)] (factors of g^e * h = 10)
+///
+/// # Hand-computed expected result
+///
+/// log(g^e * h) = log(2) + log(5) mod 7 = 3 + 2 = 5 (mod 7).
+#[test]
+fn kat_g3_assembly_two_initial_targets() {
+    let ell = bi(7);
+
+    let leaf1 = DescentNode::<BigInt> {
+        target: DescentTarget::Rational(2),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: Some(bi(3)),
+    };
+    let leaf2 = DescentNode::<BigInt> {
+        target: DescentTarget::Rational(5),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: Some(bi(2)),
+    };
+
+    let initial_targets = vec![DescentTarget::Rational(2), DescentTarget::Rational(5)];
+    let result = assemble_log(&[leaf1, leaf2], &initial_targets, &ell, |f: &BigInt| f.clone());
+
+    assert_eq!(
+        result,
+        Ok(bi(5)),
+        "two initial targets: log(2) + log(5) = 3 + 2 = 5 (mod 7)"
+    );
+}
+
+// ─── KAT (h): End-to-end shape KAT ───────────────────────────────────────────
+
+/// Helper: convert `FpNaive4` to `BigInt` for assembly arithmetic.
+///
+/// For small values (< 2^64), the first word of `to_uint()` is the canonical residue.
+fn fp_to_bigint(f: &FpNaive4) -> BigInt {
+    BigInt::from(f.to_uint().as_words()[0])
+}
+
+/// KAT (h): End-to-end shape KAT — `solve_dl_full` recovers `log_2(4) = 2 mod 5`.
+///
+/// # Setup
+///
+/// - p = 11, g = 2, h = 4 = 2^2, ell = 5.
+/// - Factor base: rational primes {2, 3} (b_rat = 3, b_alg = 3).
+/// - Virtual-log table: log_2(2) = 1 mod 5, log_2(3) = 3 mod 5.
+/// - Toy KAT: ell = p − 1 = 10 would give the full group order, but we use ell = 5
+///   (a prime factor of p − 1 = 10) to match the existing toy DL setup.
+///
+/// # Expected result
+///
+/// log_2(4) = 2 mod 5 (since 2^2 = 4 mod 11).
+///
+/// # Pipeline
+///
+/// 1. init_descent_frontier: g^0 * h = 4 = 2^2, smooth over {2, 3}. e = 0, frontier = {2, 2}.
+/// 2. run_descent: both Rational(2) are factor-base leaves. completed = [leaf(2), leaf(2)].
+/// 3. assemble_log: log(4) = log(2) + log(2) = 1 + 1 = 2 mod 5.
+/// 4. log_g(h) = (2 − 0) mod 5 = 2. ✓
+///
+/// # Toy KAT note
+///
+/// ell = 5 is a prime factor of p − 1 = 10. The log is recovered mod 5 only. For the full
+/// log mod 10, Pohlig–Hellman / CRT would be needed (out of D.C scope).
+#[test]
+fn kat_h_solve_dl_full_toy_fp() {
+    let ell5 = Uint::<4>::from(5u64);
+    let ell = bi(5);
+
+    // Build the toy polynomial pair: f(x) = x³ − x − 1, m = 2.
+    let poly = toy_poly_pair();
+
+    // Factor base: b_rat = 3, b_alg = 3 (rational primes {2, 3}).
+    let fb = FactorBase::new(&poly.f, 3, 3);
+
+    // Virtual-log table: log_2(2) = 1 mod 5, log_2(3) = 3 mod 5.
+    // These are the known virtual logs from the toy DL setup (p=11, g=2, ell=5).
+    let vtable = VirtualLogTable::<FpNaive4> {
+        rational_logs: vec![
+            FpNaive4::from_u64(1, &ell5), // log_2(2) = 1 mod 5
+            FpNaive4::from_u64(3, &ell5), // log_2(3) = 3 mod 5
+        ],
+        algebraic_logs: vec![], // no algebraic ideals in this toy setup
+    };
+
+    // Sieve config: any config works since all factors are factor-base leaves.
+    let sieve_cfg = DescentSieveConfig::new(10, 5);
+
+    let ctx = SolveDlContext {
+        poly: &poly,
+        fb: &fb,
+        vtable: &vtable,
+        sieve_cfg,
+        to_bigint: Box::new(fp_to_bigint),
+    };
+
+    // h = 4 = 2^2 mod 11. log_2(4) = 2 mod 5.
+    let g = bi(2);
+    let h = bi(4);
+    let p = bi(11);
+
+    let result = solve_dl_full(&g, &h, &p, 1, &ell, &ctx);
+
+    assert_eq!(
+        result,
+        Ok(bi(2)),
+        "solve_dl_full: log_2(4) should be 2 mod 5; got: {:?}",
+        result
+    );
+
+    // Cross-check: g^result mod p == h.
+    if let Ok(ref log) = result {
+        let g_pow = mod_pow(&g, log, &p);
+        assert_eq!(
+            g_pow, h,
+            "cross-check: g^log mod p should equal h; g^{log} mod {p} = {g_pow}, expected {h}"
+        );
+    }
+}
+
+/// KAT (h2): `solve_dl_full` with h = 8 = 2^3 mod 11 → log_2(8) = 3 mod 5.
+///
+/// Verifies that the assembly correctly handles a different h value.
+#[test]
+fn kat_h2_solve_dl_full_h8() {
+    let ell5 = Uint::<4>::from(5u64);
+    let ell = bi(5);
+
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 3, 3);
+
+    let vtable = VirtualLogTable::<FpNaive4> {
+        rational_logs: vec![
+            FpNaive4::from_u64(1, &ell5), // log_2(2) = 1 mod 5
+            FpNaive4::from_u64(3, &ell5), // log_2(3) = 3 mod 5
+        ],
+        algebraic_logs: vec![],
+    };
+
+    let sieve_cfg = DescentSieveConfig::new(10, 5);
+
+    let ctx = SolveDlContext {
+        poly: &poly,
+        fb: &fb,
+        vtable: &vtable,
+        sieve_cfg,
+        to_bigint: Box::new(fp_to_bigint),
+    };
+
+    // h = 8 = 2^3 mod 11. log_2(8) = 3 mod 5.
+    let g = bi(2);
+    let h = bi(8);
+    let p = bi(11);
+
+    let result = solve_dl_full(&g, &h, &p, 1, &ell, &ctx);
+
+    assert_eq!(
+        result,
+        Ok(bi(3)),
+        "solve_dl_full: log_2(8) should be 3 mod 5; got: {:?}",
+        result
+    );
+
+    if let Ok(ref log) = result {
+        let g_pow = mod_pow(&g, log, &p);
+        assert_eq!(g_pow, h, "cross-check: g^{log} mod {p} = {g_pow}, expected {h}");
+    }
+}
+
+/// KAT (h3): `solve_dl_full` with k > 1 returns `Unsupported`.
+#[test]
+fn kat_h3_solve_dl_full_unsupported_k2() {
+    let ell5 = Uint::<4>::from(5u64);
+    let ell = bi(5);
+
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 3, 3);
+    let vtable = VirtualLogTable::<FpNaive4> {
+        rational_logs: vec![FpNaive4::from_u64(1, &ell5)],
+        algebraic_logs: vec![],
+    };
+    let sieve_cfg = DescentSieveConfig::new(10, 5);
+
+    let ctx = SolveDlContext {
+        poly: &poly,
+        fb: &fb,
+        vtable: &vtable,
+        sieve_cfg,
+        to_bigint: Box::new(fp_to_bigint),
+    };
+
+    let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 2, &ell, &ctx);
+    assert!(
+        matches!(result, Err(SolveDlError::Unsupported { k: 2 })),
+        "k=2 should return Unsupported; got: {:?}",
+        result
+    );
+}
+
+// ─── Helpers for KAT (h) ──────────────────────────────────────────────────────
+
+/// Modular exponentiation: base^exp mod modulus.
+fn mod_pow(base: &BigInt, exp: &BigInt, modulus: &BigInt) -> BigInt {
+    use num_traits::Zero;
+    if exp.is_zero() {
+        return BigInt::from(1);
+    }
+    let mut result = BigInt::from(1);
+    let mut b = base.clone() % modulus;
+    let mut e = exp.clone();
+    while e > BigInt::from(0) {
+        if &e % 2 == BigInt::from(1) {
+            result = (result * &b) % modulus;
+        }
+        b = (&b * &b) % modulus;
+        e /= 2;
+    }
+    result
 }

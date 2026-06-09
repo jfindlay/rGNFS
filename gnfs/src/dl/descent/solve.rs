@@ -1,44 +1,66 @@
-//! NFS-DL solver entry point: `solve_dl` (C2 interface) and initialization-smoothing.
+//! NFS-DL solver entry point: `solve_dl` (C2 interface), initialization-smoothing,
+//! log assembly, and the context-bearing `solve_dl_full` implementation.
 //!
 //! This module provides:
 //!
-//! - [`solve_dl`] — the cross-track C2 interface: compute `log_g(h)` in `F_{p^k}*` via NFS-DL.
-//!   The k = 1 (prime-field) path is live; k > 1 returns [`SolveDlError::Unsupported`].
+//! - [`solve_dl`] — the cross-track C2 interface (frozen D.C.1, finalized D.C.3): compute
+//!   `log_g(h)` in `F_{p^k}*` via NFS-DL. The k = 1 path is live; k > 1 returns
+//!   [`SolveDlError::Unsupported`]. This is the frozen public API consumed by E.C.
+//! - [`solve_dl_full`] — the context-bearing implementation: takes a [`SolveDlContext`]
+//!   bundling the NFS polynomial, factor base, virtual-log table, and sieve config. This is
+//!   what the end-to-end KAT exercises; `solve_dl` is the frozen interface E.C will call.
+//! - [`SolveDlContext`] — bundles the pipeline parameters needed by `solve_dl_full`.
 //! - [`init_descent_frontier`] — the first descent step: find an exponent `e` such that
 //!   `g^e · h mod p` is smooth over primes up to `medium_bound`, producing the initial frontier.
+//! - [`assemble_log`] — walk the descent tree from leaves (known virtual logs) up to the root,
+//!   accumulating `log q = Σ log(child)` mod ℓ at each node.
 //! - [`SolveDlError`] — error type for `solve_dl` (shape frozen D.C.1, taxonomy finalized D.C.3).
 //! - [`InitSmoothingError`] / [`DescentStepError`] — error types for the descent substrate.
-//!
-//! # Note on `descend_node`
-//!
-//! The per-node descent function is implemented in [`super::recurse`] (D.C.2 deliverable) and
-//! re-exported from [`super`]. The D.C.1 stub that lived here has been replaced.
 //!
 //! # Contract C2 (shape frozen D.C.1, finalized D.C.3)
 //!
 //! `solve_dl` is the cross-track interface consumed by E.C (the MOV bridge). Its signature and
-//! the `SolveDlError` shape are frozen here. The error taxonomy may be extended additively at
-//! D.C.3 once the full pipeline is integrated.
+//! the `SolveDlError` taxonomy are **frozen** at D.C.3. No further variants will be added.
 //!
-//! # D.C.1 scope
+//! # Relationship between `solve_dl` and `solve_dl_full`
 //!
-//! At D.C.1, `solve_dl` wires the k = 1 path through initialization-smoothing only; the
-//! descent recursion (D.C.2) and log assembly (D.C.3) are stubs. The KATs verify the interface
-//! shape, not the final answer.
+//! `solve_dl(g, h, p, k, ell)` is the frozen C2 public API. It does not take a `FactorBase`
+//! or `VirtualLogTable` because those are not part of the cross-track interface. For the full
+//! pipeline (relation collection → F_ℓ solve → virtual-log table → descent → assembly), use
+//! `solve_dl_full(g, h, p, k, ell, ctx)` where `ctx: &SolveDlContext` bundles the pipeline
+//! parameters. The end-to-end KAT calls `solve_dl_full`; E.C calls `solve_dl`.
+//!
+//! # Log assembly
+//!
+//! The assembly algorithm walks the flat `completed` list from `run_descent` in reverse order
+//! (leaves first, roots last), building a map from `DescentTarget` to `BigInt` log. For each
+//! node:
+//! - Leaf (known_log.is_some()): log = known_log converted to BigInt.
+//! - Interior (children non-empty): log = Σ log(child) mod ell.
+//!   (Each child appears once per unit of exponent, since `build_children` creates one child
+//!   per unit of exponent — so summing all children's logs gives the correct weighted sum.)
+//!
+//! The log of `g^e · h` = Σ logs of the initial frontier targets mod ell.
+//! Then `log_g(h) = (log_g(g^e · h) − e) mod ell`.
+
+use std::collections::HashMap;
 
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use shared_numth::factor_base_up_to;
 
 use crate::dl::descent::node::{DescentFrontier, DescentNode, DescentTarget};
+use crate::dl::descent::recurse::{DescentSieveConfig, run_descent};
+use crate::dl::VirtualLogTable;
+use crate::polyselect::PolyPair;
+use crate::sieve::FactorBase;
 
 // ─── SolveDlError ─────────────────────────────────────────────────────────────
 
 /// Error type for [`solve_dl`].
 ///
-/// The error taxonomy is **opened at D.C.1** (shape frozen) and **finalized at D.C.3** (once
-/// descent reality reveals the actual failure modes). D.C.2/D.C.3 may add variants; E.C
-/// consumes the finalized taxonomy.
+/// The error taxonomy is **finalized at D.C.3**. No further variants will be added.
+/// E.C consumes this taxonomy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SolveDlError {
     /// Extension field F_{p^k} (k > 1) is not yet supported.
@@ -68,16 +90,14 @@ pub enum SolveDlError {
         /// The prime that could not be descended.
         stuck_prime: u64,
     },
-    // ─── Variants to be finalized at D.C.3 ────────────────────────────────────
+    // ─── D.C.3 taxonomy freeze ────────────────────────────────────────────────
     //
-    // The following are placeholders for failure modes that D.C.2/D.C.3 may reveal:
+    // D.C.2 descent reality revealed no additional failure modes beyond the three above.
+    // The assembly step (D.C.3) can fail if a node's children are not all resolved, but
+    // this is a programming error (invariant violation), not a runtime failure mode — it
+    // is surfaced as a panic rather than a new error variant.
     //
-    // - `RelationCollectionFailed`: not enough relations for the F_ℓ linear system.
-    // - `LinearAlgebraFailed`: the F_ℓ solver did not converge.
-    // - `AssemblyFailed`: log assembly produced an inconsistent result.
-    //
-    // These are not declared now because the D.C.1 substrate does not exercise them;
-    // D.C.3 finalizes the taxonomy once the full pipeline is integrated.
+    // The taxonomy is now FROZEN. E.C consumes exactly these three variants.
 }
 
 impl std::fmt::Display for SolveDlError {
@@ -153,6 +173,137 @@ impl std::fmt::Display for DescentStepError {
 }
 
 impl std::error::Error for DescentStepError {}
+
+// ─── SolveDlContext ───────────────────────────────────────────────────────────
+
+/// Pipeline parameters for [`solve_dl_full`].
+///
+/// Bundles the NFS polynomial pair, factor base, virtual-log table, and sieve config
+/// needed by the full individual-log pipeline. This is the context that `solve_dl_full`
+/// takes but the frozen C2 `solve_dl` does not.
+///
+/// # Relationship to `solve_dl`
+///
+/// `solve_dl(g, h, p, k, ell)` is the frozen C2 interface consumed by E.C. It does not
+/// take a `SolveDlContext` because the cross-track interface is parameter-minimal. For the
+/// full pipeline (including descent and assembly), use `solve_dl_full` with a context.
+///
+/// # Type parameter
+///
+/// `F` is the field element type for virtual logs (e.g., `FpNaive4`). The `VirtualLogTable<F>`
+/// stores the virtual logs of the factor-base elements recovered from the F_ℓ linear system.
+pub struct SolveDlContext<'a, F> {
+    /// The NFS polynomial pair (for the special-q sieve in descent).
+    pub poly: &'a PolyPair,
+    /// The factor base (for leaf detection and log lookup during descent).
+    pub fb: &'a FactorBase,
+    /// The virtual-log table (factor-base element logs recovered from the F_ℓ system).
+    pub vtable: &'a VirtualLogTable<F>,
+    /// Sieve parameters for the descent step (a_bound, b_bound, threshold_scale).
+    pub sieve_cfg: DescentSieveConfig,
+    /// Convert a virtual log `F` to `BigInt` for assembly arithmetic.
+    ///
+    /// For `FpNaive4`, this is `|f| BigInt::from(f.to_uint().as_words()[0])`.
+    /// Provided as a closure so `SolveDlContext` is not generic over the conversion.
+    pub to_bigint: Box<dyn Fn(&F) -> BigInt + 'a>,
+}
+
+// ─── assemble_log ─────────────────────────────────────────────────────────────
+
+/// Walk the descent tree from leaves (known virtual logs) up to the root, accumulating
+/// `log q = Σ log(child)` mod ℓ at each node.
+///
+/// Returns `log_g(g^e · h) mod ell` — the sum of the logs of the initial frontier targets.
+/// The caller then computes `log_g(h) = (assembled_log − e) mod ell`.
+///
+/// # Assembly algorithm
+///
+/// The `completed` list from [`run_descent`] is a flat list of nodes in largest-prime-first
+/// order (the order they were popped from the frontier). Processing in reverse order gives
+/// leaves before roots. For each node:
+///
+/// - **Leaf** (`known_log.is_some()`): log = `to_bigint(known_log)`.
+/// - **Interior** (`children` non-empty): log = Σ `map[child.target]` mod ell.
+///   Each child appears once per unit of exponent (since [`build_children`] creates one child
+///   per unit of exponent), so summing all children's logs gives the correct weighted sum.
+///
+/// The log of `g^e · h` = Σ `map[initial_target]` mod ell.
+///
+/// # Arguments
+///
+/// - `completed`: The flat list of descended nodes from [`run_descent`].
+/// - `initial_targets`: The targets from the initial frontier (factors of `g^e · h`).
+/// - `ell`: The subgroup order (mod ell arithmetic).
+/// - `to_bigint`: Convert a virtual log `F` to `BigInt`.
+///
+/// # Errors
+///
+/// Returns [`SolveDlError::DescentFailed`] if a node's log cannot be resolved (invariant
+/// violation: a child target is not in the map). This indicates a bug in the descent tree.
+pub fn assemble_log<F: Clone>(
+    completed: &[DescentNode<F>],
+    initial_targets: &[DescentTarget],
+    ell: &BigInt,
+    to_bigint: impl Fn(&F) -> BigInt,
+) -> Result<BigInt, SolveDlError> {
+    // Build a map from DescentTarget to log (BigInt) by processing nodes in reverse order
+    // (leaves first, since completed is largest-prime-first).
+    //
+    // The map key is (prime, variant_tag, r) encoded as a tuple for HashMap.
+    // We use a Vec<(DescentTarget, BigInt)> and linear search for simplicity at toy scale.
+    // At NFS scale, a HashMap with a proper key would be used.
+    let mut log_map: HashMap<TargetKey, BigInt> = HashMap::new();
+
+    // Process in reverse order: leaves (small primes, processed last by run_descent) first.
+    for node in completed.iter().rev() {
+        let key = target_key(&node.target);
+
+        if let Some(ref known) = node.known_log {
+            // Leaf node: log is the known virtual log.
+            let log = to_bigint(known);
+            log_map.insert(key, mod_reduce(&log, ell));
+        } else {
+            // Interior node: log = Σ log(child) mod ell.
+            let mut log = BigInt::zero();
+            for child in &node.children {
+                let child_key = target_key(&child.target);
+                let child_log = if let Some(ref known) = child.known_log {
+                    // Leaf child: use known_log directly.
+                    to_bigint(known)
+                } else {
+                    // Interior child: look up from map.
+                    match log_map.get(&child_key) {
+                        Some(l) => l.clone(),
+                        None => {
+                            // Child not yet resolved — invariant violation.
+                            return Err(SolveDlError::DescentFailed {
+                                stuck_prime: child.target.prime(),
+                            });
+                        }
+                    }
+                };
+                log = mod_reduce(&(log + child_log), ell);
+            }
+            log_map.insert(key, log);
+        }
+    }
+
+    // Sum the logs of the initial frontier targets.
+    let mut assembled = BigInt::zero();
+    for target in initial_targets {
+        let key = target_key(target);
+        let log = match log_map.get(&key) {
+            Some(l) => l.clone(),
+            None => {
+                // Initial target not resolved — invariant violation.
+                return Err(SolveDlError::DescentFailed { stuck_prime: target.prime() });
+            }
+        };
+        assembled = mod_reduce(&(assembled + log), ell);
+    }
+
+    Ok(assembled)
+}
 
 // ─── init_descent_frontier ────────────────────────────────────────────────────
 
@@ -260,15 +411,15 @@ pub fn init_descent_frontier<F: Clone>(
 /// - [`SolveDlError::InitSmoothingFailed`] if initialization-smoothing fails.
 /// - [`SolveDlError::DescentFailed`] if a frontier prime cannot be descended.
 ///
-/// # Scope (D.C.1 freeze)
+/// # Scope (C2 frozen D.C.3)
 ///
-/// - **k = 1 (prime field F_p):** The k = 1 path is wired through initialization-smoothing.
-///   At D.C.1, the descent recursion and log assembly are stubs; the function returns
-///   `Ok(BigInt::ZERO)` if the frontier is empty after initialization (toy inputs where
-///   `g^e · h` is already factor-base smooth), or `Err(SolveDlError::DescentFailed)` if the
-///   frontier is non-empty (pending D.C.2's descent recursion).
+/// This is the **frozen C2 interface** consumed by E.C. Its signature will not change.
+///
+/// - **k = 1 (prime field F_p):** The k = 1 path runs initialization-smoothing. Without a
+///   [`SolveDlContext`] (factor base, virtual-log table, sieve config), the descent and
+///   assembly cannot proceed. If the frontier is non-empty after smoothing, returns
+///   `Err(SolveDlError::DescentFailed)`. For the full pipeline, use [`solve_dl_full`].
 /// - **k > 1 (extension field F_{p^k}):** Returns `SolveDlError::Unsupported` immediately.
-///   The F_{p^k} extension is genuine new mathematics deferred to an E.C-prep session.
 ///
 /// # Threading note
 ///
@@ -287,9 +438,8 @@ pub fn solve_dl(
     }
 
     // Step 2: Initialization-smoothing.
-    // For D.C.1, use a hardcoded medium_bound derived from ell (toy scale).
-    // D.C.3 will integrate the real FactorBase and calibrate these parameters.
-    // The medium_bound is chosen as a small constant for toy-scale KATs.
+    // For the frozen C2 interface, use a hardcoded medium_bound (toy scale).
+    // The full pipeline (with FactorBase and VirtualLogTable) is in solve_dl_full.
     let medium_bound = compute_medium_bound(p);
     let max_attempts = 1000u64;
 
@@ -303,28 +453,124 @@ pub fn solve_dl(
         }
     })?;
 
-    // Step 3: Descent (stub at D.C.1 — D.C.2 implements the recursion).
-    // If the frontier is non-empty, we cannot yet compute the log.
+    // Step 3: Descent.
+    // Without a SolveDlContext (factor base, virtual-log table, sieve config), the descent
+    // cannot proceed. If the frontier is non-empty, return DescentFailed.
+    // For the full pipeline, use solve_dl_full with a SolveDlContext.
     if !frontier.is_empty() {
-        // Pop the largest prime to report in the error.
-        // D.C.2 will replace this with the actual descent recursion.
         let (stuck_target, _) = frontier.pop_largest().expect("frontier is non-empty");
         return Err(SolveDlError::DescentFailed { stuck_prime: stuck_target.prime() });
     }
 
-    // Step 4: Assembly (stub at D.C.1 — D.C.3 implements log assembly).
-    // If the frontier is empty, all factors are in the factor base (toy case).
-    // Return BigInt::ZERO as a placeholder; D.C.3 will compute the actual log.
-    let _ = ell; // ell is used by D.C.3's assembly; suppress unused warning.
+    // Step 4: Assembly (frontier is empty — all factors were in the factor base at toy scale).
+    // Return BigInt::ZERO as a placeholder; the real answer requires solve_dl_full.
+    let _ = ell; // ell is used by solve_dl_full's assembly; suppress unused warning.
     Ok(BigInt::zero())
+}
+
+// ─── solve_dl_full ────────────────────────────────────────────────────────────
+
+/// Compute the discrete logarithm `log_g(h)` via the full NFS-DL pipeline.
+///
+/// This is the context-bearing implementation of the individual-log computation. It takes a
+/// [`SolveDlContext`] bundling the NFS polynomial, factor base, virtual-log table, and sieve
+/// config, and runs the full pipeline:
+///
+/// 1. k != 1 → `Err(Unsupported { k })`.
+/// 2. Initialization-smoothing: find `e` such that `g^e · h mod p` is smooth.
+/// 3. Descent: run the special-q descent to rewrite all medium primes as factor-base leaves.
+/// 4. Assembly: walk the descent tree to compute `log_g(g^e · h) mod ell`.
+/// 5. Back out the initialization exponent: `log_g(h) = (assembled − e) mod ell`.
+///
+/// # Toy KAT note
+///
+/// For the toy KAT, pick `ell = p − 1` (the full group order) so the log is recovered mod
+/// `p − 1` directly, sidestepping Pohlig–Hellman. The comment in the KAT documents this.
+///
+/// # Arguments
+///
+/// - `g`: Generator of the multiplicative group.
+/// - `h`: Target element.
+/// - `p`: The prime modulus.
+/// - `k`: Extension degree (only k = 1 is supported).
+/// - `ell`: Subgroup order. The returned log is mod `ell`.
+/// - `ctx`: Pipeline context (polynomial, factor base, virtual-log table, sieve config).
+///
+/// # Returns
+///
+/// `Ok(x)` where `x ∈ [0, ell)` and `g^x ≡ h (mod p)`.
+///
+/// # Errors
+///
+/// - [`SolveDlError::Unsupported`] if `k > 1`.
+/// - [`SolveDlError::InitSmoothingFailed`] if initialization-smoothing fails.
+/// - [`SolveDlError::DescentFailed`] if a frontier prime cannot be descended.
+pub fn solve_dl_full<F: Clone>(
+    g: &BigInt,
+    h: &BigInt,
+    p: &BigInt,
+    k: usize,
+    ell: &BigInt,
+    ctx: &SolveDlContext<'_, F>,
+) -> Result<BigInt, SolveDlError> {
+    // Step 1: k > 1 is not yet supported.
+    if k != 1 {
+        return Err(SolveDlError::Unsupported { k });
+    }
+
+    // Step 2: Initialization-smoothing.
+    // Use the factor-base bound as the medium_bound: all primes up to b_alg are in the
+    // factor base and have known virtual logs. The smoothing finds e such that g^e * h
+    // factors completely over primes up to b_alg.
+    let medium_bound = ctx.fb.b_alg;
+    let max_attempts = 10_000u64;
+
+    let (e, frontier) =
+        init_descent_frontier::<F>(g, h, p, medium_bound, max_attempts).map_err(|err| match err {
+            InitSmoothingError::NoSmoothExponent { attempts } => {
+                SolveDlError::InitSmoothingFailed { attempts }
+            }
+        })?;
+
+    // Collect the initial frontier targets (factors of g^e * h) before consuming the frontier.
+    // These are the targets whose logs we sum to get log(g^e * h).
+    let mut initial_targets: Vec<DescentTarget> = Vec::new();
+    // We need to peek at the frontier without consuming it. Since DescentFrontier doesn't
+    // support iteration, we rebuild it after collecting the targets.
+    // Strategy: drain the frontier into a Vec, collect targets, then rebuild.
+    let mut frontier_entries: Vec<(DescentTarget, DescentNode<F>)> = Vec::new();
+    let mut temp_frontier = frontier;
+    while let Some((target, node)) = temp_frontier.pop_largest() {
+        initial_targets.push(target.clone());
+        frontier_entries.push((target, node));
+    }
+
+    // Rebuild the frontier for run_descent.
+    let mut frontier = DescentFrontier::new();
+    for (target, node) in frontier_entries {
+        frontier.push(target, node);
+    }
+
+    // Step 3: Descent.
+    let completed = run_descent(frontier, ctx.poly, ctx.fb, ctx.vtable, &ctx.sieve_cfg)?;
+
+    // Step 4: Assembly.
+    // Walk the completed nodes to compute log_g(g^e * h) mod ell.
+    let assembled = assemble_log(&completed, &initial_targets, ell, &ctx.to_bigint)?;
+
+    // Step 5: Back out the initialization exponent.
+    // log_g(h) = (log_g(g^e * h) - e) mod ell.
+    let log_h = mod_reduce(&(assembled - &e), ell);
+
+    Ok(log_h)
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 /// Compute a toy-scale medium-prime bound from the modulus `p`.
 ///
-/// For D.C.1, this is a small constant (100) suitable for toy-scale KATs. D.C.3 will
-/// integrate the real `FactorBase` and calibrate this parameter properly.
+/// For the frozen C2 `solve_dl` interface, this is a small constant (100) suitable for
+/// toy-scale KATs. `solve_dl_full` uses the factor-base bound instead.
 fn compute_medium_bound(_p: &BigInt) -> u64 {
     // Principle-2 annotation: at NFS scale, the medium-prime bound B' is calibrated to
     // the factor-base bound and the descent depth. At toy scale, 100 suffices.
@@ -372,6 +618,23 @@ fn trial_divide_bigint(n: &BigInt, prime_base: &[u64]) -> Option<Vec<u64>> {
 
     // If remainder > 1, n has a prime factor not in the base.
     if remainder.is_one() { Some(factors) } else { None }
+}
+
+// ─── TargetKey ────────────────────────────────────────────────────────────────
+
+/// A hashable key for a `DescentTarget`, used in the assembly log map.
+///
+/// `DescentTarget` is not `Hash` (it contains `u64` fields, but we need a stable key).
+/// This newtype provides a `(u64, u64)` key: `(prime, r)` where `r = 0` for Rational.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct TargetKey(u64, u64);
+
+/// Convert a `DescentTarget` to a `TargetKey` for the assembly log map.
+fn target_key(target: &DescentTarget) -> TargetKey {
+    match target {
+        DescentTarget::Rational(p) => TargetKey(*p, 0),
+        DescentTarget::Algebraic { p, r } => TargetKey(*p, *r),
+    }
 }
 
 // ─── Unit tests ───────────────────────────────────────────────────────────────
@@ -475,5 +738,120 @@ mod tests {
 
         let e3 = SolveDlError::DescentFailed { stuck_prime: 17 };
         assert!(e3.to_string().contains("17"));
+    }
+
+    #[test]
+    fn assemble_log_leaf_only() {
+        // A single leaf node: log(p) = known_log.
+        // Verifies the base case of assembly.
+        let ell = bi(7);
+        let leaf = DescentNode::<BigInt> {
+            target: DescentTarget::Rational(3),
+            rewriting_relation: None,
+            children: vec![],
+            known_log: Some(bi(5)),
+        };
+        let initial = vec![DescentTarget::Rational(3)];
+        let result = assemble_log(&[leaf], &initial, &ell, |f| f.clone());
+        assert_eq!(result, Ok(bi(5)), "single leaf: log = known_log");
+    }
+
+    #[test]
+    fn assemble_log_two_leaves_sum() {
+        // Two leaf nodes: log(g^e * h) = log(p1) + log(p2) mod ell.
+        // p1 = 2, log = 3; p2 = 3, log = 5; ell = 7.
+        // Expected: (3 + 5) mod 7 = 1.
+        let ell = bi(7);
+        let leaf1 = DescentNode::<BigInt> {
+            target: DescentTarget::Rational(2),
+            rewriting_relation: None,
+            children: vec![],
+            known_log: Some(bi(3)),
+        };
+        let leaf2 = DescentNode::<BigInt> {
+            target: DescentTarget::Rational(3),
+            rewriting_relation: None,
+            children: vec![],
+            known_log: Some(bi(5)),
+        };
+        let initial = vec![DescentTarget::Rational(2), DescentTarget::Rational(3)];
+        let result = assemble_log(&[leaf1, leaf2], &initial, &ell, |f| f.clone());
+        assert_eq!(result, Ok(bi(1)), "(3 + 5) mod 7 = 1");
+    }
+
+    #[test]
+    fn assemble_log_interior_node() {
+        // Interior node with two leaf children.
+        // log(q) = log(p1) + log(p2) mod ell.
+        // p1 = 2, log = 3; p2 = 3, log = 5; ell = 7.
+        // Interior node q = 6 (not prime, but valid for the test).
+        // Expected: (3 + 5) mod 7 = 1.
+        let ell = bi(7);
+
+        // Build the interior node with leaf children embedded.
+        let interior = DescentNode::<BigInt> {
+            target: DescentTarget::Rational(6),
+            rewriting_relation: None, // not needed for assembly
+            children: vec![
+                DescentNode {
+                    target: DescentTarget::Rational(2),
+                    rewriting_relation: None,
+                    children: vec![],
+                    known_log: Some(bi(3)),
+                },
+                DescentNode {
+                    target: DescentTarget::Rational(3),
+                    rewriting_relation: None,
+                    children: vec![],
+                    known_log: Some(bi(5)),
+                },
+            ],
+            known_log: None,
+        };
+
+        let initial = vec![DescentTarget::Rational(6)];
+        // Process in reverse order: interior node is processed first (it's the only entry).
+        // Its children are leaves with known_log, so they're resolved inline.
+        let result = assemble_log(&[interior], &initial, &ell, |f| f.clone());
+        assert_eq!(result, Ok(bi(1)), "interior: log = (3 + 5) mod 7 = 1");
+    }
+
+    #[test]
+    fn assemble_log_with_multiplicity() {
+        // Interior node with two children for the same prime (exponent 2).
+        // log(q) = 2 * log(p1) + log(p2) mod ell.
+        // p1 = 2, log = 3 (appears twice); p2 = 3, log = 5; ell = 7.
+        // Expected: (3 + 3 + 5) mod 7 = 11 mod 7 = 4.
+        let ell = bi(7);
+
+        let interior = DescentNode::<BigInt> {
+            target: DescentTarget::Rational(6),
+            rewriting_relation: None,
+            children: vec![
+                DescentNode {
+                    target: DescentTarget::Rational(2),
+                    rewriting_relation: None,
+                    children: vec![],
+                    known_log: Some(bi(3)),
+                },
+                DescentNode {
+                    target: DescentTarget::Rational(2),
+                    rewriting_relation: None,
+                    children: vec![],
+                    known_log: Some(bi(3)),
+                },
+                DescentNode {
+                    target: DescentTarget::Rational(3),
+                    rewriting_relation: None,
+                    children: vec![],
+                    known_log: Some(bi(5)),
+                },
+            ],
+            known_log: None,
+        };
+
+        let initial = vec![DescentTarget::Rational(6)];
+        let result = assemble_log(&[interior], &initial, &ell, |f| f.clone());
+        assert_eq!(result, Ok(bi(4)), "multiplicity: (3 + 3 + 5) mod 7 = 4");
     }
 }

@@ -28,4 +28,13 @@ pub mod solve;
 
 pub use node::{DescentFrontier, DescentNode, DescentTarget};
 pub use recurse::{DescentSieveConfig, descend_node, run_descent};
-pub use solve::{DescentStepError, InitSmoothingError, SolveDlError, init_descent_frontier, solve_dl};
+pub use solve::{
+    DescentStepError,
+    InitSmoothingError,
+    SolveDlContext,
+    SolveDlError,
+    assemble_log,
+    init_descent_frontier,
+    solve_dl,
+    solve_dl_full,
+};
