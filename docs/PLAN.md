@@ -688,7 +688,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | pending | — | — |
+| D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | done | 1651993 | C-Descent (frozen), C2 (shape opened) |
 | D.C.2 | Special-q descent recursion | pending | — | — |
 | D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | pending | — | — |
 
@@ -703,7 +703,11 @@ one new internal contract (C-Descent, D.C.1) plus the cross-track **C2** (shape 
 
 ## Action-frame digest
 
-*(none yet)*
+### D.C.1 — 2026-06-09
+Discovery/flex: Inflection-design juncture resolved C-Descent and C2 interfaces; design-confident verdict, self-continued.
+Affected: C-Descent (frozen 1651993), C2 (shape opened, taxonomy to finalize at D.C.3)
+Deferred: no — special-q sieve reuse seam (fixed-target-q vs range-scan) remains an anticipated additive discovery for D.C.2, already documented in Discoveries & risks.
+Texture: init_descent_frontier uses option-C (no FactorBase dependency at D.C.1 — trial-divides g^e*h mod p by all primes up to medium_bound); DescentFrontier uses HeapEntry<F> wrapper to avoid F: Ord bound on BinaryHeap.
 
 ---
 
