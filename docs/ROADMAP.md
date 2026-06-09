@@ -568,6 +568,39 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06 — Track-D / Phase-γ closeout (D.W; D.W ◆ boundary)
+
+The NFS-DL writeup sub-track is complete: D.W.1 (`8c92260`, code-tour → `gnfs/docs/PEDAGOGY.md` §63+)
+and D.W.2 / T.D (`541be29`, maths chapter → `docs/MATHEMATICS.md` ch. 9 + the L-notation NFS-DL
+payoff). This crosses the **Track-D ◆ boundary** — the NFS-DL arc (D.A → D.B → D.C → D.W) is coherent
+and closed, and **Phase γ is complete end-to-end**. Only Track E (the MOV bridge E.C consuming C2)
+lies beyond in the δ direction. Three roadmap-frame updates are taken here (D.W.2 ◆ juncture
+returned still-on-intent; all five `@plan` confirmation points satisfied).
+
+- **The L-notation NFS-DL payoff landed as a delta on §GNFS, not a re-derivation.** T.D (`MATHEMATICS.md`
+  ch. 9 §payoff) establishes that NFS-DL shares the **same** L_N[1/3, (64/9)^{1/3}] complexity as
+  NFS-factoring — same exponent 1/3, same constant — with the DL-specific deltas being (a) the
+  individual-logarithm special-q descent is **asymptotically subdominant** (a lower-order term, not
+  leading-order) and (b) the F_ℓ linear algebra carries the same complexity shape as GF(2). The
+  ROADMAP-designated payoff (the DL-vs-factoring asymptotic comparison) is delivered; the rigidity
+  guard held (the §GNFS §7 derivation was re-used, not re-derived).
+
+- **Track-D design-statement verification passed on principles 1/3/4** (the G.W §59 analogue for
+  NFS-DL). Verdict (recorded in the D.W PLAN action-frame digest): Principle 1 (algorithmic content
+  complete — relation adaptation, F_ℓ linalg, special-q descent all implemented head-on) — pass;
+  Principle 3 (no engineering optimization crept into D.A–D.C) — pass; Principle 4 (scale-only at
+  demonstration fidelity) — pass, with the descent breadth + medium-prime tuning annotated as
+  NFS-scale phenomena at demonstration fidelity. No frozen contract was invalidated; no
+  additive-reshard was triggered.
+
+- **C2 `solve_dl` is frozen (`9d07c51`, D.C.3) with a recorded F_{p^k} (k > 1) `Unsupported` debt.**
+  The cross-track interface E.C will consume is live for k = 1; the k > 1 extension-field path returns
+  `Unsupported`. This is an **engineering-/mathematical-dimension-scale boundary, not a toy-scale
+  artifact** — the F_{p^k} NFS-DL extension is genuine new mathematics, deferred to a dedicated
+  **E.C-prep ROADMAP-then-shard session** (never spontaneous in-flight scope growth during E.C). T.D
+  carries this as a principle-4 annotation. *E.C consumers: the MOV bridge first calls a real NFS-DL
+  solver at k = 1; the embedding-degree > 1 case waits on the E.C-prep widening.*
+
 ### 2026-06 — D.A boundary: dev-oracle policy RESOLVED + CADO-NFS validation-sidecar design statement
 
 Resolves the standing "reference-oracle comparison tests" open question (queued at G.C sharding,
