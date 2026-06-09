@@ -317,7 +317,7 @@ the ROADMAP Discoveries log.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.W.1 | NFS-DL code-tour chapter (PEDAGOGY.md §63+) + NFS-factoring comparison | pending | — | — (writeup; freezes nothing) |
+| D.W.1 | NFS-DL code-tour chapter (PEDAGOGY.md §63+) + NFS-factoring comparison | done | 8c92260 | — (writeup; freezes nothing) |
 | D.W.2 ◆ | NFS-DL maths chapter (T.D) + L-notation payoff + Track-D design-statement verification | pending | — | — (writeup; obeys C-Textbook, freezes nothing) |
 
 Contracts frozen before this sub-track (read by D.W): C-NF (bdba6f5 / 20cd263), C-Ideal (05b27c8),
