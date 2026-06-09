@@ -294,7 +294,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.A.1 | Composite-order test curve + `factor_order` + prime-subgroup projection | pending | — | C-CompositeCurve, C-FactorOrder |
+| E.A.1 | Composite-order test curve + `factor_order` + prime-subgroup projection | done | 054df65 | C-CompositeCurve, C-FactorOrder (frozen) |
 | E.A.2 ◆ | Pohlig–Hellman prime-power lift + CRT combine + composite-order KAT | pending | — | C-Pohlig |
 
 Contracts frozen before this sub-track (read by E.A): all Track-rho ECDLP/curve/field contracts
