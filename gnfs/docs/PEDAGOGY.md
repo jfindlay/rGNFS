@@ -5180,16 +5180,16 @@ the assembly arithmetic.
 
 ### Mathematical textbook
 
-- **`docs/MATHEMATICS.md` ch. 9** (T.D chapter, to be appended) — the maths-first sibling to
-  this integrative chapter. Develops the NFS-DL algorithm mathematically: the DLP and the
-  number-field bridge, the factor-base / virtual-logarithm construction, Schirokauer maps
-  (proof-sketch depth), F_ℓ linear algebra, and the individual-logarithm special-q descent.
-  Carries the L-notation complexity of NFS-DL as the designated payoff proof. Cross-references
-  this chapter for the code realisation.
+- **`docs/MATHEMATICS.md` ch. 9** (T.D chapter) — the maths-first sibling to this integrative
+  chapter. Develops the NFS-DL algorithm mathematically: the DLP and the number-field bridge,
+  the factor-base / virtual-logarithm construction, Schirokauer maps (proof-sketch depth), F_ℓ
+  linear algebra, and the individual-logarithm special-q descent. Carries the L-notation
+  complexity of NFS-DL as the designated payoff proof (§9.7). Cross-references this chapter for
+  the code realisation.
 
-- **`docs/MATHEMATICS.md` §GNFS** (T.G chapter, to be appended) — the NFS-factoring maths
-  chapter. The L-notation derivation in T.D is a delta on T.G's §7 derivation: same exponent
-  1/3, same constant; the DL delta is descent-cost-subdominance + F_ℓ linear-algebra shape.
+- **`docs/MATHEMATICS.md` §GNFS** (T.G chapter) — the NFS-factoring maths chapter. The
+  L-notation derivation in T.D (§9.7) is a delta on T.G's §7 derivation: same exponent 1/3,
+  same constant; the DL delta is descent-cost-subdominance + F_ℓ linear-algebra shape.
 
 - **`docs/MATHEMATICS.md` §On Scale** — the three axes of scale and the honest
   science↔engineering gap. The natural-philosophy context for the principle-4 annotations
@@ -5234,7 +5234,7 @@ the assembly arithmetic.
    modulus.* CRYPTO 2010. The RSA-768 factorisation — the NFS-factoring counterpart to the
    NFS-DL pipeline described in this chapter.
 
-7. **`docs/MATHEMATICS.md` ch. 9** (T.D chapter, to be appended). The maths-first sibling to
-   this chapter: the full L-notation NFS-DL complexity derivation as a payoff proof, the
-   Schirokauer-map algebra at proof-sketch depth, and the NFS-DL algorithm developed
-   mathematically from first principles.
+7. **`docs/MATHEMATICS.md` ch. 9** (T.D chapter). The maths-first sibling to this chapter: the
+   full L-notation NFS-DL complexity derivation as a payoff proof (§9.7), the Schirokauer-map
+   algebra at proof-sketch depth, and the NFS-DL algorithm developed mathematically from first
+   principles.

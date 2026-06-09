@@ -1890,3 +1890,778 @@ variations, the degree-$N$ coupling) are under-exposed at toy scale.
 
 23. **Crandall, R., and Pomerance, C. (2005).** *Prime Numbers: A Computational Perspective*.
     2nd ed. Springer. §6.2 for the NFS complexity analysis. [CP05]
+
+---
+
+# NFS-DL: Discrete Logarithm via the Number Field Sieve
+
+*Maths-first sibling to `gnfs/docs/PEDAGOGY.md` §63–§71 (the D.W.1 NFS-DL code-tour). For the
+code-tour — pipeline contracts, stage-by-stage implementation narrative, and KAT summary — see
+`gnfs/docs/PEDAGOGY.md` §63–§71. For the prerequisites used in this chapter, see §Prerequisites
+above. For the GNFS factoring chapter whose structure this chapter mirrors and whose §7
+L-notation derivation this chapter deltas on, see §GNFS (§1–§8) above.*
+
+---
+
+## §9.1 Introduction and Through-Line
+
+The **discrete logarithm problem** (DLP) in a prime field $\mathbb{F}_p^*$ asks: given a
+generator $g$ and a target $h$ in $\mathbb{F}_p^*$, find the unique integer $x \in
+\{0, 1, \ldots, p-2\}$ such that $g^x \equiv h \pmod{p}$. This is the search problem at the
+heart of Diffie–Hellman key exchange, ElGamal encryption, and DSA signatures. Its hardness in
+$\mathbb{F}_p^*$ is the assumption that makes these systems secure.
+
+**The generic search bound.** The DLP in a group of order $n$ can be solved in $O(\sqrt{n})$
+group operations by Pollard rho or baby-step/giant-step (§Pollard Rho chapter). For
+$\mathbb{F}_p^*$ with $n = p - 1$, this gives $O(\sqrt{p})$ multiplications — fully exponential
+in $\log p$. The NFS-DL algorithm escapes this bound by exploiting the *multiplicative structure*
+of $\mathbb{F}_p^*$: the group has a natural factor base (the small primes), and the discrete
+logarithm reduces to a linear system over $\mathbb{F}_\ell$ (where $\ell$ is the subgroup order).
+
+**The through-line.** NFS-DL is the DLP analogue of GNFS for factoring. Both algorithms exploit
+*number-field structure*: the integers $\mathbb{Z}$ embed into a number field $K = \mathbb{Q}(\alpha)$,
+and the norm map connects factorisation in $K$ to factorisation in $\mathbb{Z}$. For factoring,
+the payoff is a congruence of squares $x^2 \equiv y^2 \pmod{N}$. For DLP, the payoff is a
+*virtual-logarithm table* — the discrete logs of all factor-base elements — from which the log
+of any specific target $h$ can be computed by a descent procedure.
+
+The structure-based escape from search works in two stages:
+
+1. **Precomputation (relation collection + linear algebra).** Sieve for smooth pairs $(a, b)$
+   in two number fields sharing a rational side. Augment each relation with *Schirokauer map*
+   columns (the DL-specific correction that replaces the quadratic characters of GNFS). Solve
+   the resulting linear system over $\mathbb{F}_\ell$ to recover the virtual logs of all
+   factor-base elements.
+
+2. **Individual-logarithm descent.** Given a specific target $h$, find an exponent $e$ such
+   that $g^e \cdot h$ is smooth over a medium-prime bound, then recursively rewrite each medium
+   prime as a combination of smaller primes (via the special-$q$ sieve) until all primes are
+   factor-base leaves with known virtual logs. Assemble the log of $h$ from the descent tree.
+
+**Main theorem (NFS-DL complexity, heuristic).** *Under standard heuristic assumptions on the
+distribution of smooth norms, NFS-DL computes $\log_g(h)$ in $\mathbb{F}_p^*$ in expected time*
+
+$$L_p\!\left[\tfrac{1}{3},\, \left(\tfrac{64}{9}\right)^{1/3}\right].$$
+
+This is the *same* complexity as GNFS for factoring — the same exponent $1/3$ and the same
+constant $(64/9)^{1/3}$. The reason is structural: the precomputation (relation collection +
+linear algebra) has the same cost shape as GNFS, and the individual-logarithm descent is
+*asymptotically subdominant* — it does not change the leading complexity. The derivation of
+this equality is the payoff proof of this chapter (§9.7).
+
+**What is different from GNFS.** The algorithm differs from GNFS in three ways:
+
+- **Schirokauer maps** replace the quadratic-character columns of GNFS. Both resolve an
+  obstruction to the linear system's solvability, but the obstruction is different: unit-group
+  (DL) vs class-group (factoring).
+- **$\mathbb{F}_\ell$ linear algebra** replaces GF(2). The system is solved over a prime field
+  rather than the field with two elements.
+- **Individual-logarithm descent** has no factoring analogue. In GNFS, the linear algebra step
+  directly yields a factor; in NFS-DL, it yields only the factor-base logs, and a separate
+  descent is needed for each target $h$.
+
+---
+
+## §9.2 The Number-Field Bridge for DL
+
+### Two number fields sharing a rational side
+
+The NFS-DL setup mirrors the GNFS setup (§3) with one key difference in interpretation. Let $p$
+be the prime modulus and $\ell$ a prime dividing $p - 1$ (the subgroup order). Choose a
+degree-$d$ polynomial $f \in \mathbb{Z}[x]$ and an integer $m$ such that $f(m) \equiv 0
+\pmod{p}$. Let $\alpha$ be a root of $f$ in $\mathbb{C}$, and let $K = \mathbb{Q}(\alpha)$ be
+the number field generated by $\alpha$.
+
+There are two natural ring homomorphisms into $\mathbb{F}_p$:
+
+**The rational map** $\phi_{\mathbb{Z}}: \mathbb{Z} \to \mathbb{F}_p$, reduction modulo $p$.
+
+**The algebraic map** $\phi_\alpha: \mathbb{Z}[\alpha] \to \mathbb{F}_p$, defined by
+$\phi_\alpha(g(\alpha)) = g(m) \bmod p$. This is well-defined because $f(m) \equiv 0 \pmod{p}$.
+
+For a pair $(a, b) \in \mathbb{Z}^2$ with $\gcd(a, b) = 1$, both maps agree on $a - b\alpha$:
+
+$$\phi_\alpha(a - b\alpha) = \phi_{\mathbb{Z}}(a - bm) = a - bm \bmod p.$$
+
+This is the same bridge as in GNFS (§3). The difference is what the bridge is used for.
+
+### The homomorphism to $\mathbb{F}_p^*$
+
+In GNFS, the bridge is used to construct a congruence of squares: a product of algebraic norms
+that is a perfect square on both sides. In NFS-DL, the bridge is used to construct a
+*multiplicative relation in $\mathbb{F}_p^*$*: a product of smooth elements that equals 1 in
+$\mathbb{F}_p^*$.
+
+Specifically, for a smooth pair $(a, b)$ with rational norm $a - bm = \prod_i p_i^{e_i}$ and
+algebraic norm $N_{K/\mathbb{Q}}(a - b\alpha) = \prod_j \mathfrak{p}_j^{f_j}$, the bridge gives
+
+$$\prod_i p_i^{e_i} \equiv \prod_j \phi_\alpha(\mathfrak{p}_j)^{f_j} \pmod{p}.$$
+
+Taking discrete logarithms base $g$ on both sides:
+
+$$\sum_i e_i \log_g(p_i) \equiv \sum_j f_j \log_g(\phi_\alpha(\mathfrak{p}_j)) \pmod{p - 1}.$$
+
+This is a *linear equation* in the unknown discrete logs of the factor-base elements. Collecting
+enough such equations gives a linear system whose solution is the virtual-log table.
+
+### The factor-base and virtual-logarithm construction
+
+**The factor base** for NFS-DL has the same structure as for GNFS (§3):
+
+- **Rational factor base** $\mathcal{F}_{\mathbb{Z}} = \{p_1, \ldots, p_k\}$: rational primes
+  up to a smoothness bound $B$.
+- **Algebraic factor base** $\mathcal{F}_\alpha = \{(p, \alpha - r) : p \leq B,\; f(r) \equiv
+  0 \pmod{p}\}$: prime ideals in $\mathbb{Z}[\alpha]$ up to $B$.
+
+A pair $(a, b)$ is a *DL relation* if both the rational norm $|a - bm|$ and the algebraic norm
+$|N_{K/\mathbb{Q}}(a - b\alpha)|$ are $B$-smooth. Each DL relation gives a linear equation in
+the logs of the factor-base elements.
+
+**Virtual logarithms.** The *virtual logarithm* of a factor-base element $p_i$ is
+$\log_g(p_i) \bmod \ell$ — the discrete log of $p_i$ in the subgroup of order $\ell$. The
+virtual logs are the unknowns of the linear system. Once the system is solved, the virtual-log
+table gives the log of any $B$-smooth element of $\mathbb{F}_p^*$ as a linear combination of
+the virtual logs.
+
+**Why "virtual"?** The logs are computed modulo $\ell$ (the subgroup order), not modulo $p - 1$
+(the full group order). If $\ell \neq p - 1$, the virtual logs give the log in the $\ell$-order
+subgroup, not the full group. Recovering the full log requires Pohlig–Hellman (§Prerequisites)
+or choosing $\ell = p - 1$ (which requires $p - 1$ to be prime, i.e. $p$ is a safe prime).
+
+**The linear system.** Collecting $k + \delta$ DL relations (for a small excess $\delta$) gives
+a $(k + \delta) \times k$ matrix $A$ over $\mathbb{F}_\ell$, where $k = |\mathcal{F}_{\mathbb{Z}}|
++ |\mathcal{F}_\alpha|$ is the total number of factor-base elements. The virtual logs are the
+solution to $A \cdot x = 0$ over $\mathbb{F}_\ell$ — the kernel of $A$.
+
+*Note on the column layout.* The DL relation matrix has three groups of columns: rational
+exponent columns (one per rational factor-base prime), algebraic exponent columns (one per
+algebraic factor-base ideal), and Schirokauer columns (one per prime ideal in the Schirokauer
+set). The Schirokauer columns are the DL-specific addition; they are described in §9.3.
+
+---
+
+## §9.3 Schirokauer Maps
+
+*This section is the DL-specific algebra — the clearest single "what's different about DL"
+moment. It has no counterpart in the GNFS factoring chapter.*
+
+### The obstruction to principality
+
+In GNFS, the linear algebra step finds a subset $S$ of relations such that the product
+$\prod_{(a,b) \in S} (a - b\alpha)$ is a perfect square in $\mathbb{Z}[\alpha]$ — not just a
+square in the ideal group. The obstruction to this is the *class-group obstruction*: the product
+may be a square in the ideal group without being a square of a principal ideal. The quadratic
+characters (§5 of the GNFS chapter) resolve this obstruction.
+
+In NFS-DL, the obstruction is different. The linear system $A \cdot x = 0$ over $\mathbb{F}_\ell$
+has a solution only if the exponent vectors correctly account for all multiplicative structure in
+$\mathbb{F}_p^*$. The problem is that the *units* of $\mathcal{O}_K$ — the ring of integers of
+$K$ — are not accounted for by the exponent vectors alone. A unit $u \in \mathcal{O}_K^*$ has
+norm $N_{K/\mathbb{Q}}(u) = \pm 1$, so it contributes nothing to the rational exponent vector.
+But $\phi_\alpha(u) \in \mathbb{F}_p^*$ may be non-trivial, and its discrete log is missing from
+the linear system.
+
+**The unit-group obstruction.** More precisely: the map from $K^*$ to $\mathbb{F}_p^*$ via
+$\phi_\alpha$ has a kernel that includes the units $\mathcal{O}_K^*$. The exponent vectors
+capture the *ideal* factorisation of $a - b\alpha$, but not the unit part. The Schirokauer map
+is the correction that accounts for the unit part.
+
+### The Schirokauer map
+
+**Definition (Schirokauer map).** Let $\ell$ be a prime, and let $\varphi = (p_0, \alpha - r_0)$
+be a prime ideal in $\mathcal{O}_K$ with $p_0 \equiv 1 \pmod{\ell}$ (so that $\ell \mid p_0 - 1$).
+Define $\varepsilon = (p_0 - 1)/\ell$. The *Schirokauer map* $\lambda_\varphi: K^* \to
+\mathbb{Z}/\ell\mathbb{Z}$ is defined by
+
+$$\lambda_\varphi(\beta) = \frac{\beta^\varepsilon - 1}{\ell} \bigg|_{\alpha = r_0} \bmod \ell,$$
+
+where the expression $(\beta^\varepsilon - 1)/\ell$ is computed in $\mathbb{Z}[\alpha]/\ell^2$
+(the ring of integers modulo $\ell^2$), and then evaluated at $\alpha = r_0 \bmod \ell$.
+
+**Why this works.** The key facts are:
+
+1. For $\beta \in \mathcal{O}_K^*$ (a unit), $\beta^{p_0 - 1} \equiv 1 \pmod{\varphi}$ by
+   Fermat's little theorem in $\mathcal{O}_K/\varphi \cong \mathbb{F}_{p_0}$. So
+   $\beta^\varepsilon$ is an $\ell$-th root of unity modulo $\varphi$, and $\beta^\varepsilon
+   \equiv 1 \pmod{\ell}$ in $\mathbb{Z}[\alpha]$. This means $(\beta^\varepsilon - 1)/\ell$ is
+   an integer (the division is exact), and $\lambda_\varphi(\beta)$ is well-defined.
+
+2. The map $\lambda_\varphi$ is a *group homomorphism*: $\lambda_\varphi(\beta\gamma) =
+   \lambda_\varphi(\beta) + \lambda_\varphi(\gamma) \pmod{\ell}$. This follows from the
+   logarithm-like behaviour of the $\ell$-adic extraction.
+
+3. For a principal ideal $(\beta) = \prod_i \mathfrak{p}_i^{e_i}$, the Schirokauer map
+   $\lambda_\varphi(\beta)$ captures the "fractional part" of $\log_g(\phi_\alpha(\beta))$ that
+   the exponent vector misses — specifically, the contribution of the unit part of $\beta$.
+
+**The multi-coordinate map.** In practice, one uses $r$ prime ideals $\varphi_1, \ldots,
+\varphi_r$ (each with $p_i \equiv 1 \pmod{\ell}$) and defines the Schirokauer map as the
+$r$-tuple $\lambda(\beta) = (\lambda_{\varphi_1}(\beta), \ldots, \lambda_{\varphi_r}(\beta))
+\in (\mathbb{Z}/\ell\mathbb{Z})^r$. Each coordinate gives one Schirokauer column in the DL
+relation matrix.
+
+**Proof sketch (homomorphism property).** For $\beta, \gamma \in \mathcal{O}_K^*$:
+
+$$(\beta\gamma)^\varepsilon - 1 = \beta^\varepsilon \gamma^\varepsilon - 1
+  = (\beta^\varepsilon - 1) + (\gamma^\varepsilon - 1) + (\beta^\varepsilon - 1)(\gamma^\varepsilon - 1).$$
+
+Since $\beta^\varepsilon \equiv 1 \pmod{\ell}$ and $\gamma^\varepsilon \equiv 1 \pmod{\ell}$,
+the cross term $(\beta^\varepsilon - 1)(\gamma^\varepsilon - 1) \equiv 0 \pmod{\ell^2}$.
+Dividing by $\ell$ and evaluating at $\alpha = r_0$:
+
+$$\lambda_\varphi(\beta\gamma) = \lambda_\varphi(\beta) + \lambda_\varphi(\gamma) \pmod{\ell}.$$
+
+$\square$
+
+### The Schirokauer columns in the DL matrix
+
+Each DL relation $(a, b)$ contributes one Schirokauer column per ideal $\varphi_i$: the value
+$\lambda_{\varphi_i}(a - b\alpha) \in \mathbb{Z}/\ell\mathbb{Z}$. These columns are appended to
+the exponent vector to form the full DL relation row:
+
+$$\text{row}(a, b) = \bigl(\underbrace{e_1, \ldots, e_k}_{\text{rational exponents}},\;
+  \underbrace{f_1, \ldots, f_m}_{\text{algebraic exponents}},\;
+  \underbrace{\lambda_1(a-b\alpha), \ldots, \lambda_r(a-b\alpha)}_{\text{Schirokauer columns}}\bigr)
+  \in \mathbb{F}_\ell^{k+m+r}.$$
+
+The Schirokauer columns ensure that the kernel of the augmented matrix gives the correct virtual
+logs — including the unit-group correction that the exponent vectors alone would miss.
+
+**Contrast with GNFS.** In GNFS, the quadratic-character columns are Legendre symbols
+$\left(\frac{a - bs}{q}\right) \in \{+1, -1\}$ — elements of $\{0, 1\} \subset \mathrm{GF}(2)$.
+In NFS-DL, the Schirokauer columns are $\ell$-adic log extractions in $\mathbb{Z}/\ell\mathbb{Z}$.
+Both serve the same structural role (resolving an obstruction to the linear system's solvability),
+but the obstruction is different (unit group vs class group) and the correction is different
+($\ell$-adic log vs Legendre symbol).
+
+**Code realisation.** The Schirokauer map is implemented in `gnfs/src/dl/schirokauer.rs`
+(C-Schirokauer, frozen D.A.1). The function `schirokauer` computes the $r$-tuple
+$(\lambda_{\varphi_1}(\beta), \ldots, \lambda_{\varphi_r}(\beta))$ for a number-field element
+$\beta$ and a list of prime ideals. The `augment_relation` function in `gnfs/src/dl/relation.rs`
+(C-DLRelation, frozen D.A.1) wraps each smooth factoring relation with its Schirokauer columns
+to produce a `DLRelation`. See `gnfs/docs/PEDAGOGY.md` §64–§65 for the code-tour.
+
+---
+
+## §9.4 The $\mathbb{F}_\ell$ Linear Algebra Step
+
+### The linear system over $\mathbb{F}_\ell$
+
+The DL relation matrix $A$ is a $(k + \delta) \times (k + m + r)$ matrix over $\mathbb{F}_\ell$,
+where:
+- $k$ = number of rational factor-base primes,
+- $m$ = number of algebraic factor-base ideals,
+- $r$ = number of Schirokauer columns,
+- $\delta$ = small excess (a few extra relations for numerical stability).
+
+The rational and algebraic exponent columns are reduced modulo $\ell$ (from the integer exponent
+vectors). The Schirokauer columns are already in $\mathbb{Z}/\ell\mathbb{Z}$.
+
+**The kernel.** The virtual-log table is the kernel of $A$ over $\mathbb{F}_\ell$: a vector
+$x \in \mathbb{F}_\ell^{k+m+r}$ such that $A \cdot x = 0$. The first $k$ entries of $x$ are
+the virtual logs of the rational factor-base primes; the next $m$ entries are the virtual logs
+of the algebraic factor-base ideals; the last $r$ entries are Schirokauer correction terms.
+
+**Why the kernel gives the virtual logs.** Each row of $A$ encodes the linear equation
+
+$$\sum_i e_i \log_g(p_i) + \sum_j f_j \log_g(\phi_\alpha(\mathfrak{p}_j)) +
+  \sum_s \lambda_s(a - b\alpha) \cdot c_s \equiv 0 \pmod{\ell},$$
+
+where $c_s$ are the Schirokauer correction coefficients. A kernel vector $x$ satisfying $A \cdot
+x = 0$ is a consistent assignment of virtual logs to all factor-base elements (and Schirokauer
+corrections) that satisfies every relation simultaneously. Under the standard heuristic
+assumptions, the kernel is one-dimensional (up to scalar multiples), and the unique kernel vector
+(up to scaling) gives the virtual logs.
+
+### Block Wiedemann and block Lanczos over $\mathbb{F}_\ell$
+
+The kernel is found by the *block Wiedemann* or *block Lanczos* algorithm — the same Krylov
+subspace methods used in GNFS (§5), but over $\mathbb{F}_\ell$ instead of $\mathrm{GF}(2)$.
+
+**The algorithmic structure is identical.** Both algorithms:
+1. Start with a random block vector $V_0 \in \mathbb{F}_\ell^{(k+m+r) \times w}$ (where $w$ is
+   the block width).
+2. Iterate $V_{i+1} = A^T A \cdot V_i$ (or $A \cdot A^T \cdot V_i$) to build a Krylov subspace.
+3. Use the self-orthogonality of the Krylov sequence to find a null vector.
+
+**The implementation difference.** In GNFS, the block width is $w = 64$ (one 64-bit word per
+block vector entry, since $\mathrm{GF}(2)$ elements are bits). In NFS-DL, the block width is
+$w = 32$ (one $\mathbb{F}_\ell$ element per entry, since field elements are larger than bits).
+The scalar arithmetic changes from XOR (GF(2)) to modular multiplication and addition
+($\mathbb{F}_\ell$). The convergence criterion changes from "the block vector is zero in GF(2)"
+to "the inner-product matrix $V_i^T V_i$ is singular over $\mathbb{F}_\ell$".
+
+**Complexity.** For a matrix with $k + m + r$ columns and $w$ non-zeros per row, the block
+Lanczos/Wiedemann algorithm costs $O((k + m + r)^2)$ field operations over $\mathbb{F}_\ell$
+(or $O((k + m + r) \cdot w_{\mathrm{nnz}})$ for a sparse matrix with $w_{\mathrm{nnz}}$ non-zeros
+per row). In $L$-notation with $k + m + r \approx B = L_p[1/3, c]$:
+
+$$\text{Linear algebra cost} = O\!\left(L_p[1/3, c]^2\right) = L_p\!\left[\tfrac{1}{3},\, 2c\right].$$
+
+This is the *same* cost shape as the GF(2) linear algebra in GNFS. The field $\mathbb{F}_\ell$
+vs $\mathrm{GF}(2)$ distinction changes the constant factor (field operations over $\mathbb{F}_\ell$
+are more expensive than XOR), but not the $L$-notation exponent or constant. This is the first
+half of the DL delta in the complexity derivation (§9.7).
+
+**Code realisation.** The $\mathbb{F}_\ell$ block-solver substrate is implemented in
+`gnfs/src/dl/linalg/blockvec_fl.rs` (C-LinAlgFl, frozen D.B.1). The types `FlBlockVec`,
+`FlSparseMatrix`, `FlMatrixOperator`, `FlSolution`, `VirtualLogTable`, and the function
+`recover_virtual_logs` are the frozen interface. See `gnfs/docs/PEDAGOGY.md` §65–§66 for the
+code-tour.
+
+---
+
+## §9.5 Individual-Logarithm Special-$q$ Descent
+
+*This section describes the stage with no factoring analogue — the part of NFS-DL that goes
+beyond what GNFS needs.*
+
+### The individual-logarithm problem
+
+The linear algebra step (§9.4) recovers the virtual logs of all factor-base elements: $\log_g(p_i)
+\bmod \ell$ for each rational prime $p_i \leq B$ and $\log_g(\phi_\alpha(\mathfrak{p}_j)) \bmod
+\ell$ for each algebraic ideal $\mathfrak{p}_j$. But the target $h$ is not a factor-base element
+— it is an arbitrary element of $\mathbb{F}_p^*$. The *individual-logarithm descent* bridges
+this gap.
+
+**The descent strategy.** The descent proceeds in two phases:
+
+1. **Initialization-smoothing.** Find an exponent $e \geq 0$ such that $g^e \cdot h \bmod p$
+   is smooth over a *medium-prime bound* $B'$ (with $B < B' \ll p$). Then
+   $\log_g(h) = \log_g(g^e \cdot h) - e \pmod{\ell}$, so it suffices to compute
+   $\log_g(g^e \cdot h)$.
+
+2. **Special-$q$ descent.** The smooth factorisation of $g^e \cdot h$ involves primes in
+   $(B, B']$ — the *medium primes* — whose logs are not yet known. For each medium prime $q$,
+   find a DL relation that expresses $\log_g(q)$ as a linear combination of logs of smaller
+   primes. Repeat until all primes are factor-base leaves with known virtual logs.
+
+### Initialization-smoothing
+
+**The smoothing step.** Iterate $e = 0, 1, 2, \ldots$ and compute $c_e = g^e \cdot h \bmod p$.
+Trial-divide $c_e$ by all primes up to $B'$. If $c_e$ factors completely over primes $\leq B'$,
+the smoothing succeeds with exponent $e$ and factorisation $c_e = \prod_i q_i^{a_i}$.
+
+The expected number of trials before a smooth $c_e$ is found is $\rho(u')^{-1}$, where
+$u' = \log p / \log B'$ and $\rho$ is the Dickman function. For $B' = L_p[1/3, c']$, this is
+$L_p[1/3, 1/(3c')]$ trials — subexponential in $\log p$.
+
+**The initial frontier.** The smooth factorisation $c_e = \prod_i q_i^{a_i}$ gives the *initial
+frontier*: the set of prime factors $q_i$ (with multiplicity) that must be descended. Factor-base
+primes ($q_i \leq B$) are leaves with known virtual logs; medium primes ($B < q_i \leq B'$) are
+interior nodes that must be descended.
+
+### The special-$q$ descent recursion
+
+**The descent step.** For a medium prime $q$ in the frontier, the descent finds a DL relation
+that rewrites $\log_g(q)$ as a combination of logs of smaller primes. Specifically, it runs the
+special-$q$ sieve with $q$ as the special prime: sieve for pairs $(a, b)$ such that $q \mid
+N_{K/\mathbb{Q}}(a - b\alpha)$ and both norms are smooth over primes $< q$. Such a relation gives
+
+$$e_q \cdot \log_g(q) \equiv \sum_{p_i < q} e_i \log_g(p_i) \pmod{\ell},$$
+
+where $e_q$ is the exponent of $q$ in the algebraic norm and $e_i$ are the exponents of the
+smaller primes. Since $e_q \not\equiv 0 \pmod{\ell}$ (generically), this gives
+$\log_g(q) \equiv e_q^{-1} \sum_i e_i \log_g(p_i) \pmod{\ell}$.
+
+**The termination invariant.** The descent tree is a max-heap ordered by prime descending. Each
+step pops the largest prime $q$, finds a relation rewriting $\log_g(q)$ in terms of strictly
+smaller primes, and pushes those smaller primes back. Since each step strictly reduces the
+largest prime, the descent terminates when all frontier elements are factor-base leaves.
+
+**The descent tree.** The descent produces a tree of `DescentNode` objects:
+- **Leaf nodes** are factor-base elements with known virtual logs (from the `VirtualLogTable`).
+- **Interior nodes** are medium primes with a rewriting relation and child nodes for the smaller
+  primes.
+
+The tree has depth $O(\log \log p)$ in the asymptotic regime (since each level reduces the
+prime by a constant factor in the $L$-notation sense), but at toy scale the depth is 0 or 1
+(the smoothing step often finds $g^e \cdot h$ already smooth over the factor base).
+
+### Log assembly along the descent tree
+
+Once the descent tree is complete (all leaves have known virtual logs), the log of $g^e \cdot h$
+is assembled by a bottom-up traversal:
+
+- **Leaf:** $\log_g(q) = \text{known\_log}(q)$ from the virtual-log table.
+- **Interior node:** $\log_g(q) = \sum_{\text{children}} \log_g(\text{child}) \pmod{\ell}$,
+  where the sum is over all children with multiplicity (a child appearing twice contributes its
+  log twice).
+
+The assembled log of $g^e \cdot h$ is the sum of the logs of the initial frontier targets. Then:
+
+$$\log_g(h) = \log_g(g^e \cdot h) - e \pmod{\ell}.$$
+
+### Subgroup recovery
+
+The descent recovers $\log_g(h) \bmod \ell$, where $\ell$ is the subgroup order. If $\ell = p - 1$
+(the full group order), this is the complete discrete log. If $\ell < p - 1$, the result is the
+log in the $\ell$-order subgroup. Recovering the full log modulo $p - 1$ requires Pohlig–Hellman
+(§Prerequisites): factor $p - 1 = \prod_i \ell_i^{e_i}$, run NFS-DL for each prime power
+$\ell_i^{e_i}$, and combine via CRT.
+
+**Code realisation.** The descent substrate is implemented in `gnfs/src/dl/descent/` (C-Descent,
+frozen D.C.1; C2, frozen D.C.3). The key types and functions are `DescentNode<F>`,
+`DescentFrontier<F>`, `init_descent_frontier`, `descend_node`, `run_descent`, and `assemble_log`.
+The frozen C2 interface `solve_dl(g, h, p, k, ell)` is the cross-track entry point consumed by
+E.C (the MOV bridge). See `gnfs/docs/PEDAGOGY.md` §66 for the code-tour.
+
+**Engineering-scale boundary ($k > 1$, principle-4 annotation).** The `solve_dl` function
+returns `SolveDlError::Unsupported { k }` immediately for $k > 1$ (extension fields
+$\mathbb{F}_{p^k}$). This is an *engineering-scale boundary, not a mathematical one*: the
+mathematics of NFS-DL over extension fields is well-understood (the number field $K$ is replaced
+by a degree-$k$ extension; the Schirokauer map adapts; the descent works over the extended
+field), but the implementation requires adapting the `PolyPair` / `NumberField` / `FactorBase`
+infrastructure to the extension-field structure. This is a non-trivial engineering task deferred
+to the E.C-prep session (Track E). The debt is recorded here as a principle-4 annotation (see
+§On Scale for the three-axis framework): the code is correct at demonstration fidelity for $k = 1$;
+the $k > 1$ path is a known gap, not a silent omission.
+
+---
+
+## §9.6 Design-Statement Verification for the NFS-DL Arc
+
+*This section is the D.W.2 analogue of G.W §59 — the design-statement verification for the
+whole NFS-DL arc (Track D, D.A → D.B → D.C → D.W), against the three principles.*
+
+### Principle 1: Algorithmic content complete
+
+**Verdict: pass.** The NFS-DL pipeline implements the algorithmic content of NFS-DL for prime
+fields end-to-end:
+
+- **Relation collection (D.A):** Smooth-pair sieving reusing the GNFS infrastructure, augmented
+  with Schirokauer map columns. The `DLMatrix` type (C-DLRelation) carries the full column
+  layout (rational | algebraic | Schirokauer).
+- **$\mathbb{F}_\ell$ linear algebra (D.B):** Block Lanczos / block Wiedemann over $\mathbb{F}_\ell$,
+  recovering the virtual-log table. The `VirtualLogTable` type (C-LinAlgFl) is the frozen
+  interface to D.C.
+- **Individual-logarithm descent (D.C):** Initialization-smoothing, special-$q$ descent
+  recursion, and log assembly. The `solve_dl_full` function runs the full pipeline; the frozen
+  C2 `solve_dl` is the cross-track interface.
+
+No algorithmic stage is silently omitted or replaced by a lookup table.
+
+### Principle 3: No engineering optimisations crept in
+
+**Verdict: pass.** The implementation is at *demonstration fidelity* — the mathematical content
+is present, but the engineering optimisations that make NFS-DL run at cryptographic scale are
+not implemented:
+
+- **Large-prime variations** (partial relations with one or two large prime cofactors) are not
+  implemented. The sieve collects only fully smooth relations.
+- **Optimal polynomial selection** for NFS-DL (calibrated to $p$ and $\ell$) is not implemented.
+  The base-$m$ construction is used.
+- **Lattice sieving** for the descent step is not implemented. The line sieve is used.
+- **Pohlig–Hellman** for the full group order is not implemented. The log is recovered modulo
+  $\ell$ only.
+
+None of these omissions affect the correctness of the algorithm at toy scale. They are
+engineering optimisations that improve performance at NFS scale but are not needed for the
+mathematical demonstration.
+
+### Principle 4: Scale-only at demonstration fidelity
+
+**Verdict: pass, with annotations.** The following phenomena are annotated as scale-only:
+
+- **Descent-tree depth.** At toy scale ($p = 11$, factor base $\{2, 3\}$, $\ell = 5$), the
+  descent tree has depth 0: the initialization-smoothing step finds $g^e \cdot h$ already smooth
+  over the factor base, so no medium primes need to be descended. At NFS scale, the tree has
+  depth $O(\log \log p)$ — typically 3–5 levels. The depth is a scale-only phenomenon.
+
+- **Medium-prime tuning.** The medium-prime bound $B'$ is a critical parameter at NFS scale.
+  At toy scale, the frozen C2 `solve_dl` uses a hardcoded `medium_bound = 100`; `solve_dl_full`
+  uses the factor-base bound. At NFS scale, $B'$ is calibrated to the factor-base bound and the
+  expected descent depth.
+
+- **Block width.** The $\mathbb{F}_\ell$ block width `FL_BLOCK_WIDTH = 32` is a cache-friendly
+  unit for the inner loop at NFS scale. At toy scale, the blocking overhead is invisible.
+
+- **$k > 1$ `Unsupported` debt.** The $\mathbb{F}_{p^k}$ extension is an engineering-scale
+  boundary (see §9.5 above). The mathematics is complete for $k = 1$; the $k > 1$ path is a
+  known gap recorded as a principle-4 annotation.
+
+---
+
+## §9.7 The $L$-Notation Complexity of NFS-DL
+
+*This is the designated payoff proof for the T.D chapter (C-Textbook contract). It is a
+**delta** on the §GNFS §7 derivation — not a re-derivation from scratch. The reader should
+read §GNFS §7 first; this section identifies the two DL-specific differences and shows that
+neither changes the leading complexity.*
+
+### The §GNFS §7 derivation: what it establishes
+
+The §GNFS §7 derivation (§7 of the GNFS chapter above) establishes:
+
+1. **The exponent is $1/3$**: the sieve cost is $L_N[1/3, c + 2/(3c)]$ and the linear algebra
+   cost is $L_N[1/3, 2c]$; the crossover at $c = \sqrt{2/3}$ gives total cost
+   $L_N[1/3, 2\sqrt{6}/3]$ (simplified) or $L_N[1/3, (64/9)^{1/3}]$ (full analysis).
+
+2. **The constant is $(64/9)^{1/3}$**: the full analysis (Lenstra–Lenstra–Manasse–Pollard
+   [LLMP93], Buhler–Lenstra–Pomerance [BLP93]) accounts for the polynomial degree optimisation
+   and the two-sided sieve, yielding the standard constant.
+
+The derivation uses:
+- Smoothness bound $B = L_N[1/3, c]$.
+- Norm size $\approx N^{1/d}$ at optimal degree $d$.
+- Smoothness probability (one norm) $= L_N[-1/3, -1/(3c)]$.
+- Sieve cost $= L_N[1/3, c + 2/(3c)]$ (collecting $B$ smooth pairs).
+- Linear algebra cost $= L_N[1/3, 2c]$ (null vector in $B \times B$ matrix over GF(2)).
+- Optimal $c = \sqrt{2/3}$ (simplified) or $c = (8/9)^{1/3}$ (full).
+
+### The NFS-DL delta: two differences
+
+NFS-DL differs from GNFS in two ways that could, in principle, change the leading complexity.
+We show that neither does.
+
+#### Delta 1: $\mathbb{F}_\ell$ linear algebra vs GF(2)
+
+In GNFS, the linear algebra step finds a null vector in a $B \times B$ matrix over GF(2). In
+NFS-DL, the linear algebra step finds a null vector in a $B \times B$ matrix over $\mathbb{F}_\ell$.
+
+**The $L$-notation cost is the same.** The block Lanczos / block Wiedemann algorithm costs
+$O(B^2)$ field operations in both cases (for a dense matrix; $O(B \cdot w_{\mathrm{nnz}})$ for
+sparse). In $L$-notation:
+
+$$\text{NFS-DL linear algebra cost} = O\!\left(L_p[1/3, c]^2\right) = L_p\!\left[\tfrac{1}{3},\, 2c\right].$$
+
+This is identical to the GNFS linear algebra cost $L_N[1/3, 2c]$. The field $\mathbb{F}_\ell$
+vs GF(2) distinction changes the *constant factor* inside the $O(\cdot)$ (field operations over
+$\mathbb{F}_\ell$ are more expensive than XOR), but not the $L$-notation exponent or constant.
+The $L$-notation is insensitive to polynomial factors in the constant, so the leading complexity
+is unchanged.
+
+**Formal statement.** Let $T_{\mathrm{GF}(2)}(B)$ and $T_{\mathbb{F}_\ell}(B)$ be the costs of
+finding a null vector in a $B \times B$ matrix over GF(2) and $\mathbb{F}_\ell$ respectively.
+Then $T_{\mathrm{GF}(2)}(B) = O(B^2)$ and $T_{\mathbb{F}_\ell}(B) = O(B^2 \cdot \log \ell)$
+(since each $\mathbb{F}_\ell$ operation costs $O(\log \ell)$ bit operations). In $L$-notation
+with $B = L_p[1/3, c]$ and $\ell \leq p - 1 = L_p[1, 1]$:
+
+$$T_{\mathbb{F}_\ell}(B) = O\!\left(L_p[1/3, c]^2 \cdot \log p\right)
+  = L_p\!\left[\tfrac{1}{3},\, 2c\right] \cdot O(\log p).$$
+
+The factor $O(\log p)$ is polynomial in $\log p$ — it is $L_p[0, 1]$ in $L$-notation, which is
+dominated by $L_p[1/3, 2c]$ for any $c > 0$. Therefore:
+
+$$T_{\mathbb{F}_\ell}(B) = L_p\!\left[\tfrac{1}{3},\, 2c\right] \cdot (1 + o(1)).$$
+
+The $\mathbb{F}_\ell$ linear algebra has the same $L$-notation cost as the GF(2) linear algebra.
+$\square$
+
+#### Delta 2: Individual-logarithm descent is asymptotically subdominant
+
+In GNFS, there is no descent step: the linear algebra step directly yields a factor. In NFS-DL,
+the individual-logarithm descent is an additional stage. Could it dominate the total cost?
+
+**The descent cost.** The descent for a single target $h$ consists of:
+
+1. **Initialization-smoothing:** Find $e$ such that $g^e \cdot h$ is smooth over $B' = L_p[1/3, c']$.
+   Expected number of trials: $\rho(u')^{-1}$ where $u' = \log p / \log B'$. For $B' = L_p[1/3, c']$:
+
+   $$\rho(u')^{-1} = L_p\!\left[\tfrac{1}{3},\, \tfrac{1}{3c'}\right] \cdot (1 + o(1)).$$
+
+   Each trial costs $O(\log p)$ (one modular multiplication). Total smoothing cost:
+
+   $$L_p\!\left[\tfrac{1}{3},\, \tfrac{1}{3c'}\right] \cdot O(\log p)
+     = L_p\!\left[\tfrac{1}{3},\, \tfrac{1}{3c'}\right] \cdot (1 + o(1)).$$
+
+2. **Special-$q$ descent:** For each medium prime $q \in (B, B']$, find a rewriting relation.
+   The descent tree has depth $D = O(\log(B'/B) / \log(B/B_{\min}))$ — in the asymptotic regime,
+   $D = O(1)$ (a constant number of levels, since $B$ and $B'$ are both $L_p[1/3, \cdot]$).
+   Each descent step costs one sieve run: $O(B \cdot \log B)$ operations. Total descent cost:
+
+   $$D \cdot O(B \log B) = O(1) \cdot L_p\!\left[\tfrac{1}{3},\, c\right] \cdot O(\log p)
+     = L_p\!\left[\tfrac{1}{3},\, c\right] \cdot (1 + o(1)).$$
+
+**Comparing descent cost to precomputation cost.** The precomputation cost (sieve + linear
+algebra) is $L_p[1/3, (64/9)^{1/3}]$. The descent cost for a single target is at most
+$L_p[1/3, c + 1/(3c')]$ (the larger of the smoothing and descent costs). For any choice of
+$c, c' > 0$, the descent cost is $L_p[1/3, \cdot]$ with a constant that is at most as large as
+the precomputation constant.
+
+**The key point.** The descent cost is $L_p[1/3, \cdot]$ — the same $L$-notation *exponent*
+as the precomputation. It is not a lower-order term in the absolute sense. However, it is
+*subdominant* in the following precise sense: the descent cost for a *single* target $h$ is
+$L_p[1/3, c_{\mathrm{descent}}]$ for some constant $c_{\mathrm{descent}}$, while the
+precomputation cost is $L_p[1/3, (64/9)^{1/3}]$. The total cost is
+
+$$\text{Total cost} = L_p\!\left[\tfrac{1}{3},\, \max\!\left((64/9)^{1/3},\, c_{\mathrm{descent}}\right)\right].$$
+
+The descent constant $c_{\mathrm{descent}}$ can be made smaller than $(64/9)^{1/3}$ by choosing
+$B'$ appropriately (specifically, $B' = B = L_p[1/3, (8/9)^{1/3}]$, so that the smoothing and
+descent costs are both dominated by the precomputation). With this choice:
+
+$$c_{\mathrm{descent}} \leq (8/9)^{1/3} + \tfrac{1}{3(8/9)^{1/3}} < (64/9)^{1/3}.$$
+
+Therefore the descent does not increase the leading constant, and the total cost remains
+$L_p[1/3, (64/9)^{1/3}]$.
+
+**Formal statement (descent subdominance).** *Under the heuristic smoothness assumptions, the
+individual-logarithm descent for a single target $h$ costs at most $L_p[1/3, c_{\mathrm{descent}}]$
+with $c_{\mathrm{descent}} < (64/9)^{1/3}$. The total NFS-DL cost (precomputation + descent) is
+therefore $L_p[1/3, (64/9)^{1/3}] \cdot (1 + o(1))$, the same as the precomputation alone.*
+
+*Proof sketch.* The smoothing cost is $L_p[1/3, 1/(3c')]$ for $B' = L_p[1/3, c']$. The descent
+cost is $O(D) \cdot L_p[1/3, c]$ where $D = O(1)$ is the tree depth. Setting $c' = c$ (the
+same smoothness bound for smoothing and precomputation) gives total descent cost
+$L_p[1/3, c + 1/(3c)]$. At the optimal $c = (8/9)^{1/3}$:
+
+$$c + \frac{1}{3c} = \left(\frac{8}{9}\right)^{1/3} + \frac{1}{3(8/9)^{1/3}}
+  = \left(\frac{8}{9}\right)^{1/3} + \frac{1}{3} \cdot \left(\frac{9}{8}\right)^{1/3}
+  = \left(\frac{8}{9}\right)^{1/3}\!\left(1 + \frac{1}{3} \cdot \frac{9}{8}\right)
+  = \left(\frac{8}{9}\right)^{1/3} \cdot \frac{11}{8}.$$
+
+Numerically: $(8/9)^{1/3} \approx 0.961$, so $c + 1/(3c) \approx 0.961 \cdot 1.375 \approx
+1.321$. The precomputation constant is $(64/9)^{1/3} \approx 1.923$. Since $1.321 < 1.923$,
+the descent cost is strictly dominated by the precomputation cost. $\square$
+
+### The main theorem: NFS-DL and GNFS share the same $L$-notation complexity
+
+**Theorem (NFS-DL complexity, heuristic).** *Under standard heuristic assumptions on the
+distribution of smooth norms, NFS-DL computes $\log_g(h)$ in $\mathbb{F}_p^*$ in expected time*
+
+$$L_p\!\left[\tfrac{1}{3},\, \left(\tfrac{64}{9}\right)^{1/3}\right] \cdot (1 + o(1)).$$
+
+*This is the same complexity as GNFS for factoring an integer $N \approx p$.*
+
+**Proof (delta on §GNFS §7).** The precomputation (relation collection + $\mathbb{F}_\ell$ linear
+algebra) has the same cost as GNFS:
+
+- **Relation collection:** The sieve cost is $L_p[1/3, c + 2/(3c)]$ (same as GNFS §7, with $p$
+  in place of $N$). The norms have size $\approx p^{1/d}$ at optimal degree $d$; the smoothness
+  probability is $L_p[-1/3, -1/(3c)]$ per norm; collecting $B = L_p[1/3, c]$ relations costs
+  $L_p[1/3, c + 2/(3c)]$.
+
+- **$\mathbb{F}_\ell$ linear algebra:** The cost is $L_p[1/3, 2c]$ (Delta 1 above: same as GF(2)).
+
+- **Optimisation:** The total precomputation cost is $L_p[1/3, \max(c + 2/(3c), 2c)]$, minimised
+  at $c = \sqrt{2/3}$ (simplified) or $c = (8/9)^{1/3}$ (full), giving $L_p[1/3, (64/9)^{1/3}]$
+  (full analysis, citing [LLMP93] and [BLP93] as in §GNFS §7).
+
+- **Individual-logarithm descent:** The descent cost is $L_p[1/3, c_{\mathrm{descent}}]$ with
+  $c_{\mathrm{descent}} < (64/9)^{1/3}$ (Delta 2 above). It does not increase the leading
+  constant.
+
+Therefore the total NFS-DL cost is $L_p[1/3, (64/9)^{1/3}] \cdot (1 + o(1))$. $\square$
+
+### The asymptotic comparison: why NFS-DL and GNFS share the same complexity
+
+The equality of the NFS-DL and GNFS complexities is not a coincidence — it is a structural
+consequence of the fact that both algorithms are driven by the *same* bottleneck: the balance
+between the sieve cost and the linear algebra cost.
+
+**The shared bottleneck.** In both algorithms:
+- The sieve cost is $L[1/3, c + 2/(3c)]$ (collecting smooth pairs from norms of size $\approx
+  N^{1/d}$ or $p^{1/d}$).
+- The linear algebra cost is $L[1/3, 2c]$ (finding a null vector in a $B \times B$ matrix).
+- The optimal $c$ is the crossover point where the two costs are equal.
+
+The DL-specific stages (Schirokauer maps, $\mathbb{F}_\ell$ arithmetic, individual-logarithm
+descent) do not change this balance:
+- Schirokauer maps add $r$ columns to the matrix, but $r = O(1)$ (a constant number of ideals),
+  so the matrix size is still $B \times B$ in $L$-notation.
+- $\mathbb{F}_\ell$ arithmetic changes the constant factor in the linear algebra cost, but not
+  the $L$-notation exponent or constant (Delta 1).
+- The individual-logarithm descent is subdominant (Delta 2).
+
+**The through-line at its sharpest.** The equality $L_p[1/3, (64/9)^{1/3}] = L_N[1/3,
+(64/9)^{1/3}]$ (for $p \approx N$) is the structure-based escape from search at its sharpest:
+two different problems (factoring and discrete logarithm), solved by two different algorithms
+(GNFS and NFS-DL), with two different outputs (a factor vs a discrete log), but with the *same*
+asymptotic complexity. The reason is that both algorithms exploit the *same* structure — the
+number-field bridge and the smoothness of norms — and are limited by the *same* bottleneck —
+the sieve/linear-algebra balance.
+
+This is why the $L[1/3]$ barrier is believed to be a genuine barrier for both problems: any
+algorithm that breaks it for one problem would likely break it for the other, since the
+bottleneck is shared.
+
+### Summary of the derivation
+
+| Quantity | GNFS (§7) | NFS-DL (§9.7) |
+|----------|-----------|---------------|
+| Smoothness bound | $B = L_N[1/3, c]$ | $B = L_p[1/3, c]$ |
+| Norm size | $\approx N^{1/d}$ | $\approx p^{1/d}$ |
+| Smoothness probability (one norm) | $L_N[-1/3, -1/(3c)]$ | $L_p[-1/3, -1/(3c)]$ |
+| Sieve cost | $L_N[1/3, c + 2/(3c)]$ | $L_p[1/3, c + 2/(3c)]$ |
+| Linear algebra field | GF(2) | $\mathbb{F}_\ell$ |
+| Linear algebra cost | $L_N[1/3, 2c]$ | $L_p[1/3, 2c]$ (Delta 1) |
+| Descent cost | — (no descent) | $L_p[1/3, c_{\mathrm{descent}}] < L_p[1/3, (64/9)^{1/3}]$ (Delta 2) |
+| Optimal $c$ | $(8/9)^{1/3}$ (full) | $(8/9)^{1/3}$ (full) |
+| Total cost | $L_N[1/3, (64/9)^{1/3}]$ | $L_p[1/3, (64/9)^{1/3}]$ |
+
+The exponent $1/3$ and the constant $(64/9)^{1/3}$ are the same for both problems. The DL
+content is entirely in the two deltas: $\mathbb{F}_\ell$ linear algebra (same cost shape as
+GF(2)) and individual-logarithm descent (asymptotically subdominant).
+
+---
+
+## §9.8 Cross-References and References
+
+### Cross-references within this textbook
+
+**Code realisation.** The NFS-DL pipeline — relation collection with Schirokauer augmentation,
+$\mathbb{F}_\ell$ linear algebra, and individual-logarithm descent — is implemented in the
+`gnfs` crate and documented in `gnfs/docs/PEDAGOGY.md` §63–§71. That chapter is the code-tour
+sibling to this one: it assumes the reader knows the mathematics (this chapter) and focuses on
+the Rust realisation, the stage-by-stage contracts, and the KAT summary.
+
+**§GNFS §7 (the shared derivation core).** The L-notation derivation in §9.7 is a delta on the
+§GNFS §7 derivation. The reader should read §GNFS §7 first; §9.7 identifies the two DL-specific
+differences (Delta 1: $\mathbb{F}_\ell$ vs GF(2); Delta 2: descent subdominance) and shows that
+neither changes the leading complexity. The full derivation of the exponent $1/3$ and the
+constant $(64/9)^{1/3}$ is in §GNFS §7; §9.7 re-uses it by reference.
+
+**§Prerequisites.** The prerequisites used in this chapter:
+- The Canfield–Erdős–Pomerance smooth-number density theorem and the $L$-notation (§Analysis,
+  §Probability) — the engine of the complexity derivation.
+- The discrete logarithm problem and Pohlig–Hellman (§Logic and complexity) — for subgroup
+  recovery.
+- Unique factorisation of ideals in Dedekind domains (§Algebra) — for the algebraic factor base.
+- The $L$-notation arithmetic lemma (§Analysis) — for the cost calculations in §9.7.
+
+**§On Scale.** The honest science↔engineering gap — the gap between the asymptotic complexity
+$L_p[1/3, (64/9)^{1/3}]$ and the behaviour at toy scale — is discussed in §On Scale. The
+key points for NFS-DL: the descent-tree depth is a scale-only phenomenon (depth 0 at toy scale,
+$O(\log \log p)$ at NFS scale); the medium-prime tuning is invisible at toy scale; the
+$\mathbb{F}_{p^k}$ $k > 1$ `Unsupported` debt is an engineering-scale boundary (mathematical-
+dimension axis, not resource/operational axis).
+
+### References for the NFS-DL Chapter
+
+24. **Schirokauer, O. (1993).** "Discrete logarithms and local units." *Philosophical
+    Transactions of the Royal Society A*, 345(1676), 409–423. [S93] The original source for the
+    Schirokauer map — the $\ell$-adic virtual-log correction that resolves the unit-group
+    obstruction in NFS-DL.
+
+25. **Gordon, D. M. (1993).** "Discrete logarithms in GF(p) using the number field sieve."
+    *SIAM Journal on Discrete Mathematics*, 6(1), 124–138. [G93] The original NFS-DL algorithm
+    for prime fields, including the individual-logarithm descent.
+
+26. **Adleman, L. M. (1994).** "The function field sieve." In: Adleman, L. M., and Huang, M.-D.
+    (eds.) *Algorithmic Number Theory (ANTS-I)*, LNCS 877. Springer. The function-field analogue
+    of NFS-DL; context for the descent stage.
+
+27. **Joux, A., Lercier, R., Smart, N., and Vercauteren, F. (2006).** "The number field sieve
+    in the medium prime case." In: Dwork, C. (ed.) *Advances in Cryptology — CRYPTO 2006*, LNCS
+    4117. Springer. The medium-prime NFS-DL, including the special-$q$ descent and the
+    medium-prime bound calibration.
+
+28. **Barbulescu, R., Gaudry, P., Joux, A., and Thomé, E. (2014).** "A heuristic quasi-polynomial
+    algorithm for discrete logarithm in finite fields of small characteristic." In: Nguyen, P. Q.,
+    and Oswald, E. (eds.) *Advances in Cryptology — EUROCRYPT 2014*, LNCS 8441. Springer. The
+    BGJT algorithm — the quasi-polynomial DLP algorithm for small-characteristic fields that
+    broke the NFS-DL paradigm for that case. [BGJT14]
+
+29. **Lenstra, A. K., Lenstra, H. W. Jr., Manasse, M. S., and Pollard, J. M. (1993).** "The
+    number field sieve." In *The Development of the Number Field Sieve*, Lecture Notes in
+    Mathematics 1554, Springer, 11–42. [LLMP93] (Also cited in §GNFS §7.) The full analysis
+    giving the constant $(64/9)^{1/3}$; applies to NFS-DL by the delta argument of §9.7.
+
+30. **Buhler, J. P., Lenstra, H. W. Jr., and Pomerance, C. (1993).** "Factoring integers with
+    the number field sieve." In *The Development of the Number Field Sieve*, Lecture Notes in
+    Mathematics 1554, Springer, 50–94. [BLP93] (Also cited in §GNFS §7.) The two-sided sieve
+    analysis; applies to NFS-DL by the delta argument of §9.7.
+
+31. **Crandall, R., and Pomerance, C. (2005).** *Prime Numbers: A Computational Perspective*.
+    2nd ed. Springer. §6.2 for the NFS complexity analysis; §6.3 for NFS-DL. [CP05]
