@@ -68,10 +68,12 @@ pub use descent::{
     DescentNode,
     DescentTarget,
     DescentStepError,
+    DescentSieveConfig,
     InitSmoothingError,
     SolveDlError,
     descend_node,
     init_descent_frontier,
+    run_descent,
     solve_dl,
 };
 

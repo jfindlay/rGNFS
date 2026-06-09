@@ -6,9 +6,13 @@
 //!   The k = 1 (prime-field) path is live; k > 1 returns [`SolveDlError::Unsupported`].
 //! - [`init_descent_frontier`] — the first descent step: find an exponent `e` such that
 //!   `g^e · h mod p` is smooth over primes up to `medium_bound`, producing the initial frontier.
-//! - [`descend_node`] — per-node descent (signature frozen D.C.1; body implemented D.C.2).
 //! - [`SolveDlError`] — error type for `solve_dl` (shape frozen D.C.1, taxonomy finalized D.C.3).
 //! - [`InitSmoothingError`] / [`DescentStepError`] — error types for the descent substrate.
+//!
+//! # Note on `descend_node`
+//!
+//! The per-node descent function is implemented in [`super::recurse`] (D.C.2 deliverable) and
+//! re-exported from [`super`]. The D.C.1 stub that lived here has been replaced.
 //!
 //! # Contract C2 (shape frozen D.C.1, finalized D.C.3)
 //!
@@ -229,38 +233,6 @@ pub fn init_descent_frontier<F: Clone>(
     }
 
     Err(InitSmoothingError::NoSmoothExponent { attempts: max_attempts })
-}
-
-// ─── descend_node ─────────────────────────────────────────────────────────────
-
-/// Descend a single frontier node: find a relation rewriting `target` as smaller primes.
-///
-/// Runs a special-q sieve rooted at `target.prime()` to find a relation in which `target`
-/// appears alongside strictly smaller primes. The relation rewrites `log(target)` as a
-/// combination of the smaller primes' logs.
-///
-/// # D.C.1 scope
-///
-/// This function's signature is frozen at D.C.1; the body is D.C.2's deliverable. At D.C.1,
-/// this always returns `Err(DescentStepError::NoRelationFound { target })` — a clean stub,
-/// not a panic.
-///
-/// # Arguments
-///
-/// - `target`: The prime/ideal to descend.
-///
-/// # Errors
-///
-/// - [`DescentStepError::NoRelationFound`] if no suitable relation is found (D.C.1 stub always
-///   returns this).
-/// - [`DescentStepError::NoStrictReduction`] if the sieve produced relations but none strictly
-///   reduced the largest prime (D.C.2 may return this).
-pub fn descend_node<F: Clone>(
-    target: DescentTarget,
-) -> Result<DescentNode<F>, DescentStepError> {
-    // D.C.1 stub: the special-q descent recursion is D.C.2's deliverable.
-    // Return a clean error rather than panicking.
-    Err(DescentStepError::NoRelationFound { target })
 }
 
 // ─── solve_dl ─────────────────────────────────────────────────────────────────

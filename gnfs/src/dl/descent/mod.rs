@@ -5,8 +5,10 @@
 //! - [`node`] — descent-tree data structures: [`DescentTarget`], [`DescentNode`],
 //!   [`DescentFrontier`] (C-Descent contract, frozen D.C.1).
 //! - [`solve`] — the C2 `solve_dl` interface and initialization-smoothing:
-//!   [`solve_dl`], [`init_descent_frontier`], [`descend_node`], and the error types
+//!   [`solve_dl`], [`init_descent_frontier`], and the error types
 //!   [`SolveDlError`], [`InitSmoothingError`], [`DescentStepError`].
+//! - [`recurse`] — the D.C.2 descent recursion: [`descend_node`], [`run_descent`],
+//!   and [`DescentSieveConfig`].
 //!
 //! # Contract C-Descent (frozen D.C.1)
 //!
@@ -21,10 +23,9 @@
 //! at D.C.3 once the full pipeline is integrated.
 
 pub mod node;
+pub mod recurse;
 pub mod solve;
 
 pub use node::{DescentFrontier, DescentNode, DescentTarget};
-pub use solve::{
-    DescentStepError, InitSmoothingError, SolveDlError, descend_node, init_descent_frontier,
-    solve_dl,
-};
+pub use recurse::{DescentSieveConfig, descend_node, run_descent};
+pub use solve::{DescentStepError, InitSmoothingError, SolveDlError, init_descent_frontier, solve_dl};

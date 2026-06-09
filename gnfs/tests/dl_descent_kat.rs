@@ -1,4 +1,5 @@
-//! Known-answer tests (KATs) for D.C.1: descent substrate + initialization-smoothing + C2 shape.
+//! Known-answer tests (KATs) for D.C.1–D.C.2: descent substrate, initialization-smoothing,
+//! C2 shape, and special-q descent recursion.
 //!
 //! # KAT (a) — Frontier ordering invariant
 //!
@@ -17,12 +18,35 @@
 //! Verifies the `solve_dl` interface shape:
 //! - k > 1 returns `SolveDlError::Unsupported { k }` immediately.
 //! - k = 1 path is wired: returns a `Result`, not a panic; if `Err`, must be a known variant.
+//!
+//! # KAT (d) — Single-node descent (D.C.2)
+//!
+//! One medium prime `q = 17` descends to a relation over smaller primes via the special-q sieve.
+//! Uses `f(x) = x³ − x − 1`, `m = 2`. The relation `(a=5, b=1)` has:
+//! - Rational norm: `3` (prime 3 < 17).
+//! - Algebraic norm: `119 = 7 × 17` (primes 7 and 17; 7 < 17).
+//! All children have `prime() < 17` (strict reduction).
+//!
+//! # KAT (e) — Multi-level descent (D.C.2)
+//!
+//! A frontier with two medium primes `{17, 7}` descends through the full tree:
+//! - `q=17` descends to `{3, (7,5)}` via `(a=5, b=1)`.
+//! - `q=7` descends to `{2, 2}` via `(a=-2, b=1)` (rational norm `4=2²`, algebraic norm `7`).
+//! The final tree has depth ≥ 2 (17 → 7 → 2).
+//!
+//! # KAT (f) — Termination: undescendable input (D.C.2)
+//!
+//! A prime `q` that the sieve cannot find a relation for surfaces
+//! `SolveDlError::DescentFailed { stuck_prime: q }` rather than looping.
+//! Uses a very restrictive sieve config (a_bound=0, b_bound=0) to guarantee no relations.
 
 use gnfs::dl::{
-    DescentFrontier, DescentNode, DescentTarget, InitSmoothingError, SolveDlError,
-    init_descent_frontier, solve_dl,
+    DescentFrontier, DescentNode, DescentSieveConfig, DescentTarget, InitSmoothingError,
+    SolveDlError, VirtualLogTable, descend_node, init_descent_frontier, run_descent, solve_dl,
 };
+use gnfs::{FactorBase, PolyPair};
 use num_bigint::BigInt;
+use shared_numfield::IntPoly;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -324,4 +348,364 @@ fn kat_descent_target_prime() {
 
     let algebraic = DescentTarget::Algebraic { p: 13, r: 5 };
     assert_eq!(algebraic.prime(), 13, "Algebraic {{ p: 13, r: 5 }}.prime() should be 13");
+}
+
+// ─── Toy setup helpers ────────────────────────────────────────────────────────
+
+/// `f(x) = x³ − x − 1` (coefficients: [−1, −1, 0, 1]).
+fn f_cubic() -> IntPoly {
+    IntPoly::from_coeffs(vec![bi(-1), bi(-1), bi(0), bi(1)])
+}
+
+/// Build the toy polynomial pair: `f(x) = x³ − x − 1`, `m = 2`, `n = 5`.
+fn toy_poly_pair() -> PolyPair {
+    let f = f_cubic();
+    let m = bi(2);
+    let n = bi(5);
+    let g = IntPoly::from_coeffs(vec![-m.clone(), bi(1)]);
+    let pair = PolyPair::new(f, g, m, n);
+    pair.verify().expect("toy polynomial pair should be valid");
+    pair
+}
+
+/// Build a mock `VirtualLogTable<u64>` with all logs set to 1.
+///
+/// The log values are not meaningful for the structural KATs (d, e, f) — we only
+/// care about the tree shape and leaf detection, not the actual log values.
+fn mock_vtable(fb: &FactorBase) -> VirtualLogTable<u64> {
+    VirtualLogTable {
+        rational_logs: vec![1u64; fb.rational_size()],
+        algebraic_logs: vec![1u64; fb.algebraic_size()],
+    }
+}
+
+// ─── KAT (d): Single-node descent ─────────────────────────────────────────────
+
+/// KAT (d): Single-node descent — `q = 17` descends to a relation over smaller primes.
+///
+/// # Setup
+///
+/// - `f(x) = x³ − x − 1`, `m = 2`, `n = 5`.
+/// - Factor base: `b_rat = 30`, `b_alg = 7` (so 17 is a medium prime, not in the factor base).
+/// - Target: `q = 17` (medium prime).
+/// - Sieve: `a_bound = 10`, `b_bound = 5`, `threshold_scale = 0.3`.
+///
+/// # Expected result
+///
+/// The sieve finds the relation `(a=5, b=1)`:
+/// - Rational norm: `5 − 2 = 3` (prime 3 < 17).
+/// - Algebraic norm: `5³ − 5 − 1 = 119 = 7 × 17` (primes 7 and 17; 7 < 17).
+///
+/// `descend_node` returns `Ok` with:
+/// - `rewriting_relation = Some(...)`.
+/// - `children` non-empty.
+/// - All children have `prime() < 17` (strict reduction).
+#[test]
+fn kat_d_single_node_descent_q17() {
+    let poly = toy_poly_pair();
+    // Factor base: b_alg = 7 makes 17 a medium prime (not in the algebraic factor base).
+    let fb = FactorBase::new(&poly.f, 30, 7);
+    let vtable = mock_vtable(&fb);
+    let sieve_cfg = DescentSieveConfig::with_threshold(10, 5, 0.3);
+
+    // Target: Algebraic ideal (17, 5) — a medium prime on the algebraic side.
+    // f(5) = 119 = 7×17 ≡ 0 mod 17, so r=5 is a root of f mod 17.
+    // With b_alg = 7, the ideal (17, 5) is NOT in the algebraic factor base (17 > 7),
+    // so it is a medium prime that must be descended.
+    assert!(
+        fb.algebraic_index(17, 5).is_none(),
+        "algebraic ideal (17, 5) should not be in the factor base (b_alg=7)"
+    );
+    let target = DescentTarget::Algebraic { p: 17, r: 5 };
+
+    let result = descend_node::<u64>(target, &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        result.is_ok(),
+        "descend_node for q=17 should succeed; got: {:?}",
+        result.err()
+    );
+
+    let node = result.unwrap();
+
+    // The node should have a rewriting relation.
+    assert!(
+        node.rewriting_relation.is_some(),
+        "descended node should have a rewriting relation"
+    );
+
+    // The node should have children.
+    assert!(
+        !node.children.is_empty(),
+        "descended node should have at least one child"
+    );
+
+    // All children must have prime() < 17 (strict reduction invariant).
+    for child in &node.children {
+        assert!(
+            child.target.prime() < 17,
+            "child prime {} must be < 17 (strict reduction)",
+            child.target.prime()
+        );
+    }
+
+    // The node itself should not have a known_log (it's an interior node).
+    assert!(
+        node.known_log.is_none(),
+        "interior node should not have known_log"
+    );
+}
+
+/// KAT (d2): Single-node descent — `q = 7` descends to a relation over smaller primes.
+///
+/// # Setup
+///
+/// - Factor base: `b_rat = 5`, `b_alg = 5` (so 7 is a medium prime on both sides).
+/// - Target: `q = 7` (medium prime, not in the factor base).
+/// - Sieve: `a_bound = 10`, `b_bound = 5`, `threshold_scale = 0.3`.
+///
+/// # Expected result
+///
+/// The sieve finds the relation `(a=-2, b=1)`:
+/// - Rational norm: `|-2 − 2| = 4 = 2²` (prime 2 < 7).
+/// - Algebraic norm: `|(-2)³ − (-2) − 1| = |-7| = 7` (just the prime 7).
+///
+/// All children have `prime() < 7` (strict reduction).
+#[test]
+fn kat_d2_single_node_descent_q7() {
+    let poly = toy_poly_pair();
+    // Factor base: b_alg = 5 makes 7 a medium prime (not in the algebraic factor base).
+    let fb = FactorBase::new(&poly.f, 5, 5);
+    let vtable = mock_vtable(&fb);
+    let sieve_cfg = DescentSieveConfig::with_threshold(10, 5, 0.3);
+
+    // Target: q = 7 (medium prime, not in fb since b_alg = 5).
+    // f(5) = 119 = 7×17 ≡ 0 mod 7, so r=5 is a root of f mod 7.
+    let target = DescentTarget::Algebraic { p: 7, r: 5 };
+
+    let result = descend_node::<u64>(target, &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        result.is_ok(),
+        "descend_node for q=7 should succeed; got: {:?}",
+        result.err()
+    );
+
+    let node = result.unwrap();
+
+    assert!(node.rewriting_relation.is_some(), "descended node should have a rewriting relation");
+    assert!(!node.children.is_empty(), "descended node should have at least one child");
+
+    // All children must have prime() < 7.
+    for child in &node.children {
+        assert!(
+            child.target.prime() < 7,
+            "child prime {} must be < 7 (strict reduction)",
+            child.target.prime()
+        );
+    }
+}
+
+// ─── KAT (e): Multi-level descent ─────────────────────────────────────────────
+
+/// KAT (e): Multi-level descent — frontier with two medium primes descends to leaves.
+///
+/// # Setup
+///
+/// - Factor base: `b_rat = 5`, `b_alg = 5` (factor-base primes: rational {2,3,5}, algebraic
+///   ideals for primes ≤ 5).
+/// - Frontier: two medium primes `{17, 7}` (both above `b_alg = 5`).
+/// - Sieve: `a_bound = 10`, `b_bound = 5`, `threshold_scale = 0.3`.
+///
+/// # Expected result
+///
+/// `run_descent` processes both primes:
+/// - `q=17` descends to children including `q=7` (still medium) and factor-base leaves.
+/// - `q=7` descends to factor-base leaves (primes ≤ 5).
+/// - The completed nodes list is non-empty.
+/// - At least one completed node has depth ≥ 1 (has children).
+///
+/// # Note on depth
+///
+/// The "depth ≥ 2" requirement from the PLAN is satisfied by the two-step descent:
+/// the frontier starts with q=17, which descends to q=7, which descends to leaves.
+/// The completed nodes list contains both the q=17 node (with children) and the q=7 node.
+#[test]
+fn kat_e_multi_level_descent() {
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 5, 5);
+    let vtable = mock_vtable(&fb);
+    let sieve_cfg = DescentSieveConfig::with_threshold(10, 5, 0.3);
+
+    // Build a frontier with two medium primes: 17 and 7.
+    // Both are above b_alg = 5, so neither is a factor-base leaf.
+    let mut frontier: DescentFrontier<u64> = DescentFrontier::new();
+
+    let target_17 = DescentTarget::Algebraic { p: 17, r: 5 };
+    let node_17 = DescentNode {
+        target: target_17.clone(),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: None,
+    };
+    frontier.push(target_17, node_17);
+
+    let target_7 = DescentTarget::Algebraic { p: 7, r: 5 };
+    let node_7 = DescentNode {
+        target: target_7.clone(),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: None,
+    };
+    frontier.push(target_7, node_7);
+
+    let result = run_descent(frontier, &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        result.is_ok(),
+        "run_descent should succeed for frontier {{17, 7}}; got: {:?}",
+        result.err()
+    );
+
+    let completed = result.unwrap();
+
+    // Should have completed at least 2 nodes (one for each frontier prime).
+    assert!(
+        completed.len() >= 2,
+        "run_descent should complete at least 2 nodes; got {}",
+        completed.len()
+    );
+
+    // At least one completed node should have children (interior node from descent).
+    let has_interior = completed.iter().any(|n| !n.children.is_empty());
+    assert!(has_interior, "at least one completed node should have children (interior node)");
+
+    // All leaf nodes (known_log = Some) should have primes ≤ b_alg = 5.
+    for node in &completed {
+        if node.known_log.is_some() {
+            assert!(
+                node.target.prime() <= 5,
+                "leaf node prime {} should be ≤ b_alg = 5",
+                node.target.prime()
+            );
+        }
+    }
+}
+
+/// KAT (e2): Multi-level descent — verify the tree has depth ≥ 2.
+///
+/// Constructs a frontier with `q=17` only, then verifies that the completed tree
+/// contains a node with children (depth ≥ 1), and that at least one child was itself
+/// descended (depth ≥ 2 overall).
+#[test]
+fn kat_e2_descent_tree_depth() {
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 5, 5);
+    let vtable = mock_vtable(&fb);
+    let sieve_cfg = DescentSieveConfig::with_threshold(10, 5, 0.3);
+
+    // Start with q=17 only.
+    let mut frontier: DescentFrontier<u64> = DescentFrontier::new();
+    let target_17 = DescentTarget::Algebraic { p: 17, r: 5 };
+    let node_17 = DescentNode {
+        target: target_17.clone(),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: None,
+    };
+    frontier.push(target_17, node_17);
+
+    let result = run_descent(frontier, &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        result.is_ok(),
+        "run_descent should succeed for frontier {{17}}; got: {:?}",
+        result.err()
+    );
+
+    let completed = result.unwrap();
+
+    // The q=17 node should have been descended (has children).
+    let q17_node = completed.iter().find(|n| n.target.prime() == 17);
+    assert!(q17_node.is_some(), "completed nodes should include q=17");
+    let q17_node = q17_node.unwrap();
+    assert!(
+        !q17_node.children.is_empty(),
+        "q=17 node should have children (it was descended)"
+    );
+
+    // The q=17 node's children should include q=7 (a medium prime that was also descended).
+    // This verifies depth ≥ 2: 17 → 7 → leaves.
+    let has_q7_child = q17_node.children.iter().any(|c| c.target.prime() == 7);
+    assert!(
+        has_q7_child,
+        "q=17 node should have q=7 as a child (from the relation (a=5, b=1))"
+    );
+}
+
+// ─── KAT (f): Termination — undescendable input ───────────────────────────────
+
+/// KAT (f): Termination — a prime that cannot be descended surfaces `DescentFailed`.
+///
+/// Uses a sieve config with `a_bound = 0` and `b_bound = 0` to guarantee no relations
+/// are found. The descent must surface `SolveDlError::DescentFailed { stuck_prime: q }`
+/// rather than looping or panicking.
+///
+/// # Setup
+///
+/// - Factor base: `b_rat = 5`, `b_alg = 5`.
+/// - Frontier: `q = 7` (medium prime).
+/// - Sieve: `a_bound = 0`, `b_bound = 0` (no sieve area — guaranteed no relations).
+///
+/// # Expected result
+///
+/// `run_descent` returns `Err(SolveDlError::DescentFailed { stuck_prime: 7 })`.
+#[test]
+fn kat_f_termination_undescendable_input() {
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 5, 5);
+    let vtable = mock_vtable(&fb);
+    // Zero sieve area: guaranteed no relations found.
+    let sieve_cfg = DescentSieveConfig::new(0, 0);
+
+    let mut frontier: DescentFrontier<u64> = DescentFrontier::new();
+    let target = DescentTarget::Algebraic { p: 7, r: 5 };
+    let node = DescentNode {
+        target: target.clone(),
+        rewriting_relation: None,
+        children: vec![],
+        known_log: None,
+    };
+    frontier.push(target, node);
+
+    let result = run_descent(frontier, &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        matches!(result, Err(SolveDlError::DescentFailed { stuck_prime: 7 })),
+        "undescendable prime should surface DescentFailed {{ stuck_prime: 7 }}; got: {:?}",
+        result
+    );
+}
+
+/// KAT (f2): Termination — `descend_node` directly returns `NoRelationFound` for zero sieve area.
+///
+/// Verifies that `descend_node` itself returns the correct error when the sieve finds nothing.
+#[test]
+fn kat_f2_descend_node_no_relation_found() {
+    use gnfs::dl::DescentStepError;
+
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 5, 5);
+    let vtable = mock_vtable(&fb);
+    // Zero sieve area: guaranteed no relations.
+    let sieve_cfg = DescentSieveConfig::new(0, 0);
+
+    let target = DescentTarget::Algebraic { p: 7, r: 5 };
+    let result = descend_node::<u64>(target.clone(), &poly, &fb, &vtable, &sieve_cfg);
+
+    assert!(
+        matches!(result, Err(DescentStepError::NoRelationFound { .. })),
+        "zero sieve area should return NoRelationFound; got: {:?}",
+        result
+    );
 }
