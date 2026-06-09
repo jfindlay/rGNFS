@@ -690,7 +690,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 |---|---------|--------|--------|-------|
 | D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | done | 1651993 | C-Descent (frozen), C2 (shape opened) |
 | D.C.2 | Special-q descent recursion | done | 52ee232 | — (sieve seam resolved additively in recurse.rs; solve.rs stub replaced) |
-| D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | pending | — | — |
+| D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | done | 9d07c51 | C2 (frozen — SolveDlError taxonomy: Unsupported, InitSmoothingFailed, DescentFailed) |
 
 Contracts frozen before this sub-track (read by D.C): C-NF (bdba6f5 / extended 20cd263), C-Ideal
 (05b27c8), C-Res (bcd63cd), C-Dedekind (7844773), C-Relation (c1dc0b6), C-FactorBase (c1dc0b6),
@@ -702,6 +702,12 @@ one new internal contract (C-Descent, D.C.1) plus the cross-track **C2** (shape 
 ---
 
 ## Action-frame digest
+
+### D.C.3 — 2026-06-09
+Discovery/flex: C2 taxonomy confirmed sufficient with D.C.1 variants (no new failure modes from D.C.2 descent); C2 frozen at 9d07c51.
+Affected: C2 (frozen — final taxonomy: Unsupported, InitSmoothingFailed, DescentFailed)
+Deferred: no — subgroup recovery (Pohlig-Hellman for full log mod p-1) documented as out-of-scope; toy KAT uses ell=5 (prime factor of p-1=10), log recovered mod 5 only. solve_dl_full is the context-bearing variant; frozen C2 solve_dl signature unchanged.
+Texture: Assembly uses flat completed-list from run_descent in reverse order; multiplicity encoded in children list (one child per unit of exponent). SolveDlContext bundles poly/fb/vtable/sieve_cfg for the full pipeline without changing the frozen C2 signature.
 
 ### D.C.1 — 2026-06-09
 Discovery/flex: Inflection-design juncture resolved C-Descent and C2 interfaces; design-confident verdict, self-continued.
