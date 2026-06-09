@@ -1033,6 +1033,7 @@ dependencies = [
  "rayon",
  "shared-bigint",
  "shared-field",
+ "shared-numth",
 ]
 
 [[package]]

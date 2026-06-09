@@ -1,7 +1,4 @@
-//! Small prime-order curves for unit tests and Phase 4 ECDLP KATs.
-//!
-//! Both curves have ~20-bit prime group order, which makes Pollard rho terminate
-//! in ~1000 expected steps — fast enough for debug-mode tests.
+//! Small curves for unit tests and Phase 4–E ECDLP KATs.
 //!
 //! Parameters were computed offline via point-counting (brute-force enumeration of
 //! `y² = x³ + ax + b mod p` for each `x`) and verified by checking that `n·G = ∞`.
@@ -29,6 +26,27 @@
 //! | b | `16` |
 //! | n | `1_048_387` (20-bit prime) |
 //! | G | `(0, 4)` |
+//!
+//! # Composite-order toy curve — `composite_toy`
+//!
+//! `y² = x³ + x + 33  mod  47`
+//!
+//! A short-Weierstrass curve over GF(47) whose generator has **full composite**
+//! order `n = 60 = 2² · 3 · 5`.  The repeated prime `2²` exercises the `e > 1`
+//! lift in Pohlig–Hellman (E.A.2).  The three distinct prime factors exercise
+//! the CRT combine.
+//!
+//! Parameters computed offline by brute-force point-counting and verified by:
+//! - `n·G = ∞`
+//! - `[n/2]·G ≠ ∞`, `[n/3]·G ≠ ∞`, `[n/5]·G ≠ ∞` (full-order checks)
+//!
+//! | Symbol | Value |
+//! |--------|-------|
+//! | p | `47` |
+//! | a | `1` |
+//! | b | `33` |
+//! | n | `60 = 2² · 3 · 5` |
+//! | G | `(10, 3)` |
 
 use crypto_bigint::Uint;
 use crate::curve::Curve;
@@ -110,6 +128,35 @@ pub const TINY_GLV_N: u64 = 1093;
 pub const TINY_GLV_BETA: u64 = 870;
 /// GLV eigenvalue for `tiny_glv`.
 pub const TINY_GLV_LAMBDA: u64 = 151;
+
+// ── Composite-order toy curve ─────────────────────────────────────────────────
+
+/// Return the composite-order toy curve.
+///
+/// `y² = x³ + x + 33 mod 47`.  Composite group order `n = 60 = 2² · 3 · 5`.
+/// The generator `G = (10, 3)` has full order `n` (not a subgroup generator).
+///
+/// Used by Pohlig–Hellman (E.A) to exercise the prime-power lift (`e = 2` for
+/// the factor `2²`) and the CRT combine across three distinct primes.
+pub fn composite_toy() -> Curve {
+    Curve {
+        p:  Uint::<4>::from(47u64),
+        a:  Uint::<4>::from(1u64),
+        b:  Uint::<4>::from(33u64),
+        n:  Uint::<4>::from(60u64),
+        gx: Uint::<4>::from(10u64),
+        gy: Uint::<4>::from(3u64),
+    }
+}
+
+/// Group order of `composite_toy`: `n = 60 = 2² · 3 · 5`.
+pub const COMPOSITE_TOY_N: u64 = 60;
+
+/// Prime-power factorization of `COMPOSITE_TOY_N`.
+///
+/// Sorted `(prime, exponent)` pairs.  `∏ pᵢ^{eᵢ} = 60`.
+/// The `2²` entry exercises the `e > 1` lift in Pohlig–Hellman.
+pub const COMPOSITE_TOY_FACTORS: &[(u64, u32)] = &[(2, 2), (3, 1), (5, 1)];
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -232,5 +279,110 @@ mod tests {
         let phi_g = glv_phi(&g, &c.p, TINY_GLV_BETA);
         let lam_g = c.scalar_mul(&g, &Uint::<4>::from(TINY_GLV_LAMBDA));
         assert_eq!(phi_g, lam_g, "tiny_glv: φ(G) ≠ λ·G");
+    }
+
+    // ── composite_toy tests ───────────────────────────────────────────────────
+
+    /// composite_toy generator is on the curve.
+    #[test]
+    fn composite_toy_generator_on_curve() {
+        let c = composite_toy();
+        let g: AffinePoint<FpMonty> = c.generator();
+        assert!(c.is_on_curve(&g), "composite_toy: generator not on curve");
+    }
+
+    /// n·G = ∞ for composite_toy.
+    #[test]
+    fn composite_toy_n_times_g_is_infinity() {
+        let c = composite_toy();
+        let g: AffinePoint<FpMonty> = c.generator();
+        let ng = c.scalar_mul(&g, &c.n);
+        assert!(ng.is_infinity(), "composite_toy: n·G should be ∞");
+    }
+
+    /// Full-order check: [n/pᵢ]·G ≠ ∞ for every prime pᵢ | n.
+    ///
+    /// Verifies that G has order exactly n (not a proper divisor).
+    /// Primes dividing n = 60 = 2² · 3 · 5 are {2, 3, 5}.
+    #[test]
+    fn composite_toy_generator_full_order() {
+        let c = composite_toy();
+        let g: AffinePoint<FpMonty> = c.generator();
+        let n = COMPOSITE_TOY_N;
+        // [n/2]·G = [30]·G must not be ∞
+        let g30 = c.scalar_mul(&g, &Uint::<4>::from(n / 2));
+        assert!(!g30.is_infinity(), "composite_toy: [n/2]·G should not be ∞ (full-order check)");
+        // [n/3]·G = [20]·G must not be ∞
+        let g20 = c.scalar_mul(&g, &Uint::<4>::from(n / 3));
+        assert!(!g20.is_infinity(), "composite_toy: [n/3]·G should not be ∞ (full-order check)");
+        // [n/5]·G = [12]·G must not be ∞
+        let g12 = c.scalar_mul(&g, &Uint::<4>::from(n / 5));
+        assert!(!g12.is_infinity(), "composite_toy: [n/5]·G should not be ∞ (full-order check)");
+    }
+
+    /// COMPOSITE_TOY_FACTORS product equals COMPOSITE_TOY_N.
+    #[test]
+    fn composite_toy_factors_product() {
+        let product: u64 = COMPOSITE_TOY_FACTORS.iter().map(|&(p, e)| p.pow(e)).product();
+        assert_eq!(
+            product, COMPOSITE_TOY_N,
+            "∏ pᵢ^eᵢ = {product}, expected {COMPOSITE_TOY_N}"
+        );
+    }
+
+    /// Known scalar multiples of G on composite_toy, computed offline.
+    ///
+    /// | k  | Q.x | Q.y |
+    /// |----|-----|-----|
+    /// | 1  | 10  | 3   |
+    /// | 7  | 24  | 43  |
+    /// | 12 | 16  | 44  |
+    /// | 20 | 8   | 41  |
+    /// | 30 | 38  | 0   |
+    #[test]
+    fn composite_toy_scalar_mul_reference() {
+        let c = composite_toy();
+        let g: AffinePoint<FpMonty> = c.generator();
+        let cases: &[(u64, u64, u64)] = &[
+            (1,  10, 3),
+            (7,  24, 43),
+            (12, 16, 44),
+            (20, 8,  41),
+        ];
+        for &(k, ref_x, ref_y) in cases {
+            let result = c.scalar_mul(&g, &Uint::<4>::from(k));
+            match &result {
+                AffinePoint::Infinity => panic!("composite_toy: {k}·G is ∞"),
+                AffinePoint::Finite { x, y } => {
+                    assert_eq!(
+                        x.to_uint(), Uint::<4>::from(ref_x),
+                        "composite_toy: {k}·G x mismatch"
+                    );
+                    assert_eq!(
+                        y.to_uint(), Uint::<4>::from(ref_y),
+                        "composite_toy: {k}·G y mismatch"
+                    );
+                }
+            }
+        }
+    }
+
+    /// [30]·G = (38, 0) — a point of order 2 (y = 0), confirming the 2² factor.
+    #[test]
+    fn composite_toy_order_2_point() {
+        let c = composite_toy();
+        let g: AffinePoint<FpMonty> = c.generator();
+        // [30]·G should be (38, 0), which has order 2 (y=0 means 2P = ∞)
+        let g30 = c.scalar_mul(&g, &Uint::<4>::from(30u64));
+        match &g30 {
+            AffinePoint::Infinity => panic!("composite_toy: [30]·G should not be ∞"),
+            AffinePoint::Finite { x, y } => {
+                assert_eq!(x.to_uint(), Uint::<4>::from(38u64), "[30]·G x mismatch");
+                assert_eq!(y.to_uint(), Uint::<4>::from(0u64),  "[30]·G y should be 0 (order-2 point)");
+            }
+        }
+        // Doubling it gives ∞
+        let g60 = c.scalar_mul(&g, &Uint::<4>::from(60u64));
+        assert!(g60.is_infinity(), "composite_toy: [60]·G should be ∞");
     }
 }

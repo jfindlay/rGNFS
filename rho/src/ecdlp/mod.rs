@@ -30,6 +30,7 @@ pub mod coordinator;
 pub mod dp;
 pub mod glv;
 pub mod negmap;
+pub mod pohlig;
 pub mod walk;
 
 use std::sync::Arc;
