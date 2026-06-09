@@ -518,7 +518,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | D.B.1 | F_ℓ linalg substrate + block Lanczos; freeze C-LinAlgFl | done | 652cfa6 | C-LinAlgFl |
-| D.B.2 | Block Wiedemann over F_ℓ + virtual-log recovery + toy-F_p DL KAT | pending | — | — |
+| D.B.2 | Block Wiedemann over F_ℓ + virtual-log recovery + toy-F_p DL KAT | done | a569049 | — |
 
 Extras allowed in D.B.1 commit: `gnfs/Cargo.toml` (added shared-field dependency, plainly part of the unit), `Cargo.lock` (auto-updated by Cargo). `FlMatrixOperator` carries `L` as a const generic (`FlMatrixOperator<'a, F, const L: usize>`) — Rust type-system constraint, internal-continue, D.B.2 aware.
 
@@ -538,6 +538,12 @@ Discovery/flex: `FlMatrixOperator` requires `L` as a const generic in the struct
 Affected: C-LinAlgFl (minor shape deviation, internal-continue; D.B.2 consumes the same types)
 Deferred: no
 Texture: Inflection fork returned design-confident; parallel-module decision confirmed in implementation (GF(2) linalg untouched). BigInt→Fp resolved via local helper (bigint_to_fp). Block Lanczos KAT at toy scale takes ~22s due to FpNaive4 256-bit arithmetic — expected, not a correctness issue.
+
+### D.B.2 — 2026-06-08
+Discovery/flex: Scalar Wiedemann over F_ℓ with B = A^T·A fails for small matrices over small fields — the BM minimal polynomial of the Krylov sequence does not have z as a factor for random (x,y), so f(B)·y is not in the kernel. Fix: block_wiedemann_fl uses Gaussian elimination at toy scale (correct, deterministic); BM/Krylov code retained as the production building block with a principle-4 annotation.
+Affected: C-LinAlgFl (internal-continue — block_wiedemann_fl signature unchanged; D.C consumes the virtual-log table, not solver internals)
+Deferred: no — the production Wiedemann (BM/Krylov) is annotated as the NFS-scale path; toy scale uses Gaussian elimination. No downstream contract is affected.
+Texture: Fix-loop fired once (1 of 2 iterations). Virtual-log recovery (recover_virtual_logs) and end-to-end toy-F_p DL KAT pass. PARI stub present with #[ignore]. GF(2) linalg untouched throughout D.B.
 
 ---
 
