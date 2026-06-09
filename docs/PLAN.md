@@ -689,7 +689,7 @@ with no commit-shaped deliverable); its outcome is recorded in the Action-frame 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | D.C.1 | Descent substrate + init-smoothing + C2 shape; freeze C-Descent, open C2 | done | 1651993 | C-Descent (frozen), C2 (shape opened) |
-| D.C.2 | Special-q descent recursion | pending | — | — |
+| D.C.2 | Special-q descent recursion | done | 52ee232 | — (sieve seam resolved additively in recurse.rs; solve.rs stub replaced) |
 | D.C.3 | Individual-log assembly + C2 freeze + end-to-end DL KAT | pending | — | — |
 
 Contracts frozen before this sub-track (read by D.C): C-NF (bdba6f5 / extended 20cd263), C-Ideal
