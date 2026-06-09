@@ -300,12 +300,213 @@ D.C.1, finalized at D.C.3), and reads the frozen Track-G / Track-D contracts. **
 tree). Compiler-enforced (DescentNode / frontier / descent-entry signatures) + KAT-enforced (frontier
 ordering invariant + single-node descent). Sub-track-internal (not consumed outside Track D).
 
-**Frozen interface (`gnfs/src/dl/descent/`):** *(to be frozen at D.C.1 — the inflection-juncture
-fork writes the resolved DescentNode / frontier / descent-entry signatures here at execution time.)*
-Anticipated surface (over-specify lightly): a `DescentNode` carrying the descended prime/ideal, the
-rewriting relation, child references, and a known-log flag; a frontier type ordered largest-prime-
-first (termination invariant); a `descend_node(...)` entry D.C.2 implements and a frontier-init entry
-the initialization-smoothing feeds.
+**Frozen interface (`gnfs/src/dl/descent/`):**
+
+```rust
+// ─── DescentTarget ────────────────────────────────────────────────────────────
+
+/// A prime or ideal being descended.
+///
+/// For the rational side, this is a prime `p` (represented as `u64`).
+/// For the algebraic side, this is a degree-1 prime ideal `(p, r)` where `f(r) ≡ 0 (mod p)`.
+///
+/// The `norm_contribution` is the prime `p` in both cases — the value that must strictly
+/// decrease at each descent step (the termination invariant).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DescentTarget {
+    /// A rational prime `p`.
+    Rational(u64),
+    /// An algebraic prime ideal `(p, r)` with `f(r) ≡ 0 (mod p)`.
+    Algebraic { p: u64, r: u64 },
+}
+
+impl DescentTarget {
+    /// The prime `p` — the value that must strictly decrease at each descent step.
+    pub fn prime(&self) -> u64;
+}
+
+// Ord implementation: ordered by prime() descending (largest-first for the frontier).
+
+// ─── DescentNode ──────────────────────────────────────────────────────────────
+
+/// A node in the descent tree: a prime/ideal being descended, its rewriting relation,
+/// and references to child nodes.
+///
+/// The descent tree is built top-down: the root is the target `h` (after initialization-
+/// smoothing), interior nodes are medium primes rewritten via special-q descent, and
+/// leaves are factor-base elements with known virtual logs.
+///
+/// # Invariants
+///
+/// - `target.prime() > child.prime()` for all children (strict descent — termination).
+/// - `known_log.is_some()` iff `target` is a factor-base element (leaf node).
+/// - `rewriting_relation.is_some()` iff this is an interior node (not a leaf).
+#[derive(Debug, Clone)]
+pub struct DescentNode<F> {
+    /// The prime/ideal being descended.
+    pub target: DescentTarget,
+
+    /// The DL relation that rewrites `log(target)` as a combination of smaller primes' logs.
+    ///
+    /// `None` for leaf nodes (factor-base elements with known logs).
+    /// `Some(rel)` for interior nodes: the relation from special-q descent.
+    pub rewriting_relation: Option<DLRelation>,
+
+    /// Child nodes: the smaller primes from the rewriting relation.
+    ///
+    /// Empty for leaf nodes. For interior nodes, each child's `target.prime()` is strictly
+    /// less than `self.target.prime()` (the termination invariant).
+    pub children: Vec<DescentNode<F>>,
+
+    /// The known virtual log of this target, if it is a factor-base element.
+    ///
+    /// `Some(log)` for leaves (looked up from `VirtualLogTable`).
+    /// `None` for interior nodes (computed during assembly by combining children's logs).
+    pub known_log: Option<F>,
+}
+
+// ─── DescentFrontier ──────────────────────────────────────────────────────────
+
+/// The frontier of medium primes awaiting descent: a max-heap ordered by prime (largest-first).
+///
+/// The largest-first ordering is the termination invariant: each descent step pops the
+/// largest prime `q` from the frontier, finds a relation rewriting `q` as smaller primes,
+/// and pushes those smaller primes back onto the frontier. Since each step strictly reduces
+/// the largest prime, the descent terminates when all frontier elements are factor-base
+/// leaves.
+///
+/// # Type parameter
+///
+/// `F` is the field element type for virtual logs (e.g., `FpNaive4`).
+pub struct DescentFrontier<F> {
+    /// Max-heap of (target, partial_node) pairs, ordered by target.prime() descending.
+    heap: BinaryHeap<(DescentTarget, DescentNode<F>)>,
+}
+
+impl<F> DescentFrontier<F> {
+    /// Create an empty frontier.
+    pub fn new() -> Self;
+
+    /// Push a target onto the frontier with an initial (leaf-candidate) node.
+    pub fn push(&mut self, target: DescentTarget, node: DescentNode<F>);
+
+    /// Pop the largest-prime target from the frontier.
+    ///
+    /// Returns `None` if the frontier is empty.
+    pub fn pop_largest(&mut self) -> Option<(DescentTarget, DescentNode<F>)>;
+
+    /// Returns `true` if the frontier is empty (all targets descended to leaves).
+    pub fn is_empty(&self) -> bool;
+
+    /// The number of targets remaining on the frontier.
+    pub fn len(&self) -> usize;
+}
+
+// ─── Entry signatures ─────────────────────────────────────────────────────────
+
+/// Initialize the descent frontier by finding an exponent `e` such that `g^e · h` is
+/// B'-smooth over medium primes.
+///
+/// This is the first descent step: randomized search over exponents `e` for one where
+/// the number-field lift of `g^e · h` factors into medium primes (primes > factor-base
+/// bound but ≤ B'). The medium primes become the initial descent frontier.
+///
+/// # Arguments
+///
+/// - `g`: Generator of the multiplicative group (as `BigInt` mod p).
+/// - `h`: Target element (as `BigInt` mod p).
+/// - `p`: The prime modulus.
+/// - `poly`: The NFS polynomial pair (for norm computation).
+/// - `fb`: The factor base (for leaf detection).
+/// - `medium_bound`: The medium-prime bound B' (primes ≤ B' are considered smooth).
+/// - `max_attempts`: Maximum exponent-search iterations before giving up.
+///
+/// # Returns
+///
+/// `Ok((e, frontier))` where `e` is the smoothing exponent and `frontier` is the initial
+/// descent frontier (the medium primes of `g^e · h`).
+///
+/// `Err(InitSmoothingError)` if no smooth exponent is found within `max_attempts`.
+pub fn init_descent_frontier<F: Fp<L>, const L: usize>(
+    g: &BigInt,
+    h: &BigInt,
+    p: &BigInt,
+    poly: &PolyPair,
+    fb: &FactorBase,
+    medium_bound: u64,
+    max_attempts: u64,
+) -> Result<(BigInt, DescentFrontier<F>), InitSmoothingError>;
+
+/// Descend a single frontier node: find a relation rewriting `target` as smaller primes.
+///
+/// Runs a special-q sieve rooted at `target.prime()` to find a relation in which `target`
+/// appears alongside strictly smaller primes. The relation rewrites `log(target)` as a
+/// combination of the smaller primes' logs.
+///
+/// # Arguments
+///
+/// - `target`: The prime/ideal to descend.
+/// - `poly`: The NFS polynomial pair.
+/// - `fb`: The factor base (for leaf detection).
+/// - `sieve_config`: Special-q sieve parameters.
+/// - `nf`: The number field (for Schirokauer map).
+/// - `ell`: The subgroup order ℓ.
+/// - `schirokauer_ideals`: Prime ideals above ℓ for the Schirokauer map.
+///
+/// # Returns
+///
+/// `Ok(node)` with `node.rewriting_relation = Some(rel)` and `node.children` populated.
+///
+/// `Err(DescentStepError)` if no suitable relation is found within the sieve bounds.
+///
+/// # Contract note
+///
+/// D.C.2 implements this function. The signature is frozen at D.C.1; the body is D.C.2's
+/// deliverable.
+pub fn descend_node<'a, F: Fp<L>, const L: usize>(
+    target: DescentTarget,
+    poly: &PolyPair,
+    fb: &FactorBase,
+    sieve_config: &SpecialQConfig,
+    nf: &'a NumberField,
+    ell: &BigInt,
+    schirokauer_ideals: &[PrimeIdeal<'a>],
+) -> Result<DescentNode<F>, DescentStepError>;
+
+// ─── Error types ──────────────────────────────────────────────────────────────
+
+/// Error from initialization-smoothing.
+#[derive(Debug, Clone)]
+pub enum InitSmoothingError {
+    /// No smooth exponent found within the attempt limit.
+    NoSmoothExponent { attempts: u64 },
+}
+
+/// Error from a single descent step.
+#[derive(Debug, Clone)]
+pub enum DescentStepError {
+    /// No relation found that rewrites the target as smaller primes.
+    NoRelationFound { target: DescentTarget },
+    /// The sieve produced relations, but none strictly reduced the largest prime.
+    NoStrictReduction { target: DescentTarget },
+}
+```
+
+**Design notes (for D.C.1 implementor):**
+
+- `DescentTarget` distinguishes rational primes from algebraic ideals; both carry the prime `p`
+  that must strictly decrease (the termination invariant).
+- `DescentNode<F>` is generic over the field element type `F` (e.g., `FpNaive4`) so that
+  `known_log` can hold the virtual log in the correct field.
+- `DescentFrontier<F>` is a max-heap ordered by `target.prime()` descending — popping always
+  yields the largest prime, ensuring each descent step strictly reduces the maximum.
+- `init_descent_frontier` returns the smoothing exponent `e` alongside the frontier; D.C.3's
+  assembly needs `e` to compute `log_g(h) = log_g(g^e · h) − e`.
+- `descend_node` is the D.C.2 entry point; D.C.1 declares the signature, D.C.2 implements.
+- The special-q sieve reuse seam (Discoveries): `descend_node` will need to drive the sieve at
+  a fixed target `q` that may not be in the factor base. D.C.2 resolves this — either the
+  existing `special_q_sieve` can be parameterized, or a thin wrapper is added. This is an
+  anticipated additive discovery, not a destructive change to the frozen G.C sieve contract.
 
 ### C2 — NFS-DL solver interface (compiler + KAT) — *shape opened D.C.1, frozen D.C.3*
 
@@ -313,29 +514,137 @@ the initialization-smoothing feeds.
 the project's most-visible cross-track contract (ROADMAP Contract C2). Compiler-enforced (the
 `solve_dl` signature + `SolveDlError`) + KAT-enforced (end-to-end individual log, k = 1).
 
-**Frozen interface (`gnfs/src/dl/descent/solve.rs`):** *(shape to be frozen at D.C.1; error taxonomy
-finalized at D.C.3.)* Anticipated surface, per ROADMAP Contract C2:
+**Frozen interface (`gnfs/src/dl/descent/solve.rs`):**
 
 ```rust
-/// Compute the discrete logarithm log_g(h) in F_{p^k} via NFS-DL.
+use num_bigint::BigInt;
+
+// ─── solve_dl ─────────────────────────────────────────────────────────────────
+
+/// Compute the discrete logarithm log_g(h) in F_{p^k}* via NFS-DL.
 ///
-/// k = 1 (prime field F_p) is implemented; k > 1 (extension field) returns
-/// SolveDlError::Unsupported — the F_{p^k} extension is a deferred E.C-prep session.
+/// Returns `x` such that `g^x ≡ h (mod p^k)` in the subgroup of order `ell`, or an error
+/// if the computation fails.
+///
+/// # Arguments
+///
+/// - `g`: Generator of the multiplicative group, as a `BigInt` in `[1, p^k)`.
+/// - `h`: Target element, as a `BigInt` in `[1, p^k)`.
+/// - `p`: The prime base of the field.
+/// - `k`: The extension degree. `k = 1` is the prime field F_p; `k > 1` is F_{p^k}.
+/// - `ell`: The subgroup order (a prime dividing `p^k − 1`). The returned log is mod `ell`.
+///
+/// # Returns
+///
+/// `Ok(x)` where `x ∈ [0, ell)` and `g^x ≡ h (mod p^k)`.
+///
+/// `Err(SolveDlError)` if the computation fails (see error variants).
+///
+/// # Scope (D.C.1 freeze)
+///
+/// - **k = 1 (prime field F_p):** Fully implemented. The NFS-DL pipeline (relation collection,
+///   F_ℓ linear algebra, virtual-log table, initialization-smoothing, special-q descent,
+///   log assembly) is exercised end-to-end.
+/// - **k > 1 (extension field F_{p^k}):** Returns `SolveDlError::Unsupported`. The F_{p^k}
+///   extension is genuine new mathematics (tower number-field setup) deferred to an E.C-prep
+///   session before the MOV bridge. This is a recorded debt (Discoveries), not a silent gap.
+///
+/// # Threading note
+///
+/// The `ell` parameter threads the subgroup order through the entire pipeline: the F_ℓ linear
+/// algebra, the virtual-log table, and the descent all operate mod `ell`. The returned log is
+/// in `[0, ell)`. If the full group order `p^k − 1` is needed, the caller applies Pohlig–Hellman
+/// / CRT across the order's prime factors (out of D.C scope; see D.C.3 subgroup-recovery note).
 pub fn solve_dl(
-    g: /* group element */,
-    h: /* group element */,
+    g: &BigInt,
+    h: &BigInt,
     p: &BigInt,
     k: usize,
+    ell: &BigInt,
 ) -> Result<BigInt, SolveDlError>;
 
+// ─── SolveDlError ─────────────────────────────────────────────────────────────
+
+/// Error type for `solve_dl`.
+///
+/// The error taxonomy is **opened at D.C.1** (shape frozen) and **finalized at D.C.3** (once
+/// descent reality reveals the actual failure modes). D.C.2/D.C.3 may add variants; E.C
+/// consumes the finalized taxonomy.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SolveDlError {
-    /// k > 1 (extension field F_{p^k}) not yet supported (deferred to E.C-prep).
-    Unsupported,
-    /// Descent failed to terminate within bounds for this target/size.
-    DescentFailed,
-    // … further size/failure variants finalized at D.C.3 once descent reality is known.
+    /// Extension field F_{p^k} (k > 1) is not yet supported.
+    ///
+    /// The F_{p^k} NFS-DL extension is deferred to an E.C-prep session. This variant is
+    /// returned immediately for k > 1 without attempting any computation.
+    Unsupported { k: usize },
+
+    /// Initialization-smoothing failed: no exponent `e` found such that `g^e · h` is smooth.
+    ///
+    /// This can occur for pathological inputs or if the medium-prime bound / attempt limit
+    /// is too restrictive. The caller may retry with relaxed parameters.
+    InitSmoothingFailed {
+        /// Number of exponents tried before giving up.
+        attempts: u64,
+    },
+
+    /// Descent failed: a medium prime could not be rewritten as smaller primes.
+    ///
+    /// This occurs when the special-q sieve fails to find a suitable relation for some
+    /// frontier prime within the sieve bounds. At toy scale, this may indicate the sieve
+    /// region is too small; at NFS scale, it is rare for well-chosen parameters.
+    DescentFailed {
+        /// The prime that could not be descended.
+        stuck_prime: u64,
+    },
+
+    // ─── Variants to be finalized at D.C.3 ────────────────────────────────────
+    //
+    // The following are placeholders for failure modes that D.C.2/D.C.3 may reveal:
+    //
+    // - `RelationCollectionFailed`: not enough relations for the F_ℓ linear system.
+    // - `LinearAlgebraFailed`: the F_ℓ solver did not converge.
+    // - `AssemblyFailed`: log assembly produced an inconsistent result.
+    //
+    // These are not declared now because the D.C.1 substrate does not exercise them;
+    // D.C.3 finalizes the taxonomy once the full pipeline is integrated.
 }
+
+impl std::fmt::Display for SolveDlError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unsupported { k } => {
+                write!(f, "extension field F_{{p^{k}}} (k > 1) not yet supported")
+            }
+            Self::InitSmoothingFailed { attempts } => {
+                write!(f, "initialization-smoothing failed after {attempts} attempts")
+            }
+            Self::DescentFailed { stuck_prime } => {
+                write!(f, "descent failed: could not rewrite prime {stuck_prime}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SolveDlError {}
 ```
+
+**Design notes (for D.C.1 implementor and E.C consumer):**
+
+- **Element representation:** `g` and `h` are `&BigInt` — the canonical representation for
+  arbitrary-precision integers. For k = 1, these are elements of F_p* (integers in `[1, p)`).
+  For k > 1 (deferred), the representation would need to encode F_{p^k} elements; the `BigInt`
+  signature is forward-compatible (a polynomial over F_p can be serialized as a BigInt via
+  coefficient packing, or the signature can be extended with a type parameter at E.C-prep).
+- **ℓ threading:** The `ell` parameter is explicit in the signature. The entire pipeline
+  (F_ℓ linear algebra, virtual-log table, descent) operates mod ℓ. The returned log is in
+  `[0, ell)`. Pohlig–Hellman / CRT for the full group order is out of D.C scope.
+- **Error taxonomy:** `Unsupported`, `InitSmoothingFailed`, `DescentFailed` are frozen at D.C.1.
+  D.C.3 may add variants for relation-collection / linear-algebra / assembly failures once the
+  full pipeline is integrated. The taxonomy is **additive** (new variants, not changed existing
+  ones) — E.C can pattern-match on the D.C.1 variants and handle new D.C.3 variants via a
+  catch-all or explicit extension.
+- **k > 1 returns immediately:** The `Unsupported` check is the first thing `solve_dl` does;
+  no NFS-DL machinery is invoked for k > 1. This is a clean stub, not a panic or silent failure.
 
 **Scope at freeze:** prime field (k = 1) live; F_{p^k} (k > 1) `Unsupported` — a recorded debt
 (Discoveries), not a silent gap. E.C must not be implemented against a PARI stub permanently
