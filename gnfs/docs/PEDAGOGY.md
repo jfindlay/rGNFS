@@ -4479,3 +4479,762 @@ cross-stage thread that connects G.D, G.E, and G.F.
    this chapter: the full L-notation subexponentiality derivation as a payoff proof, the
    Couveignes-correctness sketch, and the GNFS algorithm developed mathematically from first
    principles.
+
+---
+
+# The NFS-DL Pipeline End-to-End: An Integrative Chapter
+
+This chapter is the integrative code-tour for the complete NFS-DL (discrete-logarithm via the
+Number Field Sieve) pipeline. The four preceding Track-D sessions (D.A–D.C) each implemented
+one stage in isolation. This chapter traces the whole data-flow from $(g, h, p, \ell)$ to
+$\log_g(h) \bmod \ell$ in a single narrative, names the cross-phase contracts that connect the
+stages, compares the NFS-DL pipeline explicitly with the NFS-factoring pipeline it parallels,
+and annotates the scale-dependent phenomena at demonstration fidelity.
+
+A reader who has read the G.W integrative chapter (§52–§62) can read this chapter as the
+one-phase-over analogue: every section has a factoring counterpart, and the comparison is
+explicit. A reader who has not can use this chapter as a map: each section names the stage,
+states its contract, and points to the source.
+
+For the mathematics — the Schirokauer-map algebra, the F_ℓ linear-algebra theory, and the
+L-notation complexity of NFS-DL — see `docs/MATHEMATICS.md` ch. 9 (the T.D chapter, to be
+appended). This chapter is code-first: it assumes the reader knows the mathematics and shows
+how the code realises it.
+
+---
+
+## 63. The NFS-DL Pipeline at a Glance
+
+The NFS-DL pipeline has four stages. Each stage consumes a contract from the previous stage
+and produces a contract for the next. The contracts are the frozen interfaces that allow the
+stages to be developed, tested, and reasoned about independently.
+
+```text
+(g, h, p, ℓ)  — generator, target, prime modulus, subgroup order
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  D.A — DL Relation Collection                                       │
+│  Input:  PolyPair, FactorBase, sieve config, ℓ, Schirokauer ideals  │
+│  Output: DLMatrix (DLRelation rows: exponent vecs + Schirokauer cols)│
+│  Contracts: C-DLRelation (frozen D.A.1), C-Schirokauer (frozen D.A.1)│
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-DLRelation (DLMatrix)
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  D.B — F_ℓ Linear Algebra                                           │
+│  Input:  DLMatrix, ℓ                                                │
+│  Output: VirtualLogTable (log_g(p_i) mod ℓ for each factor-base p_i)│
+│  Contract: C-LinAlgFl (frozen D.B.1, extended D.B.2)               │
+└─────────────────────────────────────────────────────────────────────┘
+    │  C-LinAlgFl (VirtualLogTable)
+    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  D.C — Individual-Logarithm Descent                                 │
+│  Input:  g, h, p, ℓ, VirtualLogTable, PolyPair, FactorBase         │
+│  Output: log_g(h) mod ℓ                                             │
+│  Contracts: C-Descent (frozen D.C.1), C2 (frozen D.C.3)            │
+└─────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+log_g(h) mod ℓ
+```
+
+The pipeline is realised end-to-end in `solve_dl_full` (in `gnfs/src/dl/descent/solve.rs`),
+which chains initialization-smoothing, `run_descent`, and `assemble_log` over a single call.
+The frozen C2 interface `solve_dl` is the cross-track entry point that E.C (the MOV bridge)
+will call. The end-to-end KAT in `gnfs/tests/dl_individual_log_kat.rs` verifies the full chain
+for $p = 11$, $g = 2$, $\ell = 5$.
+
+---
+
+## 64. Stage 1: DL Relation Collection and the C-DLRelation / C-Schirokauer Contracts
+
+### What DL relation collection does
+
+DL relation collection (D.A, frozen D.A.1) takes smooth factoring relations from the sieve and
+augments each with **Schirokauer virtual-log columns** to produce the DL relation matrix that
+D.B's F_ℓ linear algebra will consume.
+
+The key difference from NFS-factoring relation collection is the augmentation step. In
+NFS-factoring, a smooth relation (a, b) contributes a row of GF(2) exponent parities to the
+matrix. In NFS-DL, the same smooth relation contributes a row of **integer exponents mod ℓ**
+(the rational and algebraic factor-base columns) plus **Schirokauer columns** (the virtual-log
+correction terms that resolve the unit-group obstruction). The Schirokauer columns are the
+algebraic heart of the DL setting — see §68 for the explicit comparison.
+
+### The C-DLRelation contract (frozen D.A.1, commit f2dbf0a)
+
+The `DLRelation` struct is the **C-DLRelation contract** — the unit of NFS-DL data:
+
+```rust
+pub struct DLRelation {
+    /// The factoring relation (u32 exponent vectors, rational + algebraic sides).
+    /// Reused directly from the NFS-factoring pipeline.
+    pub relation: Relation,
+
+    /// Schirokauer virtual-log columns: one BigInt per prime ideal in the Schirokauer set.
+    /// Each entry is λ_i(β) ∈ ℤ/ℓ, the ℓ-adic virtual-log coordinate for the i-th ideal.
+    pub schirokauer_cols: Vec<BigInt>,
+}
+```
+
+The `DLRelation` wraps the factoring `Relation` rather than re-typing it. This is the
+over-specification pattern from C-Relation: the factoring relation stores integer exponents
+(not pre-reduced GF(2) parities), so D.A can read them directly mod ℓ without resharding.
+
+The `DLMatrix` assembles a collection of `DLRelation` rows with metadata:
+
+```rust
+pub struct DLMatrix {
+    pub relations: Vec<DLRelation>,
+    pub rational_size: usize,    // rational exponent columns
+    pub algebraic_size: usize,   // algebraic exponent columns
+    pub schirokauer_rank: usize, // Schirokauer columns (virtual-log dimension r)
+}
+```
+
+The column layout is:
+
+$$
+\text{columns} = \underbrace{\text{rational\_size}}_{\text{rational primes}} +
+\underbrace{\text{algebraic\_size}}_{\text{algebraic ideals}} +
+\underbrace{\text{schirokauer\_rank}}_{\text{Schirokauer correction}}
+$$
+
+The `collect_dl_relations` function is the D.A entry point:
+
+```rust
+pub fn collect_dl_relations<'a>(
+    poly: &PolyPair,
+    fb: &FactorBase,
+    sieve_config: &LineSieveConfig,
+    nf: &'a NumberField,
+    ell: &BigInt,
+    schirokauer_ideals: &[PrimeIdeal<'a>],
+) -> Vec<DLRelation>
+```
+
+It runs `line_sieve` to collect smooth factoring relations, then augments each with
+`augment_relation` (which constructs $\beta = a + b\alpha$ and evaluates the Schirokauer map).
+Relations for which the Schirokauer map is undefined (degenerate elements) are silently skipped,
+matching NFS-DL practice.
+
+### The C-Schirokauer contract (frozen D.A.1, commit f2dbf0a)
+
+The Schirokauer map is the DL-specific algebraic ingredient with no factoring analogue. The
+public interface is:
+
+```rust
+pub fn schirokauer<'a>(
+    elt: &NumberFieldElement<'a>,
+    ell: &BigInt,
+    ideals: &[PrimeIdeal<'a>],
+) -> Result<Vec<BigInt>, SchirokauerError>
+```
+
+Re-exported as `compute_schirokauer` at the `dl` module level. The `PrimeIdeal<'a>` type is
+`Ideal<'a>` from `shared-numfield`, re-exported under the DL module's preferred name.
+
+For each prime ideal $\varphi_i = (p_i, \alpha - r_i)$ with $p_i \equiv 1 \pmod{\ell}$, the
+map computes the ℓ-adic virtual-log coordinate $\lambda_i(\beta) \in \mathbb{Z}/\ell$:
+
+1. $\varepsilon_i = (p_i - 1)/\ell$ (an integer, since $\ell \mid p_i - 1$).
+2. Compute $\beta^{\varepsilon_i}$ in $K = \mathbb{Q}[\alpha]/(f(\alpha))$ (exact arithmetic).
+3. Reduce $\beta^{\varepsilon_i} \bmod \ell^2$ (coefficient-wise).
+4. $\delta = \beta^{\varepsilon_i} - 1$ (subtract 1 from the constant term).
+5. Divide each coefficient of $\delta$ by $\ell$ (exact; valid since $\beta^{\varepsilon_i}
+   \equiv 1 \pmod{\ell}$ for $\beta$ coprime to $\ell$).
+6. Evaluate at $\alpha \equiv r_i \pmod{\ell}$ to get $\lambda_i(\beta) \in \mathbb{Z}/\ell$.
+
+The map is a group homomorphism: $\lambda(\beta\gamma) = \lambda(\beta) + \lambda(\gamma)
+\bmod \ell$. This is the defining algebraic property verified by the KAT in
+`gnfs/tests/dl_relation_kat.rs`.
+
+The `SchirokauerError` type covers the three failure modes: `RamifiedPrime` (p ≢ 1 mod ℓ),
+`ElementDivisibleByEll` (ℓ divides a coefficient of β), and `NotDivisibleByEll` (β^ε − 1 is
+not divisible by ℓ, indicating a non-integer-coefficient element or arithmetic error).
+
+---
+
+## 65. Stage 2: F_ℓ Linear Algebra and the C-LinAlgFl Contract
+
+### What F_ℓ linear algebra does
+
+F_ℓ linear algebra (D.B, frozen D.B.1, extended D.B.2) takes the `DLMatrix` from D.A and
+solves the linear system over the prime field $\mathbb{F}_\ell$ to recover the **virtual-log
+table**: the discrete logarithms $\log_g(p_i) \bmod \ell$ for each factor-base prime $p_i$.
+
+The key difference from NFS-factoring linear algebra is the field. In NFS-factoring (G.E), the
+linear system is over GF(2): the exponent parities must sum to zero, and the null-space vector
+identifies a congruence of squares. In NFS-DL, the linear system is over $\mathbb{F}_\ell$: the
+exponents (reduced mod ℓ) plus the Schirokauer correction columns must sum to zero, and the
+solution vector gives the virtual logs. See §68 for the explicit comparison.
+
+### The C-LinAlgFl contract (frozen D.B.1, extended D.B.2, commit 652cfa6)
+
+The C-LinAlgFl contract defines the F_ℓ analogues of the GF(2) types in `gnfs::linalg`. The
+module is **parallel** to `gnfs::linalg` — no shared trait is introduced; the GF(2) types
+remain frozen and untouched.
+
+**`FlBlockVec<F, L>`** — a block of `FL_BLOCK_WIDTH = 32` F_ℓ vectors, each of length
+`num_rows`, stored as `data: Vec<[F; FL_BLOCK_WIDTH]>`. The layout is row-major with vectors
+interleaved: `data[row][j]` is the j-th vector's value at `row`. This is the F_ℓ analogue of
+GF(2)'s bit-packed `BlockVec` — the layout is identical, but each scalar is a field element
+rather than a bit.
+
+```rust
+pub struct FlBlockVec<F: Fp<L>, const L: usize> {
+    pub data: Vec<[F; FL_BLOCK_WIDTH]>,
+    pub num_rows: usize,
+}
+```
+
+The block width `FL_BLOCK_WIDTH = 32` is smaller than GF(2)'s `BLOCK_WIDTH = 64` because field
+elements are larger than bits. The principle-4 annotation applies: at toy scale the blocking
+overhead is invisible; at NFS scale this is the cache-friendly inner-loop unit.
+
+**`FlSparseMatrix<F>`** — a sparse F_ℓ matrix in CSR-like format, built from `DLMatrix` by
+`build_fl_matrix`. Rational and algebraic exponents (u32) are reduced mod ℓ via `from_u64`;
+Schirokauer columns (BigInt, already in ℤ/ℓ) are converted via `bigint_to_fp`.
+
+**`FlMatrixOperator<'a, F, L>`** — a view of `FlSparseMatrix<F>` as a linear operator over
+F_ℓ. Provides `apply` (A·V) and `apply_transpose` (Aᵀ·V) for block vectors. Mirrors the GF(2)
+`MatrixOperator` interface.
+
+**`FlSolution<F>`** — the solver return type: a coefficient vector (the solution to A·x = 0
+over F_ℓ) plus an `is_kernel` flag.
+
+**`VirtualLogTable<F>`** — the virtual-log table extracted from an F_ℓ solver solution:
+
+```rust
+pub struct VirtualLogTable<F> {
+    /// Virtual logs of rational factor-base primes: rational_logs[i] = log_g(p_i) mod ℓ.
+    pub rational_logs: Vec<F>,
+    /// Virtual logs of algebraic factor-base ideals: algebraic_logs[i] = log_g(φ_i) mod ℓ.
+    pub algebraic_logs: Vec<F>,
+}
+```
+
+The `recover_virtual_logs` function extracts the virtual-log table from a solver solution:
+
+```rust
+pub fn recover_virtual_logs<F: Clone>(
+    solution: &FlSolution<F>,
+    num_rational: usize,
+    num_algebraic: usize,
+) -> VirtualLogTable<F>
+```
+
+It slices the solution's coefficient vector: columns `0..num_rational` are the rational virtual
+logs; columns `num_rational..num_rational+num_algebraic` are the algebraic virtual logs. The
+Schirokauer correction columns (the remaining entries) are not stored in the table — they are
+correction terms, not logs of factor-base elements.
+
+### The two F_ℓ solvers
+
+D.B provides two solvers, mirroring G.E's block Lanczos and block Wiedemann:
+
+**`block_lanczos_fl`**: builds a Krylov basis for $B = A \cdot A^T$ over F_ℓ using a three-term
+recurrence. The self-orthogonality winnowing step handles the F_ℓ-specific problem that a
+nonzero vector v can satisfy $v^T B v = 0$ (when v is already in the kernel).
+
+**`block_wiedemann_fl`**: computes a scalar Krylov sequence $x^T B^i y$ over F_ℓ and uses
+Berlekamp-Massey to find the minimal polynomial of B in the direction (x, y). The kernel vector
+is extracted by evaluating $f(B) \cdot y$ via Horner's method.
+
+The end-to-end DL KAT in `gnfs/tests/dl_end_to_end_kat.rs` verifies both solvers recover the
+correct virtual logs for the toy setup ($p = 11$, $g = 2$, $\ell = 5$, factor base $\{2, 3\}$).
+
+---
+
+## 66. Stage 3: Individual-Logarithm Descent and the C-Descent / C2 Contracts
+
+### What individual-logarithm descent does
+
+Individual-logarithm descent (D.C, frozen D.C.1, finalised D.C.3) takes the virtual-log table
+from D.B and computes $\log_g(h) \bmod \ell$ for a specific target $h$. This is the stage with
+**no NFS-factoring analogue** — it has no counterpart in the G.A–G.F pipeline.
+
+The descent has three sub-steps:
+
+1. **Initialization-smoothing.** Find an exponent $e$ such that $g^e \cdot h \bmod p$ is smooth
+   over primes up to a medium bound $B'$. This reduces the problem to computing the log of a
+   smooth number.
+
+2. **Special-q descent.** For each medium prime $q$ in the smooth factorisation of $g^e \cdot h$
+   that is above the factor-base bound, find a relation that rewrites $\log q$ as a combination
+   of logs of smaller primes. Repeat until all primes are factor-base leaves with known virtual
+   logs.
+
+3. **Log assembly.** Walk the descent tree from leaves (known virtual logs) up to the root,
+   accumulating $\log q = \sum \log(\text{child}) \bmod \ell$ at each node. Then
+   $\log_g(h) = (\log_g(g^e \cdot h) - e) \bmod \ell$.
+
+### The C-Descent contract (frozen D.C.1, commit 1651993)
+
+The C-Descent contract defines the descent-tree data structures:
+
+**`DescentTarget`** — a prime or ideal being descended:
+
+```rust
+pub enum DescentTarget {
+    /// A rational prime p.
+    Rational(u64),
+    /// An algebraic prime ideal (p, r) with f(r) ≡ 0 (mod p).
+    Algebraic { p: u64, r: u64 },
+}
+```
+
+The `prime()` method returns `p` in both cases — the value that must strictly decrease at each
+descent step (the termination invariant).
+
+**`DescentNode<F>`** — a node in the descent tree:
+
+```rust
+pub struct DescentNode<F> {
+    pub target: DescentTarget,
+    pub rewriting_relation: Option<DLRelation>,
+    pub children: Vec<DescentNode<F>>,
+    pub known_log: Option<F>,
+}
+```
+
+Leaf nodes have `known_log: Some(F)` (looked up from `VirtualLogTable`) and empty `children`.
+Interior nodes have `rewriting_relation: Some(rel)` (the special-q descent relation) and
+non-empty `children` (the smaller primes from the relation). The invariant
+`target.prime() > child.target.prime()` for all children is the termination guarantee.
+
+**`DescentFrontier<F>`** — a max-heap of pending descent targets, ordered by prime descending:
+
+```rust
+pub struct DescentFrontier<F> { /* max-heap of HeapEntry<F> */ }
+```
+
+The largest-first ordering is the termination invariant: each descent step pops the largest
+prime $q$, finds a relation rewriting $q$ as smaller primes, and pushes those smaller primes
+back. Since each step strictly reduces the largest prime, the descent terminates when all
+frontier elements are factor-base leaves.
+
+The three key functions:
+
+```rust
+pub fn init_descent_frontier<F: Clone>(
+    g: &BigInt, h: &BigInt, p: &BigInt,
+    medium_bound: u64, max_attempts: u64,
+) -> Result<(BigInt, DescentFrontier<F>), InitSmoothingError>
+
+pub fn descend_node<F: Clone>(
+    target: &DescentTarget,
+    poly: &PolyPair,
+    fb: &FactorBase,
+    vtable: &VirtualLogTable<F>,
+    sieve_cfg: &DescentSieveConfig,
+) -> Result<DescentNode<F>, DescentStepError>
+
+pub fn run_descent<F: Clone>(
+    frontier: DescentFrontier<F>,
+    poly: &PolyPair,
+    fb: &FactorBase,
+    vtable: &VirtualLogTable<F>,
+    sieve_cfg: &DescentSieveConfig,
+) -> Result<Vec<DescentNode<F>>, SolveDlError>
+```
+
+`init_descent_frontier` iterates $e$ from 0 to `max_attempts − 1`, computing
+$g^e \cdot h \bmod p$ at each step and trial-dividing by all primes up to `medium_bound`. On
+success it returns the smoothing exponent $e$ and the initial frontier (one `DescentNode` per
+prime factor, with multiplicity).
+
+`descend_node` finds a rewriting relation for a single medium prime $q$ via the special-q sieve.
+It builds a temporary `FactorBase` with $b_\text{alg} \geq q$ (so that $q$ is included as an
+algebraic ideal), calls `special_q_sieve` with $q_\text{min} = q_\text{max} = q$, and selects
+the first relation that strictly reduces the largest prime. If no such relation is found within
+the sieve bounds, it returns `DescentStepError::NoStrictReduction`.
+
+`run_descent` drives the full descent loop: pop the largest frontier prime, call `descend_node`,
+push children back, repeat until all primes are factor-base leaves. Returns the flat list of
+completed nodes in largest-prime-first order (the order they were popped from the frontier).
+
+### The C2 contract (frozen D.C.3, commit 9d07c51)
+
+The C2 contract is the cross-track interface that E.C (the MOV bridge) will consume:
+
+```rust
+pub fn solve_dl(
+    g: &BigInt,
+    h: &BigInt,
+    p: &BigInt,
+    k: usize,
+    ell: &BigInt,
+) -> Result<BigInt, SolveDlError>
+```
+
+The `SolveDlError` taxonomy is **frozen at D.C.3**:
+
+```rust
+pub enum SolveDlError {
+    /// Extension field F_{p^k} (k > 1) is not yet supported.
+    Unsupported { k: usize },
+    /// Initialization-smoothing failed.
+    InitSmoothingFailed { attempts: u64 },
+    /// Descent failed: a medium prime could not be rewritten.
+    DescentFailed { stuck_prime: u64 },
+}
+```
+
+**k = 1 (prime field F_p):** The k = 1 path runs initialization-smoothing. The frozen C2
+`solve_dl` does not take a `SolveDlContext` (factor base, virtual-log table, sieve config) —
+those are not part of the cross-track interface. For the full pipeline, use `solve_dl_full`
+with a `SolveDlContext`.
+
+**k > 1 (extension field F_{p^k}):** Returns `SolveDlError::Unsupported { k }` immediately.
+The F_{p^k} NFS-DL extension is deferred to an E.C-prep session. This is an
+**engineering-scale boundary, not a mathematical one**: the mathematics of NFS-DL over
+extension fields is well-understood (see §70 for the principle-4 annotation), but the
+implementation is out of D.C scope.
+
+The context-bearing implementation `solve_dl_full` runs the full pipeline:
+
+```rust
+pub fn solve_dl_full<F: Clone>(
+    g: &BigInt, h: &BigInt, p: &BigInt, k: usize, ell: &BigInt,
+    ctx: &SolveDlContext<'_, F>,
+) -> Result<BigInt, SolveDlError>
+```
+
+where `SolveDlContext<F>` bundles `poly`, `fb`, `vtable`, `sieve_cfg`, and a `to_bigint`
+closure for converting virtual logs to `BigInt` for assembly arithmetic.
+
+---
+
+## 67. The Cross-Phase Contracts: A Unified View
+
+The five cross-phase contracts are the frozen interfaces that allow the NFS-DL pipeline to be
+developed, tested, and reasoned about in stages.
+
+| Contract | Frozen at | What it defines | Consumed by |
+|----------|-----------|-----------------|-------------|
+| **C-DLRelation** | D.A.1 (f2dbf0a) | `DLRelation`: factoring `Relation` + Schirokauer cols; `DLMatrix` | D.B |
+| **C-Schirokauer** | D.A.1 (f2dbf0a) | `schirokauer` / `compute_schirokauer`, `PrimeIdeal`, `SchirokauerError` | D.A.2, D.B |
+| **C-LinAlgFl** | D.B.1 (652cfa6) | `FlBlockVec`, `FlSparseMatrix`, `FlMatrixOperator`, `FlSolution`, `VirtualLogTable`, `recover_virtual_logs` | D.B.2, D.C |
+| **C-Descent** | D.C.1 (1651993) | `DescentNode`, `DescentFrontier`, `init_descent_frontier`, `descend_node`, `run_descent` | D.C.2, D.C.3 |
+| **C2** | D.C.3 (9d07c51) | `solve_dl(g, h, p, k, ell) -> Result<BigInt, SolveDlError>` | E.C (MOV bridge) |
+
+### The data-flow in one sentence per contract
+
+**C-DLRelation** carries each smooth pair from relation collection to F_ℓ linear algebra: the
+integer exponents (not pre-reduced mod ℓ) support D.B's `build_fl_matrix` directly; the
+Schirokauer columns are the correction terms that make the DL linear system solvable.
+
+**C-Schirokauer** carries the Schirokauer map from the algebraic substrate to the relation
+augmentation step: `compute_schirokauer` evaluates the ℓ-adic virtual-log coordinates for each
+prime ideal, and `augment_relation` calls it for each smooth relation.
+
+**C-LinAlgFl** carries the F_ℓ block-solver substrate from the linear-algebra layer to the
+descent layer: `VirtualLogTable` is the output of D.B and the input to D.C's descent; the
+`recover_virtual_logs` function extracts it from the solver solution.
+
+**C-Descent** carries the descent-tree substrate from the substrate layer to the recursion and
+assembly layers: `DescentFrontier` is the work queue; `DescentNode` is the tree node; `run_descent`
+drives the full loop; `assemble_log` walks the completed tree.
+
+**C2** carries the NFS-DL solver interface from Track D to Track E: `solve_dl` is the
+parameter-minimal frozen API; `SolveDlError` is the frozen error taxonomy.
+
+### The over-specification pattern
+
+The over-specification pattern from the factoring pipeline carries through to NFS-DL:
+
+- **C-DLRelation** wraps the factoring `Relation` rather than re-typing it. The integer
+  exponents (not pre-reduced GF(2) parities) are the over-specification that D.B needs.
+- **C-LinAlgFl** stores the full coefficient vector in `FlSolution`, not just the virtual-log
+  slice. `recover_virtual_logs` extracts the relevant portion; the Schirokauer correction
+  columns are available if needed.
+- **C-Descent** stores the full `DLRelation` in `DescentNode::rewriting_relation`, not just the
+  prime factors. The assembly step uses only the children's logs, but the relation is available
+  for debugging and KAT inspection.
+
+---
+
+## 68. The Explicit NFS-Factoring Comparison
+
+This section is the ROADMAP's named requirement for D.W.1: an explicit, structural comparison
+of what changes when the target is $\log_g(h)$ rather than a factor of $N$. The comparison is
+organised by pipeline stage.
+
+### What stays the same
+
+The NFS-DL pipeline reuses the NFS-factoring infrastructure at every stage:
+
+- **Polynomial selection.** The same `PolyPair` (base-m construction, Murphy-E scoring, root
+  sieve, Coppersmith multi-poly) is used without modification. The shared-root invariant
+  $f(m) \equiv 0 \pmod{N}$ is the same; the polynomial pair serves both factoring and DL.
+- **Sieving.** The same `line_sieve` / `special_q_sieve` / `lattice_sieve` infrastructure
+  collects smooth pairs (a, b). The `Relation` type (integer exponent vectors, sign bit) is
+  reused directly — the DL-ready over-specification of C-Relation (§54) pays off here.
+- **Factor base.** The same `FactorBase` (rational primes + algebraic degree-1 ideals) is used.
+  The column layout (rational | algebraic | obstruction) is the same; the DL pipeline adds
+  Schirokauer columns after the algebraic columns.
+
+### What changes: the four structural differences
+
+**1. Two number fields and the shared rational side.**
+
+In NFS-factoring, the pipeline uses one algebraic number field $K = \mathbb{Q}(\alpha)$ where
+$\alpha$ is a root of the algebraic polynomial $f$. The rational side is the linear polynomial
+$g(x) = x - m$.
+
+In NFS-DL, the same two-polynomial structure is used, but the interpretation is different: both
+the rational side and the algebraic side contribute to the discrete-log linear system. The
+rational norm $a - bm$ and the algebraic norm $b^d \cdot f(a/b)$ are both smooth, and both
+contribute exponent columns to the DL matrix. The "two number fields" of NFS-DL are the rational
+field $\mathbb{Q}$ (via the rational norm) and the algebraic field $K = \mathbb{Q}(\alpha)$
+(via the algebraic norm) — the same two fields as in factoring, but now both contribute to a
+single linear system over $\mathbb{F}_\ell$ rather than to a congruence of squares.
+
+**2. Schirokauer maps replacing quadratic-character columns.**
+
+In NFS-factoring (G.E), the obstruction columns are the **sign column** (one column, encoding
+the parity of the rational norm's sign) and the **quadratic-character (QC) columns** (several
+columns, encoding Legendre-symbol parities). These columns guarantee that the algebraic square
+root $\beta$ exists in $K$, not merely as an ideal square. The obstruction is the
+**class-group obstruction**: the product of the algebraic norms may be a square in the ideal
+group without being a square of a principal ideal.
+
+In NFS-DL, the obstruction is different: the **unit-group obstruction**. The units of $\mathcal{O}_K$
+(the ring of integers of $K$) are not accounted for by the exponent vectors alone. The
+**Schirokauer map** $\lambda: K^* \to (\mathbb{Z}/\ell)^r$ is the correction that resolves this
+obstruction. For each prime ideal $\varphi_i = (p_i, \alpha - r_i)$ with $p_i \equiv 1
+\pmod{\ell}$, the map computes the ℓ-adic virtual-log coordinate $\lambda_i(\beta) \in
+\mathbb{Z}/\ell$ — the "fractional part" of the discrete log that the exponent vectors miss.
+
+The Schirokauer columns replace the QC columns in the DL matrix. Both serve the same structural
+role (resolving an obstruction to the linear system's solvability), but the obstruction is
+different (unit group vs class group) and the correction is different (ℓ-adic log vs Legendre
+symbol).
+
+**3. F_ℓ (prime-field) linear algebra replacing GF(2).**
+
+In NFS-factoring (G.E), the linear system is over GF(2): find a subset of relations whose
+exponent parities sum to zero. The null-space vector identifies a congruence of squares.
+
+In NFS-DL (D.B), the linear system is over $\mathbb{F}_\ell$: find a vector $x$ such that
+$A \cdot x = 0$ over $\mathbb{F}_\ell$, where $A$ is the DL relation matrix (exponents reduced
+mod ℓ, Schirokauer columns already in $\mathbb{Z}/\ell$). The solution vector gives the virtual
+logs: $x_i = \log_g(p_i) \bmod \ell$ for each factor-base prime $p_i$.
+
+The structural difference is the field: GF(2) vs $\mathbb{F}_\ell$. The algorithmic structure
+(block Lanczos / block Wiedemann, Krylov subspaces, self-orthogonality winnowing) is the same.
+The implementation difference is the scalar type: GF(2) uses bit-packed `u64` words; F_ℓ uses
+`[F; FL_BLOCK_WIDTH]` arrays of field elements. The block width changes from 64 (GF(2)) to 32
+(F_ℓ) because field elements are larger than bits.
+
+**4. Virtual logs replacing the congruence of squares.**
+
+In NFS-factoring, the output of the linear algebra step is a `KernelVector` — a subset of
+relations whose exponent product is a perfect square on both sides. The square-root stage
+(G.F) extracts the congruence $X^2 \equiv Y^2 \pmod{N}$ and computes $\gcd(X - Y, N)$.
+
+In NFS-DL, the output of the linear algebra step is a `VirtualLogTable` — the discrete
+logarithms $\log_g(p_i) \bmod \ell$ for each factor-base prime $p_i$. There is no square-root
+stage: the virtual logs are the answer to the factor-base sub-problem. The individual-logarithm
+descent (D.C) then uses the virtual-log table to compute $\log_g(h)$ for a specific target $h$.
+
+### The individual-logarithm special-q descent: the stage with no factoring analogue
+
+The individual-logarithm descent (D.C) is the stage that has **no counterpart** in the
+NFS-factoring pipeline. In NFS-factoring, once the linear algebra step produces a kernel vector,
+the square-root stage directly computes the factor — there is no "individual target" computation.
+
+In NFS-DL, the linear algebra step gives the virtual logs of the factor-base elements, but not
+the log of the specific target $h$. The descent bridges this gap: it finds a path from $h$ down
+to the factor base by repeatedly rewriting medium primes as combinations of smaller primes, until
+all primes are factor-base leaves with known virtual logs.
+
+The descent is a **tree search** guided by the special-q sieve: for each medium prime $q$, the
+sieve finds a smooth relation that contains $q$ as a special prime, rewriting $\log q$ as a
+linear combination of logs of smaller primes. The termination invariant (each step strictly
+reduces the largest prime) guarantees the tree is finite.
+
+The side-by-side comparison:
+
+| Stage | NFS-factoring | NFS-DL |
+|-------|--------------|--------|
+| Relation collection | Smooth (a, b) pairs → exponent vectors | Same, plus Schirokauer columns |
+| Obstruction columns | Sign + QC columns (class-group correction) | Schirokauer columns (unit-group correction) |
+| Linear algebra | GF(2) null space → kernel vector | F_ℓ null space → virtual-log table |
+| Output of linalg | Congruence of squares (subset of relations) | Virtual logs of factor-base elements |
+| Final step | Square root + GCD assembly | Individual-log descent + log assembly |
+| No-factoring-analogue | — | **Special-q descent** |
+
+---
+
+## 69. Design-Statement Note and Principle-4 Annotations
+
+The full design-statement verification for the NFS-DL arc (principles 1/3/4) is D.W.2's
+responsibility. This section carries the toy-scale annotations that the code-tour documents.
+
+### Descent-tree breadth and medium-prime tuning
+
+**Principle-4 annotation (descent-tree breadth).** At toy scale ($p = 11$, factor base
+$\{2, 3\}$, $\ell = 5$), the descent tree has depth 0 or 1: the initialization-smoothing step
+finds $g^e \cdot h$ that is already smooth over the factor base, so no medium primes need to be
+descended. The `run_descent` function returns immediately with all frontier nodes as leaves.
+
+At NFS scale ($p \approx 2^{512}$, factor base up to $B \approx 10^6$, medium-prime bound
+$B' \approx 10^{12}$), the descent tree has depth $O(\log \log p)$ — typically 3–5 levels. Each
+level requires a special-q sieve run to find a rewriting relation. The descent cost is
+asymptotically subdominant to the linear algebra cost (see `docs/MATHEMATICS.md` ch. 9 for the
+L-notation analysis), but it is the most algorithmically novel stage.
+
+The `DescentSieveConfig` is the scale knob:
+
+```rust
+pub struct DescentSieveConfig {
+    pub a_bound: u64,    // half-width of the sieve region
+    pub b_bound: u64,    // height of the sieve region
+    pub threshold_scale: f64, // smoothness threshold (0.5 for descent)
+}
+```
+
+At toy scale, `a_bound = 10`, `b_bound = 5` suffice. At NFS scale, the bounds are calibrated to
+the medium-prime bound and the descent depth.
+
+**Principle-4 annotation (medium-prime tuning).** The medium-prime bound $B'$ (the smoothness
+bound for initialization-smoothing) is a critical parameter at NFS scale: too small and the
+smoothing fails; too large and the descent tree is too deep. At toy scale, the frozen C2
+`solve_dl` uses a hardcoded `medium_bound = 100`; `solve_dl_full` uses the factor-base bound
+`ctx.fb.b_alg`. At NFS scale, $B'$ is calibrated to the factor-base bound and the expected
+descent depth.
+
+### The C2 F_{p^k} k > 1 `Unsupported` debt
+
+**Engineering-scale boundary (not mathematical).** The `solve_dl` function returns
+`SolveDlError::Unsupported { k }` immediately for $k > 1$. This is an **engineering-scale
+boundary, not a mathematical one**:
+
+- The mathematics of NFS-DL over extension fields $\mathbb{F}_{p^k}$ is well-understood. The
+  algorithm generalises: the number field $K$ is replaced by a degree-$k$ extension; the
+  Schirokauer map is adapted to the extension; the descent works over the extended field.
+- The implementation gap is that the `PolyPair` / `NumberField` / `FactorBase` infrastructure
+  is built for the prime-field case ($k = 1$). Extending to $k > 1$ requires adapting the
+  polynomial pair to the extension field structure — a non-trivial engineering task, but not a
+  new mathematical idea.
+
+The debt is recorded here as a principle-4 annotation: the code is correct at demonstration
+fidelity for $k = 1$; the $k > 1$ path is a known gap, not a silent omission. The E.C-prep
+session (Track E) owns the resolution.
+
+---
+
+## 70. KAT Summary (D.W — Integrative)
+
+The integrative chapter does not add new KATs (it is a code-tour, not a new implementation).
+The KATs that verify the NFS-DL pipeline end-to-end are:
+
+| Test | File | What it verifies |
+|------|------|-----------------|
+| `kat_descent_frontier_ordering` | `dl_descent_kat.rs` | `DescentFrontier` pops targets in largest-prime-first order (termination invariant) |
+| `kat_init_smoothing_finds_exponent` | `dl_descent_kat.rs` | `init_descent_frontier` finds smooth exponent for toy input (p=101, g=2, h=50) |
+| `kat_solve_dl_unsupported_k2` | `dl_descent_kat.rs` | `solve_dl` returns `Unsupported { k: 2 }` for k > 1 |
+| `kat_single_node_descent` | `dl_descent_kat.rs` | One medium prime q=17 descends to smaller primes via special-q sieve |
+| `kat_multi_level_descent` | `dl_descent_kat.rs` | Two-level descent: frontier {17, 7} descends to factor-base leaves |
+| `kat_undescendable_returns_error` | `dl_descent_kat.rs` | Undescendable prime surfaces `DescentFailed` (not a loop) |
+| `kat_assembly_correctness` | `dl_descent_kat.rs` | Hand-built descent tree assembles to correct `log_g(h) mod ell` |
+| `kat_end_to_end_shape` | `dl_descent_kat.rs` | `solve_dl_full` returns `Ok(2)` for p=11, g=2, h=4, ell=5 |
+| `kat_a_fl_arithmetic` | `dl_linalg_kat.rs` | `FlBlockVec` inner-product matrix matches hand-computed F_ℓ values (ℓ=7) |
+| `kat_b_matrix_build` | `dl_linalg_kat.rs` | `build_fl_matrix` produces correct F_ℓ values (exponents mod ℓ, Schirokauer cols) |
+| `kat_c_block_lanczos_fl` | `dl_linalg_kat.rs` | `block_lanczos_fl` finds kernel vector for known 4×3 F_ℓ system (ℓ=7) |
+| `kat_d_block_wiedemann_fl` | `dl_linalg_kat.rs` | `block_wiedemann_fl` cross-validates with Lanczos on the same system |
+| `kat_e_virtual_log_recovery` | `dl_linalg_kat.rs` | `recover_virtual_logs` extracts correct rational/algebraic log entries |
+| `kat_end_to_end_dl_linalg` | `dl_end_to_end_kat.rs` | Full D.B pipeline: DLMatrix → F_ℓ solve → virtual logs [1, 3] mod 5 for p=11, g=2 |
+| `kat_individual_log_h4` | `dl_individual_log_kat.rs` | `solve_dl_full` recovers log_2(4) = 2 mod 5 for p=11, g=2, ell=5 |
+| `kat_individual_log_h8` | `dl_individual_log_kat.rs` | `solve_dl_full` recovers log_2(8) = 3 mod 5 |
+| `kat_individual_log_cross_check` | `dl_individual_log_kat.rs` | g^result ≡ h (mod p) for all recovered logs (cross-check) |
+
+The end-to-end KATs (`dl_end_to_end_kat.rs`, `dl_individual_log_kat.rs`) are the
+pipeline-level verification: they exercise the full chain from a hand-built `DLMatrix` and
+`VirtualLogTable` through the descent and assembly stages to a recovered discrete log. The
+descent KATs (`dl_descent_kat.rs`) verify the termination invariant, the smoothing step, and
+the assembly arithmetic.
+
+---
+
+## 71. Cross-References
+
+### Per-stage code-tour chapters (this document)
+
+- **G.B (polynomial selection):** §1–§11 of this document — base-m construction, Murphy-E
+  scoring, root sieve, Coppersmith multi-poly, C-PolyPair and C-Score contracts. The same
+  polynomial pair is reused by D.A without modification.
+- **G.C (sieving):** §12–§21 of this document — the relation as the unit of NFS data, the
+  two-sided factor base, the norm bridge, the line sieve, special-q, lattice sieving,
+  C-Relation and C-FactorBase contracts. D.A reuses `line_sieve` and `special_q_sieve`
+  directly; the C-Relation over-specification (integer exponents) is the seam D.A consumes.
+- **G.E (linear algebra):** §31–§41 of this document — the filtered matrix as a GF(2) linear
+  system, block Lanczos, block Wiedemann, C-LinAlg contract. D.B is the F_ℓ analogue: same
+  algorithmic structure, different field.
+- **G.W (integrative):** §52–§62 of this document — the NFS-factoring pipeline end-to-end.
+  The present chapter (§63–§71) is the one-phase-over analogue for NFS-DL.
+
+### Mathematical textbook
+
+- **`docs/MATHEMATICS.md` ch. 9** (T.D chapter, to be appended) — the maths-first sibling to
+  this integrative chapter. Develops the NFS-DL algorithm mathematically: the DLP and the
+  number-field bridge, the factor-base / virtual-logarithm construction, Schirokauer maps
+  (proof-sketch depth), F_ℓ linear algebra, and the individual-logarithm special-q descent.
+  Carries the L-notation complexity of NFS-DL as the designated payoff proof. Cross-references
+  this chapter for the code realisation.
+
+- **`docs/MATHEMATICS.md` §GNFS** (T.G chapter, to be appended) — the NFS-factoring maths
+  chapter. The L-notation derivation in T.D is a delta on T.G's §7 derivation: same exponent
+  1/3, same constant; the DL delta is descent-cost-subdominance + F_ℓ linear-algebra shape.
+
+- **`docs/MATHEMATICS.md` §On Scale** — the three axes of scale and the honest
+  science↔engineering gap. The natural-philosophy context for the principle-4 annotations
+  throughout this document.
+
+### Contract definitions
+
+- **C-DLRelation / C-Schirokauer:** `gnfs/src/dl/relation.rs`, `gnfs/src/dl/schirokauer.rs`
+  (frozen D.A.1, commit f2dbf0a).
+- **C-LinAlgFl:** `gnfs/src/dl/linalg/blockvec_fl.rs` (frozen D.B.1, commit 652cfa6).
+- **C-Descent / C2:** `gnfs/src/dl/descent/` (node.rs, recurse.rs, solve.rs) (frozen D.C.1,
+  commit 1651993; C2 finalised D.C.3, commit 9d07c51).
+
+---
+
+## Further Reading (D.W — Integrative)
+
+1. **Schirokauer, O. (1993).** *Discrete logarithms and local units.* Philosophical Transactions
+   of the Royal Society A, 345(1676), 409–423. The original source for the Schirokauer map —
+   the ℓ-adic virtual-log correction that resolves the unit-group obstruction in NFS-DL.
+
+2. **Gordon, D. M. (1993).** *Discrete logarithms in GF(p) using the number field sieve.*
+   SIAM Journal on Discrete Mathematics, 6(1), 124–138. The original NFS-DL algorithm for
+   prime fields, including the individual-logarithm descent.
+
+3. **Adleman, L. M. (1994).** *The function field sieve.* In: Adleman, L. M., and Huang, M.-D.
+   (eds.) Algorithmic Number Theory (ANTS-I), LNCS 877. Springer. The function-field analogue
+   of NFS-DL; context for the descent stage.
+
+4. **Joux, A., Lercier, R., Smart, N., and Vercauteren, F. (2006).** *The number field sieve
+   in the medium prime case.* In: Dwork, C. (ed.) Advances in Cryptology — CRYPTO 2006, LNCS
+   4117. Springer. The medium-prime NFS-DL, including the special-q descent and the
+   medium-prime bound calibration.
+
+5. **Barbulescu, R., Gaudry, P., Joux, A., and Thomé, E. (2014).** *A heuristic quasi-polynomial
+   algorithm for discrete logarithm in finite fields of small characteristic.* In: Nguyen, P. Q.,
+   and Oswald, E. (eds.) Advances in Cryptology — EUROCRYPT 2014, LNCS 8441. Springer. The
+   BGJT algorithm — the quasi-polynomial DLP algorithm for small-characteristic fields that
+   broke the NFS-DL paradigm for that case.
+
+6. **Kleinjung, T., Aoki, K., Franke, J., et al. (2010).** *Factorization of a 768-bit RSA
+   modulus.* CRYPTO 2010. The RSA-768 factorisation — the NFS-factoring counterpart to the
+   NFS-DL pipeline described in this chapter.
+
+7. **`docs/MATHEMATICS.md` ch. 9** (T.D chapter, to be appended). The maths-first sibling to
+   this chapter: the full L-notation NFS-DL complexity derivation as a payoff proof, the
+   Schirokauer-map algebra at proof-sketch depth, and the NFS-DL algorithm developed
+   mathematically from first principles.
