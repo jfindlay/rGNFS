@@ -1,5 +1,5 @@
 [workspace]
-members = ["gnfs", "rho", "shared/field", "shared/bigint", "shared/numth", "shared/numfield"]
+members = ["gnfs", "rho", "shared/field", "shared/bigint", "shared/numth", "shared/numfield", "shared/padic"]
 resolver = "2"
 
 [profile.bench]

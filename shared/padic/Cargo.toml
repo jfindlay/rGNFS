@@ -1,0 +1,20 @@
+[package]
+name = "shared-padic"
+version = "0.1.0"
+edition = "2024"
+description = "p-adic arithmetic substrate: Z/p^k ring, p-adic valuation, unit inversion"
+
+[dependencies]
+shared-bigint = { path = "../bigint" }
+num-bigint = "0.4"
+num-integer = "0.1"
+num-traits = "0.2"
+thiserror = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
