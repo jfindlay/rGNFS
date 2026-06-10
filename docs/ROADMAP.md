@@ -597,6 +597,30 @@ sessions but are triggered by discoveries that need static-frame updates.
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
 
+### 2026-06-10 — E.D ◆ boundary: p-adic substrate complete + C-Padic durable cross-track note
+
+The p-adic arithmetic sub-track is complete: E.D.1 (`0a98148`, `shared/padic` crate + `Zp`
+prime-power-modulus arithmetic, C-Padic frozen), E.D.2 (`2e84836`, Hensel lifting + `IntPoly`
+additive extension, C-Hensel frozen), E.D.3 ◆ (`95d03b7`, formal-group / p-adic log series,
+C-PadicLog frozen). The E.D.3 ◆ boundary juncture returned still-on-intent on all five confirmation
+points. The substrate composes correctly (Z_p arithmetic → Hensel lift → log homomorphism); both
+silent-failure defenses are in place and tested; E.D is curve-free; principle-4 boundaries annotated.
+
+- **C-Padic: the `Fp<L>`-is-not-a-ring substrate fact is a durable cross-track note.** `Fp<L>`
+  (`shared/field`) assumes a prime modulus — `inv` uses Fermat's little theorem and is silently wrong
+  for composite p^k. Z/p^k is *not* a field: only units (elements coprime to p) are invertible, and
+  the p-adic valuation `v_p(·)` is the organising invariant. Any future prime-power-modulus work
+  (e.g. a crypto-scale Z_p tower, a Witt-vector construction, or a p-adic field-of-fractions Q_p
+  layer) must use a distinct type with unit-only inversion — C-Padic (`shared/padic/src/zp.rs`) is
+  the established pattern. Reusing `Fp<L>` for a composite modulus is the silent-wrong-answer failure
+  mode; the non-unit-inversion error is mandatory, not optional.
+
+- **E.D sub-track landed at exactly the 3-session Sonnet estimate.** No additive-reshard was needed;
+  Z_p (without a Q_p field-of-fractions layer) proved sufficient for the log series at toy precision.
+  The parallel-substrate decomposition (Hensel and log as independent pieces, not a pre-wired
+  pipeline) keeps E.D curve-free and the contracts orthogonal — E.E owns the
+  curve-coords→lift→log wiring.
+
 ### 2026-06-10 — E.C ◆ boundary: Progress reconciliation + remaining re-baseline
 
 The MOV/Frey–Rück sub-track is complete: E.C.1 (`840608c`, `rho→gnfs` edge + `FpExt→solve_dl`
