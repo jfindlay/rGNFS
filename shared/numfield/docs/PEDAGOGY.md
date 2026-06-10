@@ -662,10 +662,15 @@ convention directly affects which primes are included in the factor base: primes
 **D.A (NFS-DL)** uses the same algebraic substrate as G.C, adapted for the discrete logarithm
 setting. The norm and ideal machinery are identical; the difference is in the linear algebra step.
 
-**E.D (pairings)** uses `NumberField` and `NumberFieldElement` for extension field arithmetic.
-Pairing computations require arithmetic in degree-12 extensions (for BN curves) or degree-6
-extensions (for BLS12 curves), which are number fields in the sense of this crate. The element
-arithmetic and inversion via extended Euclidean are directly reused.
+**E.B (pairings)** does **not** use `NumberField` or `NumberFieldElement` for extension-field
+arithmetic.  Pairing target fields are `F_{p^k}` — finite fields of **characteristic p**, not
+char-0 `ℚ[x]/(f)` number fields in the sense of this crate.  The degree-2 extension `F_{47^2}`
+used by the toy Weil/Tate fixture (and the degree-12 / degree-6 extensions of BN/BLS12 curves at
+crypto scale) are `F_{p^k}`, not `ℚ`-extensions.  The char-0 `NumberFieldElement` arithmetic is
+**not** directly reusable: the coefficient field differs (`F_p` vs `ℚ`).  The real char-p
+substrate is `rho/src/pairing/fpext.rs` (`FpExt<F>`, a polynomial quotient `F_p[u]/(m(u))`
+built over the `shared::field` `Fp<4>` prime field).  (Note: E.D is p-adic arithmetic, not
+pairings.)
 
 ### The C1 resolution: `Uint<4>` sufficiency
 

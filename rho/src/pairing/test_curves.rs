@@ -39,6 +39,24 @@
 //! Both satisfy `3·P = ∞` and `3·Q = ∞`.  `P` and `Q` are **linearly
 //! independent**: `Q ∉ ⟨P⟩ = {∞, P, 2P}`.
 //!
+//! ## Weil vs Tate: argument order
+//!
+//! The **Weil pairing** `w_ℓ(P, Q)` is non-degenerate for any linearly
+//! independent pair — the ratio `f_{ℓ,P}(Q) / f_{ℓ,Q}(P)` cancels the
+//! "bad" part regardless of which point is in `E(F_p)`.
+//!
+//! The **Tate pairing** `t_ℓ(A, B)` is non-degenerate when `B ∉ ℓ·E(F_{p^k})`.
+//! For this fixture:
+//! - `P ∈ E(F_p)[ℓ]` is NOT in `ℓ·E(F_{p^k})` (it is in the eigenvalue-1
+//!   eigenspace of Frobenius on `E[ℓ]`, which is the Z/3 factor of the 3-Sylow
+//!   `Z/3 × Z/9` of `E(F_{47^2})`; this factor has no preimage under `[3]`).
+//! - `Q ∈ E(F_{p^k})[ℓ] \ E(F_p)` IS in `ℓ·E(F_{p^k})` (it is in the
+//!   eigenvalue-(-1) eigenspace, which is the image of `[3]` on the Z/9 factor).
+//!
+//! Therefore: `t_ℓ(P, Q) = 1` (trivial) but `t_ℓ(Q, P) ≠ 1` (non-degenerate).
+//! The Tate KATs use `t_ℓ(Q, P)` — Q as the first (Miller-base) argument and
+//! P as the second (evaluation) argument.
+//!
 //! ## Full 3-torsion structure
 //!
 //! `E[3]` over `F_{47^2}` has exactly 9 points (`Z/3 × Z/3`), confirming the
