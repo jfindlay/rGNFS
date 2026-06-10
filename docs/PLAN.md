@@ -392,7 +392,7 @@ Action-frame digest.
 |---|---------|--------|--------|-------|
 | D.E.1 | `F_{p^k}` target-embedding substrate | done | 0d02b77 | C-ExtTarget (frozen) |
 | D.E.2 | Extension factor base + relation collection | done | 1a21a32 | C-ExtFactorBase (frozen) |
-| D.E.3 ◆ | k>1 descent + solve_dl wiring + end-to-end k=2 KAT | pending | — | C2-ext (pending) |
+| D.E.3 ◆ | k>1 descent + solve_dl wiring + end-to-end k=2 KAT | done | a804a7b | C2-ext (frozen) |
 
 Contracts frozen before this sub-track (read by D.E): all Track-D NFS-DL contracts (C2,
 C-Schirokauer, C-LinAlgFl, C-Descent — existing, frozen D.A–D.C); E.B's C-FpExt / C-PairingCurve /
@@ -404,7 +404,11 @@ C-Pairing (Track-E, read only conceptually for the residue-map cross-check). Thi
 
 ## Action-frame digest
 
-*(none yet)*
+### D.E.3 ◆ — 2026-06-10
+Discovery/flex: D.E.3 ◆ boundary juncture returned still-on-intent on all five confirmation points. C-ExtTarget / C-ExtFactorBase / C2-ext are frozen and E.C-ready. Three flagged recommendations for E.C's inflection juncture: (A) no single helper composes FpExt::to_uint_vec-coeffs into the base-p BigInt solve_dl consumes — E.C must write a ~3-line compose or a thin helper is owed; (B) the k=2 solve_dl_ext is a brute-force placeholder over the ℓ=3 subgroup, not the D.E.2 NFS-DL pipeline — C-ExtFactorBase is proven in isolation by its own KATs but not exercised by the live k=2 solve path (on-intent per principle-4 toy scoping); (C) find_irreducible_degree2 re-derives the modulus inside solve_dl_ext independently of ExtResidueMap.modulus — for the toy params they coincide; E.C's wiring must ensure they coincide by construction.
+Affected: C2-ext (frozen), C-ExtTarget (frozen), C-ExtFactorBase (frozen)
+Deferred: yes — E.C inflection juncture should re-examine: (A) the FpExt→base-p-BigInt bridge helper; (B) whether E.C needs the NFS pipeline or brute-force suffices at k=2; (C) the modulus-consistency invariant between ExtResidueMap and solve_dl_ext.
+Texture: D.E ◆ boundary crossed. The k>1 NFS-DL solver ships and is proven correct at k=2 on the pairing_toy fixture. The sub-track is complete; E.C's hard predecessor exists.
 
 ---
 
