@@ -394,7 +394,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 | E.B.1 | `F_{p^k}` extension-field arithmetic | done | 74b2ff3 | C-FpExt (frozen) |
 | E.B.2 | `E(F_{p^k})` point arithmetic + pairing-friendly fixture | done | dceaff1 | C-PairingCurve (frozen) |
 | E.B.3 | Miller's algorithm + Weil pairing + bilinearity KAT | done | 7e28962 | — |
-| E.B.4 ◆ | Tate/reduced-Tate pairing + final exp + design note + numfield correction | pending | — | C-Pairing (to freeze) |
+| E.B.4 ◆ | Tate/reduced-Tate pairing + final exp + design note + numfield correction | done | 6c082bb | C-Pairing (frozen) |
 
 Contracts frozen before this sub-track (read by E.B): all Track-rho curve/field contracts (existing
 crate); E.A's C-CompositeCurve / C-FactorOrder / C-Pohlig (Track-E, not consumed by E.B but
@@ -405,7 +405,11 @@ all forward-looking toward **E.C** (C2 / the MOV bridge).
 
 ## Action-frame digest
 
-*(none yet)*
+### E.B.4 ◆ — 2026-06-09
+Discovery/flex: Tate non-degeneracy requires argument-order reversal (t_ℓ(Q,P) not t_ℓ(P,Q)) due to eigenvalue structure of E[ℓ] under Frobenius — P∈E(F_p)[ℓ] is in the eigenvalue-1 eigenspace (Z/3 factor, no [3]-preimage in E(F_{47^2})); final exponentiation kills the non-trivial part for t_ℓ(P,Q). Documented in test_curves.rs.
+Affected: C-Pairing surface unchanged (both argument orders are valid inputs; KAT chooses the non-degenerate direction).
+Deferred: yes — E.C implementers must use t_ℓ(Q,P) for the non-degenerate direction on this fixture; the eigenvalue-1/(-1) eigenspace structure of E[ℓ] is the group-theoretic reason. Documented in test_curves.rs lines 42-58.
+Texture: E.B ◆ boundary juncture returned still-on-intent on all five confirmation points. C-FpExt/C-PairingCurve/C-Pairing are E.C-ready. Option B holds. Load-bearing assumption: E.C calls solve_dl with k=1 (prime subfield projection) or E.C-prep session widens C2 to k>1 before E.C lands — anticipated and documented in ROADMAP.
 
 ---
 
