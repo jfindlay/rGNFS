@@ -7,9 +7,11 @@
 //! - [`util`] — shared helpers: batched inversion, multi-precision utilities.
 //! - [`factor`] — integer factorization rho (Floyd → Brent → batched GCD → multi-c).
 //! - [`ecdlp`] — ECDLP rho (r-adding walk → DPs → negmap → batched inv → GLV).
+//! - [`pairing`] — `F_{p^k}` extension-field arithmetic and bilinear pairings (E.B).
 
 pub mod curve;
 pub mod ecdlp;
 pub mod factor;
 pub mod field;
+pub mod pairing;
 pub mod util;
