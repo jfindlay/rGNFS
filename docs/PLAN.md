@@ -391,7 +391,7 @@ paged fork with no commit-shaped deliverable); its outcome is recorded in the Ac
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.B.1 | `F_{p^k}` extension-field arithmetic | pending | — | C-FpExt (to freeze) |
+| E.B.1 | `F_{p^k}` extension-field arithmetic | done | 74b2ff3 | C-FpExt (frozen) |
 | E.B.2 | `E(F_{p^k})` point arithmetic + pairing-friendly fixture | pending | — | C-PairingCurve (to freeze) |
 | E.B.3 | Miller's algorithm + Weil pairing + bilinearity KAT | pending | — | — |
 | E.B.4 ◆ | Tate/reduced-Tate pairing + final exp + design note + numfield correction | pending | — | C-Pairing (to freeze) |
