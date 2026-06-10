@@ -408,7 +408,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | done | 0a98148 | C-Padic (frozen) |
-| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | pending | | C-Hensel (+ `IntPoly` ext.) |
+| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | done | 2e84836 | C-Hensel (frozen) + `IntPoly` ext. (additive) |
 | E.D.3 ◆ | p-adic logarithm + sub-track close | pending | | C-PadicLog |
 
 Contracts frozen before this sub-track (read/extended by E.D): `shared/bigint` (read); the G.A
