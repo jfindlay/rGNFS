@@ -364,7 +364,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.C.1 | MOV bridge substrate (`rho→gnfs` edge + `FpExt→solve_dl` bridge + modulus guard) | pending | — | C-MovBridge |
+| E.C.1 | MOV bridge substrate (`rho→gnfs` edge + `FpExt→solve_dl` bridge + modulus guard) | done | 840608c | C-MovBridge (frozen) |
 | E.C.2 ◆ | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | pending | — | C-Mov |
 
 Contracts frozen before this sub-track (read by E.C): all Track-D NFS-DL contracts including
