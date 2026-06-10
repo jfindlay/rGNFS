@@ -409,7 +409,7 @@ Action-frame digest.
 |---|---------|--------|--------|-------|
 | E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | done | 0a98148 | C-Padic (frozen) |
 | E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | done | 2e84836 | C-Hensel (frozen) + `IntPoly` ext. (additive) |
-| E.D.3 ◆ | p-adic logarithm + sub-track close | pending | | C-PadicLog |
+| E.D.3 ◆ | p-adic logarithm + sub-track close | done | 95d03b7 | C-PadicLog (frozen) |
 
 Contracts frozen before this sub-track (read/extended by E.D): `shared/bigint` (read); the G.A
 `IntPoly` (`shared/numfield`, additively extended). This sub-track **freezes three new contracts**
@@ -420,7 +420,11 @@ the **T.E** p-adic textbook chapter.
 
 ## Action-frame digest
 
-*(none yet)*
+### E.D.3 ◆ — 2026-06-10
+Discovery/flex: E.D.3 ◆ boundary juncture returned still-on-intent on all five confirmation points. C-PadicLog frozen. The p-adic substrate composes correctly: Z_p arithmetic → Hensel lift → log homomorphism; both silent-failure defenses (unit-only inversion, convergence guard v_p(z-1)≥1) are present and tested; IntPoly extension confirmed additive; E.D is curve-free in code and dependency graph; principle-4 boundaries annotated.
+Affected: C-Padic (frozen E.D.1), C-Hensel (frozen E.D.2), C-PadicLog (frozen E.D.3)
+Deferred: yes — ROADMAP Discoveries log capture owed at the E.D ◆: the `Fp<L>`-is-not-a-ring substrate fact (prime-power-modulus work must use C-Padic's unit-only-inversion type) is a durable cross-track note. Inflection-point Opus action, not an E.D `@build` work item.
+Texture: Parallel-substrate decomposition (Hensel and log as independent pieces, not a pre-wired pipeline) is the right call for a substrate sub-track — keeps E.D curve-free and contracts orthogonal; E.E owns the curve-coords→lift→log wiring.
 
 ---
 
