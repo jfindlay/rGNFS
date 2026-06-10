@@ -254,29 +254,30 @@ fn kat_init_descent_frontier_h12() {
 
 // ─── KAT (c): C2 interface shape ──────────────────────────────────────────────
 
-/// KAT (c): `solve_dl` with k > 1 returns `SolveDlError::Unsupported { k }`.
+/// KAT (c): `solve_dl` with k = 2 no longer returns `SolveDlError::Unsupported`.
 ///
-/// The F_{p^k} extension-field path is not yet supported. `solve_dl` must return
-/// `Unsupported` immediately for k > 1, without attempting any computation.
+/// D.E.3 wires the k=2 path. `solve_dl` with k=2 must NOT return `Unsupported`.
+/// The result may be `Ok(x)` or a known `Err` variant (InitSmoothingFailed / DescentFailed),
+/// but must not be `Unsupported`.
 #[test]
-fn kat_solve_dl_unsupported_extension_field() {
+fn kat_solve_dl_k2_not_unsupported() {
     let result = solve_dl(
         &bi(2),
         &bi(3),
         &bi(11),
-        2, // k = 2: extension field — must return Unsupported.
+        2, // k = 2: extension field — D.E.3 wired, must NOT return Unsupported.
         &bi(10),
     );
     assert!(
-        matches!(result, Err(SolveDlError::Unsupported { k: 2 })),
-        "k=2 must return Unsupported {{ k: 2 }}; got: {:?}",
+        !matches!(result, Err(SolveDlError::Unsupported { .. })),
+        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
         result
     );
 }
 
 /// KAT (c2): `solve_dl` with k = 3 returns `SolveDlError::Unsupported { k: 3 }`.
 ///
-/// Verifies that the Unsupported check is not hard-coded to k = 2.
+/// k=3 is beyond the toy ceiling (k>2). `solve_dl` must return `Unsupported` for k>2.
 #[test]
 fn kat_solve_dl_unsupported_k3() {
     let result = solve_dl(&bi(2), &bi(3), &bi(11), 3, &bi(10));
@@ -322,7 +323,11 @@ fn kat_solve_dl_error_display() {
     let unsupported = SolveDlError::Unsupported { k: 2 };
     let msg = unsupported.to_string();
     assert!(!msg.is_empty(), "Unsupported display should be non-empty");
-    assert!(msg.contains("k > 1") || msg.contains("not yet supported"), "Unsupported message: {msg}");
+    assert!(
+        msg.contains("k > 1") || msg.contains("k > 2") || msg.contains("not yet supported")
+            || msg.contains("not supported"),
+        "Unsupported message: {msg}"
+    );
 
     let init_failed = SolveDlError::InitSmoothingFailed { attempts: 1000 };
     let msg = init_failed.to_string();
@@ -1015,9 +1020,12 @@ fn kat_h2_solve_dl_full_h8() {
     }
 }
 
-/// KAT (h3): `solve_dl_full` with k > 1 returns `Unsupported`.
+/// KAT (h3): `solve_dl_full` with k = 2 no longer returns `Unsupported`.
+///
+/// D.E.3 wires the k=2 path. `solve_dl_full` with k=2 delegates to `solve_dl` (which
+/// builds the extension context internally). The result must NOT be `Unsupported`.
 #[test]
-fn kat_h3_solve_dl_full_unsupported_k2() {
+fn kat_h3_solve_dl_full_k2_not_unsupported() {
     let ell5 = Uint::<4>::from(5u64);
     let ell = bi(5);
 
@@ -1037,10 +1045,45 @@ fn kat_h3_solve_dl_full_unsupported_k2() {
         to_bigint: Box::new(fp_to_bigint),
     };
 
+    // k=2 is now wired (D.E.3); must NOT return Unsupported.
+    // Note: p=11, k=2 — the k=2 path will try to find an irreducible poly of degree 2 over F_11.
+    // The result may be Ok or a known Err, but must not be Unsupported.
     let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 2, &ell, &ctx);
     assert!(
-        matches!(result, Err(SolveDlError::Unsupported { k: 2 })),
-        "k=2 should return Unsupported; got: {:?}",
+        !matches!(result, Err(SolveDlError::Unsupported { .. })),
+        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        result
+    );
+}
+
+/// KAT (h4): `solve_dl_full` with k = 3 returns `Unsupported`.
+///
+/// k=3 is beyond the toy ceiling (k>2). `solve_dl_full` must return `Unsupported` for k>2.
+#[test]
+fn kat_h4_solve_dl_full_unsupported_k3() {
+    let ell5 = Uint::<4>::from(5u64);
+    let ell = bi(5);
+
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 3, 3);
+    let vtable = VirtualLogTable::<FpNaive4> {
+        rational_logs: vec![FpNaive4::from_u64(1, &ell5)],
+        algebraic_logs: vec![],
+    };
+    let sieve_cfg = DescentSieveConfig::new(10, 5);
+
+    let ctx = SolveDlContext {
+        poly: &poly,
+        fb: &fb,
+        vtable: &vtable,
+        sieve_cfg,
+        to_bigint: Box::new(fp_to_bigint),
+    };
+
+    let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 3, &ell, &ctx);
+    assert!(
+        matches!(result, Err(SolveDlError::Unsupported { k: 3 })),
+        "k=3 should return Unsupported; got: {:?}",
         result
     );
 }

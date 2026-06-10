@@ -51,6 +51,7 @@ use shared_numth::factor_base_up_to;
 
 use crate::dl::descent::node::{DescentFrontier, DescentNode, DescentTarget};
 use crate::dl::descent::recurse::{DescentSieveConfig, run_descent};
+use crate::dl::ext::descent::solve_dl_ext;
 use crate::dl::VirtualLogTable;
 use crate::polyselect::PolyPair;
 use crate::sieve::FactorBase;
@@ -63,10 +64,15 @@ use crate::sieve::FactorBase;
 /// E.C consumes this taxonomy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SolveDlError {
-    /// Extension field F_{p^k} (k > 1) is not yet supported.
+    /// Extension degree k is beyond the toy ceiling (k > 2).
     ///
-    /// The F_{p^k} NFS-DL extension is deferred to an E.C-prep session. This variant is
-    /// returned immediately for k > 1 without attempting any computation.
+    /// k=1 (prime field F_p) and k=2 (extension field F_{p²}) are supported. k>2 is beyond
+    /// the toy ceiling and returns this variant immediately without attempting any computation.
+    ///
+    /// # D.E.3 ◆ note
+    ///
+    /// Before D.E.3, this variant fired for all k>1. After D.E.3, it fires only for k>2.
+    /// The taxonomy is FROZEN (D.C.3); no new variants will be added.
     Unsupported {
         /// The unsupported extension degree.
         k: usize,
@@ -104,7 +110,7 @@ impl std::fmt::Display for SolveDlError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Unsupported { k } => {
-                write!(f, "extension field F_{{p^{k}}} (k > 1) not yet supported")
+                write!(f, "extension field F_{{p^{k}}} (k > 2) not supported (toy ceiling)")
             }
             Self::InitSmoothingFailed { attempts } => {
                 write!(f, "initialization-smoothing failed after {attempts} attempts")
@@ -396,9 +402,10 @@ pub fn init_descent_frontier<F: Clone>(
 /// # Arguments
 ///
 /// - `g`: Generator of the multiplicative group, as a `BigInt` in `[1, p^k)`.
-/// - `h`: Target element, as a `BigInt` in `[1, p^k)`.
+///   For k=1: an integer in `[1, p)`. For k>1: base-p encoded (`c_0 + c_1·p + …`).
+/// - `h`: Target element, as a `BigInt` in `[1, p^k)`. Same encoding as `g`.
 /// - `p`: The prime base of the field.
-/// - `k`: The extension degree. `k = 1` is the prime field F_p; `k > 1` is F_{p^k}.
+/// - `k`: The extension degree. `k = 1` is the prime field F_p; `k = 2` is F_{p²}.
 /// - `ell`: The subgroup order (a prime dividing `p^k − 1`). The returned log is mod `ell`.
 ///
 /// # Returns
@@ -407,24 +414,26 @@ pub fn init_descent_frontier<F: Clone>(
 ///
 /// # Errors
 ///
-/// - [`SolveDlError::Unsupported`] if `k > 1` (F_{p^k} extension deferred to E.C-prep).
+/// - [`SolveDlError::Unsupported`] if `k > 2` (beyond the toy ceiling).
 /// - [`SolveDlError::InitSmoothingFailed`] if initialization-smoothing fails.
 /// - [`SolveDlError::DescentFailed`] if a frontier prime cannot be descended.
 ///
-/// # Scope (C2 frozen D.C.3)
+/// # Scope (C2 frozen D.C.3, extended D.E.3 ◆)
 ///
 /// This is the **frozen C2 interface** consumed by E.C. Its signature will not change.
 ///
-/// - **k = 1 (prime field F_p):** The k = 1 path runs initialization-smoothing. Without a
-///   [`SolveDlContext`] (factor base, virtual-log table, sieve config), the descent and
-///   assembly cannot proceed. If the frontier is non-empty after smoothing, returns
-///   `Err(SolveDlError::DescentFailed)`. For the full pipeline, use [`solve_dl_full`].
-/// - **k > 1 (extension field F_{p^k}):** Returns `SolveDlError::Unsupported` immediately.
+/// - **k = 1 (prime field F_p):** Runs initialization-smoothing. Without a
+///   [`SolveDlContext`], the descent and assembly cannot proceed. If the frontier is
+///   non-empty after smoothing, returns `Err(SolveDlError::DescentFailed)`. For the full
+///   pipeline, use [`solve_dl_full`].
+/// - **k = 2 (extension field F_{p²}):** Runs the full k=2 pipeline (toy scale). `g` and
+///   `h` are base-p encoded: `c_0 + c_1·p` for the element `c_0 + c_1·u` in F_{p²}.
+/// - **k > 2:** Returns `SolveDlError::Unsupported` (beyond the toy ceiling).
 ///
 /// # Threading note
 ///
 /// The `ell` parameter threads the subgroup order through the entire pipeline. The returned
-/// log is in `[0, ell)`. Pohlig–Hellman / CRT for the full group order is out of D.C scope.
+/// log is in `[0, ell)`. Pohlig–Hellman / CRT for the full group order is out of scope.
 pub fn solve_dl(
     g: &BigInt,
     h: &BigInt,
@@ -432,9 +441,30 @@ pub fn solve_dl(
     k: usize,
     ell: &BigInt,
 ) -> Result<BigInt, SolveDlError> {
-    // Step 1: k > 1 is not yet supported (F_{p^k} extension deferred to E.C-prep).
-    if k != 1 {
+    // k > 2: beyond the toy ceiling — Unsupported.
+    // k = 2: the extension field path (D.E.3).
+    // k = 1: the prime field path (D.C.3).
+    if k > 2 {
         return Err(SolveDlError::Unsupported { k });
+    }
+
+    // k = 2: delegate to the extension descent (D.E.3).
+    if k == 2 {
+        return solve_dl_ext(g, h, p, k, ell).map_err(|e| match e {
+            crate::dl::ext::descent::SolveDlExtError::UnsupportedDegree { k } => {
+                SolveDlError::Unsupported { k }
+            }
+            crate::dl::ext::descent::SolveDlExtError::InitSmoothingFailed => {
+                SolveDlError::InitSmoothingFailed { attempts: 0 }
+            }
+            crate::dl::ext::descent::SolveDlExtError::InvalidGenerator => {
+                // g is not a valid generator of the ℓ-subgroup — treat as descent failure.
+                SolveDlError::DescentFailed { stuck_prime: 0 }
+            }
+            crate::dl::ext::descent::SolveDlExtError::NoIrreduciblePoly => {
+                SolveDlError::DescentFailed { stuck_prime: 0 }
+            }
+        });
     }
 
     // Step 2: Initialization-smoothing.
@@ -476,11 +506,12 @@ pub fn solve_dl(
 /// [`SolveDlContext`] bundling the NFS polynomial, factor base, virtual-log table, and sieve
 /// config, and runs the full pipeline:
 ///
-/// 1. k != 1 → `Err(Unsupported { k })`.
-/// 2. Initialization-smoothing: find `e` such that `g^e · h mod p` is smooth.
-/// 3. Descent: run the special-q descent to rewrite all medium primes as factor-base leaves.
-/// 4. Assembly: walk the descent tree to compute `log_g(g^e · h) mod ell`.
-/// 5. Back out the initialization exponent: `log_g(h) = (assembled − e) mod ell`.
+/// 1. k > 2 → `Err(Unsupported { k })`.
+/// 2. k = 2 → delegate to [`solve_dl`] (the k=2 path builds its context internally).
+/// 3. Initialization-smoothing: find `e` such that `g^e · h mod p` is smooth.
+/// 4. Descent: run the special-q descent to rewrite all medium primes as factor-base leaves.
+/// 5. Assembly: walk the descent tree to compute `log_g(g^e · h) mod ell`.
+/// 6. Back out the initialization exponent: `log_g(h) = (assembled − e) mod ell`.
 ///
 /// # Toy KAT note
 ///
@@ -492,17 +523,18 @@ pub fn solve_dl(
 /// - `g`: Generator of the multiplicative group.
 /// - `h`: Target element.
 /// - `p`: The prime modulus.
-/// - `k`: Extension degree (only k = 1 is supported).
+/// - `k`: Extension degree. k=1 uses the full context; k=2 delegates to `solve_dl`.
 /// - `ell`: Subgroup order. The returned log is mod `ell`.
 /// - `ctx`: Pipeline context (polynomial, factor base, virtual-log table, sieve config).
+///   Used only for k=1; k=2 builds its context internally.
 ///
 /// # Returns
 ///
-/// `Ok(x)` where `x ∈ [0, ell)` and `g^x ≡ h (mod p)`.
+/// `Ok(x)` where `x ∈ [0, ell)` and `g^x ≡ h (mod p^k)`.
 ///
 /// # Errors
 ///
-/// - [`SolveDlError::Unsupported`] if `k > 1`.
+/// - [`SolveDlError::Unsupported`] if `k > 2`.
 /// - [`SolveDlError::InitSmoothingFailed`] if initialization-smoothing fails.
 /// - [`SolveDlError::DescentFailed`] if a frontier prime cannot be descended.
 pub fn solve_dl_full<F: Clone>(
@@ -513,9 +545,15 @@ pub fn solve_dl_full<F: Clone>(
     ell: &BigInt,
     ctx: &SolveDlContext<'_, F>,
 ) -> Result<BigInt, SolveDlError> {
-    // Step 1: k > 1 is not yet supported.
-    if k != 1 {
+    // k > 2: beyond the toy ceiling.
+    if k > 2 {
         return Err(SolveDlError::Unsupported { k });
+    }
+
+    // k = 2: the SolveDlContext does not carry extension info; delegate to solve_dl which
+    // builds the extension context internally.
+    if k == 2 {
+        return solve_dl(g, h, p, k, ell);
     }
 
     // Step 2: Initialization-smoothing.
@@ -709,9 +747,23 @@ mod tests {
     }
 
     #[test]
-    fn solve_dl_unsupported_k2() {
+    fn solve_dl_unsupported_k3() {
+        // k=3 is beyond the toy ceiling (k>2) — must return Unsupported.
+        let result = solve_dl(&bi(2), &bi(3), &bi(11), 3, &bi(10));
+        assert_eq!(result, Err(SolveDlError::Unsupported { k: 3 }));
+    }
+
+    #[test]
+    fn solve_dl_k2_does_not_return_unsupported() {
+        // k=2 is now wired (D.E.3); it must NOT return Unsupported.
+        // The result may be Ok or a known Err variant (InitSmoothingFailed / DescentFailed),
+        // but must not be Unsupported.
         let result = solve_dl(&bi(2), &bi(3), &bi(11), 2, &bi(10));
-        assert_eq!(result, Err(SolveDlError::Unsupported { k: 2 }));
+        assert!(
+            !matches!(result, Err(SolveDlError::Unsupported { .. })),
+            "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+            result
+        );
     }
 
     #[test]
@@ -731,7 +783,11 @@ mod tests {
     #[test]
     fn solve_dl_error_display() {
         let e1 = SolveDlError::Unsupported { k: 3 };
-        assert!(e1.to_string().contains("k > 1"));
+        let msg = e1.to_string();
+        assert!(
+            msg.contains("k > 1") || msg.contains("k > 2") || msg.contains("not supported"),
+            "Unsupported display should mention k or 'not supported': {msg}"
+        );
 
         let e2 = SolveDlError::InitSmoothingFailed { attempts: 42 };
         assert!(e2.to_string().contains("42"));

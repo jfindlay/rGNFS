@@ -370,9 +370,12 @@ fn kat_individual_log_full_pipeline() {
     );
 }
 
-/// End-to-end individual-log KAT: verify `solve_dl_full` returns `Unsupported` for k > 1.
+/// End-to-end individual-log KAT: verify `solve_dl_full` with k=2 is no longer `Unsupported`.
+///
+/// D.E.3 wires the k=2 path. `solve_dl_full` with k=2 delegates to `solve_dl` (which builds
+/// the extension context internally). The result must NOT be `Unsupported`.
 #[test]
-fn kat_individual_log_unsupported_k2() {
+fn kat_individual_log_k2_not_unsupported() {
     let poly = toy_poly_pair();
     let fb = FactorBase::new(&poly.f, 3, 3);
     let ell5 = ell5();
@@ -391,10 +394,43 @@ fn kat_individual_log_unsupported_k2() {
         to_bigint: Box::new(fp_to_bigint),
     };
 
+    // k=2 is now wired (D.E.3); must NOT return Unsupported.
+    // Note: p=11, k=2 — the k=2 path will try to find an irreducible poly of degree 2 over F_11.
     let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 2, &ell, &ctx);
     assert!(
-        matches!(result, Err(SolveDlError::Unsupported { k: 2 })),
-        "k=2 should return Unsupported; got: {:?}",
+        !matches!(result, Err(SolveDlError::Unsupported { .. })),
+        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        result
+    );
+}
+
+/// End-to-end individual-log KAT: verify `solve_dl_full` returns `Unsupported` for k > 2.
+///
+/// k=3 is beyond the toy ceiling (k>2). `solve_dl_full` must return `Unsupported` for k>2.
+#[test]
+fn kat_individual_log_unsupported_k3() {
+    let poly = toy_poly_pair();
+    let fb = FactorBase::new(&poly.f, 3, 3);
+    let ell5 = ell5();
+    let ell = bi(5);
+
+    let vtable = VirtualLogTable::<FpNaive4> {
+        rational_logs: vec![FpNaive4::from_u64(1, &ell5)],
+        algebraic_logs: vec![],
+    };
+    let sieve_cfg = DescentSieveConfig::new(10, 5);
+    let ctx = SolveDlContext {
+        poly: &poly,
+        fb: &fb,
+        vtable: &vtable,
+        sieve_cfg,
+        to_bigint: Box::new(fp_to_bigint),
+    };
+
+    let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 3, &ell, &ctx);
+    assert!(
+        matches!(result, Err(SolveDlError::Unsupported { k: 3 })),
+        "k=3 should return Unsupported; got: {:?}",
         result
     );
 }
