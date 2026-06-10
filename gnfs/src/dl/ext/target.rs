@@ -314,6 +314,7 @@ impl ExtTarget {
 /// The number field stays char-0. The residue map is the **only** place F_{p^k} (char p)
 /// meets the sieve algebra. Do not use `ExtResidueMap` to introduce extension-field
 /// arithmetic into the factor-base or relation-collection algebra.
+#[derive(Debug)]
 pub struct ExtResidueMap {
     /// The number field K = ℚ[α]/(f).
     pub field: NumberField,
