@@ -2,140 +2,159 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E (E.C — MOV/Frey–Rück reduction: ECDLP → F_{p^k} DLP)
+# rGNFS — Current Plan: Track-E (E.D — p-adic arithmetic: Z_p tower, Hensel lifting, p-adic log)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) AND lever 4
-(correctness-criticality), with the ROADMAP's explicit both-sessions-Opus flag as a third
-constraint.** E.C is **the cross-track bridge of the entire project** (ROADMAP Phase δ: "*the*
-cross-track bridge… the pedagogical climax"): the MOV/Frey–Rück reduction transports an ECDLP on a
-small-embedding-degree curve into a discrete log in `F_{p^k}*` via the E.B pairing, then solves that
-DLP by calling the now-honest **C2-ext `solve_dl`** (made real at k=2 by D.E). It is the first
-session-set to compose two tracks in code — adding the **first `rho → gnfs` crate dependency** — and
-a wrong bridge or reduction silently produces a *wrong* discrete log. Lever 5 is strong and fast (the
-`pairing_toy` end-to-end KAT recovers a *known* scalar and verifies `e(Q,R) = e(G,R)^k`, decisive on
-any bridge/reduction error) and *would* license an opt-down in isolation — but lever 3 + lever 4 +
-the ROADMAP flag dominate on the project's climax, so the ◆ that ratifies C-MovBridge / C-Mov runs at
-**Opus**. *(Both E.C sessions are Opus per the ROADMAP. The juncture fork at the E.C.2 ◆ is Opus.)*
+`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) on the E.D.1
+substrate, against a strong lever 5 that would otherwise license an opt-down.** E.D is a Sonnet
+sub-track (the ROADMAP flags every E.D session Sonnet — p-adic arithmetic is well-understood
+material), but the **Z_p / Z/p^k arithmetic substrate (E.D.1) is a Category-A representation choice
+that bounds Hensel lifting, the p-adic log, and the downstream E.E (Smart–Satoh–Araki) attack** —
+get the precision/valuation model or the prime-power-vs-prime distinction wrong and the rework
+propagates through the whole sub-track and into E.E. Lever 5 is strong and fast (p-adic results are
+*exactly* hand-checkable — a Hensel lift to mod p^k and a formal-group log are deterministic
+known-answer values, decisive KATs) and *would* license `juncture-tier: sonnet` in isolation; the
+user judged the substrate design-error cost (lever 3) high enough to hold the ◆ juncture at **Opus**
+anyway. *(All three E.D sessions are Sonnet `@build`; only the ◆ juncture fork at E.D.3 is Opus.)*
 
-Last rewrite: **D.E ◆ boundary crossed** (D.E.1 `0d02b77`, D.E.2 `1a21a32`, D.E.3 ◆ `a804a7b`;
-C-ExtTarget / C-ExtFactorBase / C2-ext frozen; the k>1 NFS-DL solver ships, proven correct at k=2 on
-the `pairing_toy` field). The D.E.3 ◆ digest recorded **three E.C agenda items** this plan resolves:
-**(A)** no single helper composes `FpExt::to_uint_vec`-coeffs into the base-p `BigInt` `solve_dl`
-consumes — a thin bridge is owed (E.C.1); **(B)** the k=2 `solve_dl_ext` is a brute-force placeholder
-over the ℓ=3 subgroup, *not* the D.E.2 NFS pipeline — on-intent per principle-4 toy scoping, so E.C
-composes the brute-force solver and does **not** wire the NFS pipeline; **(C)** `find_irreducible_
-degree2` re-derives the modulus inside `solve_dl_ext` independently of `ExtResidueMap.modulus` — for
-p=47 they coincide (`u²+1` tried first), but E.C's wiring must ensure they coincide **by
-construction** (the modulus-consistency invariant, E.C.1's guard).
+Last rewrite: **E.C ◆ boundary crossed and ROADMAP reconciled** (E.C.1 `840608c`, E.C.2 ◆
+`2e1edf8`; C-MovBridge / C-Mov frozen; the MOV/Frey–Rück cross-track bridge ships, ECDLP→DLP through
+a real NFS-DL solver proven at k=2). The E.C ◆ Discoveries entry (ROADMAP 2026-06-10) reconciled the
+Progress table (done ~57, remaining ~35–47) and recorded the E.A/E.B/D.E closeouts; **no static-frame
+debt is outstanding.** Per the sequencing order, the next un-started sub-track is **E.D — p-adic
+arithmetic**, opening Track E's second half (the structure-based attacks that escape search through
+*p-adic* structure rather than pairings).
+
+The substrate survey (forked `@explore`, 2026-06-10) established the shape and surfaced the design
+crux:
+
+1. **E.D is fully greenfield — no p-adic code exists anywhere** (`padic`/`hensel`/`valuation`/`Zp`/`Qp`
+   return zero source hits). E.D builds the substrate from scratch in a **new `shared/padic`
+   workspace crate** (the user's placement decision), mirroring the existing
+   `shared/{bigint,field,numth,numfield}` decomposition.
+
+2. **`Fp<L>` cannot be reused for the p-adic tower — this is the load-bearing substrate fact.**
+   `shared/field`'s `Fp<L>` trait assumes a **prime** modulus (`inv` uses Fermat's little theorem,
+   `sqrt` assumes p prime). Z/p^k for k>1 is a ring with zero divisors, *not* a field; `Fp::inv`
+   would silently return wrong results for a composite modulus. E.D.1 introduces a distinct
+   prime-power arithmetic type. **This is the highest-cost-of-wrong silent-failure mode in E.D** — a
+   units-vs-non-units confusion in Z/p^k produces wrong lifts with no error.
+
+3. **The polynomial machinery needs two additive extensions.** Hensel lifting evaluates `f` and `f'`
+   mod p^k; `IntPoly` (`shared/numfield/src/poly.rs`, G.A-frozen) has **neither a formal
+   `derivative()` nor any mod-m coefficient reduction / `eval_mod`**. Per the user's decision, E.D
+   **extends `IntPoly` additively** (new `derivative()` + `eval_mod(x, m)` methods, no change to any
+   existing signature) rather than duplicating polynomial logic in `shared/padic`. This is an
+   additive edit to a frozen shared type — recorded, low-risk, surfaced at the ◆.
+
+4. **E.D adds a `rho → shared-padic` edge for the downstream consumer, but E.D itself is
+   crate-internal to `shared`.** The p-adic substrate, Hensel lift, and p-adic log all live in
+   `shared/padic`; they consume only `shared/bigint` (`BigInt`, `gcd`) and `shared/numfield`
+   (`IntPoly`). The `rho → shared-padic` dependency is added by **E.E** (Smart–Satoh–Araki, which
+   lifts curve points), *not* by E.D. E.D's KATs live in `shared/padic/tests/` and exercise the
+   arithmetic + lift + log against hand-computed values — no curve, no rho dependency.
+
+5. **The downstream consumer is E.E (Smart–Satoh–Araki), not this sub-track.** E.D delivers the
+   *general* p-adic substrate (Z_p arithmetic, Hensel root-lifting, the formal-group / p-adic
+   logarithm series). E.E consumes it to attack anomalous curves (#E(F_p) = p, trace 1). **E.D does
+   NOT touch curves, point-counting, or trace-of-Frobenius** (the survey confirmed none exists; that
+   is E.E's concern, against a hardcoded anomalous fixture). Building any of that in E.D is defocus.
+
+The work splits at two contract-sharp seams, **3 sessions** (matching the ROADMAP's 3-session
+Sonnet estimate):
+
+1. **E.D.1 — `shared/padic` crate + Z_p / Z/p^k arithmetic substrate (Sonnet, Cat A).** New
+   workspace member `shared/padic`; the prime-power-modulus arithmetic type (the p-adic number as
+   valuation + unit, or fixed-precision residue mod p^N — the representation choice is the design
+   crux); add/sub/mul/inv-of-units/valuation/precision. **Freezes C-Padic** — the p-adic-number
+   interface E.D.2 and E.D.3 build on.
+
+2. **E.D.2 — Hensel lifting + `IntPoly` derivative/mod-eval (Sonnet, Cat B).** Newton iteration
+   lifting a simple root of `f` mod p to mod p^k (the quadratic-convergence lift, `r ← r −
+   f(r)/f'(r) mod p^{2k}`); the additive `IntPoly::derivative()` + `IntPoly::eval_mod()` the lift
+   consumes. **Freezes C-Hensel.**
+
+3. **E.D.3 ◆ — p-adic logarithm + sub-track close (Sonnet, Cat B, `@plan`).** The formal-group /
+   p-adic logarithm series E.E's SSA reduction consumes; the end-to-end KAT (lift + log recovers a
+   hand-computed p-adic value); the sub-track close. **Freezes C-PadicLog.** Crosses the **E.D ◆
+   boundary.**
+
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing the *Smart–Satoh–Araki
+attack itself* — the curve lift, anomalous-curve detection, trace-of-Frobenius / point-counting —
+that is E.E, not E.D; E.D delivers the general p-adic substrate. Or writing the *p-adic textbook
+chapter* in MATHEMATICS.md — that is **T.E, paired with E.W at the Track-E ◆**, per the ROADMAP's
+per-track-chapter pairing rule; E.D writes at most a PEDAGOGY code-tour delta, not a textbook
+chapter. Or adding a `rho → shared-padic` edge — that is E.E's, not E.D's; E.D is `shared`-internal)
+and **rigidity** (using `Fp` for the p-adic tower because "it's already there" — `Fp::inv` is wrong
+mod p^k; the prime-power type is mandatory. Or duplicating `IntPoly`'s polynomial logic in
+`shared/padic` rather than extending `IntPoly` — the derivative/mod-eval are general polynomial ops
+and belong on `IntPoly`, per the placement decision).
+
+**Scoping discipline.** E.D builds p-adic arithmetic at **demonstration fidelity** (principle 4) and
+**toy precision** (fixed, small k — enough to exhibit Hensel convergence and the log, not
+crypto-scale precision towers). It **amends no frozen contract** except the **additive** `IntPoly`
+extension (new methods only). It introduces **no new live oracle** (p-adic values are exactly
+hand-computable; an optional PARI/`Qp` `#[ignore]` cross-check is the established dev-only pattern).
+A crypto-scale anomalous-curve SSA attack is a principle-4 boundary and an E.E work item, not E.D.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.C; Contract C2): E.C reduces an ECDLP on a curve `E/F_p` with small
-embedding degree k to a discrete log in `F_{p^k}*`, and solves that DLP by **calling a real NFS-DL
-solver** — "*the session where the MOV bridge first calls a real NFS-DL solver is the pedagogical
-climax.*" ROADMAP C2 forbids the permanent PARI stub ("*merging E.C with a PARI stub permanently is
-not [acceptable]*"); D.E removed that constraint by making C2-ext honest at k=2, so E.C can now land
-against a *real* solver.
+Per ROADMAP (Phase δ, E.D): "*E.D — p-adic arithmetic. 3 sessions. Predecessors: shared bigint, G.A
+(polynomial machinery). Hensel lifting; p-adic logarithm. Sonnet.*" E.D is the substrate sub-track
+for the **second structure-based escape in Track E**: where MOV (E.C) escaped the ECDLP search bound
+via a *pairing* homomorphism into a finite field, Smart–Satoh–Araki (E.E, the immediate consumer)
+escapes it via the ***p-adic* structure of anomalous curves** — lifting the curve to Z_p and reading
+the discrete log off the formal-group logarithm. E.D builds the p-adic machinery that escape stands
+on; it does not build the attack.
 
-The structure-based-escape-from-search through-line reaches its cross-track payoff here. E.A built
-the generic-and-Pohlig–Hellman ECDLP baseline; E.B built the **pairing** `e: E[ℓ] × E[ℓ] → μ_ℓ ⊂
-F_{p^k}*` (the homomorphism that transports the ECDLP into a finite-field DLP); D.E built the
-**finite-field DLP solver** in the extension the transported problem lands in. **E.C composes them
-into the MOV reduction**: it is the moment the project's three substrates (curve, pairing,
-NFS-DL) meet in one computation.
+The structure-based-escape-from-search through-line, p-adic branch: an anomalous curve (#E(F_p) = p,
+trace of Frobenius = 1) has the rare property that its group lifts compatibly to the p-adic numbers,
+and the p-adic *elliptic* logarithm — a power series convergent on the kernel of reduction — maps the
+order-p subgroup isomorphically onto the additive group p·Z_p / p²·Z_p ≅ F_p. The ECDLP `Q = k·G`
+becomes a *division* in F_p: `k = log_p(Q) / log_p(G)`. No search. E.D delivers the three substrate
+pieces that reduction calls:
 
-The MOV reduction's mathematical shape (the through-line the KAT exercises): given the ECDLP
-`Q = k·G` in the order-ℓ subgroup `E[ℓ]`, pick a point `R ∈ E[ℓ]` with `e(G, R) ≠ 1` (a
-μ_ℓ-generator). The pairing's bilinearity gives `e(Q, R) = e(k·G, R) = e(G, R)^k`. Writing
-`g := e(G, R)` and `h := e(Q, R)`, both in `μ_ℓ ⊂ F_{p^k}*`, the ECDLP scalar `k` is exactly
-`log_g(h)` — a *finite-field* discrete log. E.C transports `(G, Q, R)` through the pairing to
-`(g, h)`, encodes `g, h` for `solve_dl`, recovers `k mod ℓ`, and (at toy scale) verifies
-`e(Q, R) = e(G, R)^k`. **The escape:** an ECDLP with no exploitable curve structure becomes a
-finite-field DLP where index-calculus/NFS-DL applies — the search bound is escaped by the pairing's
-homomorphism.
+1. **Z_p / Z/p^k arithmetic (E.D.1).** The ring the lift lives in. The crux is that Z/p^k is *not* a
+   field: only units (elements coprime to p) are invertible, and the p-adic valuation `v_p(·)` is the
+   organising invariant. The representation (valuation + unit form, or fixed-precision residue) is
+   the Category-A decision that bounds everything above it.
+
+2. **Hensel lifting (E.D.2).** Newton's method over Z_p: a simple root of `f` mod p lifts *uniquely*
+   to a root mod p^k, with the iteration doubling precision each step (`r_{n+1} = r_n − f(r_n) ·
+   f'(r_n)^{-1}` mod the next power). This is the lift that takes a curve point's F_p coordinates up
+   to Z_p coordinates — and the reason E.D.2 needs `IntPoly::derivative` and a mod-p^k evaluation.
+
+3. **The p-adic logarithm (E.D.3).** The formal-group log series `log(1+x) = x − x²/2 + x³/3 − …`
+   (and the elliptic-curve formal-group log E.E specialises), convergent p-adically on the kernel of
+   reduction. This is the homomorphism that turns the multiplicative ECDLP into additive division —
+   the escape itself, exercised at toy precision by E.D's KAT and consumed in full by E.E.
 
 The substrate survey established the shape precisely:
 
-1. **E.C is a compose over frozen pieces, not new mathematics — the bridge is the design crux.** The
-   pairing (`weil_pairing` / `reduced_tate` → `FpExt<F>` ∈ μ_ℓ) and the solver (`solve_dl(g, h, p, 2,
-   ell)`) both exist and are KAT-proven. What does *not* exist is the **representational bridge** from
-   the pairing output to the solver input. `FpExt::to_uint_vec() -> Vec<Uint<4>>` (coefficient form,
-   crypto-bigint width); `solve_dl` takes `h: &num_bigint::BigInt` in **base-p encoding**
-   (`c_0 + c_1·p`). The gap is two-stage: `Vec<Uint<4>> → Vec<BigInt>` (per-coefficient type
-   conversion, toy-only single-limb) → base-p `BigInt` (scalar combine). E.C.1 builds this bridge.
+1. **E.D is greenfield — no p-adic code, no chapter, no fixture.** The substrate is built from
+   scratch in a new `shared/padic` crate. The only existing pieces it consumes are `shared/bigint`
+   (`BigInt`, `gcd`) and `shared/numfield`'s `IntPoly` (extended).
 
-2. **`solve_dl_ext` is brute-force at k=2 (digest item B) — E.C composes it as-is, does not touch
-   the NFS pipeline.** The survey confirmed `solve_dl_ext` enumerates the ℓ=3 subgroup; the D.E.2
-   `ExtFactorBase` / `augment_ext_relation` pipeline exists but is bypassed at toy scale. This is
-   **on-intent** (principle 4: the toy implementation proves the interface; the NFS pipeline is the
-   crypto-scale path). E.C calls `solve_dl` (which dispatches to `solve_dl_ext` at k=2) through the
-   frozen C2 signature; it adds **no** NFS-pipeline wiring. *Whether E.C should exercise the NFS
-   pipeline rather than brute force is a principle-4 annotation, not an E.C work item.*
+2. **`Fp` is the wrong tool for the tower (the rigidity guard).** `shared/field`'s `Fp<L>` assumes a
+   prime modulus; Z/p^k arithmetic must be a distinct type with units-only inversion and an explicit
+   valuation. Reusing `Fp` is the silent-wrong-answer failure mode.
 
-3. **The modulus-consistency invariant (digest item C) is E.C.1's load-bearing guard.** The pairing
-   carries its own `IrreducibleModulus` (`u²+1` for the toy fixture); `solve_dl_ext` re-derives a
-   degree-2 irreducible internally via `find_irreducible_degree2` (which does **not** accept a
-   caller modulus). For p=47 both pick `u²+1` (it is tried first and is irreducible), so they
-   coincide — but **by coincidence, not by construction.** E.C.1 must make the coincidence explicit:
-   the bridge asserts the pairing's modulus equals what the solver path uses, so a future p where
-   `find_irreducible_degree2` picks a different polynomial fails *loudly* rather than computing a DL
-   in the wrong F_{p²}. **This is the highest-cost-of-wrong silent-failure mode in E.C** — a
-   different modulus gives a different field and a wrong log with no error.
+3. **`IntPoly` is extended additively (the placement decision).** `derivative()` and `eval_mod(x, m)`
+   are added to `IntPoly` in `shared/numfield` — general polynomial ops that belong there, consumed
+   by E.D.2's Hensel iteration. No existing `IntPoly` signature changes.
 
-4. **E.C adds the first `rho → gnfs` dependency (the cross-crate seam).** `rho` does not yet depend
-   on `gnfs` (confirmed). E.C adds the edge. Per the bridge-location decision, **gnfs stays unaware
-   of rho's `FpExt`**: gnfs grows an `FpExt`-shaped *input* helper (a coefficient `Vec<BigInt>` +
-   modulus → base-p `BigInt`, composing the existing `ExtTarget::from_coeffs` + `ext_target_to_bigint`
-   plus the modulus-consistency assertion); the rho side does only the `Uint<4> → BigInt` step and
-   calls it. No `gnfs → rho` coupling; the new edge is one-directional.
+4. **E.D is `shared`-internal; the `rho → shared-padic` edge is E.E's.** E.D's tests live in
+   `shared/padic/tests/` and check arithmetic/lift/log against hand-computed values. The curve-side
+   wiring (and the dependency edge) is E.E.
 
-5. **The end-to-end MOV KAT lives in `rho` and uses the real `pairing_toy` fixture.** Unlike D.E.3
-   (which hand-built its F_{47²} target *independently in gnfs* because the rho→gnfs edge did not yet
-   exist), E.C's KAT **is** the cross-track composition: `pairing_toy()` → `reduced_tate(Q, P, ell)`
-   → bridge → `gnfs::solve_dl` → recovered `k mod ℓ` → verify `e(Q,R) = e(G,R)^k`. This is the
-   project's first KAT that crosses the track boundary in a single test.
-
-The work splits at the **bridge → reduction** seam, 2 sessions (matching the ROADMAP's 2-session
-both-Opus estimate):
-
-1. **E.C.1 — MOV bridge substrate: `rho → gnfs` edge + `FpExt → solve_dl`-target bridge (Opus, Cat
-   A).** Add the `rho → gnfs` dependency; build the bridge that turns a pairing output (`FpExt<F>`,
-   via `to_uint_vec`) into the base-p `BigInt` `solve_dl` consumes, with the **modulus-consistency
-   guard** (digest item C). The gnfs-side helper (FpExt-shaped coefficient input) + the rho-side
-   `Uint<4> → BigInt` step. **Freezes C-MovBridge** — the bridge interface E.C.2 reads pairing
-   outputs through.
-
-2. **E.C.2 ◆ — MOV reduction + end-to-end `pairing_toy` KAT (Opus, Cat I, `@plan`).** The reduction
-   proper: transport `(G, Q, R)` through the pairing to `(g, h) ∈ μ_ℓ`, encode via C-MovBridge, call
-   `gnfs::solve_dl(g, h, p, 2, ell)`, recover `log_g(h) = k mod ℓ`; the **end-to-end MOV KAT** at the
-   `pairing_toy` parameters (recover the known ECDLP scalar, verify `e(Q,R) = e(G,R)^k` in F_{47²}*).
-   **Freezes C-Mov** (the MOV-reduction entry). Crosses the **E.C ◆ boundary** (the cross-track
-   climax exists; ECDLP reduces to NFS-DL through a real solver).
-
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing the *NFS pipeline* inside
-the k=2 path — that is the principle-4 crypto-scale annotation, not E.C; E.C composes the brute-force
-`solve_dl_ext` as-is. Or implementing other Track-E attacks — Smart–Satoh–Araki, GHS — those are
-E.E/E.H. Or writing the MOV *textbook chapter* — that is T.E, paired with E.W at the Track-E ◆, not
-E.C) and **rigidity** (re-deriving the base-p encoding in rho rather than calling the gnfs-side
-bridge — the encoding convention is gnfs's, threaded through C-MovBridge; duplicating it in rho is
-the two-crates-must-agree failure. Or skipping the modulus-consistency guard because "p=47 works" —
-the guard is the silent-wrong-field defense, mandatory).
-
-**Scoping discipline.** E.C reduces ECDLP → DLP at **toy embedding degree k=2** (the `pairing_toy`
-fixture) at demonstration fidelity (principle 4). It introduces **no new live oracle** (the optional
-PARI/`#[ignore]` cross-check is the established dev-only pattern). It **amends no frozen contract**:
-C2-ext, C-ExtTarget, the pairing contracts (C-Pairing / C-FpExt / C-PairingCurve) and the E.A ECDLP
-substrate are all *read*, not changed. The MOV reduction recovers `k mod ℓ` (the subgroup log); a
-full composite-order lift via Pohlig–Hellman is a principle-4 annotation (the toy fixture's relevant
-subgroup is order ℓ=3). A crypto-scale MOV against a real small-embedding-degree curve is a
-principle-4 boundary, not a work item.
+Re-read this intent at the ◆ boundary to catch defocus (the SSA attack, point-counting, the
+MATHEMATICS chapter — all out of E.D scope) and rigidity (`Fp` misuse, `IntPoly` duplication).
 
 ---
 
@@ -143,15 +162,15 @@ principle-4 boundary, not a work item.
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper; raw `cargo` is the only CI surface (confirmed
-unchanged from D.E; oracle KATs are `#[ignore]`-gated only, no `oracle-tests` feature). `/run-plan`
-re-discovers at preflight. E.C **adds a cross-crate dependency and a decisive end-to-end KAT**, so
-the gate is a **correctness + integration gate**: the E.C.2 end-to-end MOV KAT (`pairing_toy` →
-pairing → bridge → `solve_dl` → `k mod ℓ`, verify `e(Q,R) = e(G,R)^k`) is the primary correctness
-signal — fast and decisive (lever 5). A wrong bridge encoding, a wrong modulus (item C), or a
-wrong reduction breaks `e(Q,R) = e(G,R)^k` directly. **The frozen D.E k=2 KATs
-(`gnfs/tests/dl_ext_kat.rs`) and the E.B pairing KATs (`rho/tests/pairing_kat.rs`) must stay green**
-— the gate also guards the no-regression invariant on both composed substrates, and the
-`cargo check --workspace` must confirm the new `rho → gnfs` edge resolves cleanly (no cycle).
+unchanged from E.C; oracle KATs are `#[ignore]`-gated only, no `oracle-tests` feature). `/run-plan`
+re-discovers at preflight. E.D **adds a new workspace member (`shared/padic`)**, so the gate is a
+**correctness + workspace-integrity gate**: each session's KATs (`shared/padic/tests/*_kat.rs`) are
+the primary correctness signal — fast and *exactly* decisive (lever 5: p-adic lifts and the log are
+hand-computable known-answer values). `cargo check --workspace` must confirm the new `shared/padic`
+member resolves cleanly (added to root `Cargo.toml` `members`, depends only on `shared-bigint` +
+`shared-numfield`, no cycle). **The G.A `IntPoly` consumers (the NFS pipeline in `gnfs`) must stay
+green** after the additive `IntPoly` extension — the gate guards the no-regression invariant on the
+shared polynomial type.
 
 ---
 
@@ -163,225 +182,245 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.C.1 | MOV bridge substrate: `rho → gnfs` edge + `FpExt → solve_dl`-target bridge + modulus-consistency guard | A | **Opus** | C2-ext `solve_dl` (frozen D.E.3, read), C-ExtTarget `ExtTarget`/`ext_target_to_bigint` (frozen D.E.1, read+compose), C-FpExt `FpExt`/`to_uint_vec` (frozen E.B.1, read), C-Pairing modulus (frozen E.B, read) | `rho/Cargo.toml` (add `gnfs` dep), `gnfs/src/dl/ext/target.rs` *or* `gnfs/src/dl/descent/solve.rs` (add the FpExt-shaped coeff-`Vec<BigInt>`→base-p-`BigInt` helper + modulus-consistency assertion), `rho/src/pairing/mov.rs` (new: rho-side `Uint<4>→BigInt` step + bridge entry), `rho/src/pairing/mod.rs` (add `pub mod mov;`) |
-| E.C.2 ◆ `@plan` | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | I | **Opus** | C-MovBridge (frozen E.C.1), C-Pairing `weil_pairing`/`reduced_tate` (frozen read), C-PairingCurve `pairing_toy`/`PairingPoint` (frozen read), E.A ECDLP substrate (frozen read), C2-ext `solve_dl` (frozen read) | `rho/src/pairing/mov.rs` (the reduction entry `mov_reduce` composing pairing→bridge→`solve_dl`), `rho/tests/mov_kat.rs` (new: end-to-end k=2 MOV KAT + optional PARI `#[ignore]` cross-check) |
+| E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | A | Sonnet | `shared/bigint` (`BigInt`, `gcd`, frozen, read) | `Cargo.toml` (add `shared/padic` member), `shared/padic/Cargo.toml` (new), `shared/padic/src/lib.rs` (new: crate root + `pub mod`), `shared/padic/src/zp.rs` (new: the Z/p^k / Z_p arithmetic type), `shared/padic/tests/zp_kat.rs` (new) |
+| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | B | Sonnet | C-Padic (frozen E.D.1), `IntPoly` (`shared/numfield`, frozen G.A, **extend additively**) | `shared/numfield/src/poly.rs` (add `derivative()` + `eval_mod()` to `IntPoly`, additive), `shared/padic/src/hensel.rs` (new: Newton root-lift), `shared/padic/src/lib.rs` (add `pub mod hensel;`), `shared/padic/Cargo.toml` (add `shared-numfield` dep), `shared/padic/tests/hensel_kat.rs` (new) |
+| E.D.3 ◆ `@plan` | p-adic logarithm + sub-track close | B | Sonnet | C-Padic (frozen E.D.1, read), C-Hensel (frozen E.D.2, read) | `shared/padic/src/log.rs` (new: formal-group / p-adic log series), `shared/padic/src/lib.rs` (add `pub mod log;`), `shared/padic/tests/log_kat.rs` (new: end-to-end lift+log KAT + optional PARI `#[ignore]` cross-check) |
 
-**Sequencing notes.** Strictly serial: **E.C.1 → E.C.2.** E.C.1 lands the cross-crate edge and the
-bridge the reduction stands on; E.C.2 writes the reduction and closes the sub-track with the
-end-to-end KAT. The single `@plan` marker sits on **E.C.2 ◆** — the Opus boundary juncture ratifying
-C-MovBridge / C-Mov (the cross-track composition is correct; the climax KAT recovers the right log)
-before the sub-track closes. E.C.1, though Opus-tier, carries **no** `@plan` (it freezes a
-compiler-/test-checkable bridge interface; C-MovBridge is re-ratified at the E.C.2 ◆ alongside C-Mov
-— an inline juncture would double the boundary cost on a 2-row shard).
+**Sequencing notes.** Strictly serial: **E.D.1 → E.D.2 → E.D.3.** E.D.1 lands the crate and the
+arithmetic everything stands on; E.D.2 builds the lift (and the polynomial support it needs); E.D.3
+builds the log and closes the sub-track. The single `@plan` marker sits on **E.D.3 ◆** — the Opus
+boundary juncture (juncture-tier: opus) ratifying C-Padic / C-Hensel / C-PadicLog before the
+sub-track closes. E.D.1, though it freezes the Category-A substrate, carries **no** inline `@plan`
+(C-Padic is compiler-/test-checkable and is re-ratified at the E.D.3 ◆ alongside C-Hensel /
+C-PadicLog — an inline juncture would double the boundary cost on a 3-row Sonnet shard).
+*(Tradeoff named: the E.D.1 substrate is the highest-design-cost session, and a wrong representation
+is cheapest to catch right after E.D.1 rather than two sessions later at the ◆. The opt for a single
+◆ juncture trades that early-catch insurance for boundary-cost economy on a short shard; `/run-plan
+halt-at-boundaries` partially mitigates by surfacing E.D.1 at its own commit for human eyes even
+without a paged fork.)*
 
-**Why 2 sessions (the ROADMAP's both-Opus estimate).** The split is taken at the bridge → reduction
-seam:
-- **One-line-commit-title corollary.** "MOV bridge substrate (`rho→gnfs` edge + FpExt→solver bridge)"
-  and "MOV reduction + end-to-end KAT" are **two distinct commit titles** spanning two categories
-  (A substrate, I integrative).
-- **Contract-sharp boundary (legitimate, not LOC-driven).** E.C.1 **freezes** C-MovBridge; E.C.2
-  **consumes** it and **freezes** C-Mov. One real produce/consume seam — and the bridge is the design
-  call (the cross-crate edge + the modulus-consistency invariant) that bounds the reduction, so it
-  earns its own session and its own freeze checkpoint.
-- **Why the bridge is its own Opus session (lever 3 + lever 4).** The `FpExt → solver-target` bridge
-  is the first cross-track code edge in the project and carries the silent-wrong-field failure mode
-  (item C). Getting the modulus-consistency guard or the encoding wrong produces a wrong log with no
-  error — cost-of-wrong (lever 3) and correctness-criticality (lever 4) are both maximal.
-- **Irreducible unit kept whole (lever 2).** The reduction + the end-to-end KAT is one coherent unit
-  (E.C.2) — the reduction has **no standalone KAT-able contract except as the working end-to-end MOV
-  recovery** (a reduction with no end-to-end KAT has an undefined contract — the same rule that kept
-  descent+`solve_dl`+KAT whole in D.E.3). Splitting it fractures an irreducible unit.
+**Why 3 sessions (the ROADMAP's Sonnet estimate).** The split is taken at the two contract-sharp
+seams:
+- **One-line-commit-title corollary.** "New `shared/padic` crate + Z_p arithmetic substrate",
+  "Hensel lifting + `IntPoly` derivative/mod-eval", and "p-adic logarithm + sub-track close" are
+  **three distinct commit titles** across two categories (A substrate, B algorithm ×2).
+- **Contract-sharp boundaries (legitimate, not LOC-driven).** E.D.1 **freezes** C-Padic; E.D.2
+  **consumes** it and **freezes** C-Hensel; E.D.3 **consumes** both and **freezes** C-PadicLog. Two
+  real produce/consume seams.
+- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the arithmetic
+  ring, the lift, the log. None fractures below its floor; none merges across a freeze.
 
-They are **not** further splittable: separating the reduction from its end-to-end KAT splits an
-irreducible unit (per the corollary); merging E.C.2 into E.C.1 would put the cross-crate edge, the
-bridge, the reduction, and the climax KAT in one >400-LOC two-title Opus session with **no
-contract-freeze checkpoint between the bridge design and its consumption** — poor insurance on the
-project's highest-stakes seam.
+They are **not** further splittable: the Z_p arithmetic is one ring (splitting add/mul from inversion
+fractures a unit with no contract-sharp seam between them); Hensel + its polynomial support is one
+lift (the `derivative`/`eval_mod` exist *for* the lift); the log + its KAT is the irreducible
+end-to-end unit (a log with no lift+log KAT has an undefined contract). Merging E.D.2 into E.D.1 would
+put the arithmetic ring, the lift, and the frozen-`IntPoly` edit in one >400-LOC two-title session
+with no freeze checkpoint between the substrate and its first consumer.
 
 ---
 
 ## Session detail
 
-E.C.1 is specified at near-full fidelity (the bridge and the modulus-consistency guard are the design
-crux). E.C.2 is a lower-fidelity sketch, correct per the substrate-first discipline: it is crisply
-specified only after C-MovBridge freezes.
+E.D.1 is specified at near-full fidelity (the Z_p representation is the design crux). E.D.2 and E.D.3
+are lower-fidelity sketches, correct per the substrate-first discipline: they are crisply specified
+only after C-Padic freezes.
 
-### E.C.1 — MOV bridge substrate (Opus, Cat A)
+### E.D.1 — `shared/padic` crate + Z_p / Z/p^k arithmetic substrate (Sonnet, Cat A)
 
-**Deliverable:** the `rho → gnfs` crate dependency and the bridge from a pairing output to the
-`solve_dl` target, with the modulus-consistency guard. The design choices:
-- **The cross-crate edge** (`rho/Cargo.toml`): add `gnfs` as a `rho` dependency. `cargo check
-  --workspace` must confirm no dependency cycle (gnfs does not depend on rho — confirmed by survey).
-- **The gnfs-side bridge helper** (per the bridge-location decision: FpExt-shaped *input*, gnfs
-  unaware of rho's type). A function taking a coefficient `Vec<BigInt>` + `p` + the expected modulus
-  (`Vec<BigInt>`) and returning the base-p `BigInt` `solve_dl` consumes — composing the existing
-  `ExtTarget::from_coeffs(coeffs, p, modulus)` + `ext_target_to_bigint(&t)` (both frozen C-ExtTarget,
-  read+compose). **The Opus design call:** where this lives (`target.rs` next to `ExtTarget`, or
-  `solve.rs` next to `solve_dl`) and its exact signature — and crucially the **modulus-consistency
-  assertion** (item C): the helper asserts the supplied modulus equals what the k=2 `solve_dl_ext`
-  path will use (`find_irreducible_degree2(p)`), so a mismatch fails loudly. Decide whether to
-  *assert* coincidence (cheapest, toy-scoped) or *thread* the modulus into `solve_dl_ext` (a larger
-  change to a frozen file — likely deferred to a principle-4 annotation; surface at the ◆ if the
-  assertion feels too fragile).
-- **The rho-side step** (`rho/src/pairing/mov.rs`): the `Uint<4> → BigInt` per-coefficient conversion
-  (toy-only single-limb: `BigInt::from(u.as_words()[0])`, with a `debug_assert` the higher limbs are
-  zero) that turns `FpExt::to_uint_vec() -> Vec<Uint<4>>` into the `Vec<BigInt>` the gnfs helper
-  accepts; and the rho-facing bridge entry that calls the gnfs helper.
+**Deliverable:** a new `shared/padic` workspace crate and the prime-power-modulus arithmetic type the
+whole sub-track stands on. The design choices:
+- **The new crate** (`Cargo.toml` member + `shared/padic/Cargo.toml`): add `shared/padic` to the
+  workspace `members`; the crate depends only on `shared-bigint` (and `num-bigint`/`num-traits` as
+  needed). `cargo check --workspace` must confirm no cycle. **Crate placement decision: `shared/padic`
+  (a new sibling crate), per the user — not a module in `shared/field` (the prime-field crate, where
+  Z/p^k would invite the exact prime-modulus confusion) nor `shared/numfield`.**
+- **The Z_p / Z/p^k arithmetic type** (`shared/padic/src/zp.rs`): the design crux. Decide the
+  representation — **the recommended shape is a `BigInt` residue carried with an explicit precision
+  `k` (the modulus is p^k) plus the p-adic valuation as the organising invariant**, exposing
+  `add`/`sub`/`mul`, **unit inversion** (`inv` defined only on elements with `v_p = 0`; a
+  non-unit-inversion attempt is an error, *not* a silent wrong answer — the C-Padic guard), `valuation`,
+  `precision`, and lift/truncate between precisions. The Opus design call (deferred to the ◆ for
+  ratification, but proposed here): valuation+unit form vs. fixed-precision residue, and whether `p`
+  is a `BigInt` field on the element or threaded per-call (mirroring `Fp`'s pass-the-modulus
+  convention for consistency, or storing it for ergonomics in a precision tower).
 
-Consumes the frozen C2-ext `solve_dl` (read — the bridge output must fit its `h: &BigInt` k=2 path),
-C-ExtTarget (`ExtTarget`/`ext_target_to_bigint`, read+compose), C-FpExt (`FpExt`/`to_uint_vec`,
-read), and the pairing's `IrreducibleModulus` (read — its coefficient form is the expected modulus
-the guard checks). **Freezes C-MovBridge.**
+Consumes `shared/bigint` (`BigInt`, `gcd`, read). **Freezes C-Padic.**
 
-**KAT:** the bridge round-trips a known μ_ℓ element (`FpExt` for, e.g., `(23, 6)` = ζ at the toy
-params → base-p `BigInt` `23 + 6·47` matching the `dl_ext_kat.rs` encoding); the modulus-consistency
-guard fires (a deliberately-wrong modulus is rejected — assert the panic/error); the `Uint<4> →
-BigInt` step is correct on a sample. **Verify gate:** `cargo test --workspace` green; **D.E k=2 KATs
-and E.B pairing KATs unchanged**; `cargo check --workspace` resolves the new edge with no cycle.
+**KAT** (`shared/padic/tests/zp_kat.rs`): hand-computed Z/p^k arithmetic at a toy prime (e.g. p=7,
+k=4): `add`/`mul` against known residues; **unit inversion** correct on a unit and **errors loudly on
+a non-unit** (the prime-power-non-field guard — the highest-cost-of-wrong check); `valuation`
+correct on sample elements (e.g. `v_7(49) = 2`). **Verify gate:** `cargo test --workspace` green;
+`cargo check --workspace` resolves the new member with no cycle; the existing `shared` KATs unchanged.
 
-**Subtlety (load-bearing):** (1) **the modulus-consistency invariant is the silent-wrong-field
-defense** — without it, a p where `find_irreducible_degree2` picks a different irreducible than the
-pairing's modulus computes a DL in a *different* F_{p²} and returns a wrong `k` with no error. The
-guard is mandatory, not a nice-to-have. (2) **The `Uint<4> → BigInt` step is toy-only** (assumes
-p < 2^64, single limb) — annotate it as a principle-4 boundary (a crypto-scale p would need the full
-limb vector; the mathematics is unchanged). (3) **gnfs must not gain a rho dependency** — the helper
-takes a `Vec<BigInt>`, not an `FpExt`; the edge is strictly one-directional (`rho → gnfs`). (4) The
-base-p encoding convention is **gnfs's** (`ext_target_to_bigint`) — do **not** re-derive it in rho;
-the rho side produces only the coefficient `Vec<BigInt>` and lets gnfs encode (the rigidity guard).
+**Subtlety (load-bearing):** (1) **Z/p^k is not a field** — only units (`v_p = 0`) invert; inversion
+of a non-unit must error, never return a plausible-wrong value. This is the `Fp`-misuse defense made
+explicit in the type. (2) **Precision is finite and explicit** — every operation carries a precision
+`k`; mixing precisions must be defined (truncate to the min, the standard convention). (3) **Toy
+precision only** — k is small (principle 4); a crypto-scale precision tower is out of scope. (4) **Do
+not reuse `Fp`** — `Fp::inv` (Fermat) is wrong for composite p^k; the new type is mandatory.
 
-**Deferred:** the reduction + end-to-end KAT (E.C.2); threading the modulus through `solve_dl_ext`
-(principle-4 annotation unless the ◆ finds the assertion too fragile); the NFS-pipeline k=2 path
-(principle-4, item B); composite-order lift beyond `k mod ℓ` (principle-4).
+**Deferred:** Hensel lifting (E.D.2); the p-adic log (E.D.3); the `IntPoly` extension (E.D.2, where
+it is needed); any curve/point lift (E.E); a Q_p (field-of-fractions) layer beyond Z_p if the log
+needs denominators — surface at the ◆ if E.D.3 finds Z_p insufficient (an additive-reshard).
 
-### E.C.2 ◆ — MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT (Opus, Cat I, `@plan`)
+### E.D.2 — Hensel lifting + `IntPoly::derivative`/`eval_mod` (Sonnet, Cat B)
 
-**Deliverable:** the MOV reduction proper, the end-to-end KAT, and the sub-track close.
-- **The reduction entry** (`rho/src/pairing/mov.rs`, `mov_reduce`-shaped): given the ECDLP
-  `(curve, G, Q, R, ell)` (R a μ_ℓ-generator with `e(G,R) ≠ 1`), compute `g = e(G,R)` and
-  `h = e(Q,R)` via `reduced_tate` (or `weil_pairing`) → `FpExt<F>`; bridge both to base-p `BigInt`
-  via C-MovBridge; call `gnfs::solve_dl(g, h, p, 2, ell)`; return the recovered `log_g(h) = k mod ℓ`.
-  The exact signature (what curve/point types, whether R is caller-supplied or discovered) ratified
-  here.
-- **End-to-end MOV KAT** (`rho/tests/mov_kat.rs`): use `pairing_toy()` (p=47, k=2, ℓ=3, modulus
-  u²+1; P, Q the fixture points); construct an ECDLP with a *known* scalar `k` (`Q' = k·G` for a
-  chosen `k ∈ {1, 2}` in the ℓ=3 subgroup); run `mov_reduce`; assert the recovered scalar equals `k`;
-  verify the pairing identity `e(Q', R) = e(G, R)^k` in F_{47²}*. **Optional PARI `znlog`/`fflog`
-  `#[ignore]` cross-check** (the established dev-only oracle pattern).
+**Deliverable:** Newton-iteration Hensel lifting over Z_p, plus the additive `IntPoly` support it
+consumes. Lower-fidelity sketch (crisp after C-Padic freezes):
+- **The `IntPoly` extension** (`shared/numfield/src/poly.rs`, additive): `IntPoly::derivative() ->
+  IntPoly` (formal derivative, `c_i·i` shifted down) and `IntPoly::eval_mod(&self, x: &BigInt, m:
+  &BigInt) -> BigInt` (Horner reduced mod m at each step). **Additive only — no existing signature
+  changes; the G.A NFS consumers are untouched.**
+- **The Hensel lift** (`shared/padic/src/hensel.rs`): given `f: &IntPoly`, a simple root `r_0` of `f`
+  mod p (with `f'(r_0) ≢ 0 mod p`), and a target precision k, lift to the unique root mod p^k via
+  Newton's method (`r ← r − f(r)·f'(r)^{-1}` over C-Padic, doubling precision per step). Errors if
+  the root is not simple (`f'(r_0) ≡ 0`) — the lift is only unique for simple roots.
 
-Consumes C-MovBridge (frozen E.C.1), C-Pairing (`weil_pairing`/`reduced_tate`, frozen read),
-C-PairingCurve (`pairing_toy`/`PairingPoint`, frozen read), the E.A ECDLP substrate (frozen read),
-and C2-ext `solve_dl` (frozen read). **Freezes C-Mov** (the MOV-reduction entry).
+Consumes C-Padic (frozen E.D.1) and `IntPoly` (extended). **Freezes C-Hensel.**
 
-**KAT (primary correctness signal):** **end-to-end** — `mov_reduce` on the `pairing_toy` fixture
-recovers the known scalar `k mod ℓ`; the pairing identity `e(Q,R) = e(G,R)^k` holds in F_{47²}*; the
-**D.E k=2 KATs and E.B pairing KATs stay green** (the no-regression gate on both composed
-substrates). Optional PARI cross-check. **Verify gate:** `cargo test --workspace` green.
+**KAT** (`shared/padic/tests/hensel_kat.rs`): lift a known simple root — e.g. the square root of 2
+mod 7^k (`3² = 9 ≡ 2 mod 7`), lift `r_0 = 3` through `f(x) = x² − 2` to mod 7^4 and check against the
+hand-computed value; assert the non-simple-root case errors; `IntPoly::derivative` and `eval_mod`
+checked directly on a sample polynomial. **Verify gate:** `cargo test --workspace` green; **the G.A
+`IntPoly` NFS consumers in `gnfs` stay green** (the additive-extension no-regression check).
 
-**Subtlety (load-bearing):** (1) **the argument order to the pairing matters** — the survey found
-non-degenerate Tate at the toy fixture is `reduced_tate(Q, P, ell)` (Q first); the reduction must use
-the order that gives a non-trivial `e(G,R)`, or `g = 1` and the DL is undefined. Pick R (the second
-pairing argument) so `e(G,R)` generates μ_ℓ; assert `g ≠ 1` before calling `solve_dl`. (2) **The
-recovered log is `k mod ℓ`, not the full ECDLP scalar** — at the toy fixture the relevant subgroup is
-order ℓ=3, so `k mod 3` *is* the answer in that subgroup; a full composite-order recovery (Pohlig–
-Hellman lift over all subgroups) is a principle-4 annotation, not wired. State this in the KAT so the
-"answer" is unambiguous. (3) **This is the E.C ◆ boundary** — re-read the Purpose intent and verify
-the MOV reduction is coherent (curve → pairing → bridge → real solver → correct log) and that the
-cross-track composition is genuinely the climax it claims (a *real* NFS-DL solver, not a stub) before
-crossing.
+**Subtlety (load-bearing):** (1) **Only simple roots lift uniquely** — `f'(r_0) ≢ 0 mod p` is the
+precondition; a non-simple root needs the general (slower-convergence) Hensel and is out of toy
+scope — error on it. (2) **The `IntPoly` edit is additive** — adding methods, not changing
+`from_coeffs`/`eval`/arithmetic; the frozen G.A contract is extended, not broken. (3) **`eval_mod`
+must reduce at each Horner step**, not eval-then-reduce (toy p^k is small so either works, but the
+reduce-each-step form is the correct general shape — annotate). (4) **Newton doubles precision** —
+each step roughly squares the precision; mind the C-Padic precision bookkeeping so the lift lands at
+exactly mod p^k.
 
-**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.C.2 ◆
-to confirm: (1) the MOV reduction composes the three substrates correctly (the end-to-end
-`e(Q,R) = e(G,R)^k` round-trip recovers the right `k mod ℓ`); (2) C-MovBridge's modulus-consistency
-guard (item C) is in place and the bridge is the right interface (gnfs stays rho-unaware; the edge is
-one-directional); (3) `solve_dl` is called as a **real** solver (the ROADMAP's anti-stub constraint
-satisfied — no permanent PARI stub); (4) no frozen contract was amended (C2-ext, C-ExtTarget, the
-pairing contracts, the E.A ECDLP substrate are all read-only); (5) the principle-4 boundaries
-(brute-force k=2, `k mod ℓ` not full composite lift, toy-only `Uint<4>→BigInt`) are annotated, not
-silently presented as crypto-scale. One-shot findings; does not implement. Held at **Opus** per the
-header (lever 3 + lever 4 + the ROADMAP both-Opus flag — the cross-track climax).
+**Deferred:** the p-adic log (E.D.3); multivariate/system Hensel (out of scope — E.E's point lift is
+univariate per coordinate); non-simple-root lifting (principle-4 boundary).
+
+### E.D.3 ◆ — p-adic logarithm + sub-track close (Sonnet, Cat B, `@plan`)
+
+**Deliverable:** the p-adic logarithm E.E's SSA reduction consumes, the end-to-end KAT, and the
+sub-track close. Lower-fidelity sketch (crisp after C-Padic + C-Hensel freeze):
+- **The p-adic log** (`shared/padic/src/log.rs`): the formal-group logarithm series `log(1+x) = x −
+  x²/2 + x³/3 − …` over C-Padic, convergent p-adically for `v_p(x) ≥ 1`, truncated at the precision
+  the toy k supports. Whether E.D.3 ships the *general* formal-group log (the series, which E.E
+  specialises to the elliptic formal group) or also the elliptic-curve specialisation is the ◆
+  design call — **proposed: ship the general series in E.D; E.E supplies the elliptic formal-group
+  parametrisation** (keeps E.D curve-free, item 5 of the intent).
+- **End-to-end KAT** (`shared/padic/tests/log_kat.rs`): lift a known `1 + p·u` via E.D.2's Hensel (or
+  construct it directly in C-Padic), apply the log, and check the result against the hand-computed
+  p-adic value; verify the homomorphism property `log(ab) = log(a) + log(b)` on a sample (the
+  property that makes the SSA escape work). **Optional PARI `Qp`/`log` `#[ignore]` cross-check** (the
+  established dev-only oracle pattern).
+
+Consumes C-Padic (frozen E.D.1, read) and C-Hensel (frozen E.D.2, read). **Freezes C-PadicLog.**
+
+**KAT (primary correctness signal):** **end-to-end** — the log of a hand-computed `1 + p·u` matches
+the known p-adic value to precision k; the homomorphism `log(ab) = log(a) + log(b)` holds; the
+existing `shared` + `gnfs` KATs stay green. Optional PARI cross-check. **Verify gate:** `cargo test
+--workspace` green.
+
+**Subtlety (load-bearing):** (1) **Convergence requires `v_p(x) ≥ 1`** — the series converges
+p-adically only on the kernel of reduction (`x ≡ 0 mod p`); the log must assert/require this, or it
+silently diverges (returns a precision-limited garbage value). This is the log's analogue of the
+unit-inversion guard. (2) **The `x^n / n` terms have a denominator** — `n` may be divisible by p,
+which *lowers* p-adic precision (the `1/p` in `x^p/p` etc.); the truncation point must account for
+this, or the log loses precision silently. **This is the subtle correctness point of E.D.3** — name
+it and bound the series length to the precision the toy k actually supports. (3) **This is the E.D ◆
+boundary** — re-read the Purpose intent and verify the p-adic substrate is coherent (Z_p arithmetic →
+Hensel lift → log homomorphism) and genuinely the substrate E.E needs (general, curve-free) before
+crossing. (4) **No MATHEMATICS chapter here** — the p-adic textbook chapter is T.E, paired with E.W
+at the *Track-E* ◆ (ROADMAP per-track pairing); E.D.3 writes at most a PEDAGOGY code-tour delta.
+
+**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.D.3 ◆
+to confirm: (1) the p-adic substrate composes correctly (Z_p arithmetic → Hensel → log, the
+homomorphism round-trip holds); (2) C-Padic's non-field guard (unit-only inversion) and C-PadicLog's
+convergence guard (`v_p ≥ 1`) are both in place — the two silent-failure defenses; (3) the `IntPoly`
+extension was **additive** (no frozen G.A signature changed; the `gnfs` NFS consumers stay green);
+(4) E.D stayed **curve-free** (no SSA attack, no point-counting, no `rho → shared-padic` edge — those
+are E.E); (5) the principle-4 boundaries (toy precision, simple-roots-only Hensel, general-series log
+deferring the elliptic specialisation to E.E) are annotated, not silently presented as crypto-scale.
+One-shot findings; does not implement. Held at **Opus** per the header (lever 3 on the E.D.1
+substrate dominates the strong lever-5 KATs).
 
 ---
 
 ## Cross-session contracts
 
-E.C **freezes two** contracts. Per the substrate-over-specify rule, C-MovBridge carries the
-modulus-consistency guard now (item C) even though the toy fixture would "work" without it. All
-composed substrates (C2-ext, C-ExtTarget, the pairing contracts, the E.A ECDLP substrate) are
-**read**, not amended.
+E.D **freezes three** contracts and **additively extends one frozen contract** (`IntPoly`). Per the
+substrate-over-specify rule, C-Padic carries the unit-inversion guard and explicit precision now even
+though a toy fixture would "work" with a looser type. All other composed substrates (`shared/bigint`)
+are **read**, not amended.
 
-### C-MovBridge — `FpExt → solve_dl`-target bridge + modulus-consistency guard (compiler- + test-enforced) — *to be frozen at E.C.1*
+### C-Padic — Z_p / Z/p^k arithmetic interface + non-field guard (compiler- + test-enforced) — *to be frozen at E.D.1*
 
-**Defined in:** E.C.1 (gnfs-side helper in `gnfs/src/dl/ext/target.rs` *or* `descent/solve.rs`;
-rho-side step in `rho/src/pairing/mov.rs`). **Consumed by:** E.C.2 (the reduction encodes pairing
-outputs through it). Compiler-enforced (the helper signatures) + test-enforced (round-trip +
-guard-fires). Exposes: the gnfs-side coefficient-`Vec<BigInt>` + `p` + modulus → base-p `BigInt`
-helper (composing `ExtTarget::from_coeffs` + `ext_target_to_bigint` + the modulus-consistency
-assertion against `find_irreducible_degree2(p)`); the rho-side `Uint<4> → BigInt` step + bridge
-entry. *Exact helper location and signature ratified at E.C.1 and re-ratified at the E.C.2 ◆.*
-**The `rho → gnfs` edge is one-directional** (gnfs takes a `Vec<BigInt>`, never an `FpExt`). **The
-base-p encoding convention is gnfs's** (not re-derived in rho). **The modulus-consistency guard is
-mandatory** (the silent-wrong-field defense).
+**Defined in:** E.D.1 (`shared/padic/src/zp.rs`). **Consumed by:** E.D.2 (Hensel iterates over it),
+E.D.3 (the log series computes over it); **E.E** (SSA lifts curve coordinates through it — the named
+downstream consumer). Compiler-enforced (the type + method signatures) + test-enforced (hand-computed
+arithmetic + the non-unit-inversion error). Exposes: the prime-power-modulus type carrying a `BigInt`
+residue + precision `k` + the p-adic valuation; `add`/`sub`/`mul`; **unit inversion** (defined only
+for `v_p = 0`, errors on non-units); `valuation`; `precision`; lift/truncate between precisions.
+*Exact representation (valuation+unit vs. fixed-precision residue) and the p-threading convention
+ratified at E.D.1 and re-ratified at the E.D.3 ◆.* **Z/p^k is not a field — only units invert** (the
+silent-wrong-answer defense). **Toy precision only** (principle-4 boundary).
 
-### C-Mov — MOV/Frey–Rück reduction entry (compiler- + test-enforced) — *to be frozen at E.C.2 ◆*
+### C-Hensel — Hensel lift (Newton root-lifting over Z_p) (compiler- + test-enforced) — *to be frozen at E.D.2*
 
-**Defined in:** E.C.2 (`rho/src/pairing/mov.rs`, `mov_reduce`-shaped). **Consumed by:** E.C's own
-end-to-end KAT now; **E.W / T.E** (the Track-E writeup + MOV textbook chapter, the named downstream
-documentation consumer at the Track-E ◆); any later attack-comparison harness (E.W's "which attack
-wins" table). Compiler- + test-enforced. Exposes the reduction entry: ECDLP `(curve, G, Q, R, ell)`
-→ `k mod ℓ` via pairing + C-MovBridge + `gnfs::solve_dl`. *Exact signature (point types, whether R is
-caller-supplied) ratified at the E.C.2 ◆.* **The reduction recovers `k mod ℓ`** (the subgroup log);
-full composite-order lift is a principle-4 annotation. **`solve_dl` is called as a real solver** (the
-ROADMAP anti-stub constraint).
+**Defined in:** E.D.2 (`shared/padic/src/hensel.rs`). **Consumed by:** E.D.3's KAT (constructs lifted
+elements); **E.E** (lifts curve-point coordinates from F_p to Z_p). Compiler- + test-enforced.
+Exposes the lift: `(f: &IntPoly, r_0 simple root mod p, target precision k) → unique root mod p^k`,
+erroring on non-simple roots. **Depends on the additive `IntPoly` extension** (`derivative` +
+`eval_mod`). *Exact signature ratified at E.D.2 and re-ratified at the E.D.3 ◆.* **Simple roots
+only** (`f'(r_0) ≢ 0 mod p`; the uniqueness precondition).
 
-### Frozen contracts read by E.C (composed, not amended)
+### C-PadicLog — p-adic / formal-group logarithm + convergence guard (compiler- + test-enforced) — *to be frozen at E.D.3 ◆*
 
-E.C composes these; none is touched.
-- **C2-ext `solve_dl`** (`gnfs/src/dl/descent/solve.rs`, frozen D.E.3) — the k>1 path; E.C calls
-  `solve_dl(g, h, p, 2, ell)` and reads the returned `k mod ℓ`. The signature and `SolveDlError`
-  taxonomy are unchanged. *(If E.C finds it must thread the modulus into `solve_dl_ext` — item C —
-  that is an edit to a frozen file and an **additive-reshard** surfaced at the ◆, not a silent
-  patch; the default is the bridge-side assertion, no `solve.rs` edit.)*
-- **C-ExtTarget** (`gnfs/src/dl/ext/target.rs` + `descent.rs`, frozen D.E.1) — `ExtTarget::from_coeffs`
-  (over-specified for E.C) and `ext_target_to_bigint`; composed by the gnfs-side bridge helper.
-- **C-FpExt** (`rho/src/pairing/fpext.rs`, frozen E.B.1) — `FpExt` + `to_uint_vec() -> Vec<Uint<4>>`;
-  read for the pairing output and its coefficient bridge.
-- **C-Pairing** (`rho/src/pairing/{weil,tate,miller}.rs`, frozen E.B) — `weil_pairing` /
-  `reduced_tate` → `FpExt<F>` ∈ μ_ℓ; the reduction's pairing step. The `IrreducibleModulus` carried
-  here is the expected modulus the guard checks.
-- **C-PairingCurve** (`rho/src/pairing/{ecext,test_curves}.rs`, frozen E.B) — `pairing_toy()`,
-  `PairingPoint<F>`, the toy parameters (p=47, k=2, ℓ=3, u²+1); the KAT fixture.
-- **E.A ECDLP substrate** (`rho/src/ecdlp/`, frozen E.A) — `Curve`, `AffinePoint`, the ECDLP problem
-  shape; read for the reduction's input (the curve and points the MOV transports).
+**Defined in:** E.D.3 (`shared/padic/src/log.rs`). **Consumed by:** **E.E** (the SSA reduction's
+core homomorphism — maps the order-p subgroup to additive F_p); E.D's own end-to-end KAT now; **T.E**
+(the p-adic textbook chapter at the Track-E ◆, the documentation consumer). Compiler- + test-enforced.
+Exposes the log: the formal-group series over C-Padic, convergent for `v_p(x) ≥ 1`, truncated to the
+precision toy k supports; the homomorphism `log(ab) = log(a) + log(b)`. *Exact signature (general
+series vs. elliptic specialisation — proposed general, E.E specialises) ratified at the E.D.3 ◆.*
+**Convergence requires `v_p(x) ≥ 1`** (the silent-divergence defense). **Ships the general series;
+the elliptic formal-group parametrisation is E.E's** (keeps E.D curve-free).
+
+### Additively-extended frozen contract
+
+- **`IntPoly`** (`shared/numfield/src/poly.rs`, frozen G.A) — E.D.2 adds `derivative()` and
+  `eval_mod(x, m)`. **Additive only** (new methods; no change to `from_coeffs`/`eval`/`degree`/
+  arithmetic). The G.A NFS consumers in `gnfs` are untouched and must stay green. *(If E.D finds it
+  must change an existing `IntPoly` signature — it should not — that is an **additive-reshard**
+  surfaced at the ◆, never a silent patch.)*
+
+### Frozen contracts read by E.D (composed, not amended)
+
+- **`shared/bigint`** (`BigInt`, `gcd`, `isqrt`, `batch_invert`, frozen) — the integer substrate
+  C-Padic computes over. Read, not changed.
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The E.C.2 ◆ `@plan` confirmation is not a separate
+"Froze" names contracts this session locked. The E.D.3 ◆ `@plan` confirmation is not a separate
 ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
 Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.C.1 | MOV bridge substrate (`rho→gnfs` edge + `FpExt→solve_dl` bridge + modulus guard) | done | 840608c | C-MovBridge (frozen) |
-| E.C.2 ◆ | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | done | 2e1edf8 | C-Mov (frozen) |
+| E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | pending | | C-Padic |
+| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | pending | | C-Hensel (+ `IntPoly` ext.) |
+| E.D.3 ◆ | p-adic logarithm + sub-track close | pending | | C-PadicLog |
 
-Contracts frozen before this sub-track (read by E.C): all Track-D NFS-DL contracts including
-**C2-ext** (frozen D.E.3) and **C-ExtTarget** (frozen D.E.1); the E.B pairing contracts (**C-FpExt /
-C-PairingCurve / C-Pairing**, frozen E.B); the E.A ECDLP substrate (frozen E.A). This sub-track
-**freezes two new contracts** (C-MovBridge, C-Mov), both serving the cross-track climax and
-forward-looking toward **E.W / T.E** (the Track-E writeup + MOV textbook chapter).
+Contracts frozen before this sub-track (read/extended by E.D): `shared/bigint` (read); the G.A
+`IntPoly` (`shared/numfield`, additively extended). This sub-track **freezes three new contracts**
+(C-Padic, C-Hensel, C-PadicLog), all serving the downstream **E.E (Smart–Satoh–Araki)** consumer and
+the **T.E** p-adic textbook chapter.
 
 ---
 
 ## Action-frame digest
 
-### E.C.2 ◆ — 2026-06-10
-Discovery/flex: E.C.2 ◆ boundary juncture returned still-on-intent on all six confirmation points. C-MovBridge and C-Mov are frozen. The cross-track climax composition is correct: `mov_reduce` composes pairing → C-MovBridge → `gnfs::solve_dl` and the end-to-end KAT recovers the known scalar with `e(Q,R) = e(G,R)^k` verified in F_{47²}*.
-Affected: C-MovBridge (frozen E.C.1), C-Mov (frozen E.C.2)
-Deferred: yes — ROADMAP Progress-table staleness + E.A/E.B/D.E closeout reconciliation is an inflection-point Opus action owed at the E.C ◆ boundary (PLAN Discoveries log, Notes-for-executors). Not an E.C `@build` work item.
-Texture: Bridge-side modulus assertion (not modulus-threading) confirmed non-fragile at toy params. Degenerate-g guard reuses `DescentFailed { stuck_prime: 0 }` (frozen taxonomy, no new variant). E.C sub-track complete; the project's first cross-track ECDLP→DLP composition ships.
+*(none yet)*
 
 ---
 
@@ -390,120 +429,104 @@ Texture: Bridge-side modulus assertion (not modulus-threading) confirmed non-fra
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.C is a compose over frozen pieces — the bridge is the only new design surface (substrate
-  finding, confirmed by survey).** The pairing and the solver both exist and are KAT-proven; E.C
-  wires them. Writing the bridge + reduction is **internal-continue**. A discovery that the
-  pairing output cannot be faithfully encoded for `solve_dl` (e.g. the coefficient form loses
-  information) is an **additive-reshard** surfaced at the E.C.2 ◆.
+- **E.D is greenfield p-adic substrate — building the crate + arithmetic + lift + log is
+  internal-continue (substrate finding, confirmed by survey).** No p-adic code exists; E.D writes it
+  from scratch in `shared/padic`. A discovery that Z_p (without a Q_p field-of-fractions layer) is
+  insufficient for the log's denominators is an **additive-reshard** surfaced at the E.D.3 ◆.
 
-- **The modulus-consistency invariant must hold by construction, not coincidence (item C —
-  correctness guard).** `find_irreducible_degree2` (inside `solve_dl_ext`) re-derives the modulus
-  independently of the pairing's `IrreducibleModulus`; they coincide for p=47 by luck (`u²+1` tried
-  first). A bridge that **omits the consistency assertion** is **internal-continue → corrected** (add
-  the guard). A discovery that the toy params *do not* coincide (they do) would be an
-  **additive-reshard** (thread the modulus into `solve_dl_ext`). The silent failure mode — wrong
-  field, wrong log, no error — is why the guard is mandatory.
+- **`Fp` must NOT be reused for the p-adic tower (the silent-wrong-answer guard).** `Fp::inv` uses
+  Fermat (prime modulus); Z/p^k is not a field. A `@build` agent that builds the tower on `Fp`, or
+  inverts a non-unit without erroring, is **internal-continue → corrected** (the C-Padic type +
+  unit-only-inversion guard is mandatory). The silent failure — wrong inverse mod p^k, wrong lift, no
+  error — is why the guard is non-negotiable.
 
-- **`solve_dl_ext` is brute-force at k=2 — E.C must NOT wire the NFS pipeline (item B / defocus
-  guard).** A `@build` agent that "improves" the k=2 path by wiring the D.E.2 `ExtFactorBase`
-  pipeline into the live `solve_dl` call is **defocus** — internal-continue only within the compose
-  scope. The brute-force k=2 path is on-intent (principle 4); the NFS pipeline is the crypto-scale
-  annotation. Touching `solve_dl_ext`'s algorithm is out of E.C's scope.
+- **The `IntPoly` extension must stay additive — changing an existing signature is a
+  destructive-HALT (frozen-contract guard).** `IntPoly` is a G.A-frozen shared type consumed by the
+  `gnfs` NFS pipeline. Adding `derivative()`/`eval_mod()` is additive (internal-continue). Changing
+  `from_coeffs`/`eval`/arithmetic signatures, or breaking a `gnfs` `IntPoly` KAT, is a
+  **destructive-HALT** — stop, surface it. `cargo test --workspace` failing on a `gnfs` `IntPoly`
+  consumer is the loud signal.
 
-- **The `rho → gnfs` edge is one-directional — a `gnfs → rho` coupling is a destructive-HALT
-  (architecture guard).** gnfs must stay unaware of rho's `FpExt` (the bridge helper takes a
-  `Vec<BigInt>`). A `@build` agent that adds a `rho` dependency to `gnfs/Cargo.toml`, or imports
-  `FpExt` into gnfs, creates a dependency cycle and inverts the track layering — **destructive-HALT**:
-  stop, surface it. `cargo check --workspace` failing to resolve (a cycle) is the loud signal.
+- **The p-adic log converges only for `v_p(x) ≥ 1` (the silent-divergence guard).** The formal-group
+  series diverges p-adically off the kernel of reduction; the log must require `v_p ≥ 1` (error or
+  precondition), or it returns precision-limited garbage. A log that omits the convergence guard is
+  **internal-continue → corrected**. The `x^n/n` denominator's p-divisibility lowering precision is
+  the subtle correctness point — bound the series length to toy k.
 
-- **No frozen contract is amended — the C2 signature, `SolveDlError`, and the pairing contracts are
-  read-only (contract guard).** A `@build` agent that changes the `solve_dl` signature, adds a
-  `SolveDlError` variant, or alters a pairing function's signature is a **destructive-HALT** (those
-  are frozen, consumed by their own KATs and downstream). The default E.C touches **no** frozen file
-  (the bridge composes existing helpers; the modulus guard is bridge-side). The one *possible* frozen
-  edit — threading the modulus into `solve_dl_ext` — is an **additive-reshard** decision at the ◆,
-  never a silent patch.
+- **E.D stays curve-free — the SSA attack, point-counting, and the `rho → shared-padic` edge are E.E,
+  not E.D (defocus guard).** A `@build` agent that implements anomalous-curve detection, trace-of-
+  Frobenius / point-counting, the curve-point lift, or adds a `rho → shared-padic` dependency during
+  E.D is **defocus** — internal-continue only within the substrate scope. E.D delivers the general
+  p-adic machinery; E.E consumes it against curves. Touching `rho` or `gnfs/src/curve` is out of E.D's
+  scope.
 
-- **The end-to-end KAT must recover a KNOWN scalar and verify `e(Q,R)=e(G,R)^k` — not a spot value
-  (correctness discipline).** A wrong bridge or reduction can return a plausible-but-wrong `k`; only
-  the round-trip pairing identity catches it. The KAT constructs `Q = k·G` for a chosen `k` and
-  asserts both `mov_reduce` recovers `k mod ℓ` *and* the pairing identity holds. A KAT that only
-  spot-checks a single DL value has an under-specified contract — flag it.
+- **No MATHEMATICS.md chapter in E.D (defocus / scope clarity).** The p-adic textbook chapter is
+  **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing rule), not at the E.D
+  sub-track ◆. A `@build` agent that writes a MATHEMATICS.md p-adic chapter during E.D is defocus;
+  E.D.3 writes at most a PEDAGOGY code-tour delta. (The explorer survey's "chapter must be appended as
+  part of E.D" inference is superseded by this rule.)
 
-- **The recovered log is `k mod ℓ`, not the full ECDLP scalar (scope clarity).** At the toy fixture
-  the relevant subgroup is order ℓ=3; `k mod 3` is the answer *in that subgroup*. A full
-  composite-order Pohlig–Hellman lift is a principle-4 annotation. Presenting `k mod ℓ` as "the full
-  ECDLP scalar" without the subgroup qualifier is a documentation defect, not a contract break —
-  internal-continue → corrected.
+- **The end-to-end KAT must check against HAND-COMPUTED p-adic values + the homomorphism, not a spot
+  value (correctness discipline).** A wrong log can return a plausible-but-wrong p-adic number; only
+  the known-value check plus `log(ab) = log(a) + log(b)` catches it. A KAT that only spot-checks one
+  log value has an under-specified contract — flag it.
 
-- **ROADMAP insertion owed: the E.A/E.B/D.E closeouts and the E.C predecessor state are not in the
-  roadmap Discoveries log (static-frame debt — capture candidate).** The roadmap's Progress table
-  still shows Track D and Track E "not started / 0 done" (reconciled at the T.G ◆, *before* D and
-  E.A/E.B/D.E landed), and the roadmap Discoveries log has no E.A / E.B / D.E closeout entry — those
-  live only in the prior PLAN ledgers and the D.E.3 digest. The roadmap's E.C entry (line ~298)
-  predates D.E and assumes the k>1 solver folds into E.C; D.E formalised it as a Track-D extension.
-  A ROADMAP reconciliation (E.A/E.B/D.E closeout entries + Progress-table update + the modulus-
-  consistency invariant as a durable cross-track note) is an **inflection-point Opus action** owed at
-  the E.C ◆ boundary — not by an E.C `@build` session.
+- **No oracle dependency for correctness (principle-3 / E.C-consistent).** p-adic lifts and the log
+  are exactly hand-computable; a PARI `Qp`/`log` cross-check is an **optional `#[ignore]` sidecar**
+  (the established pattern). E.D introduces no new live oracle.
 
-- **No oracle dependency for correctness (principle-3 / D.E-consistent).** The end-to-end
-  `e(Q,R) = e(G,R)^k` round-trip self-checks; a PARI `znlog`/`fflog` cross-check is an **optional
-  `#[ignore]` sidecar** (the established pattern — `#[ignore]` gate only). E.C introduces no new live
-  oracle.
+- **Toy precision only — the precision tower is small (scope clarity).** E.D fixes a small k
+  (principle 4); a crypto-scale precision tower is a principle-4 boundary, not an E.D work item.
+  Presenting toy precision as crypto-scale is a documentation defect — internal-continue → corrected.
+
+- **Capture owed at the E.D ◆: the `Fp`-is-not-a-ring substrate fact is a durable cross-track note.**
+  `Fp<L>` (`shared/field`) assumes a prime modulus (`inv` via Fermat) and cannot represent Z/p^k; any
+  future prime-power-modulus work must use a distinct unit-only-inversion type (C-Padic). This is the
+  p-adic analogue of the E.C modulus-consistency invariant the ROADMAP already records. Adding it to
+  the ROADMAP Discoveries log alongside C-Padic is an **inflection-point Opus action at the E.D ◆**,
+  not an E.D `@build` work item.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.C, "*the* cross-track bridge… the pedagogical climax"; Contract
-  C2 — the anti-stub constraint) and this PLAN before any session. **Note (non-blocking): the ROADMAP
-  Progress table is stale** — it shows Track D and Track E "not started / 0 done" (reconciled at the
-  T.G ◆, *before* D and E.A/E.B/D.E landed). Track D is complete (D.A→D.W, plus the D.E extension:
-  D.E.1 `0d02b77`, D.E.2 `1a21a32`, D.E.3 ◆ `a804a7b`); E.A and E.B are done (per the prior PLAN
-  ledgers / the D.E.3 digest). The prior PLAN ledgers + the D.E.3 digest are authoritative. The
-  roadmap is rewritten only at sub-track boundaries; the E.A/E.B/D.E reconciliation + the E.C
-  insertion is an inflection-point Opus action at the E.C ◆, not by E.C `@build`.
-- Read the **templates to mirror**: `gnfs/src/dl/ext/target.rs` (`ExtTarget::from_coeffs` — the
-  over-specified `Vec<BigInt>` constructor E.C composes) and `gnfs/src/dl/ext/descent.rs:59`
-  (`ext_target_to_bigint` — the base-p encoder; `find_irreducible_degree2` at ~line 370 is the
-  modulus the guard checks); `rho/src/pairing/fpext.rs` (`FpExt` + `to_uint_vec`); `rho/src/pairing/
-  test_curves.rs` (`pairing_toy()` + the `PAIRING_TOY_*` constants); `rho/src/pairing/{weil,tate}.rs`
-  (`weil_pairing` / `reduced_tate` — note the `reduced_tate(Q, P, ell)` argument order for
-  non-degeneracy at the toy fixture); `rho/tests/pairing_kat.rs` (the pairing KAT idiom) and
-  `gnfs/tests/dl_ext_kat.rs` (the k=2 DL KAT idiom + the `#[ignore]` PARI pattern — the two idioms
-  E.C.2's end-to-end MOV KAT mirrors).
-- **Register:** E.C is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New module `rho/src/pairing/mov.rs`; KAT in `rho/tests/mov_kat.rs`. The gnfs-side
-  bridge helper goes in `gnfs/src/dl/ext/target.rs` (next to `ExtTarget`, the default) or
-  `descent/solve.rs` (next to `solve_dl`) — ratified at E.C.1. The new `rho → gnfs` edge in
-  `rho/Cargo.toml`.
-- **Tier routing:** **both E.C.1 and E.C.2 are Opus** (`@build` on Opus) — the ROADMAP flags both
-  sessions Opus (the cross-track climax). E.C.2 carries the single `@plan` marker: a ◆-boundary
-  juncture (page `@plan-juncture`) ratifying C-MovBridge / C-Mov and confirming the climax composition
-  before the sub-track closes. juncture-tier (header) is **opus** — held by lever 3 (cost of design
-  error) + lever 4 (correctness-criticality) + the ROADMAP both-Opus flag; the strong lever-5
-  end-to-end round-trip KAT would license an opt-down in isolation but does not override the climax's
-  cost-of-wrong.
-- **Invariants to preserve:** **the `rho → gnfs` edge is one-directional** (no `gnfs → rho`; the
-  bridge takes a `Vec<BigInt>`, never an `FpExt`). **No frozen contract is amended** (C2-ext,
-  C-ExtTarget, the pairing contracts, the E.A ECDLP substrate are read-only; the default E.C touches
-  no frozen file). **The modulus-consistency guard is mandatory** (item C — the silent-wrong-field
-  defense). **The base-p encoding convention stays gnfs's** (not re-derived in rho). **`solve_dl` is
-  called as a real solver** (the ROADMAP anti-stub constraint). The k=2 path stays **brute-force**
-  (item B — the NFS pipeline is a principle-4 crypto-scale annotation, not wired). The reduction
-  recovers **`k mod ℓ`** (full composite lift is principle-4). The `Uint<4> → BigInt` step is
-  **toy-only** (single-limb p < 2^64; principle-4 boundary). No new live oracle (round-trip
-  self-checks).
-- **PARI remains a dev-only `#[ignore]` oracle** (Discoveries-log policy) — an optional k=2 DL
-  cross-check follows the established `#[test] #[ignore = "PARI not installed…"]` pattern; never on
-  the green path.
-- **The cross-crate seam (load-bearing for E.C).** E.C adds the **first `rho → gnfs` dependency**.
-  `solve_dl` lives in `gnfs`; the pairing + the MOV reduction + the end-to-end KAT live in `rho`. The
-  edge is one-directional; `cargo check --workspace` must resolve with no cycle. This is the
-  architectural inverse of D.E.3 (which built its target *independently in gnfs* precisely because the
-  edge did not yet exist) — E.C is where the cross-track composition finally happens in code.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.C is the
-  cross-track climax and the first real `rho → gnfs` composition; the conservative halt-at-◆ cadence
-  is warranted. The single ◆/`@plan` on E.C.2 is the one that matters (the Opus C-Mov ratification +
-  climax-composition check). *(Tradeoff vs default cadence: one extra halt-confirm on a 2-session
-  sub-track is cheap insurance on the project's highest-stakes cross-track seam.)*
+- Read `docs/ROADMAP.md` (Phase δ — E.D, "*Hensel lifting; p-adic logarithm. Sonnet.*"; the design
+  statement's principle 4; the "On scale" mathematical-dimension-scale framing) and this PLAN before
+  any session. **The ROADMAP is reconciled through the E.C ◆ boundary (2026-06-10)** — no static-frame
+  debt is outstanding; the Progress table and Discoveries log are current.
+- Read the **templates to mirror**: `shared/numfield/src/poly.rs` (`IntPoly` — the type E.D.2 extends;
+  mirror its `eval` Horner idiom for `eval_mod`); `shared/field/src/lib.rs` (the `Fp<L>` trait — the
+  *contrast* type, NOT to be reused for p^k; its pass-the-modulus convention may be mirrored for
+  consistency); `shared/bigint/src/lib.rs` (`BigInt` + `gcd`); `shared/field/tests/sqrt_legendre_kat.rs`
+  and `shared/numfield/tests/numfield_kat.rs` (the `shared`-crate KAT idiom E.D's tests mirror);
+  `rho/tests/mov_kat.rs:253` (the `#[ignore = "PARI not installed…"]` dev-oracle pattern).
+- **Register:** E.D is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New crate `shared/padic` with `src/{zp,hensel,log}.rs` and `tests/*_kat.rs`. The
+  `IntPoly` extension goes in `shared/numfield/src/poly.rs` (additive methods).
+- **Tier routing:** **all three E.D sessions are Sonnet** (`@build` on Sonnet) — the ROADMAP flags
+  E.D Sonnet (well-understood material). E.D.3 carries the single `@plan` marker: a ◆-boundary
+  juncture (page `@plan-juncture`) ratifying C-Padic / C-Hensel / C-PadicLog and confirming the
+  substrate composition before the sub-track closes. juncture-tier (header) is **opus** — held by
+  lever 3 (the E.D.1 Z_p representation is the design crux bounding the whole sub-track + E.E); the
+  strong lever-5 exactly-checkable KATs would license `sonnet` in isolation but the user judged the
+  substrate design-error cost decisive.
+- **Invariants to preserve:** **Z/p^k is not a field** (unit-only inversion; the non-unit-inversion
+  error is mandatory — C-Padic). **The `IntPoly` extension is additive** (no frozen G.A signature
+  changes; the `gnfs` NFS consumers stay green). **The p-adic log requires `v_p(x) ≥ 1`** (the
+  convergence guard — C-PadicLog). **E.D is curve-free** (no SSA attack, no point-counting, no `rho →
+  shared-padic` edge — those are E.E). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy
+  precision only; Hensel lifts simple roots only; the log ships the general series (E.E specialises).
+  No new live oracle.
+- **PARI remains a dev-only `#[ignore]` oracle** — an optional p-adic log / `Qp` cross-check follows
+  the established `#[test] #[ignore = "PARI not installed…"]` pattern; never on the green path.
+- **The new workspace member (load-bearing for E.D).** E.D.1 adds `shared/padic` to the root
+  `Cargo.toml` `members` list. The crate depends only on `shared-bigint` (E.D.1) + `shared-numfield`
+  (E.D.2 onward); `cargo check --workspace` must resolve with no cycle. The downstream `rho →
+  shared-padic` edge is E.E's, not E.D's.
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.D opens a new
+  substrate crate (the Z_p representation is a Category-A design crux) and the shard pattern (a fresh
+  `shared` crate + an additive frozen-type extension) is unproven for this sub-track; the conservative
+  halt-at-◆ cadence is warranted, and it surfaces the E.D.1 substrate at its own commit for human eyes
+  even though the only paged ◆/`@plan` juncture sits on E.D.3. *(Tradeoff vs default cadence: one
+  extra halt-confirm on a 3-session Sonnet sub-track is cheap insurance on a new shared-crate
+  substrate.)*

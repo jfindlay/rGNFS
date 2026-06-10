@@ -155,34 +155,63 @@ At one session per week (more realistic part-time), 27-42 months. Multi-year com
 
 ### Progress
 
-*Reconciled at the T.G ◆ boundary (2026-06-08). The Scope table above is the frozen design-time
+*Reconciled at the E.C ◆ boundary (2026-06-10). The Scope table above is the frozen design-time
 estimate, kept intact for variance analysis; this subsection tracks actuals against it. Counts are
 **commit-shaped sessions** (one commit = one session), the same unit as the Scope table — distinct
 from PLANs, where one `docs/PLAN.md` bundles several sessions.*
 
 | Track | Estimate | Done | Remaining | Status |
 |-------|---------:|-----:|----------:|--------|
-| α — Foundation | 3-5 | ~6 (α.1–α.5 + S0.W backfill) | 0 | **complete** |
-| β — GNFS factoring (G) | 16-22 | ~22 (G.A → G.F + G.W) | 0 | **complete** |
-| γ — NFS-DL (D) | 8-10 | 0 | 8-10 | not started |
-| δ — Algebraic ECDLP (E) | 25-32 | 0 | 25-32 | not started |
-| ε — Shor + PQ (S) | 7-9 | 0 | 7-9 | not started |
-| ζ — Umbrella | 2-4 | 0 | 2-4 | not started |
-| τ — Textbook (T) | 2-3 | 2 (T.0 spine + T.G chapter) | ~1 (T.Z + per-chapter overruns) | spine + Track-G done |
-| **Total** | **~72-93** | **~30** | **~43-56** | ~⅓ complete |
+| α — Foundation | 3–5 | ~6 (α.1–α.5 + S0.W) | 0 | **complete** |
+| β — GNFS factoring (G) | 16–22 | ~28 (G.A → G.F + G.W) | 0 | **complete** |
+| γ — NFS-DL (D) | 8–10 | ~12 (D.A → D.W + D.E ext.) | 0 | **complete** |
+| δ — Algebraic ECDLP (E) | 25–32 | ~8 (E.A, E.B, E.C) | 24–31 | in progress |
+| ε — Shor + PQ (S) | 7–9 | 0 | 7–10 | not started |
+| ζ — Umbrella | 2–4 | 0 | 3–4 | not started |
+| τ — Textbook (T) | 2–3 | ~3 (T.0, T.G, T.D) | 1–2 (T.E folds into E.W; T.Z net-new) | in progress |
+| **Total** | **~72–93** | **~57** | **~35–47** | done ~57 / remaining ~35–47 |
 
 **Confirmed-complete spans** (commit-anchored): Phase α through `α.5`/`S0.W`; Track G end-to-end —
 G.A (`bdba6f5`…`967e394`), G.B (`2f43f99`…`7fa9ab9`), G.C (`c1dc0b6`…`23a5222`), G.D
-(`a0e854b`…`c9f18b9`), G.E (`416f6db`…`f8ca3f8`), G.F (`2af8116`…`e870c82`); and the Track-G-closeout
-/ Track-τ-open bundle — T.0 (`5c9b783`), G.W (`76f3633`), T.G (`a896198`). Next up per the
-sequencing order: **Track D (NFS-DL)**, opening with the Opus-flagged D.A.1 bridge session.
+(`a0e854b`…`c9f18b9`), G.E (`416f6db`…`f8ca3f8`), G.F (`2af8116`…`e870c82`); Track-G-closeout /
+Track-τ-open — T.0 (`5c9b783`), G.W (`76f3633`), T.G (`a896198`). Track D end-to-end — D.A
+(`f2dbf0a`…`651c17e`), D.B (`652cfa6`…`a569049`), D.C (`1651993`…`9d07c51`), D.W
+(`8c92260`…`541be29`), D.E ext. (`0d02b77`…`a804a7b`). Track E through E.C ◆ — E.A
+(`054df65`…`51fd477`), E.B (`74b2ff3`…`6c082bb`), E.C (`840608c`…`2e1edf8`). Next up per the
+sequencing order: **Track E continued**, opening with E.D (p-adic arithmetic).
 
-**Estimation-bias note (inferred, not yet re-baselined):** the per-track *remaining* bands are the
-original design-time estimates. The G.C boundary found that demonstration-fidelity sessions run
-400–800 LOC (resolving to "own session," not a merge) — a bias toward the **upper** end of each
-band. If that pressure holds in Tracks D/E (which carry several demonstration-fidelity sessions),
-the realistic remaining count sits nearer the 56 ceiling than the 43 floor. A proper re-baseline is
-owed once Track D gives a second data point.
+**Estimation-bias note (re-baselined from two completed tracks):** G landed at ~28 feature-commit
+sessions; the 16–22 design-time estimate rounded sub-letter sessions away — each `G.x.N` is a real
+commit-shaped session, and the sub-letter granularity (G.A.1a/1b, G.F.1–4, etc.) was not visible
+at planning time. D landed at ~12: the 8–10 planned arc (D.A → D.W) executed near the ceiling, plus
+an additive 3-session D.E extension (k>1 F_{p^k} solver, formalised as a γ sub-track rather than
+folded into E.C). Both tracks confirm the **ceiling-bias**: realistic session counts run at or above
+the upper end of the design-time bands. The forward projection below is re-baselined accordingly.
+
+### Remaining projected sessions (from E.C ◆, 2026-06-10)
+
+*Inferred from completed-track actuals; ceiling-biased. Grand total projected: ~92–104.*
+
+| Remaining sub-track | Sessions | Opus-flagged |
+|---------------------|--------:|:------------:|
+| E.D — p-adic arithmetic | 3 | |
+| E.E — Smart–Satoh–Araki | 2 | |
+| E.F — GF(2^m) field arithmetic | 4 | ✓ E.F.1 |
+| E.G — Binary curves + Koblitz automorphism | 3 | |
+| E.H — GHS/Weil descent | 5 | ✓ E.H.1 |
+| E.I — GF(2^m) hyperelliptic Jacobian | 4 | |
+| E.J — Semaev summation polynomials | 3 | |
+| E.K — Gaudry–Diem–Joux–Vitse index calculus | 5 | ✓ E.K.1 |
+| E.W — Cross-attack benchmarks + writeup (+ T.E) | 2 | ✓ |
+| **E subtotal** | **~24–31** | |
+| S.A–S.D — Shor + post-quantum context | 7–10 | |
+| Z.1 — Umbrella narrative | 3–4 | ✓ all |
+| T.Z — Textbook bind | 1–2 | ✓ |
+| **Total remaining** | **~35–47** | |
+
+The E subtotal's low end (24) is the frozen-band-ceiling minus done (32 − 8); the high end (31) is
+the un-compressed sum of E.D–E.W sub-track ceiling estimates. S is orthogonal and can be slotted
+anywhere after α.
 
 ---
 
@@ -567,6 +596,45 @@ sessions but are triggered by discoveries that need static-frame updates.
 ## Discoveries log
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
+
+### 2026-06-10 — E.C ◆ boundary: Progress reconciliation + remaining re-baseline
+
+The MOV/Frey–Rück sub-track is complete: E.C.1 (`840608c`, `rho→gnfs` edge + `FpExt→solve_dl`
+bridge + modulus-consistency guard) and E.C.2 ◆ (`2e1edf8`, MOV reduction + end-to-end
+`pairing_toy` KAT recovering the known scalar with `e(Q,R) = e(G,R)^k` verified in F_{47²}*). This
+crosses the **E.C ◆ boundary** — the project's first cross-track ECDLP→DLP composition ships; C-Mov
+is frozen. Three prior closeouts that were never entered into this log (they landed between the T.G ◆
+and E.C ◆) are recorded here.
+
+- **E.A complete (E.A ◆ `4012353`).** Pohlig–Hellman end-to-end: composite-order test curve +
+  `factor_order` (`054df65`); prime-power lift + CRT combine + composite-order ECDLP KAT
+  (`51fd477`). C-CompositeCurve, C-FactorOrder, C-Pohlig frozen.
+
+- **E.B complete (E.B ◆ `d9c624c`).** Pairing arithmetic: `F_{p^k}` extension field (`74b2ff3`,
+  C-FpExt); `E(F_{p^k})` point arithmetic + pairing-friendly fixture (`dceaff1`, C-PairingCurve);
+  Miller's algorithm + Weil pairing + bilinearity KAT (`7e28962`); Tate/reduced-Tate + final
+  exponentiation (`6c082bb`, C-Pairing). Four sessions — the sub-track landed at the ceiling of its
+  3–4 estimate (ceiling-bias confirmed).
+
+- **D.E recorded as a new Track-D sub-track (D.E ◆ `d16381f`).** The D.C.3 digest (`8c2f0b2`)
+  deferred the k>1 F_{p^k} NFS-DL solver as an "E.C-prep ROADMAP-then-shard session." At the D.E
+  plan-init it was formalised as a γ extension — three sessions: D.E.1 (`0d02b77`, F_{p^k}
+  target-embedding substrate + residue map, C-ExtTarget); D.E.2 (`1a21a32`, extension factor base +
+  relation collection, C-ExtFactorBase); D.E.3 ◆ (`a804a7b`, k>1 individual-log descent +
+  `solve_dl` wiring + end-to-end k=2 KAT, C2-ext frozen). This supersedes the Phase-δ E.C entry's
+  implicit "E.C carries k>1": D.E carried it. E.C consumed the frozen C2-ext as-is, calling the
+  real solver at k=2 without touching `solve_dl_ext`'s algorithm (on-intent, principle 4).
+
+- **C-MovBridge: the modulus-consistency invariant is a durable cross-track note.** The bridge
+  (`gnfs/src/dl/ext/target.rs` + `rho/src/pairing/mov.rs`) asserts that the pairing's
+  `IrreducibleModulus` coincides with what `find_irreducible_degree2(p)` derives inside
+  `solve_dl_ext`. Without this guard, a p where the two paths pick different irreducibles would
+  produce a DL in the wrong F_{p²} with no error. The assertion is bridge-side (no frozen contract
+  amended); it fires loudly on mismatch. Future pairing- or extension-field work that introduces a
+  new irreducible derivation must confirm this invariant is preserved or extend the guard.
+
+- **Progress table re-baselined.** Done ~57, remaining ~35–47; projected grand total ~92–104. See
+  the Progress subsection for the full breakdown and estimation-bias analysis.
 
 ### 2026-06 — Track-D / Phase-γ closeout (D.W; D.W ◆ boundary)
 
