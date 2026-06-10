@@ -1,5 +1,6 @@
 //! NFS discrete-logarithm (NFS-DL) substrate: Schirokauer map, DL relation format,
-//! F_ℓ linear-algebra substrate, and individual-logarithm descent.
+//! F_ℓ linear-algebra substrate, individual-logarithm descent, and F_{p^k} extension
+//! substrate.
 //!
 //! This module is the entry point for the NFS-DL bridge sub-track (Track D). It provides:
 //!
@@ -12,6 +13,8 @@
 //! - [`descent`] — individual-logarithm descent substrate: descent-tree node/frontier types
 //!   (C-Descent contract, frozen D.C.1) and the cross-track C2 `solve_dl` interface
 //!   (shape frozen D.C.1, finalized D.C.3).
+//! - [`ext`] — F_{p^k} extension-field substrate: extension-target type and residue map
+//!   (C-ExtTarget contract, frozen D.E.1).
 //!
 //! # Two-number-field setup
 //!
@@ -41,11 +44,18 @@
 //!
 //! See [`descent`] module for the descent substrate and the cross-track `solve_dl` interface.
 //! C-Descent is sub-track-internal; C2 is consumed by E.C (the MOV bridge).
+//!
+//! # Contract C-ExtTarget (frozen D.E.1)
+//!
+//! See [`ext::target`] module for the F_{p^k} extension-target type and residue map.
+//! C-ExtTarget is consumed by D.E.2 (factor base), D.E.3 (descent + solver), and E.C
+//! (the MOV bridge).
 
 pub mod schirokauer;
 pub mod relation;
 pub mod linalg;
 pub mod descent;
+pub mod ext;
 
 pub use schirokauer::{schirokauer as compute_schirokauer, PrimeIdeal, SchirokauerError};
 pub use relation::{augment_relation, collect_dl_relations, DLMatrix};
@@ -79,6 +89,7 @@ pub use descent::{
     solve_dl,
     solve_dl_full,
 };
+pub use ext::target::{ExtResidueMap, ExtTarget};
 
 use num_bigint::BigInt;
 
