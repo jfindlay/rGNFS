@@ -13,10 +13,12 @@
 //! - [`test_curves`] — pairing-friendly toy fixture: embedding degree `k = 2`,
 //!   torsion prime `ℓ = 3`, base-field point `P` and extension-field point `Q`
 //!   (E.B.2).  Freezes contract C-PairingCurve.
-//! - `miller` — Miller's algorithm + line/vertical functions (E.B.3).
-//! - `weil` — Weil pairing (E.B.3).
+//! - [`miller`] — Miller's algorithm + line/vertical functions (E.B.3).
+//! - [`weil`] — Weil pairing (E.B.3).
 //! - `tate` — Tate/reduced-Tate pairing + final exponentiation (E.B.4).
 
 pub mod ecext;
 pub mod fpext;
+pub mod miller;
 pub mod test_curves;
+pub mod weil;
