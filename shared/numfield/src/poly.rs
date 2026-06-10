@@ -7,6 +7,7 @@
 //! Invariant: trailing zeros are always trimmed.
 
 use num_bigint::BigInt;
+use num_integer::Integer;
 use num_rational::BigRational;
 use num_traits::{One, Zero};
 
@@ -67,6 +68,39 @@ impl IntPoly {
         let mut result = BigInt::zero();
         for c in self.coeffs.iter().rev() {
             result = result * x + c;
+        }
+        result
+    }
+
+    /// Formal derivative: coefficient `c_i` at position `i` becomes `c_i * i` at position `i-1`.
+    ///
+    /// The derivative of the zero polynomial (or a constant) is the zero polynomial.
+    pub fn derivative(&self) -> Self {
+        if self.coeffs.len() <= 1 {
+            return Self::zero();
+        }
+        // coeffs[i] is the coefficient of x^i; the derivative has coefficient i*coeffs[i] at x^(i-1).
+        let coeffs: Vec<BigInt> = self
+            .coeffs
+            .iter()
+            .enumerate()
+            .skip(1) // skip the constant term (its derivative is 0)
+            .map(|(i, c)| BigInt::from(i as i64) * c)
+            .collect();
+        Self::from_coeffs(coeffs)
+    }
+
+    /// Evaluate the polynomial at `x` modulo `m`, using Horner's method with reduction at each step.
+    ///
+    /// Reduces mod `m` after each Horner accumulation step rather than evaluating then reducing.
+    /// This keeps intermediate values bounded even when `m` is small (e.g. p^k in Hensel lifting).
+    pub fn eval_mod(&self, x: &BigInt, m: &BigInt) -> BigInt {
+        // Horner with per-step reduction: result = (...((c_n * x + c_{n-1}) * x + ...) + c_0) mod m.
+        // Reducing at each step is the correct general form; eval-then-reduce would overflow for
+        // large polynomials or small moduli.
+        let mut result = BigInt::zero();
+        for c in self.coeffs.iter().rev() {
+            result = (result * x + c).mod_floor(m);
         }
         result
     }

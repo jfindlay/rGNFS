@@ -6,6 +6,7 @@ description = "p-adic arithmetic substrate: Z/p^k ring, p-adic valuation, unit i
 
 [dependencies]
 shared-bigint = { path = "../bigint" }
+shared-numfield = { path = "../numfield" }
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"

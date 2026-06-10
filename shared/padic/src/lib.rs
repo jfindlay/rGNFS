@@ -19,6 +19,8 @@
 //! Q_p (field of fractions), and the elliptic-curve formal-group parametrisation are out of scope
 //! for this crate (E.E's concern).
 
+pub mod hensel;
 pub mod zp;
 
+pub use hensel::{HenselError, hensel_lift};
 pub use zp::{Zp, ZpError};
