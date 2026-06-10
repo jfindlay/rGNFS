@@ -1,4 +1,4 @@
-//! MOV bridge: rho-side entry for encoding pairing outputs as `solve_dl` inputs.
+//! MOV bridge and MOV/Frey–Rück reduction.
 //!
 //! # Contract C-MovBridge (E.C.1)
 //!
@@ -11,6 +11,17 @@
 //! [`gnfs::dl::ext::target::fpext_coeffs_to_dl_target`]. The rho side does NOT re-derive
 //! the base-p encoding itself.
 //!
+//! # Contract C-Mov (E.C.2)
+//!
+//! [`mov_reduce`] is the MOV/Frey–Rück reduction entry. Given an ECDLP instance
+//! `(curve, G, Q, R, ell)` — where `Q = k·G` in the order-ℓ subgroup and `R` is a
+//! μ_ℓ-generator with `e(G, R) ≠ 1` — it transports the ECDLP into a discrete log in
+//! `F_{p^k}*` via the pairing's bilinearity, encodes both pairing outputs through
+//! C-MovBridge, and calls `gnfs::dl::solve_dl` to recover `k mod ℓ`.
+//!
+//! The mathematical shape: `e(Q, R) = e(k·G, R) = e(G, R)^k`. Writing `g := e(G, R)` and
+//! `h := e(Q, R)`, both in `μ_ℓ ⊂ F_{p^k}*`, the ECDLP scalar `k` is exactly `log_g(h)`.
+//!
 //! # Modulus-consistency guard
 //!
 //! The gnfs-side helper asserts that the pairing's irreducible modulus matches what
@@ -22,12 +33,18 @@
 //!
 //! The `Uint<4> → BigInt` conversion assumes p < 2^64 (single limb). This is a toy-scale
 //! boundary: at crypto scale (p ~ 2^256), the full limb vector would be needed.
+//!
+//! The recovered log is `k mod ℓ` (the subgroup log). A full composite-order lift via
+//! Pohlig–Hellman is a principle-4 annotation, not wired here.
 
 use crypto_bigint::Uint;
 use num_bigint::BigInt;
 use shared_field::Fp;
 
+use crate::curve::Curve;
+use crate::pairing::ecext::PairingPoint;
 use crate::pairing::fpext::{FpExt, IrreducibleModulus};
+use crate::pairing::tate::reduced_tate;
 
 /// Convert a `FpExt<F>` pairing output to the base-p `BigInt` encoding `solve_dl` consumes.
 ///
@@ -90,6 +107,108 @@ pub fn fpext_to_bigint<F: Fp<4>>(
 
     // Step 4: delegate to the gnfs-side helper (encoding convention + modulus-consistency guard).
     gnfs::dl::ext::target::fpext_coeffs_to_dl_target(coeffs, &p_big, &modulus_bigint)
+}
+
+// ─── MOV/Frey–Rück reduction ──────────────────────────────────────────────────
+
+/// Reduce an ECDLP to a finite-field DLP via the MOV/Frey–Rück reduction.
+///
+/// Given the ECDLP `Q = k·G` in the order-ℓ subgroup of `E(F_p)`, and a μ_ℓ-generator
+/// `R ∈ E(F_{p^k})[ℓ]` with `e(G, R) ≠ 1`, this function:
+///
+/// 1. Computes `g_pair = reduced_tate(R, G, ell)` — the pairing `e(G, R) ∈ μ_ℓ`.
+/// 2. Computes `h_pair = reduced_tate(R, Q, ell)` — the pairing `e(Q, R) ∈ μ_ℓ`.
+/// 3. Asserts `g_pair ≠ 1` (if `g_pair = 1`, the DL is undefined — R is not a μ_ℓ-generator
+///    with respect to G).
+/// 4. Encodes both pairing outputs as base-p `BigInt` via [`fpext_to_bigint`] (C-MovBridge).
+/// 5. Calls `gnfs::dl::solve_dl(&g_big, &h_big, &p_big, 2, &ell_big)` to recover `k mod ℓ`.
+/// 6. Returns `Ok(k_mod_ell)` as `u64`.
+///
+/// # Argument order for non-degeneracy
+///
+/// The reduced Tate pairing is non-degenerate when the **second** argument is not in
+/// `ℓ·E(F_{p^k})`. For the `pairing_toy` fixture, `P ∈ E(F_p)[ℓ]` is not in `ℓ·E(F_{p^k})`,
+/// so `reduced_tate(R, G, ell)` (R first, G second) is non-degenerate. The caller must supply
+/// R such that this holds.
+///
+/// # Recovered log
+///
+/// The returned value is `k mod ℓ` — the discrete log in the order-ℓ subgroup. A full
+/// composite-order lift via Pohlig–Hellman is a principle-4 annotation, not wired here.
+///
+/// # Arguments
+///
+/// - `curve` — the short-Weierstrass curve `y² = x³ + ax + b`.
+/// - `modulus` — the irreducible polynomial defining `F_{p^k}` (must match what
+///   `gnfs::dl::ext::find_irreducible_degree2(p)` returns — enforced by the modulus-consistency
+///   guard in [`fpext_to_bigint`]).
+/// - `g_point` — the ECDLP generator `G ∈ E[ℓ]` (typically a base-field point).
+/// - `q_point` — the ECDLP target `Q = k·G ∈ E[ℓ]`.
+/// - `r_point` — a μ_ℓ-generator `R ∈ E(F_{p^k})[ℓ] \ E(F_p)` with `e(G, R) ≠ 1`.
+/// - `ell` — the subgroup order ℓ (a prime dividing `p^k − 1`).
+///
+/// # Errors
+///
+/// Propagates [`gnfs::dl::SolveDlError`] from `solve_dl` (e.g., `InitSmoothingFailed`,
+/// `DescentFailed`). Returns `SolveDlError::DescentFailed { stuck_prime: 0 }` if
+/// `g_pair = 1` (degenerate pairing — R is not a valid μ_ℓ-generator for G).
+///
+/// # Panics
+///
+/// Panics if the pairing's modulus does not match `find_irreducible_degree2(p)` (forwarded
+/// from the modulus-consistency guard in [`fpext_to_bigint`]).
+pub fn mov_reduce<F: Fp<4>>(
+    curve: &Curve,
+    modulus: &IrreducibleModulus<F>,
+    g_point: &PairingPoint<F>,
+    q_point: &PairingPoint<F>,
+    r_point: &PairingPoint<F>,
+    ell: u64,
+) -> Result<u64, gnfs::dl::SolveDlError> {
+    let p_uint = curve.p;
+
+    // Step 1: compute g_pair = e(G, R) = reduced_tate(R, G, ell).
+    // Argument order: R first (extension-field point), G second (base-field point).
+    // This is the non-degenerate direction for the toy fixture (see C-Pairing contract).
+    let g_pair: FpExt<F> = reduced_tate(curve, modulus, r_point, g_point, ell);
+
+    // Step 2: compute h_pair = e(Q, R) = reduced_tate(R, Q, ell).
+    let h_pair: FpExt<F> = reduced_tate(curve, modulus, r_point, q_point, ell);
+
+    // Step 3: assert g_pair ≠ 1 — if g_pair = 1, R is not a μ_ℓ-generator for G and the
+    // DL is undefined. Return DescentFailed as the closest error (degenerate pairing).
+    if g_pair.is_one(&p_uint) {
+        return Err(gnfs::dl::SolveDlError::DescentFailed { stuck_prime: 0 });
+    }
+
+    // Step 4: extract p as u64 (toy-only: p < 2^64, single limb).
+    // Principle-4 boundary: at crypto scale, the full limb vector would be needed.
+    let p_u64: u64 = p_uint.as_words()[0];
+
+    // Step 5: encode both pairing outputs as base-p BigInt via C-MovBridge.
+    // The modulus-consistency guard in fpext_to_bigint ensures the pairing's modulus
+    // matches what solve_dl_ext uses internally — the silent-wrong-field defense.
+    let g_big: BigInt = fpext_to_bigint(&g_pair, modulus, p_u64);
+    let h_big: BigInt = fpext_to_bigint(&h_pair, modulus, p_u64);
+
+    let p_big = BigInt::from(p_u64);
+    let ell_big = BigInt::from(ell);
+
+    // Step 6: call solve_dl to recover log_{g_pair}(h_pair) = k mod ell.
+    // k=2 path: the extension-field brute-force solver (D.E.3, principle-4 toy scale).
+    // This is a real solver — not a stub (ROADMAP anti-stub constraint).
+    let k_big = gnfs::dl::solve_dl(&g_big, &h_big, &p_big, 2, &ell_big)?;
+
+    // Step 7: convert BigInt → u64 (toy-only: k ∈ [0, ℓ), ℓ=3 at toy scale).
+    // Principle-4 boundary: at crypto scale, the full BigInt would be returned.
+    let k_u64 = k_big
+        .to_u64_digits()
+        .1
+        .first()
+        .copied()
+        .unwrap_or(0);
+
+    Ok(k_u64)
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
