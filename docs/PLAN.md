@@ -2,132 +2,140 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-D extension (D.E — k>1 NFS-DL: F_{p^k} discrete log)
+# rGNFS — Current Plan: Track-E (E.C — MOV/Frey–Rück reduction: ECDLP → F_{p^k} DLP)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error), the binding
-constraint.** D.E is the **hard predecessor of E.C** (the MOV/Frey–Rück climax): E.C reduces an
-ECDLP on a small-embedding-degree curve to a discrete log in `F_{p^k}*` and calls `solve_dl` (C2).
-But C2 was frozen at D.C.3 with the **k>1 path returning `SolveDlError::Unsupported`** — and the MOV
-fixture is genuinely `k=2` (μ_ℓ ⊂ F_{p²}*, μ_ℓ ⊄ F_p*), so **no honest k=1 projection exists**. D.E
-lifts NFS-DL from F_p to F_{p^k}, making C2 honest at k=2. The D.E.1 **target-embedding substrate**
-(how an `FpExt` element — the pairing output — is expressed in the NFS-DL number field and fed to the
-solver) **bounds D.E.2/3 and E.C**: a wrong representation freeze is the highest-cost-of-wrong
-interface remaining before the climax. Lever 5 is strong (the end-to-end `g^x = h` round-trip in
-F_{p²} plus a PARI `znlog`/`fflog` cross-check is decisive and fast) and *would* license an opt-down
-in isolation, but lever 3 dominates, so the ◆ that ratifies C-ExtTarget / C-ExtFactorBase / C2-ext
-runs at **Opus**. *(Scoped to the D.E.3 ◆ close. D.E.1 — the target-embedding substrate design — is
-Opus-tier; D.E.2–3 are Sonnet against the frozen target/factor-base representation.)*
+`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) AND lever 4
+(correctness-criticality), with the ROADMAP's explicit both-sessions-Opus flag as a third
+constraint.** E.C is **the cross-track bridge of the entire project** (ROADMAP Phase δ: "*the*
+cross-track bridge… the pedagogical climax"): the MOV/Frey–Rück reduction transports an ECDLP on a
+small-embedding-degree curve into a discrete log in `F_{p^k}*` via the E.B pairing, then solves that
+DLP by calling the now-honest **C2-ext `solve_dl`** (made real at k=2 by D.E). It is the first
+session-set to compose two tracks in code — adding the **first `rho → gnfs` crate dependency** — and
+a wrong bridge or reduction silently produces a *wrong* discrete log. Lever 5 is strong and fast (the
+`pairing_toy` end-to-end KAT recovers a *known* scalar and verifies `e(Q,R) = e(G,R)^k`, decisive on
+any bridge/reduction error) and *would* license an opt-down in isolation — but lever 3 + lever 4 +
+the ROADMAP flag dominate on the project's climax, so the ◆ that ratifies C-MovBridge / C-Mov runs at
+**Opus**. *(Both E.C sessions are Opus per the ROADMAP. The juncture fork at the E.C.2 ◆ is Opus.)*
 
-Last rewrite: **E.B ◆ boundary crossed** (E.B.1 `74b2ff3`, E.B.2 `dceaff1`, E.B.3 `7e28962`, E.B.4 ◆
-`6c082bb`; C-FpExt / C-PairingCurve / C-Pairing frozen; the Weil + Tate pairing substrate ships,
-proven bilinear/non-degenerate). The E.B.4 ◆ juncture recorded the **load-bearing assumption** this
-plan resolves: *"E.C calls solve_dl with k=1 (prime subfield projection) OR an E.C-prep session
-widens C2 to k>1 before E.C lands."* The substrate survey confirmed there is **no honest k=1 path**
-for the k=2 MOV fixture, so the second branch is mandatory. This plan shards that branch as **D.E**,
-a Track-D extension sub-track (a one-line ROADMAP insertion is owed as a capture candidate — see
-Discoveries & risks).
+Last rewrite: **D.E ◆ boundary crossed** (D.E.1 `0d02b77`, D.E.2 `1a21a32`, D.E.3 ◆ `a804a7b`;
+C-ExtTarget / C-ExtFactorBase / C2-ext frozen; the k>1 NFS-DL solver ships, proven correct at k=2 on
+the `pairing_toy` field). The D.E.3 ◆ digest recorded **three E.C agenda items** this plan resolves:
+**(A)** no single helper composes `FpExt::to_uint_vec`-coeffs into the base-p `BigInt` `solve_dl`
+consumes — a thin bridge is owed (E.C.1); **(B)** the k=2 `solve_dl_ext` is a brute-force placeholder
+over the ℓ=3 subgroup, *not* the D.E.2 NFS pipeline — on-intent per principle-4 toy scoping, so E.C
+composes the brute-force solver and does **not** wire the NFS pipeline; **(C)** `find_irreducible_
+degree2` re-derives the modulus inside `solve_dl_ext` independently of `ExtResidueMap.modulus` — for
+p=47 they coincide (`u²+1` tried first), but E.C's wiring must ensure they coincide **by
+construction** (the modulus-consistency invariant, E.C.1's guard).
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase γ, Contract C2 + the D.W closeout Discoveries entry): C2 `solve_dl(g, h, p, k,
-ell)` is frozen, **live for k=1, returning `Unsupported` for k>1**; "*the F_{p^k} NFS-DL extension is
-genuine new mathematics, deferred to a dedicated E.C-prep ROADMAP-then-shard session (never
-spontaneous in-flight scope growth during E.C).*" D.E **is** that session-set. It is the substrate
-that makes the project's pedagogical climax (E.C, the MOV bridge first calling a *real* NFS-DL
-solver) possible: without it, E.C can only call a permanent PARI stub, which ROADMAP C2 explicitly
-forbids ("*merging E.C with a PARI stub permanently is not [acceptable]*").
+Per ROADMAP (Phase δ, E.C; Contract C2): E.C reduces an ECDLP on a curve `E/F_p` with small
+embedding degree k to a discrete log in `F_{p^k}*`, and solves that DLP by **calling a real NFS-DL
+solver** — "*the session where the MOV bridge first calls a real NFS-DL solver is the pedagogical
+climax.*" ROADMAP C2 forbids the permanent PARI stub ("*merging E.C with a PARI stub permanently is
+not [acceptable]*"); D.E removed that constraint by making C2-ext honest at k=2, so E.C can now land
+against a *real* solver.
 
-The structure-based-escape-from-search through-line continues: E.B built the **pairing** (the
-homomorphism `e: E[ℓ] × E[ℓ] → μ_ℓ ⊂ F_{p^k}*` that transports the ECDLP into a finite-field DLP);
-D.E builds the **finite-field DLP solver in the extension** that the transported problem lands in;
-E.C composes them into the MOV reduction. D.E ships no attack — it ships the k>1 NFS-DL solver and
-proves it recovers the correct discrete log in `F_{p²}*` on the `pairing_toy` fixture's target field.
+The structure-based-escape-from-search through-line reaches its cross-track payoff here. E.A built
+the generic-and-Pohlig–Hellman ECDLP baseline; E.B built the **pairing** `e: E[ℓ] × E[ℓ] → μ_ℓ ⊂
+F_{p^k}*` (the homomorphism that transports the ECDLP into a finite-field DLP); D.E built the
+**finite-field DLP solver** in the extension the transported problem lands in. **E.C composes them
+into the MOV reduction**: it is the moment the project's three substrates (curve, pairing,
+NFS-DL) meet in one computation.
+
+The MOV reduction's mathematical shape (the through-line the KAT exercises): given the ECDLP
+`Q = k·G` in the order-ℓ subgroup `E[ℓ]`, pick a point `R ∈ E[ℓ]` with `e(G, R) ≠ 1` (a
+μ_ℓ-generator). The pairing's bilinearity gives `e(Q, R) = e(k·G, R) = e(G, R)^k`. Writing
+`g := e(G, R)` and `h := e(Q, R)`, both in `μ_ℓ ⊂ F_{p^k}*`, the ECDLP scalar `k` is exactly
+`log_g(h)` — a *finite-field* discrete log. E.C transports `(G, Q, R)` through the pairing to
+`(g, h)`, encodes `g, h` for `solve_dl`, recovers `k mod ℓ`, and (at toy scale) verifies
+`e(Q, R) = e(G, R)^k`. **The escape:** an ECDLP with no exploitable curve structure becomes a
+finite-field DLP where index-calculus/NFS-DL applies — the search bound is escaped by the pairing's
+homomorphism.
 
 The substrate survey established the shape precisely:
 
-1. **The k=1 NFS-DL pipeline is ~3,500 LOC of frozen, index-agnostic substrate that mostly
-   transfers.** `gnfs/src/dl/`: the F_ℓ linear algebra (`build_fl_matrix`, `block_lanczos_fl`,
-   `recover_virtual_logs`) is keyed on factor-base *indices*, not integer magnitudes — it is
-   **already extension-ready**. The Schirokauer map (`compute_schirokauer`) was **over-specified at
-   D.A.1 to carry r>1** (`gnfs/src/dl/mod.rs:32`: *"the r>1 multi-coordinate shape is carried even
-   when toy instances use r=1, since D.C's descent and E.C's solver will need it"*). The `DLRelation`
-   wrapper composes cleanly. **So D.E is a bounded lift, not a rewrite** — what changes is the
-   *target embedding*, the *factor base*, and the *individual-log descent*.
+1. **E.C is a compose over frozen pieces, not new mathematics — the bridge is the design crux.** The
+   pairing (`weil_pairing` / `reduced_tate` → `FpExt<F>` ∈ μ_ℓ) and the solver (`solve_dl(g, h, p, 2,
+   ell)`) both exist and are KAT-proven. What does *not* exist is the **representational bridge** from
+   the pairing output to the solver input. `FpExt::to_uint_vec() -> Vec<Uint<4>>` (coefficient form,
+   crypto-bigint width); `solve_dl` takes `h: &num_bigint::BigInt` in **base-p encoding**
+   (`c_0 + c_1·p`). The gap is two-stage: `Vec<Uint<4>> → Vec<BigInt>` (per-coefficient type
+   conversion, toy-only single-limb) → base-p `BigInt` (scalar combine). E.C.1 builds this bridge.
 
-2. **The number-field machinery stays char-0; only the residue field is the extension.** NFS-DL over
-   F_{p^k} does **not** mean "redo NFS with F_{p^k} coefficients." The number field K = ℚ[α]/(f) is
-   char-0 as before; what changes is that the prime p now has a **degree-k prime ideal** above it
-   whose residue field is F_{p^k}, and the DL target h lives in that residue field. This is the
-   rigidity guard restated from E.B: do **not** reach for the char-p `FpExt` as the relation-algebra
-   coefficient field — `FpExt` is the *target representation* (D.E.1's job: the residue map), not the
-   sieve algebra.
+2. **`solve_dl_ext` is brute-force at k=2 (digest item B) — E.C composes it as-is, does not touch
+   the NFS pipeline.** The survey confirmed `solve_dl_ext` enumerates the ℓ=3 subgroup; the D.E.2
+   `ExtFactorBase` / `augment_ext_relation` pipeline exists but is bypassed at toy scale. This is
+   **on-intent** (principle 4: the toy implementation proves the interface; the NFS pipeline is the
+   crypto-scale path). E.C calls `solve_dl` (which dispatches to `solve_dl_ext` at k=2) through the
+   frozen C2 signature; it adds **no** NFS-pipeline wiring. *Whether E.C should exercise the NFS
+   pipeline rather than brute force is a principle-4 annotation, not an E.C work item.*
 
-3. **C2's signature and error taxonomy are FROZEN — D.E fills in the k>1 path behind them, it does
-   not change them.** `gnfs/src/dl/descent/solve.rs:22–23, 100`: *"No further variants will be
-   added… E.C consumes exactly these three variants."* The `k` parameter and `Unsupported` variant
-   already exist. D.E removes the early `if k != 1 { return Unsupported }` return and implements the
-   real path — a **contract-respecting extension, not a contract break.** The `Unsupported` variant
-   stays (for k beyond the toy ceiling).
+3. **The modulus-consistency invariant (digest item C) is E.C.1's load-bearing guard.** The pairing
+   carries its own `IrreducibleModulus` (`u²+1` for the toy fixture); `solve_dl_ext` re-derives a
+   degree-2 irreducible internally via `find_irreducible_degree2` (which does **not** accept a
+   caller modulus). For p=47 both pick `u²+1` (it is tried first and is irreducible), so they
+   coincide — but **by coincidence, not by construction.** E.C.1 must make the coincidence explicit:
+   the bridge asserts the pairing's modulus equals what the solver path uses, so a future p where
+   `find_irreducible_degree2` picks a different polynomial fails *loudly* rather than computing a DL
+   in the wrong F_{p²}. **This is the highest-cost-of-wrong silent-failure mode in E.C** — a
+   different modulus gives a different field and a wrong log with no error.
 
-4. **The cross-crate KAT seam: gnfs holds solve_dl; rho holds the pairing fixture.** `rho` will
-   depend on `gnfs` (added at E.C, not D.E — D.E adds no rho dependency). D.E's end-to-end k=2 KAT
-   lives **in `gnfs/`** and constructs its F_{47²} DL target **independently** (a hand-built
-   extension-field instance matching the `pairing_toy` parameters: p=47, k=2, ℓ=3, modulus u²+1).
-   The full MOV-to-pairing round-trip (pairing output → solve_dl) belongs to **E.C in `rho`**, not
-   D.E. D.E proves the solver; E.C wires it to the pairing.
+4. **E.C adds the first `rho → gnfs` dependency (the cross-crate seam).** `rho` does not yet depend
+   on `gnfs` (confirmed). E.C adds the edge. Per the bridge-location decision, **gnfs stays unaware
+   of rho's `FpExt`**: gnfs grows an `FpExt`-shaped *input* helper (a coefficient `Vec<BigInt>` +
+   modulus → base-p `BigInt`, composing the existing `ExtTarget::from_coeffs` + `ext_target_to_bigint`
+   plus the modulus-consistency assertion); the rho side does only the `Uint<4> → BigInt` step and
+   calls it. No `gnfs → rho` coupling; the new edge is one-directional.
 
-5. **The FpExt → solve_dl-input representation mismatch is D.E.1's central design call.** The survey
-   found `solve_dl` takes `h: &BigInt` (a prime-field integer); `FpExt::to_uint_vec() -> Vec<Uint<4>>`
-   exists as a coefficient bridge but **no single-step `FpExt → solver-target` encoding exists**. The
-   solver's k>1 path needs a target type richer than `BigInt` (an element of F_{p^k} is a coefficient
-   vector). D.E.1 designs that representation (C-ExtTarget) — the interface E.C reads pairing outputs
-   through.
+5. **The end-to-end MOV KAT lives in `rho` and uses the real `pairing_toy` fixture.** Unlike D.E.3
+   (which hand-built its F_{47²} target *independently in gnfs* because the rho→gnfs edge did not yet
+   exist), E.C's KAT **is** the cross-track composition: `pairing_toy()` → `reduced_tate(Q, P, ell)`
+   → bridge → `gnfs::solve_dl` → recovered `k mod ℓ` → verify `e(Q,R) = e(G,R)^k`. This is the
+   project's first KAT that crosses the track boundary in a single test.
 
-The work splits at the **target-embedding → factor-base → descent** seams, 3 sessions:
+The work splits at the **bridge → reduction** seam, 2 sessions (matching the ROADMAP's 2-session
+both-Opus estimate):
 
-1. **D.E.1 — F_{p^k} target-embedding substrate (Opus, Cat A).** The representation of a DL target
-   in `F_{p^k}*` for the NFS-DL solver, and the residue map between `FpExt` (E.B's char-p extension)
-   and the NFS-DL number field's degree-k residue field. **The Opus design call** (the reason this
-   session is Opus and bounds E.C): the *solver-target type* the k>1 `solve_dl` path consumes — does
-   it take a coefficient `Vec<BigInt>`, a thin residue-map wrapper, or accept `FpExt` directly? —
-   and how `g, h ∈ F_{p^k}*` are encoded. **Freezes C-ExtTarget** — the extension-target interface
-   D.E.2/3 and E.C consume.
+1. **E.C.1 — MOV bridge substrate: `rho → gnfs` edge + `FpExt → solve_dl`-target bridge (Opus, Cat
+   A).** Add the `rho → gnfs` dependency; build the bridge that turns a pairing output (`FpExt<F>`,
+   via `to_uint_vec`) into the base-p `BigInt` `solve_dl` consumes, with the **modulus-consistency
+   guard** (digest item C). The gnfs-side helper (FpExt-shaped coefficient input) + the rho-side
+   `Uint<4> → BigInt` step. **Freezes C-MovBridge** — the bridge interface E.C.2 reads pairing
+   outputs through.
 
-2. **D.E.2 — Extension factor base + relation collection over the degree-k prime (Sonnet, Cat A).**
-   The factor base augmented with the **degree-k prime ideal** whose residue field is F_{p^k}, and
-   relation collection adapted to the extension target (the Schirokauer ideals over ℓ in the extension
-   setting; the `init_descent_frontier` smoothing of an extension target). Composes the frozen
-   C-Schirokauer (r>1, already carried) and C-LinAlgFl (index-agnostic, already extension-ready).
-   **Freezes C-ExtFactorBase.**
+2. **E.C.2 ◆ — MOV reduction + end-to-end `pairing_toy` KAT (Opus, Cat I, `@plan`).** The reduction
+   proper: transport `(G, Q, R)` through the pairing to `(g, h) ∈ μ_ℓ`, encode via C-MovBridge, call
+   `gnfs::solve_dl(g, h, p, 2, ell)`, recover `log_g(h) = k mod ℓ`; the **end-to-end MOV KAT** at the
+   `pairing_toy` parameters (recover the known ECDLP scalar, verify `e(Q,R) = e(G,R)^k` in F_{47²}*).
+   **Freezes C-Mov** (the MOV-reduction entry). Crosses the **E.C ◆ boundary** (the cross-track
+   climax exists; ECDLP reduces to NFS-DL through a real solver).
 
-3. **D.E.3 ◆ — k>1 individual-log descent + `solve_dl` k>1 wiring + end-to-end k=2 KAT (Sonnet, Cat
-   B, `@plan`).** The individual-log descent for an extension target, **removing the `solve_dl`/
-   `solve_dl_full` `Unsupported` early-return** and threading the k>1 path through the frozen C2
-   signature; the **end-to-end k=2 KAT** (recover `log_g(h)` in F_{47²}*, verify `g^x = h`) and a
-   **PARI `znlog`/`fflog` `#[ignore]` cross-check**. **Freezes C2-ext** (the k>1 `solve_dl` contract
-   E.C consumes — C2 made honest at k=2). Crosses the **D.E ◆ boundary** (sub-track complete; E.C's
-   hard predecessor exists).
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing the *NFS pipeline* inside
+the k=2 path — that is the principle-4 crypto-scale annotation, not E.C; E.C composes the brute-force
+`solve_dl_ext` as-is. Or implementing other Track-E attacks — Smart–Satoh–Araki, GHS — those are
+E.E/E.H. Or writing the MOV *textbook chapter* — that is T.E, paired with E.W at the Track-E ◆, not
+E.C) and **rigidity** (re-deriving the base-p encoding in rho rather than calling the gnfs-side
+bridge — the encoding convention is gnfs's, threaded through C-MovBridge; duplicating it in rho is
+the two-crates-must-agree failure. Or skipping the modulus-consistency guard because "p=47 works" —
+the guard is the silent-wrong-field defense, mandatory).
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing the MOV reduction itself —
-that is **E.C**, not D.E; D.E ships the k>1 NFS-DL solver and stops at proving it recovers the right
-log. Or implementing a general crypto-scale F_{p^{12}} NFS-DL with k=12 towers — toy k=2 suffices)
-and **rigidity** (reaching for E.B's char-p `FpExt` as the *sieve algebra* coefficient field — wrong;
-the number field stays char-0 ℚ[α]/(f), `FpExt` is the *target representation* only. Or adding a
-fourth `SolveDlError` variant — the taxonomy is frozen; the k>1 path uses the existing three).
-
-**Scoping discipline.** D.E lifts NFS-DL to **toy extension degree k=2** (the `pairing_toy` fixture's
-embedding degree) at demonstration fidelity (principle 4). It introduces **no new live oracle** (PARI
-`znlog`/`fflog` is the established `#[ignore]` dev-only cross-check, matching D.B's pattern). It
-**amends nothing** in the frozen k=1 path — the k=1 KATs must stay green (`solve_dl` with k=1 is
-unchanged); the k>1 path is purely additive behind the frozen C2 signature. A general crypto-scale
-F_{p^{12}} NFS-DL is a principle-4 annotation, not a work item.
+**Scoping discipline.** E.C reduces ECDLP → DLP at **toy embedding degree k=2** (the `pairing_toy`
+fixture) at demonstration fidelity (principle 4). It introduces **no new live oracle** (the optional
+PARI/`#[ignore]` cross-check is the established dev-only pattern). It **amends no frozen contract**:
+C2-ext, C-ExtTarget, the pairing contracts (C-Pairing / C-FpExt / C-PairingCurve) and the E.A ECDLP
+substrate are all *read*, not changed. The MOV reduction recovers `k mod ℓ` (the subgroup log); a
+full composite-order lift via Pohlig–Hellman is a principle-4 annotation (the toy fixture's relevant
+subgroup is order ℓ=3). A crypto-scale MOV against a real small-embedding-degree curve is a
+principle-4 boundary, not a work item.
 
 ---
 
@@ -135,13 +143,15 @@ F_{p^{12}} NFS-DL is a principle-4 annotation, not a work item.
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper; raw `cargo` is the only CI surface (confirmed
-unchanged from E.B; oracle KATs are `#[ignore]`-gated only, no `oracle-tests` feature). `/run-plan`
-re-discovers at preflight. D.E **adds substantial code and a decisive end-to-end KAT**, so the gate
-is a **correctness gate**: the D.E.3 end-to-end k=2 KAT (`solve_dl(g, h, p, k=2, ell)` returns `x`
-with `g^x = h` in F_{47²}*) is the primary correctness signal — fast and decisive (lever 5). A wrong
-residue embedding, a wrong extension factor base, or a descent bug breaks the round-trip directly.
-**The frozen k=1 KATs (`gnfs/tests/dl_descent_kat.rs`) must stay green** — the gate also guards the
-no-regression invariant on the unchanged k=1 path.
+unchanged from D.E; oracle KATs are `#[ignore]`-gated only, no `oracle-tests` feature). `/run-plan`
+re-discovers at preflight. E.C **adds a cross-crate dependency and a decisive end-to-end KAT**, so
+the gate is a **correctness + integration gate**: the E.C.2 end-to-end MOV KAT (`pairing_toy` →
+pairing → bridge → `solve_dl` → `k mod ℓ`, verify `e(Q,R) = e(G,R)^k`) is the primary correctness
+signal — fast and decisive (lever 5). A wrong bridge encoding, a wrong modulus (item C), or a
+wrong reduction breaks `e(Q,R) = e(G,R)^k` directly. **The frozen D.E k=2 KATs
+(`gnfs/tests/dl_ext_kat.rs`) and the E.B pairing KATs (`rho/tests/pairing_kat.rs`) must stay green**
+— the gate also guards the no-regression invariant on both composed substrates, and the
+`cargo check --workspace` must confirm the new `rho → gnfs` edge resolves cleanly (no cycle).
 
 ---
 
@@ -153,262 +163,221 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| D.E.1 | `F_{p^k}` target-embedding substrate (residue map, k>1 solver-target representation) | A | **Opus** | C2 `solve_dl` (frozen signature, read), C-Schirokauer (frozen, read), `shared::numfield` `NumberField`/residue (frozen, read), C-FpExt `FpExt` (frozen, read — for the residue-map cross-check) | `gnfs/src/dl/ext/mod.rs` (new: `pub mod target;`), `gnfs/src/dl/ext/target.rs` (new: extension-target type + residue map), `gnfs/src/dl/mod.rs` (add `pub mod ext;` + re-exports) |
-| D.E.2 | Extension factor base + relation collection over the degree-k prime | A | Sonnet | C-ExtTarget (frozen D.E.1), C-Schirokauer (r>1, frozen read), C-LinAlgFl (index-agnostic, frozen read), `FactorBase` (frozen read) | `gnfs/src/dl/ext/factorbase.rs` (new: degree-k prime + extension factor base), `gnfs/src/dl/ext/relation.rs` (new: extension relation collection), `gnfs/src/dl/ext/mod.rs` (add `pub mod factorbase; pub mod relation;`) |
-| D.E.3 ◆ `@plan` | k>1 individual-log descent + `solve_dl` k>1 wiring + end-to-end k=2 KAT | B | Sonnet | C-ExtTarget + C-ExtFactorBase (frozen D.E.1/2), C-Descent (frozen read), C2 signature (frozen) | `gnfs/src/dl/ext/descent.rs` (new: k>1 descent), `gnfs/src/dl/descent/solve.rs` (remove `Unsupported` early-return for k=2, wire k>1 path), `gnfs/tests/dl_ext_kat.rs` (new: end-to-end k=2 KAT + PARI `#[ignore]` cross-check) |
+| E.C.1 | MOV bridge substrate: `rho → gnfs` edge + `FpExt → solve_dl`-target bridge + modulus-consistency guard | A | **Opus** | C2-ext `solve_dl` (frozen D.E.3, read), C-ExtTarget `ExtTarget`/`ext_target_to_bigint` (frozen D.E.1, read+compose), C-FpExt `FpExt`/`to_uint_vec` (frozen E.B.1, read), C-Pairing modulus (frozen E.B, read) | `rho/Cargo.toml` (add `gnfs` dep), `gnfs/src/dl/ext/target.rs` *or* `gnfs/src/dl/descent/solve.rs` (add the FpExt-shaped coeff-`Vec<BigInt>`→base-p-`BigInt` helper + modulus-consistency assertion), `rho/src/pairing/mov.rs` (new: rho-side `Uint<4>→BigInt` step + bridge entry), `rho/src/pairing/mod.rs` (add `pub mod mov;`) |
+| E.C.2 ◆ `@plan` | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | I | **Opus** | C-MovBridge (frozen E.C.1), C-Pairing `weil_pairing`/`reduced_tate` (frozen read), C-PairingCurve `pairing_toy`/`PairingPoint` (frozen read), E.A ECDLP substrate (frozen read), C2-ext `solve_dl` (frozen read) | `rho/src/pairing/mov.rs` (the reduction entry `mov_reduce` composing pairing→bridge→`solve_dl`), `rho/tests/mov_kat.rs` (new: end-to-end k=2 MOV KAT + optional PARI `#[ignore]` cross-check) |
 
-**Sequencing notes.** Strictly serial: **D.E.1 → D.E.2 → D.E.3.** D.E.1 lands the target
-representation the whole sub-track stands on; D.E.2 builds the factor base + relations over it;
-D.E.3 writes the descent, wires the k>1 `solve_dl` path, and closes the sub-track with the
-end-to-end KAT. The single `@plan` marker sits on **D.E.3 ◆** — the Opus boundary juncture ratifying
-C-ExtTarget / C-ExtFactorBase / C2-ext against E.C's needs before the sub-track closes. D.E.1,
-though Opus-tier, carries **no** `@plan` (it freezes a compiler-/test-checkable target interface;
-C-ExtTarget is re-ratified at the D.E.3 ◆ alongside the others — an inline juncture would double the
-boundary cost on a 3-row shard).
+**Sequencing notes.** Strictly serial: **E.C.1 → E.C.2.** E.C.1 lands the cross-crate edge and the
+bridge the reduction stands on; E.C.2 writes the reduction and closes the sub-track with the
+end-to-end KAT. The single `@plan` marker sits on **E.C.2 ◆** — the Opus boundary juncture ratifying
+C-MovBridge / C-Mov (the cross-track composition is correct; the climax KAT recovers the right log)
+before the sub-track closes. E.C.1, though Opus-tier, carries **no** `@plan` (it freezes a
+compiler-/test-checkable bridge interface; C-MovBridge is re-ratified at the E.C.2 ◆ alongside C-Mov
+— an inline juncture would double the boundary cost on a 2-row shard).
 
-**Why 3 sessions (top of the roadmap 3-4 band for Track-D sub-tracks).** The split is taken at the
-target-embedding → factor-base → descent seams:
-- **One-line-commit-title corollary.** "k>1 target-embedding substrate", "extension factor base +
-  relation collection", "k>1 descent + solve_dl wiring + e2e KAT" are **three distinct commit
-  titles** spanning two categories (A substrate ×2, B algorithm ×1).
-- **Contract-sharp boundaries (legitimate, not LOC-driven).** D.E.1 **freezes** C-ExtTarget; D.E.2
-  **consumes** it and **freezes** C-ExtFactorBase; D.E.3 **consumes** both and **freezes** C2-ext.
-  Two real produce/consume seams.
-- **Why the target-embedding is its own Opus session (lever 1 + lever 3).** The F_{p^k}-target
-  representation and residue map is the deepest consumed surface (E.C reads pairing outputs through
-  C-ExtTarget into `solve_dl`), and the FpExt→solver-target mismatch is an open design call the
-  substrate survey flagged explicitly — ambient complexity (lever 1, ~3,500 LOC frozen substrate) and
-  cost-of-wrong (lever 3, bounds E.C) are both high.
-- **Irreducible units kept whole (lever 2).** The descent + the `solve_dl` k>1 wiring + the
-  end-to-end KAT is one coherent unit (D.E.3) — the descent has **no standalone KAT-able contract
-  except as the working `solve_dl`** (a descent with no solver deliverable has an undefined contract,
-  same rule that kept Miller+Weil whole in E.B.3). Splitting it fractures an irreducible unit.
+**Why 2 sessions (the ROADMAP's both-Opus estimate).** The split is taken at the bridge → reduction
+seam:
+- **One-line-commit-title corollary.** "MOV bridge substrate (`rho→gnfs` edge + FpExt→solver bridge)"
+  and "MOV reduction + end-to-end KAT" are **two distinct commit titles** spanning two categories
+  (A substrate, I integrative).
+- **Contract-sharp boundary (legitimate, not LOC-driven).** E.C.1 **freezes** C-MovBridge; E.C.2
+  **consumes** it and **freezes** C-Mov. One real produce/consume seam — and the bridge is the design
+  call (the cross-crate edge + the modulus-consistency invariant) that bounds the reduction, so it
+  earns its own session and its own freeze checkpoint.
+- **Why the bridge is its own Opus session (lever 3 + lever 4).** The `FpExt → solver-target` bridge
+  is the first cross-track code edge in the project and carries the silent-wrong-field failure mode
+  (item C). Getting the modulus-consistency guard or the encoding wrong produces a wrong log with no
+  error — cost-of-wrong (lever 3) and correctness-criticality (lever 4) are both maximal.
+- **Irreducible unit kept whole (lever 2).** The reduction + the end-to-end KAT is one coherent unit
+  (E.C.2) — the reduction has **no standalone KAT-able contract except as the working end-to-end MOV
+  recovery** (a reduction with no end-to-end KAT has an undefined contract — the same rule that kept
+  descent+`solve_dl`+KAT whole in D.E.3). Splitting it fractures an irreducible unit.
 
-They are **not** further splittable: separating the k>1 descent from the `solve_dl` wiring splits
-an irreducible unit (per the corollary); merging D.E.2 into D.E.1 risks a >400-LOC two-title Opus
-session against high ambient complexity (lever 1).
+They are **not** further splittable: separating the reduction from its end-to-end KAT splits an
+irreducible unit (per the corollary); merging E.C.2 into E.C.1 would put the cross-crate edge, the
+bridge, the reduction, and the climax KAT in one >400-LOC two-title Opus session with **no
+contract-freeze checkpoint between the bridge design and its consumption** — poor insurance on the
+project's highest-stakes seam.
 
 ---
 
 ## Session detail
 
-D.E.1 is specified at near-full fidelity (the target representation and residue map are the design
-crux, with one open Opus design call flagged). D.E.2–3 are lower-fidelity sketches, correct per the
-substrate-first discipline: they are crisply specified only after C-ExtTarget and C-ExtFactorBase
-freeze.
+E.C.1 is specified at near-full fidelity (the bridge and the modulus-consistency guard are the design
+crux). E.C.2 is a lower-fidelity sketch, correct per the substrate-first discipline: it is crisply
+specified only after C-MovBridge freezes.
 
-### D.E.1 — F_{p^k} target-embedding substrate (Opus, Cat A)
+### E.C.1 — MOV bridge substrate (Opus, Cat A)
 
-**Deliverable:** the representation of a DL target in `F_{p^k}*` for the NFS-DL solver, and the
-residue map between the char-p extension and the NFS-DL number field. **The Opus design call** (the
-reason this session is Opus and bounds E.C): the *solver-target type* the k>1 `solve_dl` path
-consumes. The survey found `solve_dl` takes `h: &BigInt` (prime-field integer); an F_{p^k} target is
-a coefficient vector `[c_0, …, c_{k−1}]` over F_p. The design choices:
-- **The extension-target type** (`ext/target.rs`): the representation of `g, h ∈ F_{p^k}*` the k>1
-  solver path reads. Candidates (the Opus call): (a) a coefficient `Vec<BigInt>` over the prime
-  field; (b) a thin wrapper that the residue map produces from a number-field element; (c) accept
-  E.B's `FpExt` directly (cleanest for E.C, but couples gnfs to rho's type — rejected unless the
-  survey finds a clean way). Decision criteria: what E.C can produce from a pairing output (`FpExt`
-  via `to_uint_vec` → `Vec<Uint<4>>` → `Vec<BigInt>`) and what the descent/smoothing needs to
-  factor an extension target. Recorded as C-ExtTarget; re-ratified at the D.E.3 ◆ against E.C.
-- **The residue map** F_{p^k} ↔ residue field of the degree-k prime ideal in K = ℚ[α]/(f). The map
-  that takes an abstract F_{p^k} element (in coefficient form) to the NFS-DL representation and back
-  — the bridge a pairing output crosses when E.C calls `solve_dl`. Cross-checked against E.B's
-  `FpExt` arithmetic (read-only): the same field, two representations — assert they agree on a sample
-  (a + b, a · b, a^p / Frobenius).
-- **The g, h encoding** for k=2 at the `pairing_toy` parameters (p=47, modulus u²+1).
+**Deliverable:** the `rho → gnfs` crate dependency and the bridge from a pairing output to the
+`solve_dl` target, with the modulus-consistency guard. The design choices:
+- **The cross-crate edge** (`rho/Cargo.toml`): add `gnfs` as a `rho` dependency. `cargo check
+  --workspace` must confirm no dependency cycle (gnfs does not depend on rho — confirmed by survey).
+- **The gnfs-side bridge helper** (per the bridge-location decision: FpExt-shaped *input*, gnfs
+  unaware of rho's type). A function taking a coefficient `Vec<BigInt>` + `p` + the expected modulus
+  (`Vec<BigInt>`) and returning the base-p `BigInt` `solve_dl` consumes — composing the existing
+  `ExtTarget::from_coeffs(coeffs, p, modulus)` + `ext_target_to_bigint(&t)` (both frozen C-ExtTarget,
+  read+compose). **The Opus design call:** where this lives (`target.rs` next to `ExtTarget`, or
+  `solve.rs` next to `solve_dl`) and its exact signature — and crucially the **modulus-consistency
+  assertion** (item C): the helper asserts the supplied modulus equals what the k=2 `solve_dl_ext`
+  path will use (`find_irreducible_degree2(p)`), so a mismatch fails loudly. Decide whether to
+  *assert* coincidence (cheapest, toy-scoped) or *thread* the modulus into `solve_dl_ext` (a larger
+  change to a frozen file — likely deferred to a principle-4 annotation; surface at the ◆ if the
+  assertion feels too fragile).
+- **The rho-side step** (`rho/src/pairing/mov.rs`): the `Uint<4> → BigInt` per-coefficient conversion
+  (toy-only single-limb: `BigInt::from(u.as_words()[0])`, with a `debug_assert` the higher limbs are
+  zero) that turns `FpExt::to_uint_vec() -> Vec<Uint<4>>` into the `Vec<BigInt>` the gnfs helper
+  accepts; and the rho-facing bridge entry that calls the gnfs helper.
 
-Consumes the frozen C2 `solve_dl` signature (read — the target must fit it or extend it
-compatibly), C-Schirokauer (read), `shared::numfield` residue machinery (read), and C-FpExt `FpExt`
-(read — for the residue-map cross-check; **no `rho` dependency added** — the cross-check is
-conceptual, not a code import). **Freezes C-ExtTarget.**
+Consumes the frozen C2-ext `solve_dl` (read — the bridge output must fit its `h: &BigInt` k=2 path),
+C-ExtTarget (`ExtTarget`/`ext_target_to_bigint`, read+compose), C-FpExt (`FpExt`/`to_uint_vec`,
+read), and the pairing's `IrreducibleModulus` (read — its coefficient form is the expected modulus
+the guard checks). **Freezes C-MovBridge.**
 
-**KAT:** residue-map round-trip (an `FpExt`-shaped coefficient vector → extension-target → back is
-identity on a sample); residue-map homomorphism (the map respects +, ×, Frobenius — cross-checked
-against E.B's `FpExt` arithmetic at the `pairing_toy` parameters); the encoding of a k=2 target is
-well-formed. **Verify gate:** `cargo test --workspace` green; **k=1 KATs unchanged.**
+**KAT:** the bridge round-trips a known μ_ℓ element (`FpExt` for, e.g., `(23, 6)` = ζ at the toy
+params → base-p `BigInt` `23 + 6·47` matching the `dl_ext_kat.rs` encoding); the modulus-consistency
+guard fires (a deliberately-wrong modulus is rejected — assert the panic/error); the `Uint<4> →
+BigInt` step is correct on a sample. **Verify gate:** `cargo test --workspace` green; **D.E k=2 KATs
+and E.B pairing KATs unchanged**; `cargo check --workspace` resolves the new edge with no cycle.
 
-**Subtlety (load-bearing):** (1) the number field stays **char-0** — the residue map is the only
-place F_{p^k} (char p) meets the sieve algebra; do not let extension-field arithmetic leak into the
-relation-collection coefficient field (the rigidity guard). (2) **Over-specify** the target type for
-E.C: carry a constructor that accepts the `Vec<BigInt>` coefficient form `FpExt::to_uint_vec` already
-produces, even if D.E's own KATs build targets by other means — E.C produces targets from pairing
-outputs and adding the constructor later is costlier. (3) The degree-k prime ideal's residue field
-must be **exactly F_{p^k}** (the prime must be inert/degree-k over p, not split) — a split prime
-gives a smaller residue field and the lift is vacuous (the E.B minimal-embedding-degree trap
-analogue). Assert the residue degree in the fixture.
+**Subtlety (load-bearing):** (1) **the modulus-consistency invariant is the silent-wrong-field
+defense** — without it, a p where `find_irreducible_degree2` picks a different irreducible than the
+pairing's modulus computes a DL in a *different* F_{p²} and returns a wrong `k` with no error. The
+guard is mandatory, not a nice-to-have. (2) **The `Uint<4> → BigInt` step is toy-only** (assumes
+p < 2^64, single limb) — annotate it as a principle-4 boundary (a crypto-scale p would need the full
+limb vector; the mathematics is unchanged). (3) **gnfs must not gain a rho dependency** — the helper
+takes a `Vec<BigInt>`, not an `FpExt`; the edge is strictly one-directional (`rho → gnfs`). (4) The
+base-p encoding convention is **gnfs's** (`ext_target_to_bigint`) — do **not** re-derive it in rho;
+the rho side produces only the coefficient `Vec<BigInt>` and lets gnfs encode (the rigidity guard).
 
-**Deferred:** the extension factor base + relation collection (D.E.2); the k>1 descent + `solve_dl`
-wiring (D.E.3); crypto-scale F_{p^{12}} NFS-DL (principle-4 annotation, not a work item).
+**Deferred:** the reduction + end-to-end KAT (E.C.2); threading the modulus through `solve_dl_ext`
+(principle-4 annotation unless the ◆ finds the assertion too fragile); the NFS-pipeline k=2 path
+(principle-4, item B); composite-order lift beyond `k mod ℓ` (principle-4).
 
-### D.E.2 — Extension factor base + relation collection over the degree-k prime (Sonnet, Cat A)
+### E.C.2 ◆ — MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT (Opus, Cat I, `@plan`)
 
-**Deliverable:** the factor base and relation collection adapted to the extension target.
-- **Extension factor base** (`ext/factorbase.rs`): the factor base augmented with the degree-k prime
-  ideal (and its residue structure) so relations can be collected against an F_{p^k} target. Composes
-  the frozen `FactorBase` (read) and C-ExtTarget.
-- **Extension relation collection** (`ext/relation.rs`): adapt `augment_relation` /
-  `init_descent_frontier` smoothing to an extension target — the Schirokauer ideals over ℓ in the
-  extension setting (C-Schirokauer's r>1, already carried), the smoothing of `g^e · h` where h is an
-  extension target expressed via the C-ExtTarget residue map.
+**Deliverable:** the MOV reduction proper, the end-to-end KAT, and the sub-track close.
+- **The reduction entry** (`rho/src/pairing/mov.rs`, `mov_reduce`-shaped): given the ECDLP
+  `(curve, G, Q, R, ell)` (R a μ_ℓ-generator with `e(G,R) ≠ 1`), compute `g = e(G,R)` and
+  `h = e(Q,R)` via `reduced_tate` (or `weil_pairing`) → `FpExt<F>`; bridge both to base-p `BigInt`
+  via C-MovBridge; call `gnfs::solve_dl(g, h, p, 2, ell)`; return the recovered `log_g(h) = k mod ℓ`.
+  The exact signature (what curve/point types, whether R is caller-supplied or discovered) ratified
+  here.
+- **End-to-end MOV KAT** (`rho/tests/mov_kat.rs`): use `pairing_toy()` (p=47, k=2, ℓ=3, modulus
+  u²+1; P, Q the fixture points); construct an ECDLP with a *known* scalar `k` (`Q' = k·G` for a
+  chosen `k ∈ {1, 2}` in the ℓ=3 subgroup); run `mov_reduce`; assert the recovered scalar equals `k`;
+  verify the pairing identity `e(Q', R) = e(G, R)^k` in F_{47²}*. **Optional PARI `znlog`/`fflog`
+  `#[ignore]` cross-check** (the established dev-only oracle pattern).
 
-Consumes C-ExtTarget (frozen D.E.1), C-Schirokauer (r>1, frozen read), C-LinAlgFl (index-agnostic,
-frozen read), `FactorBase` (frozen read). **Freezes C-ExtFactorBase.**
+Consumes C-MovBridge (frozen E.C.1), C-Pairing (`weil_pairing`/`reduced_tate`, frozen read),
+C-PairingCurve (`pairing_toy`/`PairingPoint`, frozen read), the E.A ECDLP substrate (frozen read),
+and C2-ext `solve_dl` (frozen read). **Freezes C-Mov** (the MOV-reduction entry).
 
-**KAT:** the extension factor base contains the degree-k prime with the right residue degree; a
-hand-built extension relation augments correctly (Schirokauer columns over ℓ, exercising r>1); the
-F_ℓ matrix assembles via the unchanged index-agnostic `build_fl_matrix`. **Verify gate:** green;
-k=1 KATs unchanged.
+**KAT (primary correctness signal):** **end-to-end** — `mov_reduce` on the `pairing_toy` fixture
+recovers the known scalar `k mod ℓ`; the pairing identity `e(Q,R) = e(G,R)^k` holds in F_{47²}*; the
+**D.E k=2 KATs and E.B pairing KATs stay green** (the no-regression gate on both composed
+substrates). Optional PARI cross-check. **Verify gate:** `cargo test --workspace` green.
 
-**Subtlety (load-bearing):** the F_ℓ linalg is **already extension-ready** (index-keyed) — D.E.2
-must **not** re-implement it; reuse `build_fl_matrix` / `block_lanczos_fl` / `recover_virtual_logs`
-unchanged. The Schirokauer map was over-specified for r>1 at D.A.1 — confirm the extension setting
-exercises r>1 and that the existing map handles it cleanly; if it does not, that is an
-**additive-reshard** (surfaced at the D.E.3 ◆), not a silent patch.
+**Subtlety (load-bearing):** (1) **the argument order to the pairing matters** — the survey found
+non-degenerate Tate at the toy fixture is `reduced_tate(Q, P, ell)` (Q first); the reduction must use
+the order that gives a non-trivial `e(G,R)`, or `g = 1` and the DL is undefined. Pick R (the second
+pairing argument) so `e(G,R)` generates μ_ℓ; assert `g ≠ 1` before calling `solve_dl`. (2) **The
+recovered log is `k mod ℓ`, not the full ECDLP scalar** — at the toy fixture the relevant subgroup is
+order ℓ=3, so `k mod 3` *is* the answer in that subgroup; a full composite-order recovery (Pohlig–
+Hellman lift over all subgroups) is a principle-4 annotation, not wired. State this in the KAT so the
+"answer" is unambiguous. (3) **This is the E.C ◆ boundary** — re-read the Purpose intent and verify
+the MOV reduction is coherent (curve → pairing → bridge → real solver → correct log) and that the
+cross-track composition is genuinely the climax it claims (a *real* NFS-DL solver, not a stub) before
+crossing.
 
-**Deferred:** the k>1 descent + `solve_dl` wiring + end-to-end KAT (D.E.3).
-
-### D.E.3 ◆ — k>1 individual-log descent + solve_dl k>1 wiring + end-to-end k=2 KAT (Sonnet, Cat B, `@plan`)
-
-**Deliverable:** the individual-log descent for an extension target, the k>1 `solve_dl` wiring, the
-end-to-end k=2 KAT, and the sub-track close.
-- **k>1 descent** (`ext/descent.rs`): the individual-log descent (special-q, composing the frozen
-  C-Descent node/frontier types) adapted to an extension target — descend the extension target's
-  factorization to factor-base leaves with known virtual logs from the C-ExtFactorBase setup.
-- **`solve_dl` k>1 wiring** (`descent/solve.rs`): **remove the `if k != 1 { return Unsupported }`
-  early-return** in `solve_dl` (line 436) and `solve_dl_full` (line 517); thread the k>1 path (D.E.1
-  target + D.E.2 factor base + this descent) through the **frozen C2 signature**. The `Unsupported`
-  variant **stays** (now returned only for k beyond the toy ceiling, e.g. k>2 if the substrate is
-  k=2-scoped) — the taxonomy is unchanged. *(This is the only edit to a frozen file in this
-  sub-track; the C2 signature and error variants are not touched.)*
-- **End-to-end k=2 KAT** (`tests/dl_ext_kat.rs`): construct a k=2 instance at the `pairing_toy`
-  parameters (p=47, k=2, ℓ=3, modulus u²+1) **independently in gnfs** — a hand-built F_{47²} DL
-  target, *not* the rho fixture (the cross-crate seam: rho→gnfs dependency is E.C's, not D.E's);
-  call `solve_dl(g, h, p, k=2, ell)`; assert the recovered `x` satisfies `g^x = h` in F_{47²}*.
-  **PARI `znlog`/`fflog` `#[ignore]` cross-check** (the established dev-only oracle pattern,
-  matching `gnfs/tests/dl_descent_kat.rs`).
-
-Consumes C-ExtTarget + C-ExtFactorBase (frozen D.E.1/2), C-Descent (frozen read), the C2 signature
-(frozen). **Freezes C2-ext** (the k>1 `solve_dl` contract E.C consumes).
-
-**KAT (primary correctness signal):** **end-to-end** `solve_dl(g, h, 47, 2, 3)` returns `x` with
-`g^x = h` in F_{47²}* for several (g, h) pairs; the k>1 path no longer returns `Unsupported` for
-k=2; **all k=1 KATs stay green** (`gnfs/tests/dl_descent_kat.rs` — the no-regression gate). Optional
-PARI cross-check. **Verify gate:** `cargo test --workspace` green.
-
-**Subtlety (load-bearing):** (1) the descent is the subtle step — a wrong residue embedding or a
-descent that loses a virtual log gives a `solve_dl` that returns a *wrong* x silently (hence the
-end-to-end `g^x = h` round-trip is the KAT, not a spot value). (2) **The k=1 path must be untouched
-in behaviour** — the wiring threads k>1 *alongside* k=1, it does not refactor the k=1 logic; the k=1
-KATs green is a hard gate, not a nice-to-have. (3) This is the **D.E ◆ boundary** — re-read the
-Purpose intent and verify the k>1 NFS-DL solver (target embedding, extension factor base, descent) is
-coherent and that **C2-ext is genuinely E.C-ready** (the MOV bridge can hand a pairing output to
-`solve_dl` at k=2 and get the right log) before crossing.
-
-**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the D.E.3 ◆
-to confirm: (1) C-ExtTarget / C-ExtFactorBase / C2-ext are the right inputs for **E.C** (the MOV
-bridge: does the extension-target representation accept what E.C produces from a pairing output —
-`FpExt::to_uint_vec` → coefficient `Vec<BigInt>` → C-ExtTarget — and does `solve_dl` at k=2 return
-the log E.C needs?); (2) the k=1 path is behaviourally unchanged (no-regression); (3) the descent +
-end-to-end KAT recover correct logs with the round-trip KAT exercising `g^x = h`; (4) the frozen C2
-signature and `SolveDlError` taxonomy are **unchanged** (the k>1 path lives behind them); (5) the
-number field stayed char-0 (rigidity guard — `FpExt` did not leak into the sieve algebra). One-shot
-findings; does not implement. Held at **Opus** per the header (lever-3 binding constraint — the
-E.C-bounding freeze).
+**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.C.2 ◆
+to confirm: (1) the MOV reduction composes the three substrates correctly (the end-to-end
+`e(Q,R) = e(G,R)^k` round-trip recovers the right `k mod ℓ`); (2) C-MovBridge's modulus-consistency
+guard (item C) is in place and the bridge is the right interface (gnfs stays rho-unaware; the edge is
+one-directional); (3) `solve_dl` is called as a **real** solver (the ROADMAP's anti-stub constraint
+satisfied — no permanent PARI stub); (4) no frozen contract was amended (C2-ext, C-ExtTarget, the
+pairing contracts, the E.A ECDLP substrate are all read-only); (5) the principle-4 boundaries
+(brute-force k=2, `k mod ℓ` not full composite lift, toy-only `Uint<4>→BigInt`) are annotated, not
+silently presented as crypto-scale. One-shot findings; does not implement. Held at **Opus** per the
+header (lever 3 + lever 4 + the ROADMAP both-Opus flag — the cross-track climax).
 
 ---
 
 ## Cross-session contracts
 
-D.E **freezes three** contracts. Per the substrate-over-specify rule, C-ExtTarget carries the
-`FpExt`-aligned constructor E.C will consume even where D.E's own KATs build targets directly. The
-frozen k=1 C2 signature and `SolveDlError` taxonomy are **read** (the k>1 path fills in behind them),
-not amended.
+E.C **freezes two** contracts. Per the substrate-over-specify rule, C-MovBridge carries the
+modulus-consistency guard now (item C) even though the toy fixture would "work" without it. All
+composed substrates (C2-ext, C-ExtTarget, the pairing contracts, the E.A ECDLP substrate) are
+**read**, not amended.
 
-### C-ExtTarget — F_{p^k} solver-target representation + residue map (compiler- + test-enforced) — *to be frozen at D.E.1*
+### C-MovBridge — `FpExt → solve_dl`-target bridge + modulus-consistency guard (compiler- + test-enforced) — *to be frozen at E.C.1*
 
-**Defined in:** D.E.1 (`gnfs/src/dl/ext/target.rs`). **Consumed by:** D.E.2 (factor base reads the
-target structure), D.E.3 (the solver path), and **E.C** (the MOV bridge produces a pairing output and
-encodes it as a C-ExtTarget for `solve_dl`). Compiler-enforced (the target type + residue-map
-signatures) + test-enforced (round-trip + homomorphism). Exposes the extension-target type, the
-residue map F_{p^k} ↔ degree-k residue field, and (over-specify) a constructor that accepts the
-coefficient-`Vec<BigInt>` form `FpExt::to_uint_vec` already produces. *Exact type name and target
-representation (coeff `Vec<BigInt>` vs wrapper vs other) ratified at D.E.1 and re-ratified at the
-D.E.3 ◆ against E.C.* *Over-specify note:* the `Vec<BigInt>`-accepting constructor is carried now
-though D.E's own KATs may build targets by other means — E.C needs it centrally.
+**Defined in:** E.C.1 (gnfs-side helper in `gnfs/src/dl/ext/target.rs` *or* `descent/solve.rs`;
+rho-side step in `rho/src/pairing/mov.rs`). **Consumed by:** E.C.2 (the reduction encodes pairing
+outputs through it). Compiler-enforced (the helper signatures) + test-enforced (round-trip +
+guard-fires). Exposes: the gnfs-side coefficient-`Vec<BigInt>` + `p` + modulus → base-p `BigInt`
+helper (composing `ExtTarget::from_coeffs` + `ext_target_to_bigint` + the modulus-consistency
+assertion against `find_irreducible_degree2(p)`); the rho-side `Uint<4> → BigInt` step + bridge
+entry. *Exact helper location and signature ratified at E.C.1 and re-ratified at the E.C.2 ◆.*
+**The `rho → gnfs` edge is one-directional** (gnfs takes a `Vec<BigInt>`, never an `FpExt`). **The
+base-p encoding convention is gnfs's** (not re-derived in rho). **The modulus-consistency guard is
+mandatory** (the silent-wrong-field defense).
 
-### C-ExtFactorBase — extension factor base + relation collection (test-enforced) — *to be frozen at D.E.2*
+### C-Mov — MOV/Frey–Rück reduction entry (compiler- + test-enforced) — *to be frozen at E.C.2 ◆*
 
-**Defined in:** D.E.2 (`gnfs/src/dl/ext/{factorbase,relation}.rs`). **Consumed by:** D.E.3 (the
-descent + solver) and **E.C** (indirectly, via `solve_dl`). Test-enforced: the factor base carries
-the degree-k prime with the right residue degree; extension relations augment with r-coordinate
-Schirokauer columns; the F_ℓ matrix assembles via the unchanged index-agnostic `build_fl_matrix`.
-Exposes the extension factor base constructor and the extension relation-collection entry. *Exact
-names ratified at D.E.2.* **The degree-k prime's residue field is exactly F_{p^k}** (inert/degree-k,
-not split).
+**Defined in:** E.C.2 (`rho/src/pairing/mov.rs`, `mov_reduce`-shaped). **Consumed by:** E.C's own
+end-to-end KAT now; **E.W / T.E** (the Track-E writeup + MOV textbook chapter, the named downstream
+documentation consumer at the Track-E ◆); any later attack-comparison harness (E.W's "which attack
+wins" table). Compiler- + test-enforced. Exposes the reduction entry: ECDLP `(curve, G, Q, R, ell)`
+→ `k mod ℓ` via pairing + C-MovBridge + `gnfs::solve_dl`. *Exact signature (point types, whether R is
+caller-supplied) ratified at the E.C.2 ◆.* **The reduction recovers `k mod ℓ`** (the subgroup log);
+full composite-order lift is a principle-4 annotation. **`solve_dl` is called as a real solver** (the
+ROADMAP anti-stub constraint).
 
-### C2-ext — k>1 `solve_dl` (compiler- + test-enforced) — *to be frozen at D.E.3 ◆*
+### Frozen contracts read by E.C (composed, not amended)
 
-**Defined in:** D.E.3 (`gnfs/src/dl/descent/solve.rs` — edit; descent in `ext/descent.rs` — new).
-**Consumed by:** D.E's own end-to-end KAT now; **E.C** (the MOV/Frey–Rück reduction — the named,
-climactic consumer). Compiler- + test-enforced. **The C2 signature is unchanged** —
-`solve_dl(g, h, p, k, ell) -> Result<BigInt, SolveDlError>`; what changes is that **k=2 now returns
-a real `Ok(x)`** instead of `Unsupported`. The exact parameter shape (whether k>1 uses the existing
-`g, h: &BigInt` with an agreed encoding, or `solve_dl` gains a separate extension overload) is
-ratified at the D.E.1 design call and finalized here. *Frozen at the ◆ juncture (signature/target
-ratified against the E.C MOV-bridge fit before crossing — the lever-3 reason the juncture is Opus).*
-**The `SolveDlError` taxonomy is unchanged (frozen D.C.3); `Unsupported` now fires only for k beyond
-the toy ceiling.**
-
-### Frozen contracts read by D.E (composed, not amended)
-
-D.E composes these; none is touched.
-- **C2 `solve_dl` signature + `SolveDlError` taxonomy** (`gnfs/src/dl/descent/solve.rs`, frozen
-  D.C.3) — the k>1 path fills in behind the frozen signature; the early-return is removed but the
-  signature and error variants are unchanged.
-- **C-Schirokauer** (`gnfs/src/dl/schirokauer.rs`, frozen D.A.1) — the r>1 multi-coordinate shape,
-  over-specified at D.A.1 for exactly this consumer; read, not amended.
-- **C-LinAlgFl** (`gnfs/src/dl/linalg/`, frozen D.B.1/2) — `build_fl_matrix` / `block_lanczos_fl` /
-  `recover_virtual_logs`, index-keyed and already extension-ready; reused unchanged.
-- **C-Descent** (`gnfs/src/dl/descent/`, frozen D.C.1) — the node/frontier types; the k>1 descent
-  composes them.
-- **C-FpExt** (`rho/src/pairing/fpext.rs`, frozen E.B.1) — read at D.E.1 *conceptually only* for the
-  residue-map cross-check (same field, two representations). D.E adds **no `rho` dependency**; the
-  cross-check is a test-time arithmetic check using the same parameters (p=47, k=2, u²+1), not a code
-  import. The rho→gnfs dependency is E.C's.
-- **`shared::numfield`** `NumberField` / residue machinery — the char-0 number field stays the sieve
-  algebra; D.E reads its residue structure for the degree-k prime.
+E.C composes these; none is touched.
+- **C2-ext `solve_dl`** (`gnfs/src/dl/descent/solve.rs`, frozen D.E.3) — the k>1 path; E.C calls
+  `solve_dl(g, h, p, 2, ell)` and reads the returned `k mod ℓ`. The signature and `SolveDlError`
+  taxonomy are unchanged. *(If E.C finds it must thread the modulus into `solve_dl_ext` — item C —
+  that is an edit to a frozen file and an **additive-reshard** surfaced at the ◆, not a silent
+  patch; the default is the bridge-side assertion, no `solve.rs` edit.)*
+- **C-ExtTarget** (`gnfs/src/dl/ext/target.rs` + `descent.rs`, frozen D.E.1) — `ExtTarget::from_coeffs`
+  (over-specified for E.C) and `ext_target_to_bigint`; composed by the gnfs-side bridge helper.
+- **C-FpExt** (`rho/src/pairing/fpext.rs`, frozen E.B.1) — `FpExt` + `to_uint_vec() -> Vec<Uint<4>>`;
+  read for the pairing output and its coefficient bridge.
+- **C-Pairing** (`rho/src/pairing/{weil,tate,miller}.rs`, frozen E.B) — `weil_pairing` /
+  `reduced_tate` → `FpExt<F>` ∈ μ_ℓ; the reduction's pairing step. The `IrreducibleModulus` carried
+  here is the expected modulus the guard checks.
+- **C-PairingCurve** (`rho/src/pairing/{ecext,test_curves}.rs`, frozen E.B) — `pairing_toy()`,
+  `PairingPoint<F>`, the toy parameters (p=47, k=2, ℓ=3, u²+1); the KAT fixture.
+- **E.A ECDLP substrate** (`rho/src/ecdlp/`, frozen E.A) — `Curve`, `AffinePoint`, the ECDLP problem
+  shape; read for the reduction's input (the curve and points the MOV transports).
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The D.E.3 ◆ `@plan` confirmation is not a separate
+"Froze" names contracts this session locked. The E.C.2 ◆ `@plan` confirmation is not a separate
 ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
 Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| D.E.1 | `F_{p^k}` target-embedding substrate | done | 0d02b77 | C-ExtTarget (frozen) |
-| D.E.2 | Extension factor base + relation collection | done | 1a21a32 | C-ExtFactorBase (frozen) |
-| D.E.3 ◆ | k>1 descent + solve_dl wiring + end-to-end k=2 KAT | done | a804a7b | C2-ext (frozen) |
+| E.C.1 | MOV bridge substrate (`rho→gnfs` edge + `FpExt→solve_dl` bridge + modulus guard) | pending | — | C-MovBridge |
+| E.C.2 ◆ | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | pending | — | C-Mov |
 
-Contracts frozen before this sub-track (read by D.E): all Track-D NFS-DL contracts (C2,
-C-Schirokauer, C-LinAlgFl, C-Descent — existing, frozen D.A–D.C); E.B's C-FpExt / C-PairingCurve /
-C-Pairing (Track-E, read only conceptually for the residue-map cross-check). This sub-track
-**freezes three new contracts** (C-ExtTarget, C-ExtFactorBase, C2-ext), all forward-looking toward
-**E.C** (the MOV bridge).
+Contracts frozen before this sub-track (read by E.C): all Track-D NFS-DL contracts including
+**C2-ext** (frozen D.E.3) and **C-ExtTarget** (frozen D.E.1); the E.B pairing contracts (**C-FpExt /
+C-PairingCurve / C-Pairing**, frozen E.B); the E.A ECDLP substrate (frozen E.A). This sub-track
+**freezes two new contracts** (C-MovBridge, C-Mov), both serving the cross-track climax and
+forward-looking toward **E.W / T.E** (the Track-E writeup + MOV textbook chapter).
 
 ---
 
 ## Action-frame digest
 
-### D.E.3 ◆ — 2026-06-10
-Discovery/flex: D.E.3 ◆ boundary juncture returned still-on-intent on all five confirmation points. C-ExtTarget / C-ExtFactorBase / C2-ext are frozen and E.C-ready. Three flagged recommendations for E.C's inflection juncture: (A) no single helper composes FpExt::to_uint_vec-coeffs into the base-p BigInt solve_dl consumes — E.C must write a ~3-line compose or a thin helper is owed; (B) the k=2 solve_dl_ext is a brute-force placeholder over the ℓ=3 subgroup, not the D.E.2 NFS-DL pipeline — C-ExtFactorBase is proven in isolation by its own KATs but not exercised by the live k=2 solve path (on-intent per principle-4 toy scoping); (C) find_irreducible_degree2 re-derives the modulus inside solve_dl_ext independently of ExtResidueMap.modulus — for the toy params they coincide; E.C's wiring must ensure they coincide by construction.
-Affected: C2-ext (frozen), C-ExtTarget (frozen), C-ExtFactorBase (frozen)
-Deferred: yes — E.C inflection juncture should re-examine: (A) the FpExt→base-p-BigInt bridge helper; (B) whether E.C needs the NFS pipeline or brute-force suffices at k=2; (C) the modulus-consistency invariant between ExtResidueMap and solve_dl_ext.
-Texture: D.E ◆ boundary crossed. The k>1 NFS-DL solver ships and is proven correct at k=2 on the pairing_toy fixture. The sub-track is complete; E.C's hard predecessor exists.
+*(none yet)*
 
 ---
 
@@ -417,106 +386,120 @@ Texture: D.E ◆ boundary crossed. The k>1 NFS-DL solver ships and is proven cor
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **The k=1 NFS-DL pipeline mostly transfers — D.E is a bounded lift, not a rewrite (substrate
-  finding, confirmed by survey).** The F_ℓ linalg is index-agnostic; Schirokauer carries r>1; the
-  DLRelation wrapper composes. Writing the lift is **internal-continue**. A discovery that the
-  Schirokauer map does *not* handle the extension r>1 setting cleanly is an **additive-reshard**
-  surfaced at the D.E.3 ◆.
+- **E.C is a compose over frozen pieces — the bridge is the only new design surface (substrate
+  finding, confirmed by survey).** The pairing and the solver both exist and are KAT-proven; E.C
+  wires them. Writing the bridge + reduction is **internal-continue**. A discovery that the
+  pairing output cannot be faithfully encoded for `solve_dl` (e.g. the coefficient form loses
+  information) is an **additive-reshard** surfaced at the E.C.2 ◆.
 
-- **The C2 signature and `SolveDlError` taxonomy are FROZEN — the k>1 path fills in behind them
-  (contract guard).** A `@build` agent that **adds a fourth `SolveDlError` variant** or **changes
-  the `solve_dl` signature** is a **destructive-HALT** — the taxonomy is frozen (D.C.3, "no further
-  variants will be added"), consumed by E.C. The k>1 path uses the existing three variants and the
-  existing signature; the only edit to `solve.rs` is removing the `Unsupported` early-return for k=2
-  and threading the real path. Surface any felt need to change the surface as a juncture discovery.
+- **The modulus-consistency invariant must hold by construction, not coincidence (item C —
+  correctness guard).** `find_irreducible_degree2` (inside `solve_dl_ext`) re-derives the modulus
+  independently of the pairing's `IrreducibleModulus`; they coincide for p=47 by luck (`u²+1` tried
+  first). A bridge that **omits the consistency assertion** is **internal-continue → corrected** (add
+  the guard). A discovery that the toy params *do not* coincide (they do) would be an
+  **additive-reshard** (thread the modulus into `solve_dl_ext`). The silent failure mode — wrong
+  field, wrong log, no error — is why the guard is mandatory.
 
-- **The number field stays char-0 — `FpExt` is the target representation, not the sieve algebra
-  (rigidity guard).** Reaching for E.B's char-p `FpExt` as the relation-collection coefficient field
-  is **internal-continue → corrected** (the sieve algebra is char-0 ℚ[α]/(f); `FpExt` meets it only
-  at the residue map in D.E.1). Do not let `FpExt` or extension-field arithmetic leak into the factor
-  base / relation algebra.
+- **`solve_dl_ext` is brute-force at k=2 — E.C must NOT wire the NFS pipeline (item B / defocus
+  guard).** A `@build` agent that "improves" the k=2 path by wiring the D.E.2 `ExtFactorBase`
+  pipeline into the live `solve_dl` call is **defocus** — internal-continue only within the compose
+  scope. The brute-force k=2 path is on-intent (principle 4); the NFS pipeline is the crypto-scale
+  annotation. Touching `solve_dl_ext`'s algorithm is out of E.C's scope.
 
-- **The k=1 path must stay behaviourally unchanged — no-regression invariant (hard gate).** A wiring
-  that refactors the k=1 logic (rather than threading k>1 alongside) risks breaking the frozen k=1
-  KATs. A k=1 regression is a **destructive-HALT**: stop, do not proceed to D.E.3 ◆, surface it.
+- **The `rho → gnfs` edge is one-directional — a `gnfs → rho` coupling is a destructive-HALT
+  (architecture guard).** gnfs must stay unaware of rho's `FpExt` (the bridge helper takes a
+  `Vec<BigInt>`). A `@build` agent that adds a `rho` dependency to `gnfs/Cargo.toml`, or imports
+  `FpExt` into gnfs, creates a dependency cycle and inverts the track layering — **destructive-HALT**:
+  stop, surface it. `cargo check --workspace` failing to resolve (a cycle) is the loud signal.
 
-- **The degree-k prime's residue field must be exactly F_{p^k} — minimality trap.** If the prime
-  splits (residue field smaller than F_{p^k}) the lift is vacuous (the E.B minimal-embedding-degree
-  trap analogue). A non-degree-k prime is **internal-continue** (fix the prime choice in D.E.1), not
-  a contract break. D.E.1 must assert the residue degree in the fixture.
+- **No frozen contract is amended — the C2 signature, `SolveDlError`, and the pairing contracts are
+  read-only (contract guard).** A `@build` agent that changes the `solve_dl` signature, adds a
+  `SolveDlError` variant, or alters a pairing function's signature is a **destructive-HALT** (those
+  are frozen, consumed by their own KATs and downstream). The default E.C touches **no** frozen file
+  (the bridge composes existing helpers; the modulus guard is bridge-side). The one *possible* frozen
+  edit — threading the modulus into `solve_dl_ext` — is an **additive-reshard** decision at the ◆,
+  never a silent patch.
 
-- **C2-ext is a forward-looking contract bounding E.C (over-specify discipline).** The
-  extension-target representation is frozen with the MOV bridge (E.C) in mind — E.C produces targets
-  from pairing outputs (`FpExt::to_uint_vec`). If D.E.3 finds the surface underserves E.C,
-  **widening** it at the ◆ is additive; a consumer-driven *change* after freeze is an
-  **additive-reshard** at the E.C inflection. This is the lever-3 reason the ◆ juncture is Opus.
+- **The end-to-end KAT must recover a KNOWN scalar and verify `e(Q,R)=e(G,R)^k` — not a spot value
+  (correctness discipline).** A wrong bridge or reduction can return a plausible-but-wrong `k`; only
+  the round-trip pairing identity catches it. The KAT constructs `Q = k·G` for a chosen `k` and
+  asserts both `mov_reduce` recovers `k mod ℓ` *and* the pairing identity holds. A KAT that only
+  spot-checks a single DL value has an under-specified contract — flag it.
 
-- **D.E is the NFS-DL *extension*, not the MOV attack — it must not presume E.C (defocus guard).**
-  No pairing call, no curve, no MOV reduction belongs in D.E. The end-to-end KAT builds its F_{47²}
-  target **independently in gnfs** (not via the rho pairing fixture — the rho→gnfs dependency is
-  E.C's). Writing toward the MOV bridge here is **defocus** — internal-continue only within the
-  k>1-NFS-DL scope.
+- **The recovered log is `k mod ℓ`, not the full ECDLP scalar (scope clarity).** At the toy fixture
+  the relevant subgroup is order ℓ=3; `k mod 3` is the answer *in that subgroup*. A full
+  composite-order Pohlig–Hellman lift is a principle-4 annotation. Presenting `k mod ℓ` as "the full
+  ECDLP scalar" without the subgroup qualifier is a documentation defect, not a contract break —
+  internal-continue → corrected.
 
-- **ROADMAP insertion owed: D.E is a new Track-D sub-track not yet in the roadmap (static-frame
-  debt — capture candidate).** The roadmap's E.C entry (line 300) assumes the k>1 solver folded into
-  E.C; the D.W closeout deferred it to "an E.C-prep ROADMAP-then-shard session." This shard
-  formalises it as **D.E**. A one-line ROADMAP insertion (inserting D.E between Track D and E.C, and
-  reconciling the stale Progress table that shows D/E "not started") is an **inflection-point Opus
-  action** owed at the D.E ◆ boundary — not by a D.E `@build` session.
+- **ROADMAP insertion owed: the E.A/E.B/D.E closeouts and the E.C predecessor state are not in the
+  roadmap Discoveries log (static-frame debt — capture candidate).** The roadmap's Progress table
+  still shows Track D and Track E "not started / 0 done" (reconciled at the T.G ◆, *before* D and
+  E.A/E.B/D.E landed), and the roadmap Discoveries log has no E.A / E.B / D.E closeout entry — those
+  live only in the prior PLAN ledgers and the D.E.3 digest. The roadmap's E.C entry (line ~298)
+  predates D.E and assumes the k>1 solver folds into E.C; D.E formalised it as a Track-D extension.
+  A ROADMAP reconciliation (E.A/E.B/D.E closeout entries + Progress-table update + the modulus-
+  consistency invariant as a durable cross-track note) is an **inflection-point Opus action** owed at
+  the E.C ◆ boundary — not by an E.C `@build` session.
 
-- **No oracle dependency for correctness (principle-3 / D.B-consistent).** The end-to-end `g^x = h`
-  round-trip self-checks; a PARI `znlog`/`fflog` cross-check is an **optional `#[ignore]` sidecar**
-  (the established pattern — no `oracle-tests` feature, `#[ignore]` gate only). D.E introduces no
-  new live oracle.
+- **No oracle dependency for correctness (principle-3 / D.E-consistent).** The end-to-end
+  `e(Q,R) = e(G,R)^k` round-trip self-checks; a PARI `znlog`/`fflog` cross-check is an **optional
+  `#[ignore]` sidecar** (the established pattern — `#[ignore]` gate only). E.C introduces no new live
+  oracle.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase γ — Contract C2 `solve_dl`, and the D.W closeout Discoveries entry
-  deferring the F_{p^k} extension to "an E.C-prep ROADMAP-then-shard session"; Phase δ — E.C, the
-  MOV bridge that consumes C2-ext) and this PLAN before any session.
-- **Note (non-blocking): the ROADMAP Progress table is stale** — it shows Track D and Track E "not
-  started / 0 done" (reconciled at the T.G ◆ boundary, *before* Track D and E.A/E.B landed). Track
-  D is complete (D.A→D.W, `8c92260`…`541be29`); E.A and E.B are done (E.A: `054df65` + `51fd477`;
-  E.B: `74b2ff3`…`6c082bb`). The Discoveries log and the prior PLAN ledgers are authoritative. The
-  roadmap is rewritten only at sub-track boundaries; the D.E insertion + progress reconciliation is
-  an inflection-point Opus action at the D.E ◆, not by D.E `@build`.
-- Read the **templates to mirror**: `gnfs/src/dl/relation.rs` (the `augment_relation` /
-  `collect_dl_relations` idiom D.E.2 parallels); `gnfs/src/dl/descent/solve.rs` (the `solve_dl` /
-  `solve_dl_full` structure D.E.3 threads the k>1 path through — the early-returns at lines 436 and
-  517 are the edit sites); `gnfs/src/dl/schirokauer.rs` (the r>1-carrying map); `gnfs/tests/
-  dl_descent_kat.rs` (the KAT idiom — esp. KAT (h) end-to-end shape, the template for the D.E.3
-  end-to-end k=2 KAT); `rho/src/pairing/fpext.rs` (`FpExt` + `to_uint_vec`, read conceptually at
-  D.E.1 for the residue-map cross-check only — no rho dependency added by D.E).
-- **Register:** D.E is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New module tree `gnfs/src/dl/ext/{mod,target,factorbase,relation,descent}.rs`.
-  KATs in `gnfs/tests/dl_ext_kat.rs`. One edit to an existing frozen file: `gnfs/src/dl/descent/
-  solve.rs` (remove the k>1 `Unsupported` early-return, thread the k>1 path — signature unchanged).
-- **Tier routing:** **D.E.1 is Opus** (`@build` on Opus) — the target-embedding substrate that
-  bounds E.C. **D.E.2–3 are Sonnet** (mechanical against the frozen target/factor-base
-  representation). D.E.3 carries the single `@plan` marker: a ◆-boundary juncture (page
-  `@plan-juncture`) ratifying C-ExtTarget / C-ExtFactorBase / C2-ext against E.C before the
-  sub-track closes. juncture-tier (header) is **opus** — held by lever 3 (the E.C-bounding freeze),
-  the binding constraint; the strong lever-5 end-to-end round-trip KAT would license an opt-down in
-  isolation but does not override lever 3.
-- **Invariants to preserve:** **the frozen C2 signature + `SolveDlError` taxonomy are unchanged** —
-  D.E fills in the k>1 path behind them (the only `solve.rs` edit is removing the two early-returns).
-  **The k=1 path is behaviourally unchanged** (no-regression; k=1 KATs green is a hard gate). **The
-  number field stays char-0** — `FpExt` is the target representation, not the sieve algebra (rigidity
-  guard). The F_ℓ linalg is reused unchanged (index-agnostic). The extension is **toy k=2-scoped**;
-  crypto-scale F_{p^{12}} NFS-DL is a documented principle-4 boundary, not wired. No new live oracle
-  (round-trip self-checks).
-- **PARI remains a dev-only `#[ignore]` oracle** (Discoveries-log policy) — a k>1 DL cross-check
-  (`znlog`/`fflog`) follows the established `#[test] #[ignore = "PARI not installed…"]` pattern; it
-  is optional, never on the green path.
-- **The cross-crate seam (load-bearing for D.E.3).** `solve_dl` lives in `gnfs`; the `pairing_toy`
-  fixture lives in `rho`. `rho` will depend on `gnfs` **at E.C, not D.E** — D.E adds no rho
-  dependency. D.E.3's end-to-end KAT therefore builds its F_{47²} target **independently in gnfs**
-  (hand-built, matching p=47/k=2/ℓ=3/u²+1). The full pairing-output → `solve_dl` round-trip KAT is
-  **E.C's in rho**, not D.E's.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — D.E is the
-  highest-stakes interface remaining before the cross-track climax; the conservative halt-at-◆
-  cadence is warranted. The single ◆/`@plan` on D.E.3 is the one that matters (the Opus C2-ext
-  ratification + E.C-readiness check). *(Tradeoff vs default cadence: one extra halt-confirm on a
-  3-session sub-track is cheap insurance on an E.C-bounding shard.)*
+- Read `docs/ROADMAP.md` (Phase δ — E.C, "*the* cross-track bridge… the pedagogical climax"; Contract
+  C2 — the anti-stub constraint) and this PLAN before any session. **Note (non-blocking): the ROADMAP
+  Progress table is stale** — it shows Track D and Track E "not started / 0 done" (reconciled at the
+  T.G ◆, *before* D and E.A/E.B/D.E landed). Track D is complete (D.A→D.W, plus the D.E extension:
+  D.E.1 `0d02b77`, D.E.2 `1a21a32`, D.E.3 ◆ `a804a7b`); E.A and E.B are done (per the prior PLAN
+  ledgers / the D.E.3 digest). The prior PLAN ledgers + the D.E.3 digest are authoritative. The
+  roadmap is rewritten only at sub-track boundaries; the E.A/E.B/D.E reconciliation + the E.C
+  insertion is an inflection-point Opus action at the E.C ◆, not by E.C `@build`.
+- Read the **templates to mirror**: `gnfs/src/dl/ext/target.rs` (`ExtTarget::from_coeffs` — the
+  over-specified `Vec<BigInt>` constructor E.C composes) and `gnfs/src/dl/ext/descent.rs:59`
+  (`ext_target_to_bigint` — the base-p encoder; `find_irreducible_degree2` at ~line 370 is the
+  modulus the guard checks); `rho/src/pairing/fpext.rs` (`FpExt` + `to_uint_vec`); `rho/src/pairing/
+  test_curves.rs` (`pairing_toy()` + the `PAIRING_TOY_*` constants); `rho/src/pairing/{weil,tate}.rs`
+  (`weil_pairing` / `reduced_tate` — note the `reduced_tate(Q, P, ell)` argument order for
+  non-degeneracy at the toy fixture); `rho/tests/pairing_kat.rs` (the pairing KAT idiom) and
+  `gnfs/tests/dl_ext_kat.rs` (the k=2 DL KAT idiom + the `#[ignore]` PARI pattern — the two idioms
+  E.C.2's end-to-end MOV KAT mirrors).
+- **Register:** E.C is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New module `rho/src/pairing/mov.rs`; KAT in `rho/tests/mov_kat.rs`. The gnfs-side
+  bridge helper goes in `gnfs/src/dl/ext/target.rs` (next to `ExtTarget`, the default) or
+  `descent/solve.rs` (next to `solve_dl`) — ratified at E.C.1. The new `rho → gnfs` edge in
+  `rho/Cargo.toml`.
+- **Tier routing:** **both E.C.1 and E.C.2 are Opus** (`@build` on Opus) — the ROADMAP flags both
+  sessions Opus (the cross-track climax). E.C.2 carries the single `@plan` marker: a ◆-boundary
+  juncture (page `@plan-juncture`) ratifying C-MovBridge / C-Mov and confirming the climax composition
+  before the sub-track closes. juncture-tier (header) is **opus** — held by lever 3 (cost of design
+  error) + lever 4 (correctness-criticality) + the ROADMAP both-Opus flag; the strong lever-5
+  end-to-end round-trip KAT would license an opt-down in isolation but does not override the climax's
+  cost-of-wrong.
+- **Invariants to preserve:** **the `rho → gnfs` edge is one-directional** (no `gnfs → rho`; the
+  bridge takes a `Vec<BigInt>`, never an `FpExt`). **No frozen contract is amended** (C2-ext,
+  C-ExtTarget, the pairing contracts, the E.A ECDLP substrate are read-only; the default E.C touches
+  no frozen file). **The modulus-consistency guard is mandatory** (item C — the silent-wrong-field
+  defense). **The base-p encoding convention stays gnfs's** (not re-derived in rho). **`solve_dl` is
+  called as a real solver** (the ROADMAP anti-stub constraint). The k=2 path stays **brute-force**
+  (item B — the NFS pipeline is a principle-4 crypto-scale annotation, not wired). The reduction
+  recovers **`k mod ℓ`** (full composite lift is principle-4). The `Uint<4> → BigInt` step is
+  **toy-only** (single-limb p < 2^64; principle-4 boundary). No new live oracle (round-trip
+  self-checks).
+- **PARI remains a dev-only `#[ignore]` oracle** (Discoveries-log policy) — an optional k=2 DL
+  cross-check follows the established `#[test] #[ignore = "PARI not installed…"]` pattern; never on
+  the green path.
+- **The cross-crate seam (load-bearing for E.C).** E.C adds the **first `rho → gnfs` dependency**.
+  `solve_dl` lives in `gnfs`; the pairing + the MOV reduction + the end-to-end KAT live in `rho`. The
+  edge is one-directional; `cargo check --workspace` must resolve with no cycle. This is the
+  architectural inverse of D.E.3 (which built its target *independently in gnfs* precisely because the
+  edge did not yet exist) — E.C is where the cross-track composition finally happens in code.
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.C is the
+  cross-track climax and the first real `rho → gnfs` composition; the conservative halt-at-◆ cadence
+  is warranted. The single ◆/`@plan` on E.C.2 is the one that matters (the Opus C-Mov ratification +
+  climax-composition check). *(Tradeoff vs default cadence: one extra halt-confirm on a 2-session
+  sub-track is cheap insurance on the project's highest-stakes cross-track seam.)*
