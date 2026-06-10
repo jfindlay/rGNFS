@@ -391,7 +391,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | D.E.1 | `F_{p^k}` target-embedding substrate | done | 0d02b77 | C-ExtTarget (frozen) |
-| D.E.2 | Extension factor base + relation collection | pending | — | C-ExtFactorBase (pending) |
+| D.E.2 | Extension factor base + relation collection | done | 1a21a32 | C-ExtFactorBase (frozen) |
 | D.E.3 ◆ | k>1 descent + solve_dl wiring + end-to-end k=2 KAT | pending | — | C2-ext (pending) |
 
 Contracts frozen before this sub-track (read by D.E): all Track-D NFS-DL contracts (C2,
