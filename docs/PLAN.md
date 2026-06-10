@@ -2,94 +2,128 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E opens (E.A — Pohlig–Hellman)
+# rGNFS — Current Plan: Track-E continues (E.B — Pairing arithmetic: Weil, Tate)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by an explicit tier election, not by the default
-levers.** On the five-lever law E.A reads as the textbook **opt-down-to-Sonnet** case: lever 5 (the
-`cargo test --workspace` inner loop is fast and the composite-curve KAT makes a wrong CRT-combine or
-prime-power lift directly test-catchable as `k·G ≠ Q`) coincides with lever 3 (low design-error
-cost — E.A is a **leaf attack**, freezing no deep cross-track interface like C2) and lever 4
-(moderate, KAT-bounded correctness-criticality). The default would therefore opt **down**. It does
-**not**, for one reason: **E.A is the Phase-δ / Track-E *entry*** — the first algebraic-ECDLP attack
-on a fresh sub-track scaffold — and the operator elected **E.A.2 at Opus** to hold a deliberate
-design register at the phase-opening boundary (does the Track-E attack scaffolding start clean: the
-composite-curve fixture, the order-factorization entry point, and the `solve_ecdlp_composite`
-contract that later Track-E attacks may consume?). The juncture-tier follows that election: the ◆
-juncture that ratifies C-Pohlig and the Track-E-entry design-statement note runs at **Opus**. *(The
-hold is scoped to E.A.2's ◆ close; E.A.1 — the substrate fixture + factor loop — needs no Opus
-juncture: it freezes test-/compiler-checkable objects and the default cadence lands it.)*
+`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error), the binding
+constraint.** Unlike E.A — where the default *opted down* and an operator election held it up — E.B
+holds at Opus on the law itself: the E.B substrate (the `F_{p^k}` extension field and the
+`E(F_{p^k})` point representation) **bounds E.C**, the MOV/Frey–Rück bridge that is *the* cross-track
+pedagogical climax (it calls the real NFS-DL solver, C2). A wrong representation freeze here is the
+**highest-cost-of-wrong interface in Track E so far** — E.C must consume whatever E.B freezes. Lever 5
+is strong (bilinearity `e(aP,bQ) = e(P,Q)^{ab}` is a decisive, fast, self-checking KAT) and *would*
+license an opt-down in isolation, but lever 3 dominates and is the binding constraint, so the ◆
+juncture that ratifies C-FpExt / C-PairingCurve / C-Pairing runs at **Opus**. *(Scoped to the E.B.4 ◆
+close. The roadmap-flagged Opus session is E.B.1 — the `F_{p^k}` substrate design; E.B.2–4 are Sonnet
+against the frozen extension/point representation.)*
 
-Last rewrite: **D.W ◆ boundary crossed** (Phase γ / Track D complete — D.A → D.B → D.C → D.W
-coherent; NFS-DL landed end-to-end; C2 `solve_dl` frozen at 9d07c51; D.W.1 code-tour 8c92260, D.W.2
-maths chapter + L-notation payoff 541be29; ledger reconciled 2026-06-09). This plan opens **Phase δ
-(Algebraic ECDLP attacks, Track E)** at its dependency-clean entry, **E.A — Pohlig–Hellman**: the
-reduction of a composite-order ECDLP to prime-order subgroups via CRT, calling the **existing**
-Pollard-rho solvers (which assume a *prime* group order) once per prime-power subgroup. Predecessors
-(`rho` crate ECDLP solvers, `shared::numth` order-factoring primitives) are landed and KAT-verified.
+Last rewrite: **E.A ◆ boundary crossed** (E.A.1 substrate `054df65`, E.A.2 ◆ Pohlig–Hellman
+`51fd477`; C-CompositeCurve, C-FactorOrder, C-Pohlig frozen; sub-track closed, Track-E attack scaffold
+coherent — composite fixture `n=60=2²·3·5`, `factor_order`, `project_to_subgroup`,
+`solve_ecdlp_composite`, 6 composite KATs). This plan continues **Phase δ (Algebraic ECDLP, Track E)**
+with **E.B — Pairing arithmetic (Weil, Tate)**: the bilinear-pairing substrate on which the MOV/Frey–
+Rück reduction (E.C) stands. Predecessor per ROADMAP: G.A (number-field machinery, *as conceptual
+reference for divisor arithmetic — not as the char-p extension-field substrate; see the rigidity guard
+below*).
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ): "**E.A — Pohlig–Hellman.** 2 sessions. Predecessor: existing `rho` crate,
-S0.2 (factoring of group orders). The cleanest sub-rho attack: reduction to prime-order subgroups
-via CRT. Sonnet." E.A is the first *algebraic* (structure-exploiting) ECDLP attack in the project:
-where Track-rho solves a prime-order DLP by generic collision search, Pohlig–Hellman exploits the
-**factorization of the group order** — it decomposes the DLP in a composite-order group into
-independent DLPs in each prime-power subgroup, solves each (the prime-order ones by handing off to
-the existing rho solvers), and reassembles the answer by CRT. The structure-based-escape-from-search
-through-line: *a smooth group order is a structural weakness*; Pohlig–Hellman is the attack that
-converts that structure into a √(largest-prime-factor) cost instead of √n.
+Per ROADMAP (Phase δ): "**E.B — Pairing arithmetic (Weil, Tate).** 3-4 sessions. Predecessor: G.A.
+**First session is Opus-tier** — pairings are mathematically delicate and the divisor-arithmetic
+representation choice bounds E.C. Subsequent Sonnet." E.B is the second Track-E attack-substrate and
+the first to leave the prime field: where E.A reduced a composite-order DLP to prime subgroups by CRT,
+E.B builds the machinery that lets a *different* structural escape exist — the **bilinear pairing**
+`e: E[ℓ] × E[ℓ] → μ_ℓ ⊂ F_{p^k}*`, which transports the ECDLP into the multiplicative group of a
+finite extension field, where index calculus / NFS-DL is subexponential. The
+structure-based-escape-from-search through-line: *a low embedding degree is a structural weakness* —
+the pairing is the homomorphism that converts an elliptic-curve discrete log into a finite-field one.
+E.B builds the pairing; **E.C is the attack that exploits it** (calling NFS-DL via C2). E.B itself
+ships no attack — it ships the bilinear map and proves it bilinear and non-degenerate.
 
-The substrate survey established the shape precisely:
+The substrate survey established the shape precisely, and it is **larger than the roadmap sketch**
+implies in one decisive respect:
 
-1. **The existing rho solvers assume a prime order.** `solve_brent` / `solve_dp` / `solve_dp_negmap`
-   / `solve_dp_batch` / `solve_dp_glv` (`rho/src/ecdlp/mod.rs`) all take `n: u64` documented as a
-   **prime** group order; `inv_mod_prime` (Fermat) silently misbehaves on composite `n`. E.A is
-   exactly the missing composite→prime-subgroup layer **on top of** them — it does not modify them;
-   it calls them with prime subgroup orders.
-2. **No composite-order test curve exists.** All five fixtures (`tiny_a`, `tiny_b`, `tiny_glv`,
-   `secp_k1_toy`, `generic_curve`) have **prime** order. E.A needs a curve whose generator has a
-   **smooth composite** order to exercise the reduction (load-bearing for the KAT).
-3. **No full-factorization entry point exists.** `shared::numth` gives `is_prime`, `ecm_factor`
-   (one factor), `trial_smooth` (factor over a supplied base) — but no `factor_fully`. E.A writes
-   the order-factorization loop (`lib.rs` already names this as the anticipated E.A use).
-4. **`shared-numth` is not yet a `rho` dependency** — a one-line `Cargo.toml` addition.
+1. **No extension-field arithmetic exists.** There is no `Fp2` / `FpK` / tower / polynomial-quotient
+   field anywhere in the workspace — only the base prime field `Fp<L>` (`shared/field/src/lib.rs`,
+   `FpNaive` / `FpMonty`). But Weil/Tate pairings **land in `F_{p^k}`** (the embedding field, μ_ℓ ⊂
+   F_{p^k}*). So E.B must **build `F_{p^k}` arithmetic from scratch** — this is the substrate session
+   the roadmap's "3-4 sessions, first Opus" folds in but does not decompose. E.B.1 is that session.
+2. **The curve group law is `F: Fp<4>`-bound.** `Curve` stores its coefficients as `Uint<4>`
+   (base-prime-field), and `double_jacobian` / `add_jacobian` / `add_mixed` / `scalar_mul`
+   (`rho/src/curve/mod.rs`) all require `F: Fp<4>` — a **prime** field. Miller's algorithm must
+   evaluate line functions at points of `E(F_{p^k})`, which the existing law **cannot represent**.
+   This is exactly the "**divisor-arithmetic representation choice bounds E.C**" the roadmap flags, and
+   the α-boundary discovery anticipated ("`rho::curve` was NOT lifted to `shared::curve`… Revisit at
+   E.B.1 when pairings need divisor-arithmetic curves").
+3. **The representation decision was adjudicated at shard time: option (B), the standalone pairing
+   layer.** Rather than generalising the frozen `rho::curve` field bound (option A — cleanest
+   long-term, but a destructive edit to a contract consumed by all of Track-rho + E.A), E.B builds a
+   **separate** `E(F_{p^k})` arithmetic inside a new `rho/src/pairing/` module, **composing** the
+   frozen curve params (read-only) and the new `F_{p^k}` field, amending nothing in `rho::curve`. This
+   matches the E.A principle-3 discipline (compose the frozen substrate; the attack layer wraps it).
+   The cost is some group-law duplication over the extension field; the win is a bounded blast radius.
+   *(The E.B.4 ◆ juncture re-ratifies this against E.C's needs at execution time.)*
+4. **No Miller / divisor / line-function machinery exists.** No rational-function-on-a-curve, line
+   function, vertical function, or divisor type anywhere. E.B writes Miller's algorithm from scratch
+   (E.B.3). The G.A `NumberField`/`NumberFieldElement` machinery is **char-0** number-field arithmetic
+   — *not* the char-p `F_{p^k}` E.B needs (a `numfield` PEDAGOGY note claiming "E.D (pairings) uses
+   `NumberField` for extension arithmetic" is a forward-looking mis-mapping: it conflates char-0
+   number fields with char-p finite extensions, and names the wrong sub-track — see the rigidity
+   guard, and the corrective work item folded into E.B.4). G.A is a *conceptual* reference for divisor
+   arithmetic, not a code dependency here.
 
-The work splits at the **substrate→algorithm seam**:
+The work splits at the **field-substrate → curve-substrate → algorithm** seams, 4 sessions:
 
-1. **E.A.1 — composite-order substrate (Sonnet, Cat A).** The composite-order test-curve fixture
-   (`test_curves.rs`), the order-factorization loop `factor_order(n) -> Vec<(u64,u32)>`
-   (`rho/src/ecdlp/pohlig.rs`), the `shared-numth` Cargo wiring, and the prime-subgroup **projection**
-   primitive (given prime power `pᵉ | n`, map `(G, Q)` to the order-`pᵉ` subgroup via
-   `[n/pᵉ]`-multiplication). **Freezes** C-CompositeCurve and C-FactorOrder — the fixture and the
-   factor-order interface E.A.2 consumes.
+1. **E.B.1 — `F_{p^k}` extension-field arithmetic (Opus, Cat A).** A finite extension field over the
+   base prime field, as a polynomial quotient `F_p[u]/(m(u))` for an irreducible modulus `m` of degree
+   `k` (toy embedding degrees `k = 2`, possibly `k = 3`/`6`). Element = coefficient vector over
+   `Fp<4>`; add/sub/mul (with reduction mod `m`)/inv (extended-Euclid or Frobenius-norm route)/pow/
+   Frobenius/equality/`one`/`zero`. **Freezes C-FpExt** — the extension-field interface E.B.2–4 and
+   E.C consume.
 
-2. **E.A.2 ◆ — Pohlig–Hellman proper (Opus, Cat B, `@plan`).** The full reduction: the **prime-power
-   lift** for `e>1` (the digit-by-digit base-`p` Pohlig–Hellman recursion, solving each digit by a
-   rho call in the order-`p` subgroup) and the **CRT combine** across distinct primes, exposed as
-   `solve_ecdlp_composite(curve, g, q, n) -> Option<u64>`; the **composite-curve end-to-end KAT**;
-   and the **Track-E-entry design-statement note** (principles 1/3/4 for the attack scaffold).
-   **Freezes** C-Pohlig. Crosses the **E.A ◆ boundary** (sub-track complete).
+2. **E.B.2 — `E(F_{p^k})` point arithmetic + pairing-friendly fixture (Sonnet, Cat A).** A standalone
+   short-Weierstrass group law over `F_{p^k}` (`PairingPoint`, add/double/scalar-mul/negate), composing
+   the frozen `Curve` params (read-only) and C-FpExt; and a **pairing-friendly toy fixture**: a curve
+   with a *small known embedding degree* `k` w.r.t. a small prime ℓ | #E(F_p), with the ℓ-torsion
+   structure recorded (a base-field point `P ∈ E(F_p)[ℓ]` and a linearly-independent
+   `Q ∈ E(F_{p^k})[ℓ]`). **Freezes C-PairingCurve** — the fixture + point representation E.B.3/E.B.4
+   and E.C consume.
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing *Baby-step/Giant-step* as a
-"better" per-subgroup solver — that is a different attack, not E.A, whose per-subgroup solver is the
-*existing rho*; or generalising the factor loop toward NFS-grade factoring — `trial_smooth` over a
-√n base is sufficient and correct for u64 orders) and **rigidity** (re-implementing modular inverse /
-CRT from scratch when the codebase already carries modular primitives; or modifying the rho solvers
-to "handle composite order" — they must stay prime-order, E.A wraps them).
+3. **E.B.3 — Miller's algorithm + Weil pairing (Sonnet, Cat B).** Miller's algorithm (the
+   double-and-add accumulation of the line/vertical-function quotient `f_{ℓ,P}`), and the **Weil
+   pairing** `w_ℓ(P,Q) = f_{ℓ,P}(Q) / f_{ℓ,Q}(P)` (the ratio form, no final exponentiation). KAT:
+   **bilinearity** `w(aP,bQ) = w(P,Q)^{ab}` and **non-degeneracy** `w(P,Q) ≠ 1` for independent P,Q.
 
-**Scoping discipline.** E.A solves the DLP on **toy composite-order curves** (smooth order, small
-primes) at demonstration fidelity (principle 4). It introduces **no oracle dependency** (the
-composite DLP is self-checking: `k·G == Q`). The per-subgroup solver is the **frozen rho substrate** —
-E.A adds the reduction layer, nothing inside rho. The factor loop is **toy-order-scoped** (u64 group
-orders, `trial_smooth`/`is_prime`); ECM (`ecm_factor`) is available as a fallback but is overkill at
-toy scale — a principle-4 annotation, not a work item.
+4. **E.B.4 ◆ — Tate / reduced-Tate pairing + Track-E pairing design note (Sonnet, Cat B, `@plan`).**
+   The **Tate pairing** `t_ℓ(P,Q) = f_{ℓ,P}(Q)` followed by **final exponentiation**
+   `^{(p^k−1)/ℓ}` (the reduced Tate pairing, a well-defined element of μ_ℓ), reusing the E.B.3 Miller
+   loop; bilinearity KAT for Tate; the **Track-E pairing design-statement note** (principles 1/3/4 for
+   the pairing substrate, and the explicit E.C-readiness check: is C-Pairing the right input to the MOV
+   bridge?); and the **numfield PEDAGOGY correction** (the corrective work item, see below). **Freezes
+   C-Pairing.** Crosses the **E.B ◆ boundary** (sub-track complete).
+
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing the MOV reduction itself —
+that is **E.C**, not E.B; E.B ships the pairing and stops at proving it bilinear/non-degenerate. Or
+implementing BN/BLS *cryptographic* pairing curves / optimal-ate / a full tower `F_{p^{12}}` — toy
+embedding degree `k ≤ 6` suffices for the demonstration; pairing-based-crypto engineering is out of
+scope) and **rigidity** (reaching for G.A's char-0 `NumberFieldElement` to represent `F_{p^k}` — wrong
+characteristic; E.B builds a char-p extension field. Or amending the frozen `rho::curve` group law to
+"accept extension fields" — option A was declined; E.B composes a *separate* `E(F_{p^k})` layer).
+
+**Scoping discipline.** E.B builds pairings on **toy pairing-friendly curves** (small `p`, small
+embedding degree `k`, small torsion prime ℓ) at demonstration fidelity (principle 4). It introduces
+**no oracle dependency** for correctness (bilinearity self-checks; a PARI `ellweilpairing`/
+`elltatepairing` cross-check is an *optional* `#[ignore]` sidecar, matching the established pattern).
+The base-curve params are the **frozen `rho::curve`** read read-only; E.B adds the extension-field
+and pairing layers, nothing inside `rho::curve` or `shared::field`. The `F_{p^k}` arithmetic is
+**toy-embedding-degree-scoped** (`k ≤ 6`); a general tower-field construction for crypto-scale `k=12`
+is a principle-4 annotation, not a work item.
 
 ---
 
@@ -97,11 +131,11 @@ toy scale — a principle-4 annotation, not a work item.
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper; raw `cargo` is the only CI surface (confirmed
-unchanged from D.C/D.W). `/run-plan` re-discovers at preflight. E.A **adds code and a KAT** (unlike
-the D.W writeup), so the gate is a **correctness gate**, not merely a regression guard: the E.A.2
-composite-curve KAT (`k·G == Q` on a curve whose order factors as ∏ pᵢ^{eᵢ}) is the primary
-correctness signal, and lever 5 — that this signal is fast and decisive — is what made the Sonnet
-opt-down *available* (declined at the ◆ tier election, taken for E.A.1).
+unchanged from E.A; no `oracle-tests` feature exists — oracle KATs are `#[ignore]`-gated only).
+`/run-plan` re-discovers at preflight. E.B **adds substantial code and KATs**, so the gate is a
+**correctness gate**: the E.B.3 Weil-bilinearity KAT (`w(aP,bQ) = w(P,Q)^{ab}`) and the E.B.4 Tate
+counterpart are the primary correctness signals — fast and decisive (lever 5). A wrong `F_{p^k}` mul/
+inv, a Miller off-by-one, or a wrong final exponentiation breaks bilinearity directly.
 
 ---
 
@@ -113,204 +147,265 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.A.1 | Composite-order test curve + `factor_order` decomposition + prime-subgroup projection | A | Sonnet | rho `Curve`/`scalar_mul`/`generator` (frozen, read), `shared::numth` `is_prime`/`trial_smooth` (frozen, read), existing prime-order curve fixtures (template) | `rho/src/curve/test_curves.rs` (add composite fixture), `rho/src/ecdlp/pohlig.rs` (new: `factor_order`, projection), `rho/src/ecdlp/mod.rs` (`pub mod pohlig;`), `rho/Cargo.toml` (+`shared-numth` dep) |
-| E.A.2 ◆ `@plan` | Pohlig–Hellman prime-power lift + CRT combine + composite-order ECDLP KAT | B | **Opus** | C-CompositeCurve + C-FactorOrder (frozen E.A.1), rho solvers (`solve_brent`/`solve_dp`, frozen read), existing ecdlp KAT (template) | `rho/src/ecdlp/pohlig.rs` (`solve_ecdlp_composite`, lift, CRT), `rho/tests/ecdlp_kat.rs` (composite-order KAT) |
+| E.B.1 | `F_{p^k}` extension-field arithmetic (`F_p[u]/(m)` quotient, add/mul/inv/pow/Frobenius) | A | **Opus** | `shared::field` `Fp<4>` (frozen, read), `crypto-bigint` `Uint<4>` | `rho/src/pairing/mod.rs` (new: `pub mod fpext;`), `rho/src/pairing/fpext.rs` (new: `FpExt`, irreducible modulus), `rho/src/lib.rs` (`pub mod pairing;`) |
+| E.B.2 | `E(F_{p^k})` point arithmetic + pairing-friendly fixture (embedding degree `k`, ℓ-torsion) | A | Sonnet | C-FpExt (frozen E.B.1), `rho::curve::Curve` params (frozen, read), `composite_toy`/`tiny_*` fixtures (template) | `rho/src/pairing/ecext.rs` (new: `PairingPoint`, group law over `FpExt`), `rho/src/pairing/test_curves.rs` (new: pairing-friendly fixture + ℓ-torsion P, Q), `rho/src/pairing/mod.rs` (`pub mod ecext; pub mod test_curves;`) |
+| E.B.3 | Miller's algorithm + Weil pairing + bilinearity/non-degeneracy KAT | B | Sonnet | C-FpExt + C-PairingCurve (frozen E.B.1/E.B.2), existing ecdlp KAT (template) | `rho/src/pairing/miller.rs` (new: Miller loop, line/vertical functions), `rho/src/pairing/weil.rs` (new: `weil_pairing`), `rho/tests/pairing_kat.rs` (new: Weil bilinearity + non-degeneracy) |
+| E.B.4 ◆ `@plan` | Tate/reduced-Tate pairing + final exponentiation + design note + numfield-doc correction | B | Sonnet | C-FpExt + C-PairingCurve + Miller (frozen E.B.1–3) | `rho/src/pairing/tate.rs` (new: `tate_pairing`, `reduced_tate`, final exp), `rho/tests/pairing_kat.rs` (Tate bilinearity), `rho/src/pairing/mod.rs` (design-note module docstring), `shared/numfield/docs/PEDAGOGY.md` (correct the E.D/E.B + char-0/char-p mis-mapping) |
 
-**Sequencing notes.** Strictly serial: **E.A.1 → E.A.2.** E.A.1 lands the substrate (fixture +
-factor loop + projection) that E.A.2's reduction stands on; E.A.2 consumes both frozen contracts.
-The single `@plan` marker sits on **E.A.2 ◆** — the Opus boundary juncture that ratifies C-Pohlig and
-the Track-E-entry design-statement note before the sub-track is declared closed. E.A.1 carries **no**
-`@plan` (it freezes test-/compiler-checkable objects; default cadence lands it).
+**Sequencing notes.** Strictly serial: **E.B.1 → E.B.2 → E.B.3 → E.B.4.** E.B.1 lands the field the
+whole sub-track stands on; E.B.2 builds the curve arithmetic over it and the fixture; E.B.3 writes
+Miller + Weil over both; E.B.4 reuses E.B.3's Miller loop for Tate and closes the sub-track. The single
+`@plan` marker sits on **E.B.4 ◆** — the Opus boundary juncture ratifying C-FpExt / C-PairingCurve /
+C-Pairing against E.C's needs before the sub-track closes. E.B.1, though Opus-tier, carries **no**
+`@plan` (it freezes a compiler-/test-checkable field interface; the C-FpExt design is re-ratified at
+the E.B.4 ◆ alongside the others — an inline juncture would double the boundary cost on a 4-row shard).
 
-**Why 2 sessions (matches the ROADMAP allotment — split taken at the contract-sharp seam).** The
-ROADMAP allots E.A = 2 sessions. The split is the substrate→algorithm seam, taken up-front:
-- **One-line-commit-title corollary.** "Composite-order test curve + `factor_order` + projection" and
-  "Pohlig–Hellman lift + CRT + KAT" are **two distinct commit titles** — and two categories (A vs B):
-  E.A.1 builds the *substrate the reduction consumes*, E.A.2 is the *reduction*.
-- **Contract-sharp boundary (legitimate, not LOC-driven).** E.A.1 **freezes** C-CompositeCurve (the
-  fixture) and C-FactorOrder (the decomposition interface); E.A.2 **consumes** both. A real
-  produce/consume seam.
-- **Irreducible unit kept whole (lever 2).** The prime-power lift and the CRT combine are the *same*
-  coherent algorithm ("reassemble subgroup logs into the full log") — fracturing them into separate
-  sessions would split an irreducible unit at a non-contract-sharp boundary, forbidden. E.A.2 holds
-  the lift *and* the CRT *and* its KAT whole.
-- **Tier seam.** E.A.1 is Sonnet (mechanical substrate against the established hand-computed-curve
-  template); E.A.2 is **Opus** (operator-elected: the Phase-δ-entry design register on the freshly
-  scaffolded attack — see header). The tier seam reinforces the session seam.
+**Why 4 sessions (top of the ROADMAP 3-4 band — the field substrate is its own session).** The split
+is taken at the field→curve→algorithm seams:
+- **One-line-commit-title corollary.** "`F_{p^k}` arithmetic", "`E(F_{p^k})` + fixture", "Miller +
+  Weil", "Tate + final exp" are **four distinct commit titles** spanning two categories (A substrate ×2,
+  B algorithm ×2).
+- **Contract-sharp boundaries (legitimate, not LOC-driven).** E.B.1 **freezes** C-FpExt; E.B.2
+  **consumes** it and **freezes** C-PairingCurve; E.B.3 **consumes** both; E.B.4 **consumes** all and
+  **freezes** C-Pairing. Three real produce/consume seams.
+- **Why the field is its own session (lever 1 + lever 3).** `F_{p^k}` arithmetic from scratch
+  (quotient construction, irreducible modulus selection, extension inverse, Frobenius) is a full
+  substrate unit, and the survey confirmed *nothing* exists to build on past the base prime field —
+  ambient complexity (lever 1) is real, and the field interface is the deepest consumed surface (E.C
+  reads `F_{p^k}` elements through C-FpExt). Merging it into E.B.2 risks a >400-LOC two-title session.
+- **Irreducible units kept whole (lever 2).** Miller's algorithm + the Weil ratio is one coherent unit
+  (E.B.3); the Tate pairing + final exponentiation is one coherent unit reusing the same Miller loop
+  (E.B.4). Neither is fractured.
 
-They are **not** further splittable: separating the composite fixture into its own pre-session
-(3-session option) is unwarranted — the fixture follows the frozen hand-computed point-counting
-template (`test_curves.rs` §1–§7: brute-force enumeration + `n·G=∞` verification), a bounded Sonnet
-task, not the heavier offline search that would justify isolating it.
+They are **not** further splittable: separating Miller's algorithm from the Weil pairing (a 5-session
+option) would split an irreducible unit — Miller's loop has no standalone KAT-able contract except *as*
+the pairing it computes (a Miller loop with no pairing deliverable has an undefined contract). Tate
+genuinely reuses E.B.3's Miller, so it is the natural ◆-closing session, not a separate substrate.
 
 ---
 
 ## Session detail
 
-E.A.1 is crisply specified (it mirrors the frozen prime-order fixture template + a standard u64
-factorization loop). E.A.2 is specified at near-full fidelity (Pohlig–Hellman is a textbook
-algorithm), with the one open judgment (the composite-order parameter choice the KAT exercises, and
-the design-statement depth) flagged for the ◆ juncture.
+E.B.1 is specified at near-full fidelity (finite-extension-field arithmetic is textbook, with the one
+open design call — the tower-vs-direct-quotient construction and the embedding degrees the fixture
+exercises — flagged for the E.B.1 design register and re-ratified at the ◆). E.B.2–4 are
+lower-fidelity sketches, correct per the substrate-first discipline: they are crisply specified only
+after C-FpExt and C-PairingCurve freeze.
 
-### E.A.1 — Composite-order substrate (Sonnet, Cat A)
+### E.B.1 — `F_{p^k}` extension-field arithmetic (Opus, Cat A)
 
-**Deliverable:** the substrate E.A.2's reduction consumes, in three pieces.
-- **Composite-order test curve** (`test_curves.rs`, mirroring the `tiny_a`/`tiny_b` pattern §1–§7):
-  a short-Weierstrass curve over a small prime field whose generator has **full composite** order
-  `n = ∏ pᵢ^{eᵢ}` with small primes (e.g. `n = 2³·3·5·7·…`, smooth, with at least one repeated prime
-  to exercise the `e>1` lift). Verified by `n·G = ∞`, the generator being a **full-order** point
-  (subtlety below), and the factorization recorded as a checkable constant. Computed offline by
-  brute-force point-counting + `n·G=∞` (the established method, `test_curves.rs` header).
-- **`factor_order(n: u64) -> Vec<(u64, u32)>`** (`rho/src/ecdlp/pohlig.rs`): the prime-power
-  decomposition loop `shared::numth` lacks — trial-division via `trial_smooth` over
-  `factor_base_up_to(isqrt(n))` with an `is_prime` short-circuit on the cofactor. Toy-order-scoped
-  (u64); ECM-fallback noted, not wired.
-- **Prime-subgroup projection** (`pohlig.rs`): given prime power `pᵉ | n`, map `(G, Q)` to the
-  order-`pᵉ` subgroup by `[n/pᵉ]`-scalar-multiplication (`curve.scalar_mul`), returning the subgroup
-  generator/target. The primitive the lift and CRT both build on.
-- **Cargo wiring:** add `shared-numth = { path = "../shared/numth" }` to `rho/Cargo.toml`; declare
-  `pub mod pohlig;` in `rho/src/ecdlp/mod.rs`.
+**Deliverable:** a finite extension field `F_{p^k}` over the base prime field, as a polynomial quotient
+`F_p[u]/(m(u))` with `m` irreducible of degree `k`. **The Opus design call** (the reason this session is
+Opus and bounds E.C): the *construction shape* — a **direct degree-`k` quotient** vs a **tower**
+(`F_{p^2}` then `F_{(p^2)^{k/2}}`), and which embedding degrees the substrate must support (`k = 2`
+minimum for the toy Weil/Tate demo; `k = 3`/`6` if a richer fixture is wanted). The choice bounds how
+E.C reads pairing outputs and feeds them to NFS-DL (C2). Pieces:
+- **`FpExt`** (`fpext.rs`): element = coefficient vector `[Fp<4>; k]` (or `Vec<Fp<4>>`) mod the
+  irreducible `m`; `zero`/`one`/`from_base`/`add`/`sub`/`neg`/`mul` (schoolbook poly mult + reduction
+  mod `m`)/`square`/`pow`/`inv` (extended-Euclid in `F_p[u]`, or the norm-to-base-field route)/
+  `frobenius` (the `x ↦ x^p` map, needed for the trace/norm and for E.C)/`eq`.
+- **Irreducible modulus selection** for the chosen `k` over the fixture's `p` (recorded as a checkable
+  constant; irreducibility verified offline + asserted).
+- **Base-field embedding** `F_p ↪ F_{p^k}` (constant term), so curve coefficients `a, b ∈ F_p` lift.
 
-Consumes the frozen rho curve interface (`Curve`, `scalar_mul`, `generator`) and `shared::numth`
-(`is_prime`, `trial_smooth`, `factor_base_up_to`) read-only. **Freezes C-CompositeCurve and
-C-FactorOrder.**
+Consumes `shared::field` `Fp<4>` (frozen, read) and `crypto-bigint` `Uint<4>` only. **Freezes C-FpExt.**
 
-**KAT:** `factor_order` correctness (a unit KAT: `factor_order(n)` reproduces the recorded
-factorization of the composite fixture's `n`, and `∏ pᵢ^{eᵢ} == n`); the fixture's `n·G = ∞` and
-full-order checks (mirroring the existing `*_n_times_g_is_infinity` tests). **Verify gate:**
-`cargo test --workspace` green.
+**KAT:** field-axiom KATs — `a·a^{-1} = 1`, distributivity, `(a+b)^p = a^p + b^p` (Frobenius / freshman's
+dream in char p), `frobenius` applied `k` times is the identity on `F_{p^k}`, and `m` is irreducible
+(no root in `F_p`, recorded factorisation-free check). **Verify gate:** `cargo test --workspace` green.
 
-**Subtlety (load-bearing):** the fixture generator must have order **exactly the full composite `n`**,
-not a proper divisor — a subgroup generator would make the CRT reduction vacuous and the KAT pass
-trivially. Verify `[n/pᵢ]·G ≠ ∞` for every prime `pᵢ | n` (the standard full-order check). This is
-*the* fixture-correctness trap; the session must assert it explicitly.
+**Subtlety (load-bearing):** (1) `inv` in `F_{p^k}` is *not* Fermat-`a^{p^k−2}` by default cost — the
+extended-Euclid route over `F_p[u]` is the clean one; document which is used and why. (2) The
+irreducible modulus must be **genuinely irreducible over `F_p`** — a reducible `m` makes
+`F_p[u]/(m)` a ring with zero divisors and `inv` silently wrong; assert irreducibility in the fixture.
+(3) `frobenius` (`x^p`, not `x^{p^k}`) is the load-bearing map E.C's MOV reduction needs — over-specify
+it now (the over-specify rule: carry the method E.C will need even if E.B's own KATs barely use it).
 
-**Deferred:** the lift + CRT + composite-DLP KAT (E.A.2); any non-rho per-subgroup solver (defocus);
-NFS-grade factoring (the toy `trial_smooth` loop suffices).
+**Deferred:** the curve-over-`F_{p^k}` group law and fixture (E.B.2); Miller/Weil/Tate (E.B.3/4); any
+crypto-scale tower `F_{p^{12}}` / optimal-ate machinery (principle-4 annotation, not a work item).
 
-### E.A.2 ◆ — Pohlig–Hellman proper (Opus, Cat B, `@plan`)
+### E.B.2 — `E(F_{p^k})` point arithmetic + pairing-friendly fixture (Sonnet, Cat A)
 
-**Deliverable:** the composite-order ECDLP reduction, exposed as
-`solve_ecdlp_composite(curve, g, q, n: u64) -> Option<u64>` (`pohlig.rs`), in two algorithmic pieces
-over the E.A.1 substrate:
-- **Prime-power lift (`e>1`).** For each `pᵉ ‖ n`: recover the order-`p` digit-by-digit base-`p`
-  expansion of the subgroup log — at each digit, project to the order-`p` sub-subgroup and call a
-  **frozen rho solver** (`solve_brent`/`solve_dp`) on that prime-order DLP, then lift. The `e=1` case
-  is one rho call (no lift). This is where the *existing prime-order solver* is consumed.
-- **CRT combine.** Reassemble the per-prime-power logs `{xᵢ mod pᵢ^{eᵢ}}` into `k mod n` by the
-  Chinese Remainder Theorem.
+**Deliverable:** the curve arithmetic over the extension field and the fixture the pairings exercise.
+- **`PairingPoint`** (`ecext.rs`): short-Weierstrass affine (or Jacobian) point over `FpExt`, with
+  `add`/`double`/`scalar_mul`/`negate`/`is_on_curve`/identity — a standalone group law composing the
+  frozen `Curve` params (read `p, a, b` read-only, lifted into `F_{p^k}` via C-FpExt's base embedding)
+  and C-FpExt. *(This is the deliberate duplication of `rho::curve`'s law over `FpExt`, the cost of
+  option B; annotate it as such — the frozen prime-field law stays untouched.)*
+- **Pairing-friendly fixture** (`test_curves.rs`): a toy curve with a *small known embedding degree* `k`
+  with respect to a small torsion prime `ℓ | #E(F_p)` (i.e. `ℓ | p^k − 1` but `ℓ ∤ p^i − 1` for
+  `i < k`), with **recorded** `ℓ`, `k`, a base-field ℓ-torsion point `P ∈ E(F_p)[ℓ]`, and a
+  linearly-independent `Q ∈ E(F_{p^k})[ℓ]` (the second pairing argument). Verified by `ℓ·P = ∞`,
+  `ℓ·Q = ∞`, and P, Q independent (`Q ∉ ⟨P⟩`).
 
-**Track-E-entry design-statement note** (the phase-opening analogue of G.W §59 / the D.W
-verification, at lighter fidelity — a sub-track entry, not a phase ◆): principle 1 (the attack is
-the genuine structure-exploiting reduction, not a generic search relabelled); principle 3 (no
-engineering optimization crept into the reduction — it composes the frozen rho substrate head-on);
-principle 4 (toy composite-order scale; the smooth-order assumption and u64 factor loop annotated as
-demonstration-scale, not mathematical, boundaries). Verdict recorded in the action-frame digest.
+Consumes C-FpExt (frozen E.B.1), `rho::curve::Curve` params (frozen, read), and the existing fixtures
+as template. **Freezes C-PairingCurve.**
 
-Consumes C-CompositeCurve + C-FactorOrder (frozen E.A.1), the rho solvers (frozen, read), and the
-existing ecdlp KAT (template). **Freezes C-Pohlig.**
+**KAT:** `PairingPoint` group-law KATs (`ℓ·P = ∞`, associativity sample, `is_on_curve` over `F_{p^k}`);
+the fixture's torsion + independence checks. **Verify gate:** `cargo test --workspace` green.
 
-**KAT (primary correctness signal):** composite-order end-to-end — on the E.A.1 fixture, for several
-target scalars `k_target` (including ones with nontrivial residue in the `e>1` subgroup), compute
-`Q = k_target·G`, call `solve_ecdlp_composite`, assert `k·G == Q` (the `check_solver_on_curve`
-style — any valid log accepted). At least one case must exercise the `e>1` lift and one the
-multi-prime CRT. **Verify gate:** `cargo test --workspace` green.
+**Subtlety (load-bearing):** the **embedding degree must be exactly `k`** — if `ℓ | p^i − 1` for some
+`i < k` the pairing degenerates into a smaller field and the demo is vacuous (the analogue of E.A's
+full-order trap). Assert the *minimality* of `k` explicitly. Finding `Q` independent of `P` in the
+ℓ-torsion is the fixture's real work (the distortion-map / random-point search), done offline and
+recorded.
 
-**Subtlety (load-bearing):** (1) the **prime-power lift** is the subtle algorithmic step — an
-off-by-one in the digit recursion or a wrong subgroup projection gives a silently-wrong log the KAT
-must catch (hence a fixture with `e>1`); (2) **`inv_mod_prime` is prime-only** — every rho call must
-receive a *prime* order, never `pᵉ`; the lift solves in the order-`p` group, not order-`pᵉ`; (3) the
-**CRT moduli are the prime *powers*** `pᵢ^{eᵢ}`, pairwise coprime by construction. This is the
-**E.A ◆ boundary** — re-read the Purpose intent and verify the Track-E attack scaffold (fixture,
-factor loop, reduction, KAT) is coherent and that E.A is a clean leaf entry to Phase δ before
-crossing.
+**Deferred:** Miller/Weil (E.B.3), Tate (E.B.4).
 
-**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.A.2 ◆
-to confirm: (1) C-Pohlig's `solve_ecdlp_composite` signature is the right composite-order entry for
-later Track-E consumers (E.G's rho-baseline re-run may call it); (2) the prime-power lift + CRT are
-correct and the KAT exercises both `e>1` and multi-prime; (3) the per-subgroup solver is the *frozen
-rho substrate*, unmodified (principle 3); (4) the Track-E-entry design-statement note passes 1/3/4;
-(5) nothing in E.A presumes E.B/E.C structure (no premature pairing/MOV scaffolding). One-shot
-findings; does not implement. Held at **Opus** per the header (operator-elected phase-entry register).
+### E.B.3 — Miller's algorithm + Weil pairing (Sonnet, Cat B)
+
+**Deliverable:** Miller's algorithm and the Weil pairing over the E.B.2 substrate.
+- **Miller's algorithm** (`miller.rs`): `f_{ℓ,P}(Q)` — the double-and-add accumulation over the bits of
+  `ℓ`, multiplying in the line function `g_{T,T}` / `g_{T,P}` and dividing by the vertical `v` at each
+  step, evaluated at `Q`. Line and vertical functions as helpers over `FpExt`.
+- **Weil pairing** (`weil.rs`): `w_ℓ(P,Q) = (−1)^ℓ · f_{ℓ,P}(Q) / f_{ℓ,Q}(P)` (the ratio form — **no
+  final exponentiation**, which is the Weil-vs-Tate distinction; document it).
+
+Consumes C-FpExt + C-PairingCurve (frozen). *(Does not freeze a new contract; C-Pairing is frozen at
+E.B.4 once both pairings share the surface.)*
+
+**KAT (primary correctness signal):** **bilinearity** `w(aP, Q) = w(P,Q)^a`, `w(P, bQ) = w(P,Q)^b`,
+`w(aP, bQ) = w(P,Q)^{ab}` for several `a, b`; **non-degeneracy** `w(P,Q) ≠ 1` for the independent P,Q;
+**alternation** `w(P,P) = 1`. Optional `#[ignore]` PARI `ellweilpairing` cross-check (the established
+oracle pattern). **Verify gate:** `cargo test --workspace` green.
+
+**Subtlety (load-bearing):** (1) Miller's loop is the subtle step — an off-by-one in the bit iteration
+or a wrong line/vertical function gives a value that *fails bilinearity* (hence bilinearity is the KAT,
+not a single spot-value). (2) Division by a vertical function that vanishes at `Q` (when `Q` shares an
+x-coordinate with an intermediate `T`) needs the standard care — choose `Q` (or a shifted evaluation
+point) to avoid it, or handle the degenerate divisor. (3) The Weil pairing needs **two** Miller calls
+(`f_{ℓ,P}(Q)` and `f_{ℓ,Q}(P)`); Tate (E.B.4) needs **one** — keep the Miller core shared.
+
+**Deferred:** Tate + final exponentiation (E.B.4).
+
+### E.B.4 ◆ — Tate/reduced-Tate pairing + Track-E pairing design note + numfield correction (Sonnet, Cat B, `@plan`)
+
+**Deliverable:** the Tate pairing (reusing E.B.3's Miller core), the sub-track-closing design note, and
+a scheduled documentation correction.
+- **Tate pairing** (`tate.rs`): `t_ℓ(P,Q) = f_{ℓ,P}(Q)` (one Miller call), then **final exponentiation**
+  `^{(p^k − 1)/ℓ}` to land in μ_ℓ (the **reduced** Tate pairing, a well-defined coset representative).
+  `tate_pairing` (raw) and `reduced_tate` (with final exp) both exposed.
+- **Track-E pairing design-statement note** (the sub-track-entry analogue, lighter than a phase ◆):
+  principle 1 (genuine bilinear pairing — Miller + Weil/Tate implemented head-on, not a stubbed map);
+  principle 3 (no engineering optimization crept in — schoolbook `F_{p^k}`, no optimal-ate / no tower
+  fast path); principle 4 (toy embedding degree, the `k ≤ 6` ceiling and the crypto-scale `F_{p^{12}}`
+  gap annotated as demonstration-scale, not mathematical, boundaries). **Plus the E.C-readiness check:**
+  is C-Pairing's surface the right input to the MOV bridge — does it expose what E.C needs to map an
+  ECDLP into `F_{p^k}*` and hand off to `solve_dl` (C2)? Verdict recorded in the action-frame digest.
+- **numfield PEDAGOGY correction (scheduled corrective work item).** `shared/numfield/docs/PEDAGOGY.md`
+  (≈ lines 665–668) carries a doubly-wrong forward-looking note: "**E.D (pairings)** uses `NumberField`
+  and `NumberFieldElement` for extension field arithmetic… degree-12/degree-6 extensions… which are
+  number fields in the sense of this crate. The element arithmetic and inversion via extended Euclidean
+  are directly reused." Both claims are false and E.B is the session with the authority to correct them
+  (it builds the *actual* substrate): (1) **sub-track mis-name** — pairings are **E.B**, not E.D (E.D is
+  p-adic arithmetic); (2) **char-0/char-p conflation** — pairing target fields are `F_{p^k}`
+  (characteristic p), *not* char-0 `ℚ[x]/(f)` "number fields in the sense of this crate"; the BN/BLS
+  "degree-12 extension" is `F_{p^{12}}`, and the char-0 `NumberFieldElement` arithmetic is **not**
+  directly reusable (different coefficient field). Correct the note to point at the real char-p
+  `rho/src/pairing/fpext.rs` substrate. Small, doc-only; folded here (effort-neutral) rather than given
+  its own sub-LOC-band session.
+
+Consumes C-FpExt + C-PairingCurve + Miller (frozen). **Freezes C-Pairing.**
+
+**KAT:** **Tate bilinearity** `t(aP,bQ) = t(P,Q)^{ab}` (reduced form, in μ_ℓ); reduced-Tate lands in
+μ_ℓ (`result^ℓ = 1`); Weil/Tate consistency where the theory predicts a fixed-power relation. **Verify
+gate:** `cargo test --workspace` green.
+
+**Subtlety (load-bearing):** the **final exponentiation** `(p^k − 1)/ℓ` is the Tate-specific subtle step
+— a wrong exponent gives a non-μ_ℓ result that fails `result^ℓ = 1`. This is the **E.B ◆ boundary** —
+re-read the Purpose intent and verify the pairing substrate (extension field, curve-over-extension,
+Miller, Weil, Tate) is coherent and that **C-Pairing is genuinely E.C-ready** before crossing.
+
+**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.B.4 ◆ to
+confirm: (1) C-FpExt / C-PairingCurve / C-Pairing are the right inputs for **E.C** (the MOV bridge: does
+the `F_{p^k}` element representation feed `solve_dl`'s `BigInt`-in-`[1,p^k)` interface, and is the
+embedding-degree / torsion-fixture shape what E.C needs?); (2) the standalone-pairing-layer decision
+(option B) still holds against E.C's needs, or whether E.C will want the generalised field bound
+(option A) after all — surface as a discovery if so; (3) Miller + Weil + Tate are correct with KATs
+exercising bilinearity and non-degeneracy; (4) the pairing substrate composes frozen `rho::curve` /
+`shared::field` unmodified (principle 3); (5) the design-statement note passes 1/3/4 and nothing
+presumes E.D (p-adic) / E.E structure. One-shot findings; does not implement. Held at **Opus** per the
+header (lever-3 binding constraint — the E.C-bounding freeze).
 
 ---
 
 ## Cross-session contracts
 
-E.A **freezes three** contracts (substrate over-specifies per the rule — C-FactorOrder and
-C-CompositeCurve carry interfaces later Track-E attacks may consume). All rho solver and curve
-contracts are **read** (composed), not amended.
+E.B **freezes three** contracts. Per the substrate-over-specify rule, C-FpExt and C-PairingCurve carry
+interfaces E.C (and possibly E.D) will consume even where E.B's own KATs barely exercise them
+(`frobenius`, the torsion-point pair). All `rho::curve` and `shared::field` contracts are **read**
+(composed), not amended — the option-B decision.
 
-### C-CompositeCurve — composite-order test fixture (test-enforced) — *to be frozen at E.A.1*
+### C-FpExt — finite extension field `F_{p^k}` (compiler- + test-enforced) — *to be frozen at E.B.1*
 
-**Defined in:** E.A.1 (`rho/src/curve/test_curves.rs`). **Consumed by:** E.A.2 (the composite-order
-KAT) and any later Track-E attack needing a composite-order curve (E.G rho-baseline, potentially
-E.A-adjacent tests). Test-enforced: the fixture carries `n·G = ∞`, full-order (`[n/pᵢ]·G ≠ ∞ ∀ pᵢ`),
-and recorded-factorization KATs. **The generator has full composite order `n = ∏ pᵢ^{eᵢ}`** (smooth,
-small primes, ≥1 repeated prime for the `e>1` path) — *not* a subgroup generator. *Interface frozen
-at E.A.1: `composite_toy() -> Curve`, `COMPOSITE_TOY_N: u64`, `COMPOSITE_TOY_FACTORS: &[(u64,u32)]`
-(exact names ratified at E.A.1).*
+**Defined in:** E.B.1 (`rho/src/pairing/fpext.rs`). **Consumed by:** E.B.2 (curve coefficients lift),
+E.B.3/E.B.4 (pairing values live here), and **E.C** (the MOV bridge reads pairing outputs as `F_{p^k}`
+elements and maps them toward `solve_dl`). Compiler-enforced (the `FpExt` type + method signatures) +
+test-enforced (field axioms, Frobenius). **`FpExt` represents `F_p[u]/(m)`** for irreducible `m` of
+degree `k`; exposes `add`/`sub`/`neg`/`mul`/`square`/`inv`/`pow`/`frobenius`/`from_base`/`zero`/`one`/
+`eq` and `to_uint_vec`-style canonicalisation (the bridge to `solve_dl`'s `BigInt` encoding). *Exact
+type name, `k` representation (const-generic vs runtime), and the construction shape (direct quotient
+vs tower) ratified at E.B.1 and re-ratified at the E.B.4 ◆ against E.C.* *Over-specify note:* `frobenius`
+is carried now though E.B's own pairings need it only incidentally — E.C's MOV reduction needs it
+centrally.
 
-### C-FactorOrder — order-factorization entry point (compiler- + test-enforced) — *to be frozen at E.A.1*
+### C-PairingCurve — pairing-friendly fixture + `E(F_{p^k})` arithmetic (test-enforced) — *to be frozen at E.B.2*
 
-**Defined in:** E.A.1 (`rho/src/ecdlp/pohlig.rs`). **Consumed by:** E.A.2 (drives the per-prime-power
-loop) and potentially E.G (rho-baseline order analysis). Compiler-enforced (signature) + test-enforced
-(reproduces the fixture factorization). Signature:
-`factor_order(n: u64) -> Vec<(u64, u32)>` — the sorted prime-power decomposition `∏ pᵢ^{eᵢ} = n`.
-Toy-order-scoped (u64); the ECM fallback for larger orders is a recorded principle-4 annotation, not
-in the frozen surface. *Over-specify note:* returning `Vec<(u64,u32)>` (prime, exponent) rather than a
-flat prime list carries the exponent the `e>1` lift needs — included now though a flat list would
-suffice for a squarefree-only demo, because the `e>1` path is in E.A.2's scope.
+**Defined in:** E.B.2 (`rho/src/pairing/{ecext,test_curves}.rs`). **Consumed by:** E.B.3/E.B.4 (the
+pairing arguments) and **E.C** (the MOV bridge needs a curve with small embedding degree and an
+ℓ-torsion basis). Test-enforced: the fixture carries `ℓ·P = ∞`, `ℓ·Q = ∞`, P/Q independence, and
+**minimal embedding degree `k`** KATs. Exposes `PairingPoint` (group law over `FpExt`) and the fixture
+accessors (`pairing_toy() -> (Curve, FpExt-modulus, ℓ, P, Q)` shape — exact names ratified at E.B.2).
+**The embedding degree is exactly `k`** (minimal) and **P, Q are independent ℓ-torsion** — not a
+degenerate/collinear pair.
 
-### C-Pohlig — composite-order ECDLP entry (compiler- + test-enforced) — *to be frozen at E.A.2 ◆*
+### C-Pairing — Weil + Tate pairing entry (compiler- + test-enforced) — *to be frozen at E.B.4 ◆*
 
-**Defined in:** E.A.2 (`rho/src/ecdlp/pohlig.rs`). **Consumed by:** E.A.2's KAT now; later Track-E
-attacks that need a composite-order ECDLP entry (E.G rho-baseline re-run is the named candidate).
-Compiler- + test-enforced. Signature:
-`solve_ecdlp_composite(curve: &Curve, g: &AffinePoint<F>, q: &AffinePoint<F>, n: u64) -> Option<u64>`
-— `Some(k)` with `k·G = Q`, `None` on solver failure. *Frozen at the ◆ juncture* (signature ratified
-against the later-consumer fit before crossing).
+**Defined in:** E.B.4 (`rho/src/pairing/{weil,tate}.rs`, Miller in `miller.rs`). **Consumed by:** E.B's
+own KATs now; **E.C** (the MOV/Frey–Rück reduction — the named, climactic consumer). Compiler- +
+test-enforced. Signatures (shape; exact types ratified at the ◆):
+`weil_pairing(curve, &P, &Q, ℓ) -> FpExt` and
+`tate_pairing(curve, &P, &Q, ℓ) -> FpExt` / `reduced_tate(curve, &P, &Q, ℓ) -> FpExt` (in μ_ℓ).
+*Frozen at the ◆ juncture* (signature ratified against the E.C MOV-bridge fit before crossing — the
+lever-3 reason the juncture is Opus).
 
-### Frozen contracts read by E.A (composed, not amended)
+### Frozen contracts read by E.B (composed, not amended — the option-B decision)
 
-E.A composes these; none is touched.
-- **The rho ECDLP solvers** — `solve_brent` / `solve_dp` / `solve_dp_negmap` / `solve_dp_batch` /
-  `solve_dp_glv` (`rho/src/ecdlp/mod.rs`), each `(curve, g, q, n: u64 [prime], …) -> Option<u64>`.
-  E.A calls them with **prime** subgroup orders only. *`inv_mod_prime` is prime-only — a hard
-  precondition E.A must honour.*
-- **The rho curve interface** — `Curve { p, a, b, n, gx, gy }`, `generator`, `scalar_mul`, `negate`
-  (`rho/src/curve/mod.rs`). `Curve.n` is `Uint<4>`; E.A's composite fixture sets it to the composite
-  order.
-- **`shared::numth`** — `is_prime`, `trial_smooth`, `factor_base_up_to` (`shared/numth/src/`). The
-  factorization primitives `factor_order` composes. *(New `rho` → `shared-numth` dep added at E.A.1.)*
+E.B composes these; none is touched.
+- **`shared::field` `Fp<4>`** — the base prime field (`FpNaive`/`FpMonty`, `add`/`mul`/`inv`/`pow`/
+  `sqrt`/`legendre`, `shared/field/src/lib.rs`). `FpExt` is built *over* it as coefficient vectors.
+- **`rho::curve`** — `Curve { p, a, b, n, gx, gy }` (`Uint<4>` params), the `Fp<4>`-bound group law
+  (`scalar_mul`/`add_jacobian`/…). E.B reads the params and **re-implements** the group law over `FpExt`
+  in `ecext.rs` (the deliberate option-B duplication); it **amends nothing** in `rho::curve`. *A
+  destructive edit to generalise the `Fp<4>` bound is option A — declined; resurfacing it is a juncture
+  discovery, not an in-flight edit.*
+- **`crypto-bigint` `Uint<4>`** — the limb-backed integer the base field and `solve_dl` encoding share.
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
-names contracts this session locked. The E.A.2 ◆ `@plan` confirmation is not a separate ledger row (a
+names contracts this session locked. The E.B.4 ◆ `@plan` confirmation is not a separate ledger row (a
 paged fork with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.A.1 | Composite-order test curve + `factor_order` + prime-subgroup projection | done | 054df65 | C-CompositeCurve, C-FactorOrder (frozen) |
-| E.A.2 ◆ | Pohlig–Hellman prime-power lift + CRT combine + composite-order KAT | done | 51fd477 | C-Pohlig (frozen) |
+| E.B.1 | `F_{p^k}` extension-field arithmetic | pending | — | C-FpExt (to freeze) |
+| E.B.2 | `E(F_{p^k})` point arithmetic + pairing-friendly fixture | pending | — | C-PairingCurve (to freeze) |
+| E.B.3 | Miller's algorithm + Weil pairing + bilinearity KAT | pending | — | — |
+| E.B.4 ◆ | Tate/reduced-Tate pairing + final exp + design note + numfield correction | pending | — | C-Pairing (to freeze) |
 
-Contracts frozen before this sub-track (read by E.A): all Track-rho ECDLP/curve/field contracts
-(existing crate), `shared::numth` C1-family primitives (`is_prime`, `trial_smooth`,
-`factor_base_up_to`). This sub-track opens Phase δ over the existing rho substrate; it **freezes
-three new contracts** (C-CompositeCurve, C-FactorOrder, C-Pohlig).
+Contracts frozen before this sub-track (read by E.B): all Track-rho curve/field contracts (existing
+crate); E.A's C-CompositeCurve / C-FactorOrder / C-Pohlig (Track-E, not consumed by E.B but
+sibling-frozen). This sub-track **freezes three new contracts** (C-FpExt, C-PairingCurve, C-Pairing),
+all forward-looking toward **E.C** (C2 / the MOV bridge).
 
 ---
 
 ## Action-frame digest
 
-### E.A.2 ◆ — 2026-06-09
-Discovery/flex: E.A.2 ◆ boundary juncture returned still-on-intent; all five @plan confirmation points satisfied (C-Pohlig signature correct for later Track-E consumers, lift+CRT correct with KAT exercising e>1 and multi-prime, rho substrate frozen unmodified, design-statement note passes 1/3/4, no E.B/E.C scaffolding).
-Affected: none — C-Pohlig frozen as specified; no contracts flexed.
-Deferred: no — sub-track complete; E.A is a clean leaf entry to Phase δ. `solve_small_dlog` helper (brute-force for p≤64) noted as pragmatic guard against rho degeneration on tiny groups; reconciled against principle 3 (rho substrate itself unmodified).
-Texture: Both E.A sessions were clean green runs. The inflection-design fork (pre-E.A.2 dispatch) also returned design-confident. Track-E attack scaffold (composite fixture n=60=2²·3·5, factor_order, project_to_subgroup, solve_ecdlp_composite, 6 composite KATs) is coherent and closed.
+*(none yet)*
 
 ---
 
@@ -319,74 +414,85 @@ Texture: Both E.A sessions were clean green runs. The inflection-design fork (pr
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **No composite-order test curve exists — E.A.1 must construct one (substrate gap, not a blocker).**
-  All five existing fixtures are prime-order. E.A.1 builds the composite fixture by the established
-  offline point-counting method. If the offline search proves heavier than the prime-order template
-  (it should not — smooth composite orders are *easier* to find than large primes), isolating the
-  fixture into its own session is an **additive-reshard**, surfaced at E.A.1. A fixture whose
-  generator turns out to have proper-divisor order (the subtlety) is **internal-continue** (fix the
-  parameters), not a contract break.
+- **No extension-field arithmetic exists — E.B.1 builds `F_{p^k}` from scratch (substrate gap, larger
+  than the ROADMAP sketch).** The survey confirmed zero `Fp2`/`FpK`/tower types. This is **the** reason
+  E.B is 4 sessions, not 3, and why the field is its own Opus session. Writing it is
+  **internal-continue**. A discovery that the chosen construction (direct quotient) is awkward for E.C's
+  needs is an **additive-reshard** surfaced at the E.B.4 ◆ (or a tower refactor as its own session).
 
-- **No full-factorization entry point in `shared::numth` — E.A.1 writes the loop (anticipated, not a
-  surprise).** `lib.rs` already names "factoring composite group orders in Pohlig–Hellman (E.A)" as
-  the intended use of the ecm/smooth primitives. Writing `factor_order` on top of them is
-  **internal-continue**. A discovery that `trial_smooth` is *insufficient* for a u64 order (it is not,
-  with a √n base) would be a real finding — surface it; do not silently reach for ECM.
+- **The curve group law is `Fp<4>`-bound — E.B builds a *separate* `E(F_{p^k})` layer (option-B
+  guard).** `rho::curve`'s law cannot represent extension-field points. The shard adjudicated **option
+  B** (compose, don't amend). A `@build` agent that starts **editing `rho::curve` to accept extension
+  fields** (option A) is a **destructive-HALT** — that is a frozen, widely-consumed contract and a
+  separate deliberate decision; surface it as a juncture discovery, do not edit opportunistically.
 
-- **The rho solvers are prime-order-only — E.A composes, never modifies them (principle-3 guard).**
-  `inv_mod_prime` (Fermat) is silently wrong on composite `n`. E.A must pass **prime** subgroup
-  orders. A "discovery" that a solver fails on a composite order is **not** a solver bug — it is E.A
-  calling it wrong (**internal-continue**: fix the projection). A *destructive* edit to a rho solver
-  to "accept composite order" is a **destructive-HALT** — Pohlig–Hellman is the composite layer; the
-  rho substrate stays prime-order.
+- **G.A's `NumberFieldElement` is char-0 — not the `F_{p^k}` E.B needs (rigidity guard, with a
+  scheduled doc fix).** A `numfield` PEDAGOGY note (≈ lines 665–668) claims "E.D (pairings) uses
+  `NumberField` for extension arithmetic" — **doubly wrong** (char-0 number fields ≠ char-p finite
+  extensions; and pairings are E.B, not E.D). Reaching for `NumberFieldElement` to represent `F_{p^k}`
+  is **internal-continue → corrected** (build the char-p `FpExt`); do not silently adopt the char-0
+  type. **The note correction is scheduled as a corrective work item in E.B.4** (E.B has the authority
+  to fix it — it builds the real substrate).
 
-- **`solve_ecdlp_composite` is a forward-looking contract (over-specify discipline).** C-Pohlig's
-  signature is frozen with later Track-E consumers in mind (E.G's rho-baseline re-run is the named
-  candidate). If E.A.2 finds the signature underserves a known consumer, widening it at the ◆ is
-  **additive**; a consumer-driven *change* after freeze is an **additive-reshard** surfaced at the
-  next inflection.
+- **The pairing fixture's embedding degree must be *minimal* `k` — E.B.2's fixture trap.** If `ℓ | p^i−1`
+  for `i < k` the pairing degenerates into a smaller field and the demo is vacuous (the E.A full-order
+  trap analogue). A fixture that turns out non-minimal is **internal-continue** (fix the parameters),
+  not a contract break. The session must assert minimality.
 
-- **E.A is a leaf entry — it must not presume E.B/E.C structure (defocus guard).** No pairing
-  (E.B) or MOV (E.C) scaffolding belongs in E.A. Writing toward the MOV bridge here is **defocus** —
-  internal-continue only within the Pohlig–Hellman reduction scope. (The `@plan` juncture checks this
-  explicitly.)
+- **C-Pairing is a forward-looking contract bounding E.C (over-specify discipline).** The pairing
+  signatures and `FpExt` surface are frozen with the MOV bridge (E.C) in mind — the highest-stakes
+  forward contract in Track E. If E.B.4 finds the surface underserves E.C, **widening** it at the ◆ is
+  additive; a consumer-driven *change* after freeze is an **additive-reshard** at the E.C inflection.
+  This is the lever-3 reason the ◆ juncture is Opus.
 
-- **Phase-δ entry, not a phase ◆ — lighter design-statement register.** E.A.2 ◆ closes a *sub-track*,
-  not a phase. The design-statement note is the *attack-scaffold* check (1/3/4 for the reduction),
-  not the whole-phase verification a Track-E ◆ (E.W) will carry. The Opus juncture is operator-elected
-  for the phase-*entry* register, not because E.A is correctness-critical at the C2 level.
+- **E.B is the pairing *substrate*, not the MOV attack — it must not presume E.C (defocus guard).** No
+  MOV/Frey–Rück reduction, no `solve_dl` call, no embedding-into-NFS-DL belongs in E.B. Writing toward
+  the MOV bridge here is **defocus** — internal-continue only within the pairing-construction scope.
+  (The `@plan` juncture checks this and the *converse*: that C-Pairing is nonetheless E.C-*ready*.)
+
+- **No oracle dependency for correctness (principle-3 / E.A-consistent).** Bilinearity self-checks; a
+  PARI `ellweilpairing`/`elltatepairing` cross-check is an **optional `#[ignore]` sidecar** (the
+  established pattern — no `oracle-tests` feature, `#[ignore]` gate only). E.B introduces no new live
+  oracle.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — "E.A — Pohlig–Hellman"; Contract C1 — the `shared::numth`
-  smoothness family E.A's factor loop composes; the Sequencing note "γ before δ" — NFS-DL is now real,
-  so Track E may proceed) and this PLAN before any session.
-- Read the **templates to mirror**: `rho/src/curve/test_curves.rs` (the hand-computed prime-order
-  fixture pattern — E.A.1's composite fixture model, incl. the `n·G=∞` / full-order verification
-  idiom) and `rho/tests/ecdlp_kat.rs` (`check_solver_on_curve` — E.A.2's KAT model, `k·G==Q`
-  assertion style). Read the **substrate E.A composes**: `rho/src/ecdlp/mod.rs` (the five prime-order
-  solvers + `inv_mod_prime`'s prime precondition), `rho/src/curve/mod.rs` (`Curve`, `scalar_mul`,
-  `generator`), `shared/numth/src/{prime,smooth,ecm}.rs` (`is_prime`, `trial_smooth`,
-  `factor_base_up_to`, `ecm_factor`).
-- **Register:** E.A is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New module `rho/src/ecdlp/pohlig.rs`. KAT in `rho/tests/ecdlp_kat.rs`.
-- **Tier routing:** **E.A.1 is Sonnet** (substrate against the frozen fixture template — mechanical).
-  **E.A.2 is Opus** (`@build` on Opus) — operator-elected phase-δ-entry design register on the freshly
-  scaffolded attack. E.A.2 carries the single `@plan` marker: a ◆-boundary juncture (page
-  `@plan-juncture`) ratifying C-Pohlig and the Track-E-entry design-statement note before the
-  sub-track is closed. juncture-tier (header) is **opus** on the same election.
-- **Invariants to preserve:** **the rho solvers and curve interface are frozen — E.A composes them;
-  it amends none.** The per-subgroup solver is the *existing rho* (a destructive edit to make it
-  accept composite order is a destructive-HALT). Every rho call receives a **prime** order. The factor
-  loop is toy-order-scoped (u64); ECM is a documented fallback, not wired. No oracle dependency (the
-  composite DLP self-checks).
-- **PARI / CADO remain dev-only oracles** (Discoveries-log policy) — E.A introduces no new oracle;
-  the composite DLP needs none (`k·G==Q` is self-validating).
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — this is the **first
-  Track-E shard** (an unproven sub-track pattern for the new phase), so the conservative
-  halt-at-every-◆ cadence is warranted for the entry; the single ◆/`@plan` on E.A.2 is the one that
-  matters (the Opus C-Pohlig ratification + phase-entry design-statement note). *(Tradeoff vs default
-  cadence: one extra halt-confirm on a 2-session sub-track is cheap insurance on the phase-opening
-  shard; drop to default cadence for E.B once the Track-E pattern is proven.)*
+- Read `docs/ROADMAP.md` (Phase δ — "E.B — Pairing arithmetic (Weil, Tate)"; Contract C2 — the
+  `solve_dl` interface E.C will consume, *for context on what E.B's representation must eventually feed*;
+  the α-boundary discovery "`rho::curve` was NOT lifted to `shared::curve`… Revisit at E.B.1 when
+  pairings need divisor-arithmetic curves" — now resolved as option B) and this PLAN before any session.
+- **Note (non-blocking): the ROADMAP Progress table is stale** — it shows Track E "not started / 0 done"
+  (reconciled at the T.G boundary, *before* E.A landed). E.A is done (`054df65`, `51fd477`); the
+  Discoveries log and the prior PLAN ledger are authoritative. The roadmap is rewritten only at
+  sub-track boundaries; this lag is expected and is reconciled at the next Track-E ◆ that touches the
+  roadmap, not by E.B.
+- Read the **templates to mirror**: `shared/field/src/lib.rs` (the `Fp` trait E.B.1's `FpExt` parallels
+  and composes); `rho/src/curve/mod.rs` (the `Fp<4>`-bound group law E.B.2 re-implements over `FpExt` —
+  the `double_jacobian`/`add_jacobian` formulae transfer); `rho/src/curve/test_curves.rs` (the
+  hand-computed fixture idiom — `n·G=∞` / order verification — E.B.2's fixture model); `rho/tests/
+  ecdlp_kat.rs` (`check_solver_on_curve` — the KAT-helper style for E.B.3/4 bilinearity assertions).
+- **Register:** E.B is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New module tree `rho/src/pairing/{mod,fpext,ecext,test_curves,miller,weil,tate}.rs`.
+  KATs in `rho/tests/pairing_kat.rs`. One doc edit at E.B.4: `shared/numfield/docs/PEDAGOGY.md`.
+- **Tier routing:** **E.B.1 is Opus** (`@build` on Opus) — the roadmap-flagged `F_{p^k}` substrate
+  design that bounds E.C. **E.B.2–4 are Sonnet** (mechanical against the frozen extension/point
+  representation). E.B.4 carries the single `@plan` marker: a ◆-boundary juncture (page `@plan-juncture`)
+  ratifying C-FpExt / C-PairingCurve / C-Pairing against E.C before the sub-track closes. juncture-tier
+  (header) is **opus** — held by lever 3 (the E.C-bounding freeze), the binding constraint; the strong
+  lever-5 bilinearity KAT would license an opt-down in isolation but does not override lever 3.
+- **Invariants to preserve:** **`rho::curve` and `shared::field` are frozen — E.B composes them; it
+  amends neither.** The `E(F_{p^k})` group law is a *separate* layer in `rho/src/pairing/` (option B); a
+  destructive edit generalising `rho::curve`'s `Fp<4>` bound (option A) is a **destructive-HALT**. The
+  `F_{p^k}` arithmetic is toy-embedding-degree-scoped (`k ≤ 6`); a crypto-scale `F_{p^{12}}` tower is a
+  documented principle-4 boundary, not wired. No oracle dependency (bilinearity self-checks).
+- **PARI remains a dev-only `#[ignore]` oracle** (Discoveries-log policy) — a pairing cross-check
+  (`ellweilpairing`/`elltatepairing`) follows the established `#[test] #[ignore = "PARI not installed…"]`
+  pattern; it is optional, never on the green path.
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.B is still an early
+  Track-E shard and its substrate (a from-scratch extension field bounding the cross-track climax) is the
+  highest-stakes interface in the track so far, so the conservative halt-at-every-◆ cadence is warranted.
+  The single ◆/`@plan` on E.B.4 is the one that matters (the Opus C-Pairing ratification + E.C-readiness
+  check). *(Tradeoff vs default cadence: one extra halt-confirm on a 4-session sub-track is cheap
+  insurance on an E.C-bounding shard; revisit cadence for E.D once the pairing layer is proven.)*
