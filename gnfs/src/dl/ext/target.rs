@@ -614,6 +614,63 @@ fn scale_ext(a: &[BigInt], scalar: &BigInt, p: &BigInt) -> Vec<BigInt> {
     a.iter().map(|c| mod_reduce(&(c * scalar), p)).collect()
 }
 
+// ─── MOV bridge helper ────────────────────────────────────────────────────────
+
+/// Encode a pairing output (as coefficient vector) into the base-p `BigInt` that `solve_dl`
+/// consumes.
+///
+/// This is the gnfs-side half of the E.C MOV bridge (contract C-MovBridge). It accepts the
+/// `Vec<BigInt>` coefficient form that `FpExt::to_uint_vec` produces (after `Uint<4> → BigInt`
+/// conversion), asserts that the supplied modulus matches what `find_irreducible_degree2(p)`
+/// returns (the modulus-consistency guard), builds an [`ExtTarget`], and encodes it as a
+/// base-p `BigInt` via [`crate::dl::ext::descent::ext_target_to_bigint`].
+///
+/// # Modulus-consistency guard
+///
+/// The guard is mandatory: without it, a prime `p` where `find_irreducible_degree2` picks a
+/// different irreducible than the pairing's modulus would compute a DL in a different F_{p²}
+/// and return a wrong discrete log with no error.
+///
+/// # Arguments
+///
+/// - `coeffs`: Coefficient vector `[c_0, c_1]` in F_p (each in `[0, p)`), from the pairing
+///   output.
+/// - `p`: The prime base as `BigInt`.
+/// - `expected_modulus`: The irreducible modulus the pairing used, as `&[BigInt]` of length 3
+///   (for k=2): `[m_0, m_1, 1]` least-significant first.
+///
+/// # Panics
+///
+/// Panics if:
+/// - `find_irreducible_degree2(p)` fails (no irreducible polynomial found — should not happen
+///   for valid primes p > 2).
+/// - `expected_modulus` differs from what `find_irreducible_degree2(p)` returns (modulus
+///   mismatch: the pairing and the DL solver would be working in different F_{p²}).
+/// - Any coefficient is negative or `>= p` (forwarded from `ExtTarget::from_coeffs`).
+pub fn fpext_coeffs_to_dl_target(
+    coeffs: Vec<BigInt>,
+    p: &BigInt,
+    expected_modulus: &[BigInt],
+) -> BigInt {
+    // Modulus-consistency guard: the pairing's irreducible modulus must match the one
+    // find_irreducible_degree2 would choose for this p. Without this check, a p where
+    // find_irreducible_degree2 picks a different irreducible than the pairing's modulus
+    // computes a DL in a different F_{p²} and returns a wrong discrete log with no error.
+    let canonical_modulus = crate::dl::ext::descent::find_irreducible_degree2(p)
+        .expect("fpext_coeffs_to_dl_target: find_irreducible_degree2 failed for the given p");
+    assert!(
+        expected_modulus == canonical_modulus.as_slice(),
+        "fpext_coeffs_to_dl_target: modulus mismatch — pairing modulus {:?} differs from \
+         find_irreducible_degree2(p={p}) = {:?}; the pairing and the DL solver would operate \
+         in different F_{{p²}} fields",
+        expected_modulus,
+        canonical_modulus,
+    );
+
+    let target = ExtTarget::from_coeffs(coeffs, p.clone(), canonical_modulus);
+    crate::dl::ext::descent::ext_target_to_bigint(&target)
+}
+
 // ─── Unit tests (KATs) ────────────────────────────────────────────────────────
 
 #[cfg(test)]

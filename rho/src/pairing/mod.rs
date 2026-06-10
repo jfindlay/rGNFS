@@ -48,6 +48,7 @@
 pub mod ecext;
 pub mod fpext;
 pub mod miller;
+pub mod mov;
 pub mod tate;
 pub mod test_curves;
 pub mod weil;

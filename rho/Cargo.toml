@@ -13,10 +13,12 @@ name = "rho-dlog"
 path = "src/ecdlp/cli.rs"
 
 [dependencies]
+gnfs = { path = "../gnfs" }
 shared-field = { path = "../shared/field" }
 shared-bigint = { path = "../shared/bigint" }
 shared-numth = { path = "../shared/numth" }
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
+num-bigint = "0.4"
 rand = "0.8"
 rand_chacha = "0.3"
 crossbeam-channel = "0.5"

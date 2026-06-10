@@ -367,7 +367,7 @@ impl std::error::Error for SolveDlExtError {}
 ///
 /// Returns [`SolveDlExtError::NoIrreduciblePoly`] if no irreducible polynomial is found
 /// (should not happen for valid primes p > 2).
-fn find_irreducible_degree2(p: &BigInt) -> Result<Vec<BigInt>, SolveDlExtError> {
+pub(crate) fn find_irreducible_degree2(p: &BigInt) -> Result<Vec<BigInt>, SolveDlExtError> {
     let p_usize = bigint_to_usize(p);
 
     // Try x²+1 first (works for p ≡ 3 mod 4).
