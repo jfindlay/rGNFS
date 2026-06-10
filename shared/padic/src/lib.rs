@@ -1,4 +1,5 @@
-//! p-adic arithmetic substrate: Z/p^k ring arithmetic, p-adic valuation, and unit inversion.
+//! p-adic arithmetic substrate: Z/p^k ring arithmetic, p-adic valuation, unit inversion, and
+//! the formal-group logarithm.
 //!
 //! This crate provides the prime-power-modulus arithmetic type the p-adic sub-track (E.D) stands
 //! on. The central type is [`zp::Zp`] — an element of Z/p^k carrying a `BigInt` residue, an
@@ -13,6 +14,10 @@
 //! This is the load-bearing non-field guard that distinguishes this type from `shared/field`'s
 //! `Fp<L>` (which uses Fermat's little theorem and assumes a prime modulus).
 //!
+//! The [`log::padic_log`] function computes the formal-group logarithm series, convergent for
+//! `v_p(z − 1) ≥ 1` (the kernel of reduction). The convergence guard mirrors the unit-inversion
+//! guard: both defend against silent wrong answers.
+//!
 //! # Scope (principle-4 boundary)
 //!
 //! Toy precision only: `k` is small (demonstration fidelity). Crypto-scale precision towers,
@@ -20,7 +25,9 @@
 //! for this crate (E.E's concern).
 
 pub mod hensel;
+pub mod log;
 pub mod zp;
 
 pub use hensel::{HenselError, hensel_lift};
+pub use log::{PadicLogError, padic_log};
 pub use zp::{Zp, ZpError};
