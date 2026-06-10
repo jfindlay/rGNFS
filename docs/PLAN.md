@@ -365,7 +365,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.C.1 | MOV bridge substrate (`rho→gnfs` edge + `FpExt→solve_dl` bridge + modulus guard) | done | 840608c | C-MovBridge (frozen) |
-| E.C.2 ◆ | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | pending | — | C-Mov |
+| E.C.2 ◆ | MOV/Frey–Rück reduction + end-to-end `pairing_toy` MOV KAT | done | 2e1edf8 | C-Mov (frozen) |
 
 Contracts frozen before this sub-track (read by E.C): all Track-D NFS-DL contracts including
 **C2-ext** (frozen D.E.3) and **C-ExtTarget** (frozen D.E.1); the E.B pairing contracts (**C-FpExt /
@@ -377,7 +377,11 @@ forward-looking toward **E.W / T.E** (the Track-E writeup + MOV textbook chapter
 
 ## Action-frame digest
 
-*(none yet)*
+### E.C.2 ◆ — 2026-06-10
+Discovery/flex: E.C.2 ◆ boundary juncture returned still-on-intent on all six confirmation points. C-MovBridge and C-Mov are frozen. The cross-track climax composition is correct: `mov_reduce` composes pairing → C-MovBridge → `gnfs::solve_dl` and the end-to-end KAT recovers the known scalar with `e(Q,R) = e(G,R)^k` verified in F_{47²}*.
+Affected: C-MovBridge (frozen E.C.1), C-Mov (frozen E.C.2)
+Deferred: yes — ROADMAP Progress-table staleness + E.A/E.B/D.E closeout reconciliation is an inflection-point Opus action owed at the E.C ◆ boundary (PLAN Discoveries log, Notes-for-executors). Not an E.C `@build` work item.
+Texture: Bridge-side modulus assertion (not modulus-threading) confirmed non-fragile at toy params. Degenerate-g guard reuses `DescentFailed { stuck_prime: 0 }` (frozen taxonomy, no new variant). E.C sub-track complete; the project's first cross-track ECDLP→DLP composition ships.
 
 ---
 
