@@ -426,7 +426,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.E.1 | Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) | pending | — | C-AnomalousLift (+ `rho → shared-padic` edge) |
+| E.E.1 | Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) | done | 4dc5eaf | C-AnomalousLift (frozen) + `rho → shared-padic` edge |
 | E.E.2 ◆ | Elliptic formal-group log + log-division reduction + sub-track close | pending | — | C-SSA |
 
 Contracts frozen before this sub-track (read by E.E): C-Padic / C-Hensel / C-PadicLog
