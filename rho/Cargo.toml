@@ -17,6 +17,8 @@ gnfs = { path = "../gnfs" }
 shared-field = { path = "../shared/field" }
 shared-bigint = { path = "../shared/bigint" }
 shared-numth = { path = "../shared/numth" }
+shared-padic = { path = "../shared/padic" }
+shared-numfield = { path = "../shared/numfield" }
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
 num-bigint = "0.4"
 rand = "0.8"

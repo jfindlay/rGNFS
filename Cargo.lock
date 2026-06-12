@@ -1035,7 +1035,9 @@ dependencies = [
  "rayon",
  "shared-bigint",
  "shared-field",
+ "shared-numfield",
  "shared-numth",
+ "shared-padic",
 ]
 
 [[package]]
