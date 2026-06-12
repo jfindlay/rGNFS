@@ -427,7 +427,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.E.1 | Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) | done | 4dc5eaf | C-AnomalousLift (frozen) + `rho → shared-padic` edge |
-| E.E.2 ◆ | Elliptic formal-group log + log-division reduction + sub-track close | pending | — | C-SSA |
+| E.E.2 ◆ | Elliptic formal-group log + log-division reduction + sub-track close | done | 8a217f4 | C-SSA (frozen) |
 
 Contracts frozen before this sub-track (read by E.E): C-Padic / C-Hensel / C-PadicLog
 (`shared/padic`); the rho curve + ECDLP surface; `Fp<4>`. This sub-track **freezes two new
@@ -439,7 +439,11 @@ substrate → E.E attack).
 
 ## Action-frame digest
 
-*(none yet)*
+### E.E.2 — 2026-06-12
+Discovery/flex: Fixture y²=x³+5/F_7 has CM by Z[ζ₃] (a=0, p≡1 mod 3); v_p(T)=2 instead of 1; raw SSA formula gives k_raw=2k mod p. Discovery adjudication: internal-continue. ◆ juncture: still-on-intent. Fix applied: O(p) verify_and_search replaced with O(1) CM correction (k_raw·inv(2,p) mod p, verified by one scalar_mul). Precision bumped k=4→k=8 (fixture-dependent: k > 2·v_p(T)). All five ◆ confirmation points satisfied.
+Affected: C-SSA (frozen at this ◆)
+Deferred: yes — ◆ juncture flagged for T.E pedagogy: the CM correction is a permanent annotated wrinkle; if T.E wants the canonical SSA presentation without a CM caveat, a non-CM fixture (a≠0, v_p(T)=1) is the cleaner option. Not a blocker for E.W or T.E consumers of the frozen C-SSA signature.
+Texture: The multiply-by-p kernel step, formal-group log, and F_p division are all structurally correct and present. The convergence guard v_p≥1 is satisfied (not bypassed) — elliptic_log_proj pre-checks vt≥1 before calling padic_log. The rho-solver cross-check (solve_brent) independently confirms k recovery.
 
 ---
 
