@@ -22,7 +22,11 @@
 //! The fixture is hand-picked (not discovered via Schoof–SEA). The O(p) point-count verify
 //! is a fixture check, not a general point-counting algorithm. Toy precision only.
 
+pub mod formal_log;
 pub mod lift;
+pub mod reduce;
+
+pub use reduce::ssa_solve;
 
 use crypto_bigint::Uint;
 use num_bigint::BigInt;

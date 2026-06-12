@@ -1028,6 +1028,8 @@ dependencies = [
  "gnfs",
  "k256",
  "num-bigint",
+ "num-integer",
+ "num-traits",
  "p256",
  "proptest",
  "rand 0.8.6",
