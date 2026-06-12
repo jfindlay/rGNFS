@@ -2,159 +2,169 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E (E.D — p-adic arithmetic: Z_p tower, Hensel lifting, p-adic log)
+# rGNFS — Current Plan: Track-E (E.E — Smart–Satoh–Araki: the p-adic attack on anomalous curves)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) on the E.D.1
-substrate, against a strong lever 5 that would otherwise license an opt-down.** E.D is a Sonnet
-sub-track (the ROADMAP flags every E.D session Sonnet — p-adic arithmetic is well-understood
-material), but the **Z_p / Z/p^k arithmetic substrate (E.D.1) is a Category-A representation choice
-that bounds Hensel lifting, the p-adic log, and the downstream E.E (Smart–Satoh–Araki) attack** —
-get the precision/valuation model or the prime-power-vs-prime distinction wrong and the rework
-propagates through the whole sub-track and into E.E. Lever 5 is strong and fast (p-adic results are
-*exactly* hand-checkable — a Hensel lift to mod p^k and a formal-group log are deterministic
-known-answer values, decisive KATs) and *would* license `juncture-tier: sonnet` in isolation; the
-user judged the substrate design-error cost (lever 3) high enough to hold the ◆ juncture at **Opus**
-anyway. *(All three E.D sessions are Sonnet `@build`; only the ◆ juncture fork at E.D.3 is Opus.)*
+`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) on the E.E.1
+point-lift substrate, against a strong lever 5 that would otherwise license an opt-down.** E.E is a
+Sonnet sub-track (the ROADMAP flags both E.E sessions Sonnet — the attack is a known algorithm on a
+now-frozen p-adic substrate), but the **lift of a curve point from E(F_p) up to E(Z_p) (E.E.1) is a
+Category-A representation choice that bounds the whole attack**: how an F_p coordinate lifts to Z_p,
+whether E.E lifts x and Hensel-solves the curve equation for y or lifts the affine point wholesale,
+and the elliptic formal-group parametrisation the lift must be compatible with — get any of these
+wrong and the formal-group log reads a garbage value with no error. Lever 5 is strong and fast (a toy
+anomalous curve has a *known* group order p and the ECDLP scalar k is hand-chosen — the recovered k
+is an exactly decisive pass/fail KAT, cross-checkable against the existing rho ECDLP solver) and
+*would* license `juncture-tier: sonnet` in isolation; the user judged the point-lift design-error
+cost (lever 3) high enough to hold the ◆ juncture at **Opus** anyway, mirroring the E.D call. *(Both
+E.E sessions are Sonnet `@build`; only the ◆ juncture fork at E.E.2 is Opus.)*
 
-Last rewrite: **E.C ◆ boundary crossed and ROADMAP reconciled** (E.C.1 `840608c`, E.C.2 ◆
-`2e1edf8`; C-MovBridge / C-Mov frozen; the MOV/Frey–Rück cross-track bridge ships, ECDLP→DLP through
-a real NFS-DL solver proven at k=2). The E.C ◆ Discoveries entry (ROADMAP 2026-06-10) reconciled the
-Progress table (done ~57, remaining ~35–47) and recorded the E.A/E.B/D.E closeouts; **no static-frame
-debt is outstanding.** Per the sequencing order, the next un-started sub-track is **E.D — p-adic
-arithmetic**, opening Track E's second half (the structure-based attacks that escape search through
-*p-adic* structure rather than pairings).
+Last rewrite: **E.D ◆ boundary crossed and ROADMAP reconciled** (E.D.1 `0a98148`, E.D.2 `2e84836`,
+E.D.3 ◆ `95d03b7`; C-Padic / C-Hensel / C-PadicLog frozen; the p-adic substrate ships — Z_p
+arithmetic, Hensel root-lifting, the general formal-group log series). The E.D ◆ Discoveries entry
+(ROADMAP 2026-06-10) recorded the `Fp<L>`-is-not-a-ring durable cross-track note and confirmed the
+substrate composes (Z_p → Hensel → log homomorphism). **No static-frame debt is outstanding.** Per
+the sequencing order, the next un-started sub-track is **E.E — Smart–Satoh–Araki**, the immediate
+consumer the E.D substrate was built for: the second structure-based escape in Track E, escaping the
+ECDLP search bound through the *p-adic* structure of anomalous curves.
 
-The substrate survey (forked `@explore`, 2026-06-10) established the shape and surfaced the design
-crux:
+The substrate survey (forked `@explore`, 2026-06-10) established the shape and confirmed every
+planning assumption from the E.D intent prose:
 
-1. **E.D is fully greenfield — no p-adic code exists anywhere** (`padic`/`hensel`/`valuation`/`Zp`/`Qp`
-   return zero source hits). E.D builds the substrate from scratch in a **new `shared/padic`
-   workspace crate** (the user's placement decision), mirroring the existing
-   `shared/{bigint,field,numth,numfield}` decomposition.
+1. **E.E is fully greenfield — no SSA / anomalous / formal-group / Satoh / Smart code exists
+   anywhere** (zero source hits). E.E builds the attack from scratch in a **new `rho/src/ssa/`
+   module**, mirroring the MOV bridge's placement (`rho/src/pairing/mov.rs`) as the structural
+   precedent for an alternative-ECDLP-solver-as-a-bridge-into-a-shared-substrate.
 
-2. **`Fp<L>` cannot be reused for the p-adic tower — this is the load-bearing substrate fact.**
-   `shared/field`'s `Fp<L>` trait assumes a **prime** modulus (`inv` uses Fermat's little theorem,
-   `sqrt` assumes p prime). Z/p^k for k>1 is a ring with zero divisors, *not* a field; `Fp::inv`
-   would silently return wrong results for a composite modulus. E.D.1 introduces a distinct
-   prime-power arithmetic type. **This is the highest-cost-of-wrong silent-failure mode in E.D** — a
-   units-vs-non-units confusion in Z/p^k produces wrong lifts with no error.
+2. **E.E adds the `rho → shared-padic` dependency edge** (confirmed absent today: `rho` depends on
+   `shared-field`/`shared-bigint`/`shared-numth`/`gnfs`, not `shared-padic`). This is **E.E's edge to
+   add**, exactly as the E.D intent prose foretold ("the `rho → shared-padic` edge is E.E's, not
+   E.D's"). It is a new workspace dependency, not a new crate.
 
-3. **The polynomial machinery needs two additive extensions.** Hensel lifting evaluates `f` and `f'`
-   mod p^k; `IntPoly` (`shared/numfield/src/poly.rs`, G.A-frozen) has **neither a formal
-   `derivative()` nor any mod-m coefficient reduction / `eval_mod`**. Per the user's decision, E.D
-   **extends `IntPoly` additively** (new `derivative()` + `eval_mod(x, m)` methods, no change to any
-   existing signature) rather than duplicating polynomial logic in `shared/padic`. This is an
-   additive edit to a frozen shared type — recorded, low-risk, surfaced at the ◆.
+3. **rho has NO point-counting, trace-of-Frobenius, or anomalous-curve detection** (the stored
+   `Curve::n` is a *parameter*, never computed; zero hits for `trace`/`anomalous`/`cardinality`). The
+   anomalous fixture (#E(F_p) = p, trace 1) must be **hand-constructed** — a hardcoded toy curve with
+   a *naive O(p) point-count verification* helper (the user's decision), **not** a general
+   Schoof–SEA point-counting algorithm (out of scope — a different machine). How the fixture was
+   *found* is a principle-4 annotation (the disconnect: real anomalous-curve construction is an
+   engineering search; the toy fixture is hand-picked).
 
-4. **E.D adds a `rho → shared-padic` edge for the downstream consumer, but E.D itself is
-   crate-internal to `shared`.** The p-adic substrate, Hensel lift, and p-adic log all live in
-   `shared/padic`; they consume only `shared/bigint` (`BigInt`, `gcd`) and `shared/numfield`
-   (`IntPoly`). The `rho → shared-padic` dependency is added by **E.E** (Smart–Satoh–Araki, which
-   lifts curve points), *not* by E.D. E.D's KATs live in `shared/padic/tests/` and exercise the
-   arithmetic + lift + log against hand-computed values — no curve, no rho dependency.
+4. **The p-adic substrate is frozen and general-only.** `shared/padic` exposes `Zp` (C-Padic:
+   `add`/`sub`/`mul`/`inv`-of-units/`valuation`/`precision`/`lift`/`truncate`), `hensel_lift(f, r0,
+   p, k)` (C-Hensel), and `padic_log(z)` (C-PadicLog — the **general** `log(1+x)` series, requiring
+   `v_p(z−1) ≥ 1`). `log.rs` explicitly states "E.E supplies the elliptic-curve specialisation; this
+   module ships the general series." **E.E supplies the elliptic formal-group parametrisation** that
+   feeds the general log — confirmed, not refuted, by the code.
 
-5. **The downstream consumer is E.E (Smart–Satoh–Araki), not this sub-track.** E.D delivers the
-   *general* p-adic substrate (Z_p arithmetic, Hensel root-lifting, the formal-group / p-adic
-   logarithm series). E.E consumes it to attack anomalous curves (#E(F_p) = p, trace 1). **E.D does
-   NOT touch curves, point-counting, or trace-of-Frobenius** (the survey confirmed none exists; that
-   is E.E's concern, against a hardcoded anomalous fixture). Building any of that in E.D is defocus.
+5. **The curve substrate is `rho`-local and `Uint<4>`-based.** `rho::curve::Curve` (short Weierstrass
+   over GF(p), parameters `Uint<4>`), `AffinePoint<F>` / `JacobianPoint<F>` with `F: Fp<4>`,
+   `scalar_mul`, `add_jacobian`, `is_on_curve`. `Fp<L>` passes the modulus *per-call* (`p: &Uint<L>`).
+   A coordinate lifts to Z_p via `x.to_uint()` → extract the toy-scale limb → `Zp::new(&BigInt, &p,
+   k)`. The existing ECDLP solvers (`solve_brent`/`solve_dp*`) take `(curve, g, q, n, …) -> Option<u64>`;
+   **E.E mirrors this instance shape but returns `Result<u64, SsaError>`** (deterministic — succeeds,
+   or errors "curve not anomalous").
 
-The work splits at two contract-sharp seams, **3 sessions** (matching the ROADMAP's 3-session
-Sonnet estimate):
+The work splits at **one contract-sharp seam**, **2 sessions** (matching the ROADMAP's 2-session
+Sonnet estimate), at the boundary between the *curve substrate E.E must build* and *the attack that
+consumes it*:
 
-1. **E.D.1 — `shared/padic` crate + Z_p / Z/p^k arithmetic substrate (Sonnet, Cat A).** New
-   workspace member `shared/padic`; the prime-power-modulus arithmetic type (the p-adic number as
-   valuation + unit, or fixed-precision residue mod p^N — the representation choice is the design
-   crux); add/sub/mul/inv-of-units/valuation/precision. **Freezes C-Padic** — the p-adic-number
-   interface E.D.2 and E.D.3 build on.
+1. **E.E.1 — Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) (Sonnet, Cat A).** A hardcoded
+   anomalous toy curve with an O(p) `#E = p` verification helper; the lift of an affine F_p point to
+   Z_p coordinates (lift x, Hensel-solve the curve equation `y² = x³ + ax + b` over Z_p for y). New
+   `rho/src/ssa/` module; the `rho → shared-padic` edge. **Freezes C-AnomalousLift** — the curve-lift
+   interface E.E.2 builds the attack on.
 
-2. **E.D.2 — Hensel lifting + `IntPoly` derivative/mod-eval (Sonnet, Cat B).** Newton iteration
-   lifting a simple root of `f` mod p to mod p^k (the quadratic-convergence lift, `r ← r −
-   f(r)/f'(r) mod p^{2k}`); the additive `IntPoly::derivative()` + `IntPoly::eval_mod()` the lift
-   consumes. **Freezes C-Hensel.**
+2. **E.E.2 ◆ — Elliptic formal-group log + log-division reduction + sub-track close (Sonnet,
+   Cat B, `@plan`).** The elliptic formal-group logarithm specialising C-PadicLog; the
+   "multiply-by-p into the kernel of reduction, then ψ(p·Q̃)/ψ(p·G̃) mod p" SSA reduction; the
+   end-to-end ECDLP KAT (recover a hand-chosen k on the anomalous fixture, cross-checked against the
+   rho solver). **Freezes C-SSA.** Crosses the **E.E ◆ boundary** (and the Track-E p-adic-branch arc:
+   E.D substrate → E.E attack).
 
-3. **E.D.3 ◆ — p-adic logarithm + sub-track close (Sonnet, Cat B, `@plan`).** The formal-group /
-   p-adic logarithm series E.E's SSA reduction consumes; the end-to-end KAT (lift + log recovers a
-   hand-computed p-adic value); the sub-track close. **Freezes C-PadicLog.** Crosses the **E.D ◆
-   boundary.**
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing general point-counting /
+Schoof–SEA — the fixture is hand-picked with an O(p) verify, not discovered; or building a Q_p
+field-of-fractions tower beyond what the formal-group log needs — surface as an additive-reshard if
+E.E.2 finds Z_p insufficient; or writing the *p-adic / SSA textbook chapter* in MATHEMATICS.md —
+that is **T.E, paired with E.W at the Track-E ◆**, per the per-track-chapter pairing rule; E.E writes
+at most a PEDAGOGY code-tour delta) and **rigidity** (re-deriving p-adic arithmetic in `rho` rather
+than consuming the frozen `shared/padic` surface; or trying to make `padic_log` curve-aware rather
+than supplying the elliptic parametrisation as the E.E layer the survey confirmed it expects).
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing the *Smart–Satoh–Araki
-attack itself* — the curve lift, anomalous-curve detection, trace-of-Frobenius / point-counting —
-that is E.E, not E.D; E.D delivers the general p-adic substrate. Or writing the *p-adic textbook
-chapter* in MATHEMATICS.md — that is **T.E, paired with E.W at the Track-E ◆**, per the ROADMAP's
-per-track-chapter pairing rule; E.D writes at most a PEDAGOGY code-tour delta, not a textbook
-chapter. Or adding a `rho → shared-padic` edge — that is E.E's, not E.D's; E.D is `shared`-internal)
-and **rigidity** (using `Fp` for the p-adic tower because "it's already there" — `Fp::inv` is wrong
-mod p^k; the prime-power type is mandatory. Or duplicating `IntPoly`'s polynomial logic in
-`shared/padic` rather than extending `IntPoly` — the derivative/mod-eval are general polynomial ops
-and belong on `IntPoly`, per the placement decision).
-
-**Scoping discipline.** E.D builds p-adic arithmetic at **demonstration fidelity** (principle 4) and
-**toy precision** (fixed, small k — enough to exhibit Hensel convergence and the log, not
-crypto-scale precision towers). It **amends no frozen contract** except the **additive** `IntPoly`
-extension (new methods only). It introduces **no new live oracle** (p-adic values are exactly
-hand-computable; an optional PARI/`Qp` `#[ignore]` cross-check is the established dev-only pattern).
-A crypto-scale anomalous-curve SSA attack is a principle-4 boundary and an E.E work item, not E.D.
+**Scoping discipline.** E.E builds the SSA attack at **demonstration fidelity** (principle 1 —
+algorithmic content complete: the lift, the formal-group log, the division reduction all implemented
+head-on) and **toy precision / toy curve** (a small hand-picked anomalous p; fixed small precision k
+— enough to recover the scalar, not crypto-scale). It **amends no frozen contract** (C-Padic /
+C-Hensel / C-PadicLog / the rho curve surface are all **read**; the `rho → shared-padic` edge is
+additive). It introduces **no new live oracle** (the recovered k is exactly checkable against the
+known scalar and against the rho ECDLP solver; an optional PARI `Qp`/`elllog` `#[ignore]`
+cross-check is the established dev-only pattern). **The "surprise" is the pedagogy** (ROADMAP: "the
+most surprising single result in classical ECDLP cryptanalysis; the chapter should make that surprise
+explicit") — that an O(log p) division replaces an O(√p) search the instant the curve is anomalous —
+and it belongs whole in E.E.2's reduction, exercised by the end-to-end KAT.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.D): "*E.D — p-adic arithmetic. 3 sessions. Predecessors: shared bigint, G.A
-(polynomial machinery). Hensel lifting; p-adic logarithm. Sonnet.*" E.D is the substrate sub-track
-for the **second structure-based escape in Track E**: where MOV (E.C) escaped the ECDLP search bound
-via a *pairing* homomorphism into a finite field, Smart–Satoh–Araki (E.E, the immediate consumer)
-escapes it via the ***p-adic* structure of anomalous curves** — lifting the curve to Z_p and reading
-the discrete log off the formal-group logarithm. E.D builds the p-adic machinery that escape stands
-on; it does not build the attack.
+Per ROADMAP (Phase δ, E.E): "*E.E — Smart–Satoh–Araki. 2 sessions. Predecessor: E.D. Polynomial-time
+attack on anomalous curves (trace = 1). The most surprising single result in classical ECDLP
+cryptanalysis; the chapter should make that surprise explicit. Sonnet.*" E.E is the **immediate
+consumer the E.D p-adic substrate was built for**: where MOV (E.C) escaped the ECDLP search bound via
+a *pairing* into a finite field, Smart–Satoh–Araki escapes it via the ***p-adic* structure of
+anomalous curves** — and where E.D delivered the general machinery, E.E wires it onto curves and
+reads the discrete log off.
 
-The structure-based-escape-from-search through-line, p-adic branch: an anomalous curve (#E(F_p) = p,
-trace of Frobenius = 1) has the rare property that its group lifts compatibly to the p-adic numbers,
-and the p-adic *elliptic* logarithm — a power series convergent on the kernel of reduction — maps the
-order-p subgroup isomorphically onto the additive group p·Z_p / p²·Z_p ≅ F_p. The ECDLP `Q = k·G`
-becomes a *division* in F_p: `k = log_p(Q) / log_p(G)`. No search. E.D delivers the three substrate
-pieces that reduction calls:
+The structure-based-escape-from-search through-line, p-adic branch, completed: an **anomalous** curve
+(#E(F_p) = p, trace of Frobenius = 1) has the rare property that its order-p group lifts compatibly to
+the p-adic numbers. The SSA reduction:
 
-1. **Z_p / Z/p^k arithmetic (E.D.1).** The ring the lift lives in. The crux is that Z/p^k is *not* a
-   field: only units (elements coprime to p) are invertible, and the p-adic valuation `v_p(·)` is the
-   organising invariant. The representation (valuation + unit form, or fixed-precision residue) is
-   the Category-A decision that bounds everything above it.
+1. **Lift** the base point G and target Q from E(F_p) to *arbitrary* lifts G̃, Q̃ in E(Z_p) reducing
+   to them (lift the x-coordinate to Z_p, Hensel-solve `y² = x³ + ax + b` for ỹ). **(E.E.1.)**
 
-2. **Hensel lifting (E.D.2).** Newton's method over Z_p: a simple root of `f` mod p lifts *uniquely*
-   to a root mod p^k, with the iteration doubling precision each step (`r_{n+1} = r_n − f(r_n) ·
-   f'(r_n)^{-1}` mod the next power). This is the lift that takes a curve point's F_p coordinates up
-   to Z_p coordinates — and the reason E.D.2 needs `IntPoly::derivative` and a mod-p^k evaluation.
+2. **Multiply by p** to land p·G̃ and p·Q̃ in the **kernel of reduction** E₁(Z_p) — the points
+   reducing to the identity, where the formal group lives and the p-adic elliptic logarithm
+   *converges* (this is precisely where C-PadicLog's `v_p ≥ 1` guard is satisfied — the
+   multiply-by-p is the load-bearing step that makes the log legal). **(E.E.2.)**
 
-3. **The p-adic logarithm (E.D.3).** The formal-group log series `log(1+x) = x − x²/2 + x³/3 − …`
-   (and the elliptic-curve formal-group log E.E specialises), convergent p-adically on the kernel of
-   reduction. This is the homomorphism that turns the multiplicative ECDLP into additive division —
-   the escape itself, exercised at toy precision by E.D's KAT and consumed in full by E.E.
+3. **Apply the elliptic formal-group logarithm** ψ (a power series in the local parameter `t = −x/y`,
+   specialising C-PadicLog's general series), mapping the kernel isomorphically onto p·Z_p / p²·Z_p ≅
+   F_p. The ECDLP `Q = k·G` becomes a **division in F_p**: `k ≡ ψ(p·Q̃) / ψ(p·G̃) mod p`. **No
+   search.** **(E.E.2.)**
+
+E.E delivers the two pieces the reduction needs that E.D deliberately left to it (item 5 of the E.D
+intent: "E.D delivers the *general* p-adic substrate; E.E consumes it to attack anomalous curves"):
+
+1. **The anomalous-curve fixture + point-lift (E.E.1).** rho has no point-counting; the anomalous
+   curve is a hand-picked toy fixture (with an O(p) `#E = p` verify), and the lift of its points to
+   Z_p is the Category-A representation choice that bounds the attack. The lift Hensel-solves the
+   curve equation over Z_p — the first real *consumer* of C-Hensel outside E.D's own KAT.
+
+2. **The elliptic formal-group log + division reduction (E.E.2).** The elliptic specialisation
+   `log.rs` explicitly defers to E.E, the multiply-by-p kernel step, the F_p division, and the
+   end-to-end ECDLP recovery — the escape itself, the pedagogical surprise made concrete.
 
 The substrate survey established the shape precisely:
 
-1. **E.D is greenfield — no p-adic code, no chapter, no fixture.** The substrate is built from
-   scratch in a new `shared/padic` crate. The only existing pieces it consumes are `shared/bigint`
-   (`BigInt`, `gcd`) and `shared/numfield`'s `IntPoly` (extended).
+1. **E.E is greenfield in `rho`** — new `rho/src/ssa/` module, the `rho → shared-padic` edge, zero
+   prior SSA code. It consumes the frozen `shared/padic` surface (`Zp`, `hensel_lift`, `padic_log`)
+   and the existing `rho::curve` machinery (`Curve`, `AffinePoint`, `scalar_mul`, `is_on_curve`).
 
-2. **`Fp` is the wrong tool for the tower (the rigidity guard).** `shared/field`'s `Fp<L>` assumes a
-   prime modulus; Z/p^k arithmetic must be a distinct type with units-only inversion and an explicit
-   valuation. Reusing `Fp` is the silent-wrong-answer failure mode.
+2. **The p-adic log is general-only; E.E supplies the elliptic parametrisation** (the local parameter
+   `t = −x/y` and the formal-group series feeding `padic_log`) — confirmed by `log.rs:41-43`.
 
-3. **`IntPoly` is extended additively (the placement decision).** `derivative()` and `eval_mod(x, m)`
-   are added to `IntPoly` in `shared/numfield` — general polynomial ops that belong there, consumed
-   by E.D.2's Hensel iteration. No existing `IntPoly` signature changes.
+3. **The anomalous fixture is hand-picked with an O(p) verify** — no Schoof–SEA (defocus guard). How
+   it was found is a principle-4 annotation.
 
-4. **E.D is `shared`-internal; the `rho → shared-padic` edge is E.E's.** E.D's tests live in
-   `shared/padic/tests/` and check arithmetic/lift/log against hand-computed values. The curve-side
-   wiring (and the dependency edge) is E.E.
+4. **E.E mirrors the existing ECDLP-solver instance shape** (`curve, g, q, n`) but returns
+   `Result<u64, SsaError>` (deterministic, mirroring `mov_reduce`'s `Result<u64, E>`, not the rho
+   walkers' `Option<u64>`).
 
-Re-read this intent at the ◆ boundary to catch defocus (the SSA attack, point-counting, the
-MATHEMATICS chapter — all out of E.D scope) and rigidity (`Fp` misuse, `IntPoly` duplication).
+Re-read this intent at the ◆ boundary to catch defocus (point-counting, a Q_p tower, the MATHEMATICS
+chapter) and rigidity (re-deriving p-adic arithmetic in rho; forcing `padic_log` to be curve-aware).
 
 ---
 
@@ -162,15 +172,18 @@ MATHEMATICS chapter — all out of E.D scope) and rigidity (`Fp` misuse, `IntPol
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper; raw `cargo` is the only CI surface (confirmed
-unchanged from E.C; oracle KATs are `#[ignore]`-gated only, no `oracle-tests` feature). `/run-plan`
-re-discovers at preflight. E.D **adds a new workspace member (`shared/padic`)**, so the gate is a
-**correctness + workspace-integrity gate**: each session's KATs (`shared/padic/tests/*_kat.rs`) are
-the primary correctness signal — fast and *exactly* decisive (lever 5: p-adic lifts and the log are
-hand-computable known-answer values). `cargo check --workspace` must confirm the new `shared/padic`
-member resolves cleanly (added to root `Cargo.toml` `members`, depends only on `shared-bigint` +
-`shared-numfield`, no cycle). **The G.A `IntPoly` consumers (the NFS pipeline in `gnfs`) must stay
-green** after the additive `IntPoly` extension — the gate guards the no-regression invariant on the
-shared polynomial type.
+unchanged from E.D; oracle KATs are `#[ignore]`-gated only — the exact form is `#[ignore = "PARI not
+installed; run manually when available"]`, used identically in `rho/tests/mov_kat.rs:252` and
+`shared/padic/tests/log_kat.rs:202`). `/run-plan` re-discovers at preflight. E.E **adds a new
+workspace dependency edge (`rho → shared-padic`)** but **no new crate**, so the gate is a
+**correctness + dependency-integrity gate**: each session's KATs (`rho/tests/ssa_kat.rs`) are the
+primary correctness signal — fast and *exactly* decisive (lever 5: the anomalous curve's order is a
+known p, the ECDLP scalar k is hand-chosen, and the recovered k is cross-checkable against the rho
+solver). `cargo check --workspace` must confirm the `rho → shared-padic` edge resolves with **no
+dependency cycle** (`shared-padic` depends on `shared-bigint` + `shared-numfield`; `rho` already
+depends on `gnfs` + `shared-field/bigint/numth` — adding `shared-padic` introduces no cycle since
+`shared-padic` does not depend on `rho`). **The existing rho ECDLP / MOV / pairing KATs must stay
+green** after the new module + edge — the gate guards the no-regression invariant on the rho crate.
 
 ---
 
@@ -182,249 +195,251 @@ point requiring a juncture fork + human sign-off before the next session is disp
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | A | Sonnet | `shared/bigint` (`BigInt`, `gcd`, frozen, read) | `Cargo.toml` (add `shared/padic` member), `shared/padic/Cargo.toml` (new), `shared/padic/src/lib.rs` (new: crate root + `pub mod`), `shared/padic/src/zp.rs` (new: the Z/p^k / Z_p arithmetic type), `shared/padic/tests/zp_kat.rs` (new) |
-| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | B | Sonnet | C-Padic (frozen E.D.1), `IntPoly` (`shared/numfield`, frozen G.A, **extend additively**) | `shared/numfield/src/poly.rs` (add `derivative()` + `eval_mod()` to `IntPoly`, additive), `shared/padic/src/hensel.rs` (new: Newton root-lift), `shared/padic/src/lib.rs` (add `pub mod hensel;`), `shared/padic/Cargo.toml` (add `shared-numfield` dep), `shared/padic/tests/hensel_kat.rs` (new) |
-| E.D.3 ◆ `@plan` | p-adic logarithm + sub-track close | B | Sonnet | C-Padic (frozen E.D.1, read), C-Hensel (frozen E.D.2, read) | `shared/padic/src/log.rs` (new: formal-group / p-adic log series), `shared/padic/src/lib.rs` (add `pub mod log;`), `shared/padic/tests/log_kat.rs` (new: end-to-end lift+log KAT + optional PARI `#[ignore]` cross-check) |
+| E.E.1 | Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) | A | Sonnet | C-Hensel (frozen E.D.2), C-Padic (frozen E.D.1), `rho::curve` (`Curve`, `AffinePoint`, frozen, read), `Fp<4>` (`shared-field`, read) | `rho/Cargo.toml` (add `shared-padic` dep — the new edge), `rho/src/lib.rs` (add `pub mod ssa;`), `rho/src/ssa/mod.rs` (new: module root + `SsaError` + the anomalous fixture + O(p) `#E=p` verify), `rho/src/ssa/lift.rs` (new: affine F_p point → Z_p lift via Hensel), `rho/tests/ssa_kat.rs` (new) |
+| E.E.2 ◆ `@plan` | Elliptic formal-group log + log-division reduction + sub-track close | B | Sonnet | C-AnomalousLift (frozen E.E.1), C-PadicLog (frozen E.D.3, read), C-Padic (read), `rho::ecdlp::solve_brent` (read — KAT cross-check) | `rho/src/ssa/formal_log.rs` (new: elliptic formal-group log specialising `padic_log`), `rho/src/ssa/reduce.rs` (new: multiply-by-p kernel step + F_p division + `ssa_solve` entry), `rho/src/ssa/mod.rs` (add `pub mod formal_log; pub mod reduce;` + re-export `ssa_solve`), `rho/tests/ssa_kat.rs` (extend: end-to-end ECDLP KAT + rho-solver cross-check + optional PARI `#[ignore]`) |
 
-**Sequencing notes.** Strictly serial: **E.D.1 → E.D.2 → E.D.3.** E.D.1 lands the crate and the
-arithmetic everything stands on; E.D.2 builds the lift (and the polynomial support it needs); E.D.3
-builds the log and closes the sub-track. The single `@plan` marker sits on **E.D.3 ◆** — the Opus
-boundary juncture (juncture-tier: opus) ratifying C-Padic / C-Hensel / C-PadicLog before the
-sub-track closes. E.D.1, though it freezes the Category-A substrate, carries **no** inline `@plan`
-(C-Padic is compiler-/test-checkable and is re-ratified at the E.D.3 ◆ alongside C-Hensel /
-C-PadicLog — an inline juncture would double the boundary cost on a 3-row Sonnet shard).
-*(Tradeoff named: the E.D.1 substrate is the highest-design-cost session, and a wrong representation
-is cheapest to catch right after E.D.1 rather than two sessions later at the ◆. The opt for a single
+**Sequencing notes.** Strictly serial: **E.E.1 → E.E.2.** E.E.1 lands the module, the dependency
+edge, the fixture, and the lift everything stands on; E.E.2 builds the formal-group log + reduction
+and closes the sub-track. The single `@plan` marker sits on **E.E.2 ◆** — the Opus boundary juncture
+(juncture-tier: opus) ratifying C-AnomalousLift / C-SSA and confirming the attack composes onto the
+frozen p-adic substrate before the sub-track closes. E.E.1, though it freezes the Category-A
+lift substrate, carries **no** inline `@plan` (C-AnomalousLift is compiler-/test-checkable and is
+re-ratified at the E.E.2 ◆ alongside C-SSA — an inline juncture would double the boundary cost on a
+2-row Sonnet shard). *(Tradeoff named: the E.E.1 lift is the highest-design-cost session, and a wrong
+lift representation is cheapest to catch right after E.E.1 rather than at the ◆. The opt for a single
 ◆ juncture trades that early-catch insurance for boundary-cost economy on a short shard; `/run-plan
-halt-at-boundaries` partially mitigates by surfacing E.D.1 at its own commit for human eyes even
-without a paged fork.)*
+halt-at-boundaries` mitigates by surfacing E.E.1 at its own commit for human eyes even without a
+paged fork.)*
 
-**Why 3 sessions (the ROADMAP's Sonnet estimate).** The split is taken at the two contract-sharp
-seams:
-- **One-line-commit-title corollary.** "New `shared/padic` crate + Z_p arithmetic substrate",
-  "Hensel lifting + `IntPoly` derivative/mod-eval", and "p-adic logarithm + sub-track close" are
-  **three distinct commit titles** across two categories (A substrate, B algorithm ×2).
-- **Contract-sharp boundaries (legitimate, not LOC-driven).** E.D.1 **freezes** C-Padic; E.D.2
-  **consumes** it and **freezes** C-Hensel; E.D.3 **consumes** both and **freezes** C-PadicLog. Two
-  real produce/consume seams.
-- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the arithmetic
-  ring, the lift, the log. None fractures below its floor; none merges across a freeze.
+**Why 2 sessions (the ROADMAP's Sonnet estimate).** The split is taken at the single contract-sharp
+seam between the substrate E.E builds and the attack that consumes it:
+- **One-line-commit-title corollary.** "Anomalous-curve fixture + point-lift E(F_p) → E(Z_p)" and
+  "Elliptic formal-group log + log-division reduction + sub-track close" are **two distinct commit
+  titles** across two categories (A substrate, B algorithm).
+- **Contract-sharp boundary (legitimate, not LOC-driven).** E.E.1 **freezes** C-AnomalousLift;
+  E.E.2 **consumes** it and **freezes** C-SSA. One real produce/consume seam (the lifted points are
+  the input the formal-group log + division operate on).
+- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the lift, the
+  attack. Neither fractures below its floor; neither merges across the freeze.
 
-They are **not** further splittable: the Z_p arithmetic is one ring (splitting add/mul from inversion
-fractures a unit with no contract-sharp seam between them); Hensel + its polynomial support is one
-lift (the `derivative`/`eval_mod` exist *for* the lift); the log + its KAT is the irreducible
-end-to-end unit (a log with no lift+log KAT has an undefined contract). Merging E.D.2 into E.D.1 would
-put the arithmetic ring, the lift, and the frozen-`IntPoly` edit in one >400-LOC two-title session
-with no freeze checkpoint between the substrate and its first consumer.
+They are **not** further splittable: the fixture + its lift are one unit (the lift exists *for* the
+fixture's points; splitting the fixture from the lift leaves a fixture with no consumer and no
+contract-sharp seam between them); the formal-group log + the division reduction + the end-to-end KAT
+are the irreducible attack unit (a formal-group log with no reduction-and-KAT has an undefined
+contract — the log is built *for* the division, and the "surprise" the ROADMAP names lives in the
+log→division composition, which must stay whole). Merging E.E.2 into E.E.1 would put the lift, the
+log, and the reduction in one >400-LOC two-title session with no freeze checkpoint between the
+substrate and the attack.
 
 ---
 
 ## Session detail
 
-E.D.1 is specified at near-full fidelity (the Z_p representation is the design crux). E.D.2 and E.D.3
-are lower-fidelity sketches, correct per the substrate-first discipline: they are crisply specified
-only after C-Padic freezes.
+E.E.1 is specified at near-full fidelity (the point-lift representation is the design crux). E.E.2 is
+a lower-fidelity sketch, correct per the substrate-first discipline: it is crisply specified only
+after C-AnomalousLift freezes.
 
-### E.D.1 — `shared/padic` crate + Z_p / Z/p^k arithmetic substrate (Sonnet, Cat A)
+### E.E.1 — Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) (Sonnet, Cat A)
 
-**Deliverable:** a new `shared/padic` workspace crate and the prime-power-modulus arithmetic type the
-whole sub-track stands on. The design choices:
-- **The new crate** (`Cargo.toml` member + `shared/padic/Cargo.toml`): add `shared/padic` to the
-  workspace `members`; the crate depends only on `shared-bigint` (and `num-bigint`/`num-traits` as
-  needed). `cargo check --workspace` must confirm no cycle. **Crate placement decision: `shared/padic`
-  (a new sibling crate), per the user — not a module in `shared/field` (the prime-field crate, where
-  Z/p^k would invite the exact prime-modulus confusion) nor `shared/numfield`.**
-- **The Z_p / Z/p^k arithmetic type** (`shared/padic/src/zp.rs`): the design crux. Decide the
-  representation — **the recommended shape is a `BigInt` residue carried with an explicit precision
-  `k` (the modulus is p^k) plus the p-adic valuation as the organising invariant**, exposing
-  `add`/`sub`/`mul`, **unit inversion** (`inv` defined only on elements with `v_p = 0`; a
-  non-unit-inversion attempt is an error, *not* a silent wrong answer — the C-Padic guard), `valuation`,
-  `precision`, and lift/truncate between precisions. The Opus design call (deferred to the ◆ for
-  ratification, but proposed here): valuation+unit form vs. fixed-precision residue, and whether `p`
-  is a `BigInt` field on the element or threaded per-call (mirroring `Fp`'s pass-the-modulus
-  convention for consistency, or storing it for ergonomics in a precision tower).
+**Deliverable:** the new `rho/src/ssa/` module, the `rho → shared-padic` dependency edge, a hardcoded
+anomalous toy curve with verification, and the lift of an affine F_p point to Z_p coordinates the
+attack stands on. The design choices:
+- **The new module + edge** (`rho/Cargo.toml`, `rho/src/lib.rs`, `rho/src/ssa/mod.rs`): add
+  `shared-padic` to `rho`'s dependencies; `pub mod ssa;`. `cargo check --workspace` must confirm no
+  cycle. **Placement decision: `rho/src/ssa/` (a new module in `rho`), per the MOV precedent
+  (`rho/src/pairing/mov.rs`)** — the attack lives where the curves and the existing ECDLP solvers
+  live, consuming `shared-padic` as MOV consumes `gnfs`.
+- **The anomalous fixture + verify** (`rho/src/ssa/mod.rs`): a hardcoded small anomalous `Curve`
+  (#E(F_p) = p, trace 1 — a literature or hand-computed toy example), plus a **naive O(p)
+  point-count verify helper** (`fn verify_anomalous(curve) -> bool`, iterating x ∈ F_p, counting
+  points via the Legendre symbol, asserting `#E = p`). **No Schoof–SEA** (defocus guard). The
+  `SsaError` enum lives here (`NotAnomalous`, `LiftFailed(HenselError)`, `Padic(ZpError)`, …).
+- **The point-lift** (`rho/src/ssa/lift.rs`): the design crux. Given an `AffinePoint<F>` on E(F_p)
+  and a target precision k, lift to Z_p coordinates: lift x via `Zp::new(x.to_uint() limb, p, k)`,
+  then **Hensel-solve `y² − (x³+ax+b) = 0` over Z_p** (build the `IntPoly` `g(y) = y² − c` with `c`
+  the lifted RHS, call `hensel_lift(g, y0, p, k)` with `y0` the F_p y-coordinate as the simple root
+  mod p). Returns the lifted (x̃, ỹ) as a Z_p point. The Opus design call (deferred to the ◆ for
+  ratification, proposed here): represent the lifted point as a `(Zp, Zp)` pair vs. a dedicated
+  `ZpPoint` struct; lift x-then-solve-y vs. lift both and verify on-curve mod p^k; and the toy-scale
+  limb extraction (`to_uint().as_words()[0]`) vs. a full `Uint<4>`→`BigInt` conversion.
 
-Consumes `shared/bigint` (`BigInt`, `gcd`, read). **Freezes C-Padic.**
+Consumes C-Hensel (frozen E.D.2), C-Padic (frozen E.D.1), `rho::curve` (read), `Fp<4>` (read).
+**Freezes C-AnomalousLift.**
 
-**KAT** (`shared/padic/tests/zp_kat.rs`): hand-computed Z/p^k arithmetic at a toy prime (e.g. p=7,
-k=4): `add`/`mul` against known residues; **unit inversion** correct on a unit and **errors loudly on
-a non-unit** (the prime-power-non-field guard — the highest-cost-of-wrong check); `valuation`
-correct on sample elements (e.g. `v_7(49) = 2`). **Verify gate:** `cargo test --workspace` green;
-`cargo check --workspace` resolves the new member with no cycle; the existing `shared` KATs unchanged.
+**KAT** (`rho/tests/ssa_kat.rs`): `verify_anomalous` returns true on the fixture and **false on a
+non-anomalous control curve** (the anomalous-detection guard); the lift of a known point matches a
+hand-computed Z_p coordinate to precision k; the lifted point **satisfies the curve equation mod p^k**
+(`ỹ² ≡ x̃³ + ax̃ + b mod p^k` — the lift-correctness check); a non-simple-root lift case (if
+constructible) errors via `HenselError`. **Verify gate:** `cargo test --workspace` green; `cargo
+check --workspace` resolves the `rho → shared-padic` edge with no cycle; the existing rho KATs
+unchanged.
 
-**Subtlety (load-bearing):** (1) **Z/p^k is not a field** — only units (`v_p = 0`) invert; inversion
-of a non-unit must error, never return a plausible-wrong value. This is the `Fp`-misuse defense made
-explicit in the type. (2) **Precision is finite and explicit** — every operation carries a precision
-`k`; mixing precisions must be defined (truncate to the min, the standard convention). (3) **Toy
-precision only** — k is small (principle 4); a crypto-scale precision tower is out of scope. (4) **Do
-not reuse `Fp`** — `Fp::inv` (Fermat) is wrong for composite p^k; the new type is mandatory.
+**Subtlety (load-bearing):** (1) **The lift is *arbitrary*** — SSA lifts G and Q to *any* points
+reducing to them; the attack's correctness does not depend on *which* lift (the multiply-by-p and the
+log-of-ratio cancel the lift-dependence). Lift x exactly and Hensel-solve y is the clean canonical
+choice. (2) **The y-Hensel-solve needs a simple root** — `f'(y0) = 2·y0 ≢ 0 mod p`, i.e. `y0 ≠ 0`
+and `p ≠ 2`; a 2-torsion point (y = 0) or p = 2 is a degenerate lift — error or pick a non-2-torsion
+base point (the fixture must avoid this). (3) **Toy-scale limb extraction** — `Uint<4>` coordinates
+at toy p fit one `u64` limb; extracting `as_words()[0]` is correct *only* at toy scale (principle-4
+annotate: a crypto-scale p would need the full `Uint<4>`→`BigInt` path). (4) **No point-counting
+machine** — the O(p) verify is a *fixture check*, not Schoof–SEA; presenting it as general
+point-counting is defocus.
 
-**Deferred:** Hensel lifting (E.D.2); the p-adic log (E.D.3); the `IntPoly` extension (E.D.2, where
-it is needed); any curve/point lift (E.E); a Q_p (field-of-fractions) layer beyond Z_p if the log
-needs denominators — surface at the ◆ if E.D.3 finds Z_p insufficient (an additive-reshard).
+**Deferred:** the elliptic formal-group log (E.E.2); the multiply-by-p kernel step + division
+reduction (E.E.2); the end-to-end ECDLP KAT (E.E.2); any general point-counting (out of scope —
+principle-4 boundary); a Q_p field-of-fractions layer (surface at the ◆ if E.E.2's formal-group log
+needs denominators Z_p can't carry — an additive-reshard).
 
-### E.D.2 — Hensel lifting + `IntPoly::derivative`/`eval_mod` (Sonnet, Cat B)
+### E.E.2 ◆ — Elliptic formal-group log + log-division reduction + sub-track close (Sonnet, Cat B, `@plan`)
 
-**Deliverable:** Newton-iteration Hensel lifting over Z_p, plus the additive `IntPoly` support it
-consumes. Lower-fidelity sketch (crisp after C-Padic freezes):
-- **The `IntPoly` extension** (`shared/numfield/src/poly.rs`, additive): `IntPoly::derivative() ->
-  IntPoly` (formal derivative, `c_i·i` shifted down) and `IntPoly::eval_mod(&self, x: &BigInt, m:
-  &BigInt) -> BigInt` (Horner reduced mod m at each step). **Additive only — no existing signature
-  changes; the G.A NFS consumers are untouched.**
-- **The Hensel lift** (`shared/padic/src/hensel.rs`): given `f: &IntPoly`, a simple root `r_0` of `f`
-  mod p (with `f'(r_0) ≢ 0 mod p`), and a target precision k, lift to the unique root mod p^k via
-  Newton's method (`r ← r − f(r)·f'(r)^{-1}` over C-Padic, doubling precision per step). Errors if
-  the root is not simple (`f'(r_0) ≡ 0`) — the lift is only unique for simple roots.
+**Deliverable:** the elliptic formal-group logarithm specialising C-PadicLog, the SSA division
+reduction, the end-to-end ECDLP recovery, and the sub-track close. Lower-fidelity sketch (crisp after
+C-AnomalousLift freezes):
+- **The elliptic formal-group log** (`rho/src/ssa/formal_log.rs`): given a kernel-of-reduction point
+  (the result of multiply-by-p, with `v_p(t) ≥ 1` for the local parameter `t = −x/y`), compute the
+  elliptic formal-group logarithm — the local parameter `t` and the formal-group series feeding
+  `padic_log` (or the direct elliptic-log series `t + …` truncated to precision k). This is the
+  elliptic specialisation `log.rs` explicitly defers to E.E. **Whether E.E.2 calls `padic_log` on
+  `1+t`-shaped input or implements the elliptic series directly over `Zp` is the ◆ design call** —
+  proposed: compute the local parameter and feed/compose with the frozen general `padic_log` where
+  the series shapes match, implementing only the elliptic-specific parametrisation.
+- **The reduction** (`rho/src/ssa/reduce.rs`): the `ssa_solve<F: Fp<4>>(curve, g, q, n) ->
+  Result<u64, SsaError>` entry. (1) verify the curve is anomalous (`verify_anomalous`, error
+  `NotAnomalous` otherwise); (2) lift G and Q (C-AnomalousLift); (3) **multiply both lifts by p**
+  (`scalar_mul` over Z_p, or repeated Z_p point-add) to enter the kernel of reduction; (4) apply the
+  formal-group log to both; (5) **divide in F_p**: `k ≡ ψ(p·Q̃) · ψ(p·G̃)⁻¹ mod p` (the unit
+  inversion is in F_p, the reduction of the p-adic ratio). Return k.
+- **End-to-end KAT** (`rho/tests/ssa_kat.rs`, extended): on the anomalous fixture, pick a known
+  scalar k, form Q = k·G (via the existing rho `scalar_mul`), run `ssa_solve`, assert it recovers k;
+  **cross-check against the rho ECDLP solver** (`solve_brent` recovers the same k — the independent
+  confirmation); assert `ssa_solve` **errors `NotAnomalous` on a non-anomalous curve** (the attack's
+  precondition guard). **Optional PARI `Qp`/`elllog` `#[ignore]` cross-check** (the established
+  dev-only oracle pattern).
 
-Consumes C-Padic (frozen E.D.1) and `IntPoly` (extended). **Freezes C-Hensel.**
+Consumes C-AnomalousLift (frozen E.E.1), C-PadicLog (frozen E.D.3, read), C-Padic (read),
+`rho::ecdlp::solve_brent` (read). **Freezes C-SSA.**
 
-**KAT** (`shared/padic/tests/hensel_kat.rs`): lift a known simple root — e.g. the square root of 2
-mod 7^k (`3² = 9 ≡ 2 mod 7`), lift `r_0 = 3` through `f(x) = x² − 2` to mod 7^4 and check against the
-hand-computed value; assert the non-simple-root case errors; `IntPoly::derivative` and `eval_mod`
-checked directly on a sample polynomial. **Verify gate:** `cargo test --workspace` green; **the G.A
-`IntPoly` NFS consumers in `gnfs` stay green** (the additive-extension no-regression check).
+**KAT (primary correctness signal):** **end-to-end** — `ssa_solve` recovers a hand-chosen k on the
+anomalous fixture; the rho ECDLP solver recovers the same k (independent cross-check); `ssa_solve`
+errors on a non-anomalous curve; the existing rho + shared KATs stay green. Optional PARI
+cross-check. **Verify gate:** `cargo test --workspace` green.
 
-**Subtlety (load-bearing):** (1) **Only simple roots lift uniquely** — `f'(r_0) ≢ 0 mod p` is the
-precondition; a non-simple root needs the general (slower-convergence) Hensel and is out of toy
-scope — error on it. (2) **The `IntPoly` edit is additive** — adding methods, not changing
-`from_coeffs`/`eval`/arithmetic; the frozen G.A contract is extended, not broken. (3) **`eval_mod`
-must reduce at each Horner step**, not eval-then-reduce (toy p^k is small so either works, but the
-reduce-each-step form is the correct general shape — annotate). (4) **Newton doubles precision** —
-each step roughly squares the precision; mind the C-Padic precision bookkeeping so the lift lands at
-exactly mod p^k.
+**Subtlety (load-bearing):** (1) **Multiply-by-p is the convergence-enabling step** — the
+formal-group log converges *only* on the kernel of reduction (`v_p(t) ≥ 1`); the raw lifts G̃, Q̃ are
+generally *not* in the kernel, so the log of them would violate C-PadicLog's guard and error/diverge.
+The multiply-by-p (since #E(F_p) = p, p·P reduces to the identity, landing in the kernel) is what
+makes the log legal. **This is the subtle correctness heart of E.E.2** — name it; the `v_p ≥ 1`
+guard from C-PadicLog firing is the loud signal that the kernel step was skipped. (2) **The
+lift-dependence cancels** — different arbitrary lifts give different ψ(p·G̃), ψ(p·Q̃), but the
+*ratio* is invariant mod p (the formal-group log is a homomorphism; the lift ambiguity is in the
+kernel of reduction's higher terms, killed by the mod-p reduction). The KAT should ideally check two
+different lifts give the same k (the lift-invariance check). (3) **The final division is in F_p, not
+Z_p** — `ψ(p·Q̃) / ψ(p·G̃)` is computed by taking each log's `residue/p mod p` (the p²Z_p/pZ_p ≅
+F_p identification) and dividing in F_p; getting the precision bookkeeping wrong (dividing in Z_p, or
+at the wrong precision) silently gives a wrong k. (4) **This is the E.E ◆ boundary** — re-read the
+Purpose intent and verify the attack composes (lift → multiply-by-p → log → F_p division → recovered
+k) and is genuinely the SSA escape (the "surprise": O(log p) division replacing O(√p) search).
+(5) **No MATHEMATICS chapter here** — the p-adic/SSA textbook chapter is T.E, paired with E.W at the
+*Track-E* ◆ (ROADMAP per-track pairing); E.E.2 writes at most a PEDAGOGY code-tour delta.
 
-**Deferred:** the p-adic log (E.D.3); multivariate/system Hensel (out of scope — E.E's point lift is
-univariate per coordinate); non-simple-root lifting (principle-4 boundary).
-
-### E.D.3 ◆ — p-adic logarithm + sub-track close (Sonnet, Cat B, `@plan`)
-
-**Deliverable:** the p-adic logarithm E.E's SSA reduction consumes, the end-to-end KAT, and the
-sub-track close. Lower-fidelity sketch (crisp after C-Padic + C-Hensel freeze):
-- **The p-adic log** (`shared/padic/src/log.rs`): the formal-group logarithm series `log(1+x) = x −
-  x²/2 + x³/3 − …` over C-Padic, convergent p-adically for `v_p(x) ≥ 1`, truncated at the precision
-  the toy k supports. Whether E.D.3 ships the *general* formal-group log (the series, which E.E
-  specialises to the elliptic formal group) or also the elliptic-curve specialisation is the ◆
-  design call — **proposed: ship the general series in E.D; E.E supplies the elliptic formal-group
-  parametrisation** (keeps E.D curve-free, item 5 of the intent).
-- **End-to-end KAT** (`shared/padic/tests/log_kat.rs`): lift a known `1 + p·u` via E.D.2's Hensel (or
-  construct it directly in C-Padic), apply the log, and check the result against the hand-computed
-  p-adic value; verify the homomorphism property `log(ab) = log(a) + log(b)` on a sample (the
-  property that makes the SSA escape work). **Optional PARI `Qp`/`log` `#[ignore]` cross-check** (the
-  established dev-only oracle pattern).
-
-Consumes C-Padic (frozen E.D.1, read) and C-Hensel (frozen E.D.2, read). **Freezes C-PadicLog.**
-
-**KAT (primary correctness signal):** **end-to-end** — the log of a hand-computed `1 + p·u` matches
-the known p-adic value to precision k; the homomorphism `log(ab) = log(a) + log(b)` holds; the
-existing `shared` + `gnfs` KATs stay green. Optional PARI cross-check. **Verify gate:** `cargo test
---workspace` green.
-
-**Subtlety (load-bearing):** (1) **Convergence requires `v_p(x) ≥ 1`** — the series converges
-p-adically only on the kernel of reduction (`x ≡ 0 mod p`); the log must assert/require this, or it
-silently diverges (returns a precision-limited garbage value). This is the log's analogue of the
-unit-inversion guard. (2) **The `x^n / n` terms have a denominator** — `n` may be divisible by p,
-which *lowers* p-adic precision (the `1/p` in `x^p/p` etc.); the truncation point must account for
-this, or the log loses precision silently. **This is the subtle correctness point of E.D.3** — name
-it and bound the series length to the precision the toy k actually supports. (3) **This is the E.D ◆
-boundary** — re-read the Purpose intent and verify the p-adic substrate is coherent (Z_p arithmetic →
-Hensel lift → log homomorphism) and genuinely the substrate E.E needs (general, curve-free) before
-crossing. (4) **No MATHEMATICS chapter here** — the p-adic textbook chapter is T.E, paired with E.W
-at the *Track-E* ◆ (ROADMAP per-track pairing); E.D.3 writes at most a PEDAGOGY code-tour delta.
-
-**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.D.3 ◆
-to confirm: (1) the p-adic substrate composes correctly (Z_p arithmetic → Hensel → log, the
-homomorphism round-trip holds); (2) C-Padic's non-field guard (unit-only inversion) and C-PadicLog's
-convergence guard (`v_p ≥ 1`) are both in place — the two silent-failure defenses; (3) the `IntPoly`
-extension was **additive** (no frozen G.A signature changed; the `gnfs` NFS consumers stay green);
-(4) E.D stayed **curve-free** (no SSA attack, no point-counting, no `rho → shared-padic` edge — those
-are E.E); (5) the principle-4 boundaries (toy precision, simple-roots-only Hensel, general-series log
-deferring the elliptic specialisation to E.E) are annotated, not silently presented as crypto-scale.
-One-shot findings; does not implement. Held at **Opus** per the header (lever 3 on the E.D.1
-substrate dominates the strong lever-5 KATs).
+**`@plan` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.E.2 ◆
+to confirm: (1) the attack composes correctly (lift → multiply-by-p into the kernel → formal-group
+log → F_p division recovers k; the rho-solver cross-check agrees); (2) C-AnomalousLift's
+lift-correctness (`ỹ² ≡ x̃³+ax̃+b mod p^k`) and C-SSA's anomalous-precondition guard (`NotAnomalous`
+error on non-anomalous curves) are both in place — the two correctness defenses; (3) the
+multiply-by-p kernel step is present and the `v_p ≥ 1` convergence guard from C-PadicLog is
+*satisfied* (not bypassed); (4) E.E stayed in scope — no Schoof–SEA / general point-counting (the
+fixture is hand-picked + O(p)-verified), no Q_p tower beyond what the log needs, no MATHEMATICS
+chapter; (5) the principle-4 boundaries (toy curve, toy precision, hand-picked-fixture-not-discovered,
+toy-scale limb extraction) are annotated, not silently presented as crypto-scale. One-shot findings;
+does not implement. Held at **Opus** per the header (lever 3 on the E.E.1 point-lift dominates the
+strong lever-5 KATs).
 
 ---
 
 ## Cross-session contracts
 
-E.D **freezes three** contracts and **additively extends one frozen contract** (`IntPoly`). Per the
-substrate-over-specify rule, C-Padic carries the unit-inversion guard and explicit precision now even
-though a toy fixture would "work" with a looser type. All other composed substrates (`shared/bigint`)
-are **read**, not amended.
+E.E **freezes two** contracts and **amends none** (the p-adic substrate and the rho curve surface are
+all **read**; the `rho → shared-padic` edge is an additive dependency, not a contract amendment). Per
+the substrate-over-specify rule, C-AnomalousLift carries the on-curve-mod-p^k verification and the
+explicit precision now even though a toy fixture would "work" with a looser lift.
 
-### C-Padic — Z_p / Z/p^k arithmetic interface + non-field guard (compiler- + test-enforced) — *to be frozen at E.D.1*
+### C-AnomalousLift — anomalous-curve fixture + point-lift E(F_p) → E(Z_p) (compiler- + test-enforced) — *to be frozen at E.E.1*
 
-**Defined in:** E.D.1 (`shared/padic/src/zp.rs`). **Consumed by:** E.D.2 (Hensel iterates over it),
-E.D.3 (the log series computes over it); **E.E** (SSA lifts curve coordinates through it — the named
-downstream consumer). Compiler-enforced (the type + method signatures) + test-enforced (hand-computed
-arithmetic + the non-unit-inversion error). Exposes: the prime-power-modulus type carrying a `BigInt`
-residue + precision `k` + the p-adic valuation; `add`/`sub`/`mul`; **unit inversion** (defined only
-for `v_p = 0`, errors on non-units); `valuation`; `precision`; lift/truncate between precisions.
-*Exact representation (valuation+unit vs. fixed-precision residue) and the p-threading convention
-ratified at E.D.1 and re-ratified at the E.D.3 ◆.* **Z/p^k is not a field — only units invert** (the
-silent-wrong-answer defense). **Toy precision only** (principle-4 boundary).
+**Defined in:** E.E.1 (`rho/src/ssa/lift.rs`, `rho/src/ssa/mod.rs`). **Consumed by:** E.E.2 (the
+reduction lifts G and Q through it). Compiler-enforced (the lift fn + `SsaError` + fixture
+signatures) + test-enforced (the on-curve-mod-p^k check + the anomalous-vs-control verify). Exposes:
+the hardcoded anomalous `Curve` fixture + `verify_anomalous(curve) -> bool` (O(p), toy-scale); the
+lift `(point: &AffinePoint<F>, curve, p, k) → (Zp, Zp)` Hensel-solving the curve equation for ỹ;
+the `SsaError` enum. *Exact representation (`(Zp, Zp)` vs. a `ZpPoint` struct; lift-x-solve-y vs.
+lift-both-verify; the toy-limb extraction convention) ratified at E.E.1 and re-ratified at the E.E.2
+◆.* **The lift must satisfy `ỹ² ≡ x̃³+ax̃+b mod p^k`** (the lift-correctness defense). **The y-solve
+needs a simple root** (`y0 ≠ 0`, `p ≠ 2`; the fixture avoids 2-torsion base points). **Toy curve /
+toy precision only** (principle-4 boundary; no Schoof–SEA).
 
-### C-Hensel — Hensel lift (Newton root-lifting over Z_p) (compiler- + test-enforced) — *to be frozen at E.D.2*
+### C-SSA — Smart–Satoh–Araki ECDLP reduction (compiler- + test-enforced) — *to be frozen at E.E.2 ◆*
 
-**Defined in:** E.D.2 (`shared/padic/src/hensel.rs`). **Consumed by:** E.D.3's KAT (constructs lifted
-elements); **E.E** (lifts curve-point coordinates from F_p to Z_p). Compiler- + test-enforced.
-Exposes the lift: `(f: &IntPoly, r_0 simple root mod p, target precision k) → unique root mod p^k`,
-erroring on non-simple roots. **Depends on the additive `IntPoly` extension** (`derivative` +
-`eval_mod`). *Exact signature ratified at E.D.2 and re-ratified at the E.D.3 ◆.* **Simple roots
-only** (`f'(r_0) ≢ 0 mod p`; the uniqueness precondition).
+**Defined in:** E.E.2 (`rho/src/ssa/reduce.rs`, `rho/src/ssa/formal_log.rs`). **Consumed by:** E.E's
+own end-to-end KAT now; **E.W** (the cross-attack benchmark table — "which attack wins on which
+curve"; SSA is the polynomial-time winner on anomalous curves); **T.E** (the p-adic/SSA textbook
+chapter at the Track-E ◆, the documentation consumer). Compiler- + test-enforced. Exposes the
+reduction: `ssa_solve<F: Fp<4>>(curve, g, q, n) -> Result<u64, SsaError>` (mirroring the rho ECDLP
+solver instance shape but deterministic, like `mov_reduce`); the elliptic formal-group log
+specialising C-PadicLog. *Exact signature (direct elliptic series vs. composing `padic_log`; the
+local-parameter convention) ratified at the E.E.2 ◆.* **Multiply-by-p enters the kernel of reduction
+before the log** (the convergence-enabling step; C-PadicLog's `v_p ≥ 1` guard must be *satisfied*,
+not bypassed). **The final division is in F_p** (the p²Z_p/pZ_p ≅ F_p identification). **Errors
+`NotAnomalous` on non-anomalous curves** (the attack's precondition — the structure-based escape
+exists *only* for trace-1 curves).
 
-### C-PadicLog — p-adic / formal-group logarithm + convergence guard (compiler- + test-enforced) — *to be frozen at E.D.3 ◆*
+### Frozen contracts read by E.E (consumed, not amended)
 
-**Defined in:** E.D.3 (`shared/padic/src/log.rs`). **Consumed by:** **E.E** (the SSA reduction's
-core homomorphism — maps the order-p subgroup to additive F_p); E.D's own end-to-end KAT now; **T.E**
-(the p-adic textbook chapter at the Track-E ◆, the documentation consumer). Compiler- + test-enforced.
-Exposes the log: the formal-group series over C-Padic, convergent for `v_p(x) ≥ 1`, truncated to the
-precision toy k supports; the homomorphism `log(ab) = log(a) + log(b)`. *Exact signature (general
-series vs. elliptic specialisation — proposed general, E.E specialises) ratified at the E.D.3 ◆.*
-**Convergence requires `v_p(x) ≥ 1`** (the silent-divergence defense). **Ships the general series;
-the elliptic formal-group parametrisation is E.E's** (keeps E.D curve-free).
+- **C-Padic** (`shared/padic/src/zp.rs`, frozen E.D.1) — `Zp` arithmetic; the ring the lift and log
+  compute over. Read, not changed.
+- **C-Hensel** (`shared/padic/src/hensel.rs`, frozen E.D.2) — `hensel_lift(f, r0, p, k)`; the lift
+  E.E.1's y-solve calls. **First real consumer outside E.D's own KAT.** Read.
+- **C-PadicLog** (`shared/padic/src/log.rs`, frozen E.D.3) — `padic_log(z)`, the general
+  formal-group series with the `v_p(z−1) ≥ 1` convergence guard; **E.E.2 supplies the elliptic
+  specialisation that feeds it** (the deferral `log.rs` explicitly names). Read.
+- **`rho::curve`** (`Curve`, `AffinePoint`, `scalar_mul`, `is_on_curve`, frozen) — the curve
+  substrate E.E lifts from and recovers the scalar on. Read.
+- **`rho::ecdlp::solve_brent`** (frozen) — the independent ECDLP solver E.E.2's KAT cross-checks
+  against. Read.
+- **`Fp<4>`** (`shared/field`, per-call modulus, frozen) — the field the coordinates live in. Read.
 
-### Additively-extended frozen contract
+### Additive dependency edge (not a contract amendment)
 
-- **`IntPoly`** (`shared/numfield/src/poly.rs`, frozen G.A) — E.D.2 adds `derivative()` and
-  `eval_mod(x, m)`. **Additive only** (new methods; no change to `from_coeffs`/`eval`/`degree`/
-  arithmetic). The G.A NFS consumers in `gnfs` are untouched and must stay green. *(If E.D finds it
-  must change an existing `IntPoly` signature — it should not — that is an **additive-reshard**
-  surfaced at the ◆, never a silent patch.)*
-
-### Frozen contracts read by E.D (composed, not amended)
-
-- **`shared/bigint`** (`BigInt`, `gcd`, `isqrt`, `batch_invert`, frozen) — the integer substrate
-  C-Padic computes over. Read, not changed.
+- **`rho → shared-padic`** — E.E.1 adds `shared-padic` to `rho/Cargo.toml`. **Additive** (a new
+  dependency; no `shared-padic` or `rho` API changes). `cargo check --workspace` confirms no cycle
+  (`shared-padic` does not depend on `rho`). *(If E.E found it must change a `shared-padic` signature
+  — it should not; the surface is general by E.D's over-specify design — that is an additive-reshard
+  of E.D's frozen contract surfaced at the ◆, never a silent patch.)*
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The E.D.3 ◆ `@plan` confirmation is not a separate
+"Froze" names contracts this session locked. The E.E.2 ◆ `@plan` confirmation is not a separate
 ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
 Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.D.1 | New `shared/padic` crate + Z_p / Z/p^k arithmetic substrate | done | 0a98148 | C-Padic (frozen) |
-| E.D.2 | Hensel lifting + `IntPoly::derivative`/`eval_mod` | done | 2e84836 | C-Hensel (frozen) + `IntPoly` ext. (additive) |
-| E.D.3 ◆ | p-adic logarithm + sub-track close | done | 95d03b7 | C-PadicLog (frozen) |
+| E.E.1 | Anomalous-curve fixture + point-lift E(F_p) → E(Z_p) | pending | — | C-AnomalousLift (+ `rho → shared-padic` edge) |
+| E.E.2 ◆ | Elliptic formal-group log + log-division reduction + sub-track close | pending | — | C-SSA |
 
-Contracts frozen before this sub-track (read/extended by E.D): `shared/bigint` (read); the G.A
-`IntPoly` (`shared/numfield`, additively extended). This sub-track **freezes three new contracts**
-(C-Padic, C-Hensel, C-PadicLog), all serving the downstream **E.E (Smart–Satoh–Araki)** consumer and
-the **T.E** p-adic textbook chapter.
+Contracts frozen before this sub-track (read by E.E): C-Padic / C-Hensel / C-PadicLog
+(`shared/padic`); the rho curve + ECDLP surface; `Fp<4>`. This sub-track **freezes two new
+contracts** (C-AnomalousLift, C-SSA), serving the downstream **E.W** (cross-attack benchmark) and
+**T.E** (p-adic textbook chapter) consumers, and **completes the p-adic branch of Track E** (E.D
+substrate → E.E attack).
 
 ---
 
 ## Action-frame digest
 
-### E.D.3 ◆ — 2026-06-10
-Discovery/flex: E.D.3 ◆ boundary juncture returned still-on-intent on all five confirmation points. C-PadicLog frozen. The p-adic substrate composes correctly: Z_p arithmetic → Hensel lift → log homomorphism; both silent-failure defenses (unit-only inversion, convergence guard v_p(z-1)≥1) are present and tested; IntPoly extension confirmed additive; E.D is curve-free in code and dependency graph; principle-4 boundaries annotated.
-Affected: C-Padic (frozen E.D.1), C-Hensel (frozen E.D.2), C-PadicLog (frozen E.D.3)
-Deferred: yes — ROADMAP Discoveries log capture owed at the E.D ◆: the `Fp<L>`-is-not-a-ring substrate fact (prime-power-modulus work must use C-Padic's unit-only-inversion type) is a durable cross-track note. Inflection-point Opus action, not an E.D `@build` work item.
-Texture: Parallel-substrate decomposition (Hensel and log as independent pieces, not a pre-wired pipeline) is the right call for a substrate sub-track — keeps E.D curve-free and contracts orthogonal; E.E owns the curve-coords→lift→log wiring.
+*(none yet)*
 
 ---
 
@@ -433,104 +448,111 @@ Texture: Parallel-substrate decomposition (Hensel and log as independent pieces,
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.D is greenfield p-adic substrate — building the crate + arithmetic + lift + log is
-  internal-continue (substrate finding, confirmed by survey).** No p-adic code exists; E.D writes it
-  from scratch in `shared/padic`. A discovery that Z_p (without a Q_p field-of-fractions layer) is
-  insufficient for the log's denominators is an **additive-reshard** surfaced at the E.D.3 ◆.
+- **E.E is greenfield SSA in `rho` — building the module + edge + fixture + lift + log + reduction is
+  internal-continue (confirmed by survey).** No SSA code exists; E.E writes it in `rho/src/ssa/`. A
+  discovery that the elliptic formal-group log needs a Q_p field-of-fractions layer Z_p can't carry
+  (denominators with negative valuation) is an **additive-reshard** surfaced at the E.E.2 ◆ (the same
+  Q_p-tower deferral E.D flagged).
 
-- **`Fp` must NOT be reused for the p-adic tower (the silent-wrong-answer guard).** `Fp::inv` uses
-  Fermat (prime modulus); Z/p^k is not a field. A `@build` agent that builds the tower on `Fp`, or
-  inverts a non-unit without erroring, is **internal-continue → corrected** (the C-Padic type +
-  unit-only-inversion guard is mandatory). The silent failure — wrong inverse mod p^k, wrong lift, no
-  error — is why the guard is non-negotiable.
+- **The multiply-by-p kernel step is mandatory before the log (the silent-divergence guard).** The
+  elliptic formal-group log converges only on the kernel of reduction (`v_p(t) ≥ 1`). A `@build`
+  agent that applies the log to the *raw* lifts G̃, Q̃ (not p·G̃, p·Q̃) hits C-PadicLog's convergence
+  guard (loud error) or, worse, computes a precision-limited garbage value — **internal-continue →
+  corrected**. The multiply-by-p (exploiting #E = p so p·P reduces to identity) is the
+  convergence-enabling step; its omission is the subtle failure mode.
 
-- **The `IntPoly` extension must stay additive — changing an existing signature is a
-  destructive-HALT (frozen-contract guard).** `IntPoly` is a G.A-frozen shared type consumed by the
-  `gnfs` NFS pipeline. Adding `derivative()`/`eval_mod()` is additive (internal-continue). Changing
-  `from_coeffs`/`eval`/arithmetic signatures, or breaking a `gnfs` `IntPoly` KAT, is a
-  **destructive-HALT** — stop, surface it. `cargo test --workspace` failing on a `gnfs` `IntPoly`
-  consumer is the loud signal.
+- **The lift must satisfy the curve equation mod p^k (the lift-correctness guard).** A `@build` agent
+  that lifts x and y *independently* (without Hensel-solving y from the lifted x via the curve
+  equation) produces a point *not on* E(Z_p) — `ỹ² ≢ x̃³+ax̃+b mod p^k` — and the formal-group log
+  reads a garbage value. The on-curve-mod-p^k KAT is the loud signal — **internal-continue →
+  corrected**.
 
-- **The p-adic log converges only for `v_p(x) ≥ 1` (the silent-divergence guard).** The formal-group
-  series diverges p-adically off the kernel of reduction; the log must require `v_p ≥ 1` (error or
-  precondition), or it returns precision-limited garbage. A log that omits the convergence guard is
-  **internal-continue → corrected**. The `x^n/n` denominator's p-divisibility lowering precision is
-  the subtle correctness point — bound the series length to toy k.
+- **The attack errors on non-anomalous curves (the precondition guard).** SSA's escape exists *only*
+  for trace-1 (anomalous) curves; `ssa_solve` must verify `#E = p` and error `NotAnomalous`
+  otherwise. A `@build` agent that runs the reduction on a non-anomalous curve and returns a
+  plausible-but-wrong k (the division still computes a value) has a missing precondition guard —
+  **internal-continue → corrected**. The non-anomalous-control KAT catches it.
 
-- **E.D stays curve-free — the SSA attack, point-counting, and the `rho → shared-padic` edge are E.E,
-  not E.D (defocus guard).** A `@build` agent that implements anomalous-curve detection, trace-of-
-  Frobenius / point-counting, the curve-point lift, or adds a `rho → shared-padic` dependency during
-  E.D is **defocus** — internal-continue only within the substrate scope. E.D delivers the general
-  p-adic machinery; E.E consumes it against curves. Touching `rho` or `gnfs/src/curve` is out of E.D's
-  scope.
+- **E.E adds the `rho → shared-padic` edge additively — a dependency cycle is a destructive-HALT.**
+  Adding `shared-padic` to `rho`'s deps is additive (internal-continue). If `cargo check --workspace`
+  reports a cycle (it must not — `shared-padic` does not depend on `rho`), or if E.E finds it must
+  change a frozen `shared-padic` signature, that is a **destructive-HALT** — stop, surface it.
 
-- **No MATHEMATICS.md chapter in E.D (defocus / scope clarity).** The p-adic textbook chapter is
-  **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing rule), not at the E.D
-  sub-track ◆. A `@build` agent that writes a MATHEMATICS.md p-adic chapter during E.D is defocus;
-  E.D.3 writes at most a PEDAGOGY code-tour delta. (The explorer survey's "chapter must be appended as
-  part of E.D" inference is superseded by this rule.)
+- **No general point-counting in E.E (defocus guard).** The anomalous fixture is hand-picked with an
+  O(p) `#E = p` verify; Schoof–SEA / general point-counting is **out of scope** (a different
+  machine). A `@build` agent that implements general point-counting is defocus — internal-continue
+  only within the fixture-verify scope.
 
-- **The end-to-end KAT must check against HAND-COMPUTED p-adic values + the homomorphism, not a spot
-  value (correctness discipline).** A wrong log can return a plausible-but-wrong p-adic number; only
-  the known-value check plus `log(ab) = log(a) + log(b)` catches it. A KAT that only spot-checks one
-  log value has an under-specified contract — flag it.
+- **No MATHEMATICS.md chapter in E.E (defocus / scope clarity).** The p-adic/SSA textbook chapter is
+  **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing rule), not at the E.E
+  sub-track ◆. A `@build` agent that writes a MATHEMATICS.md SSA chapter during E.E is defocus; E.E.2
+  writes at most a PEDAGOGY code-tour delta. **(The "surprise" the ROADMAP names is the *code's*
+  pedagogical payoff — exercised by the KAT — not a chapter E.E owns.)**
 
-- **No oracle dependency for correctness (principle-3 / E.C-consistent).** p-adic lifts and the log
-  are exactly hand-computable; a PARI `Qp`/`log` cross-check is an **optional `#[ignore]` sidecar**
-  (the established pattern). E.D introduces no new live oracle.
+- **The end-to-end KAT must recover a HAND-CHOSEN k AND cross-check the rho solver (correctness
+  discipline).** A wrong reduction can return a plausible-but-wrong scalar; only the known-k check
+  *plus* the independent `solve_brent` cross-check (and, ideally, the two-different-lifts invariance
+  check) catches it. A KAT that only asserts `ssa_solve` returns *something* has an under-specified
+  contract — flag it.
 
-- **Toy precision only — the precision tower is small (scope clarity).** E.D fixes a small k
-  (principle 4); a crypto-scale precision tower is a principle-4 boundary, not an E.D work item.
-  Presenting toy precision as crypto-scale is a documentation defect — internal-continue → corrected.
+- **No oracle dependency for correctness (principle-3 / E.D/E.C-consistent).** SSA's recovered k is
+  exactly checkable (known scalar + rho-solver cross-check); a PARI `Qp`/`elllog` cross-check is an
+  **optional `#[ignore]` sidecar** (the established `#[ignore = "PARI not installed; run manually
+  when available"]` pattern). E.E introduces no new live oracle.
 
-- **Capture owed at the E.D ◆: the `Fp`-is-not-a-ring substrate fact is a durable cross-track note.**
-  `Fp<L>` (`shared/field`) assumes a prime modulus (`inv` via Fermat) and cannot represent Z/p^k; any
-  future prime-power-modulus work must use a distinct unit-only-inversion type (C-Padic). This is the
-  p-adic analogue of the E.C modulus-consistency invariant the ROADMAP already records. Adding it to
-  the ROADMAP Discoveries log alongside C-Padic is an **inflection-point Opus action at the E.D ◆**,
-  not an E.D `@build` work item.
+- **Toy curve / toy precision only (scope clarity).** E.E fixes a small anomalous p and small
+  precision k (principle 1 — complete algorithm; principle 4 — toy scale). The toy-scale limb
+  extraction (`to_uint().as_words()[0]`), the hand-picked-not-discovered fixture, and the small k are
+  principle-4 boundaries, annotated — presenting any as crypto-scale is a documentation defect
+  (internal-continue → corrected).
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.D, "*Hensel lifting; p-adic logarithm. Sonnet.*"; the design
-  statement's principle 4; the "On scale" mathematical-dimension-scale framing) and this PLAN before
-  any session. **The ROADMAP is reconciled through the E.C ◆ boundary (2026-06-10)** — no static-frame
-  debt is outstanding; the Progress table and Discoveries log are current.
-- Read the **templates to mirror**: `shared/numfield/src/poly.rs` (`IntPoly` — the type E.D.2 extends;
-  mirror its `eval` Horner idiom for `eval_mod`); `shared/field/src/lib.rs` (the `Fp<L>` trait — the
-  *contrast* type, NOT to be reused for p^k; its pass-the-modulus convention may be mirrored for
-  consistency); `shared/bigint/src/lib.rs` (`BigInt` + `gcd`); `shared/field/tests/sqrt_legendre_kat.rs`
-  and `shared/numfield/tests/numfield_kat.rs` (the `shared`-crate KAT idiom E.D's tests mirror);
-  `rho/tests/mov_kat.rs:253` (the `#[ignore = "PARI not installed…"]` dev-oracle pattern).
-- **Register:** E.D is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New crate `shared/padic` with `src/{zp,hensel,log}.rs` and `tests/*_kat.rs`. The
-  `IntPoly` extension goes in `shared/numfield/src/poly.rs` (additive methods).
-- **Tier routing:** **all three E.D sessions are Sonnet** (`@build` on Sonnet) — the ROADMAP flags
-  E.D Sonnet (well-understood material). E.D.3 carries the single `@plan` marker: a ◆-boundary
-  juncture (page `@plan-juncture`) ratifying C-Padic / C-Hensel / C-PadicLog and confirming the
-  substrate composition before the sub-track closes. juncture-tier (header) is **opus** — held by
-  lever 3 (the E.D.1 Z_p representation is the design crux bounding the whole sub-track + E.E); the
-  strong lever-5 exactly-checkable KATs would license `sonnet` in isolation but the user judged the
-  substrate design-error cost decisive.
-- **Invariants to preserve:** **Z/p^k is not a field** (unit-only inversion; the non-unit-inversion
-  error is mandatory — C-Padic). **The `IntPoly` extension is additive** (no frozen G.A signature
-  changes; the `gnfs` NFS consumers stay green). **The p-adic log requires `v_p(x) ≥ 1`** (the
-  convergence guard — C-PadicLog). **E.D is curve-free** (no SSA attack, no point-counting, no `rho →
-  shared-padic` edge — those are E.E). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy
-  precision only; Hensel lifts simple roots only; the log ships the general series (E.E specialises).
-  No new live oracle.
-- **PARI remains a dev-only `#[ignore]` oracle** — an optional p-adic log / `Qp` cross-check follows
-  the established `#[test] #[ignore = "PARI not installed…"]` pattern; never on the green path.
-- **The new workspace member (load-bearing for E.D).** E.D.1 adds `shared/padic` to the root
-  `Cargo.toml` `members` list. The crate depends only on `shared-bigint` (E.D.1) + `shared-numfield`
-  (E.D.2 onward); `cargo check --workspace` must resolve with no cycle. The downstream `rho →
-  shared-padic` edge is E.E's, not E.D's.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.D opens a new
-  substrate crate (the Z_p representation is a Category-A design crux) and the shard pattern (a fresh
-  `shared` crate + an additive frozen-type extension) is unproven for this sub-track; the conservative
-  halt-at-◆ cadence is warranted, and it surfaces the E.D.1 substrate at its own commit for human eyes
-  even though the only paged ◆/`@plan` juncture sits on E.D.3. *(Tradeoff vs default cadence: one
-  extra halt-confirm on a 3-session Sonnet sub-track is cheap insurance on a new shared-crate
-  substrate.)*
+- Read `docs/ROADMAP.md` (Phase δ — E.E, "*Smart–Satoh–Araki … polynomial-time attack on anomalous
+  curves (trace = 1) … the most surprising single result … make that surprise explicit. Sonnet.*";
+  the design statement's principles 1 + 4; the "On scale" mathematical-dimension framing) and this
+  PLAN before any session. **The ROADMAP is reconciled through the E.D ◆ boundary (2026-06-10)** —
+  no static-frame debt is outstanding; the Progress table and Discoveries log are current.
+- Read the **templates to mirror**: `rho/src/pairing/mov.rs` (the MOV bridge — the structural
+  precedent for an alternative-ECDLP-solver-into-a-shared-substrate: module placement, `Result<u64,
+  E>` return, the `<F: Fp<4>>` generic shape); `rho/src/ecdlp/mod.rs` (`solve_brent` — the ECDLP
+  instance shape `(curve, g, q, n)` to mirror, and the cross-check target); `rho/src/curve/mod.rs`
+  (`Curve`, `AffinePoint`, `scalar_mul`, `is_on_curve` — the curve surface E.E lifts from);
+  `shared/padic/src/{zp.rs,hensel.rs,log.rs}` (the frozen `Zp` / `hensel_lift` / `padic_log` surface
+  — read the `log.rs:41-43` deferral note: E.E supplies the elliptic specialisation);
+  `shared/padic/tests/log_kat.rs` and `rho/tests/mov_kat.rs` (the `_kat.rs` idiom + the exact PARI
+  `#[ignore = "PARI not installed; run manually when available"]` dev-oracle pattern).
+- **Register:** E.E is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New module `rho/src/ssa/` with `{mod,lift,formal_log,reduce}.rs` and the
+  extended `rho/tests/ssa_kat.rs`. The `rho → shared-padic` edge goes in `rho/Cargo.toml`.
+- **Tier routing:** **both E.E sessions are Sonnet** (`@build` on Sonnet) — the ROADMAP flags E.E
+  Sonnet (known attack on a frozen substrate). E.E.2 carries the single `@plan` marker: a
+  ◆-boundary juncture (page `@plan-juncture`) ratifying C-AnomalousLift / C-SSA and confirming the
+  attack composes onto the p-adic substrate before the sub-track closes. juncture-tier (header) is
+  **opus** — held by lever 3 (the E.E.1 point-lift is the design crux bounding the attack); the
+  strong lever-5 exactly-checkable KATs (known k + rho-solver cross-check) would license `sonnet` in
+  isolation but the user judged the lift design-error cost decisive, mirroring the E.D call.
+- **Invariants to preserve:** **the lift satisfies the curve equation mod p^k** (the on-curve check
+  — C-AnomalousLift). **Multiply-by-p before the log** (the kernel-of-reduction /
+  convergence-enabling step — C-SSA; C-PadicLog's `v_p ≥ 1` guard must be satisfied, not bypassed).
+  **The final division is in F_p** (the p²Z_p/pZ_p ≅ F_p identification). **`ssa_solve` errors on
+  non-anomalous curves** (the precondition guard — C-SSA). **E.E consumes `shared/padic`, never
+  re-derives p-adic arithmetic in rho.** **No general point-counting** (hand-picked fixture + O(p)
+  verify). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy curve / toy precision only; no new
+  live oracle.
+- **PARI remains a dev-only `#[ignore]` oracle** — an optional `Qp`/`elllog` SSA cross-check follows
+  the established `#[test] #[ignore = "PARI not installed; run manually when available"]` pattern;
+  never on the green path.
+- **The new dependency edge (load-bearing for E.E).** E.E.1 adds `shared-padic` to `rho/Cargo.toml`.
+  `cargo check --workspace` must resolve with no cycle (`shared-padic` depends only on
+  `shared-bigint` + `shared-numfield`; it does not depend on `rho`). No new crate — a module + an
+  edge.
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — E.E opens a new
+  attack module + a new cross-crate dependency edge (the point-lift is a Category-A design crux), and
+  the shard pattern (an alternative ECDLP solver bridging rho into the p-adic substrate) is unproven
+  for this sub-track; the conservative halt-at-◆ cadence is warranted, and it surfaces the E.E.1
+  lift substrate at its own commit for human eyes even though the only paged ◆/`@plan` juncture sits
+  on E.E.2. *(Tradeoff vs default cadence: one extra halt-confirm on a 2-session Sonnet sub-track is
+  cheap insurance on a new attack-module substrate + a new dependency edge.)*
