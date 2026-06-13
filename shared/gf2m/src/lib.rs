@@ -50,11 +50,15 @@
 //! the same algorithms used for crypto-scale `m` (163, 233, 571) — but the
 //! parameters are small for auditability (principle-4 boundary).
 
+pub mod convert;
 pub mod inv;
 pub mod naive;
+pub mod normal;
 
+pub use convert::{find_normal_element, frobenius_orbit, is_normal_element, normal_to_poly, poly_to_normal};
 pub use inv::{ext_euclid_inv, itoh_tsujii_inv};
 pub use naive::F2mNaive;
+pub use normal::F2mNormal;
 
 use crypto_bigint::Uint;
 

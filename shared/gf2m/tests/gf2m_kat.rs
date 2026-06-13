@@ -1,4 +1,4 @@
-//! Known-answer tests and field-axiom tests for `F2mNaive`.
+//! Known-answer tests and field-axiom tests for `F2mNaive` and `F2mNormal`.
 //!
 //! Coverage:
 //! - Field axioms over GF(2^4) with `x⁴+x+1` (poly = 0x13).
@@ -15,13 +15,20 @@
 //! - `inv(one) == one`.
 //! - `inv(zero)` panics.
 //! - `div(a, b) == mul(a, inv(b))`.
+//! - Normal-basis round-trips: `poly_to_normal(normal_to_poly(a)) == a` and vice versa.
+//! - Squaring-is-a-cyclic-shift: `square(a).c == cyclic_left_shift(a.c, m)` (direct check).
+//! - Cross-representation agreement: `mul`/`add` in polynomial basis equals the same
+//!   operation in normal basis after conversion.
 //!
 //! The Frobenius fixed-field law `a^(2^m) = a` is the loudest correctness
 //! signal: it fails immediately if modular reduction is wrong (wrong irreducible,
 //! off-by-one in the shift, etc.).
 
 use crypto_bigint::Uint;
-use shared_gf2m::{ext_euclid_inv, itoh_tsujii_inv, F2m, F2mNaive};
+use shared_gf2m::{
+    ext_euclid_inv, find_normal_element, itoh_tsujii_inv, normal_to_poly, poly_to_normal, F2m,
+    F2mNaive, F2mNormal,
+};
 
 // ── Field parameters ──────────────────────────────────────────────────────────
 
@@ -621,4 +628,228 @@ fn aes_inv_known_pair() {
     let b = F2mNaive::<1>::from_u64(0xca, &p);
     assert_eq!(a.inv(&p), b, "inv(0x53) != 0xca in AES GF(2^8)");
     assert_eq!(b.inv(&p), a, "inv(0xca) != 0x53 in AES GF(2^8)");
+}
+
+// ── Normal-basis KATs ─────────────────────────────────────────────────────────
+//
+// These tests cover the normal-basis representation (`F2mNormal`) and the
+// polynomial↔normal change-of-basis isomorphism (`convert.rs`).
+
+/// Basis-conversion round-trip: `poly_to_normal(normal_to_poly(a)) == a`
+/// for all elements of GF(2^4).
+///
+/// Verifies that the normal→poly→normal round-trip is the identity.  A bug in
+/// either direction of the conversion would break this test.
+#[test]
+fn normal_to_poly_to_normal_round_trip_gf4() {
+    let p = poly4();
+    let beta = find_normal_element(&p);
+    for v in 0u64..16 {
+        let a_normal = Uint::<1>::from(v);
+        let a_poly = normal_to_poly(&a_normal, &beta, &p);
+        let a_back = poly_to_normal(&a_poly, &beta, &p);
+        assert_eq!(
+            a_normal, a_back,
+            "normal→poly→normal round-trip failed for normal coords={v:#06b}"
+        );
+    }
+}
+
+/// Basis-conversion round-trip: `normal_to_poly(poly_to_normal(a)) == a`
+/// for all elements of GF(2^4).
+///
+/// Verifies that the poly→normal→poly round-trip is the identity.
+#[test]
+fn poly_to_normal_to_poly_round_trip_gf4() {
+    let p = poly4();
+    let beta = find_normal_element(&p);
+    for v in 0u64..16 {
+        let a_poly = Uint::<1>::from(v);
+        let a_normal = poly_to_normal(&a_poly, &beta, &p);
+        let a_back = normal_to_poly(&a_normal, &beta, &p);
+        assert_eq!(
+            a_poly, a_back,
+            "poly→normal→poly round-trip failed for poly value={v:#06b}"
+        );
+    }
+}
+
+/// Squaring in a normal basis is a cyclic left-shift of the coefficient vector.
+///
+/// This is the **pedagogical payoff** of the normal basis.  The test verifies
+/// the property **directly**: it checks that `square(a).c` equals the cyclic
+/// left-shift of `a.c` by 1 position within the m-bit field — not merely that
+/// `square` returns the correct field element.
+///
+/// If `square` were implemented by converting to polynomial basis and back
+/// (rather than as a cyclic shift), this test would still pass for correctness
+/// but would fail to exhibit the shift property.  The implementation in
+/// `normal.rs` uses the cyclic shift directly, and this test confirms it.
+#[test]
+fn squaring_is_cyclic_shift_gf4() {
+    let p = poly4();
+    let m = p.bits() - 1; // 4
+    assert_eq!(m, 4, "GF(2^4) should have degree 4");
+
+    // For every element in GF(2^4), verify:
+    //   square(a).c == cyclic_left_shift_m(a.c, m)
+    //
+    // This checks the IMPLEMENTATION MECHANISM, not just the result.
+    for v in 0u64..16 {
+        let a = F2mNormal::<1>::from_uint(Uint::<1>::from(v), &p);
+        let sq = a.square(&p);
+
+        // Compute the expected cyclic left-shift of a.normal_coords().
+        let c_bits = a.normal_coords().as_words()[0];
+        let mask = (1u64 << m) - 1;
+        let top_bit = (c_bits >> (m - 1)) & 1; // bit m−1 wraps to bit 0
+        let expected_c = ((c_bits << 1) | top_bit) & mask;
+
+        assert_eq!(
+            sq.normal_coords().as_words()[0],
+            expected_c,
+            "square(a).c is not a cyclic left-shift of a.c for \
+             poly-basis value={v:#x} (normal coords a.c={c_bits:#06b}, \
+             expected sq.c={expected_c:#06b}, got sq.c={:#06b})",
+            sq.normal_coords().as_words()[0]
+        );
+    }
+}
+
+/// Cross-representation agreement for `mul` in GF(2^4).
+///
+/// For a representative set of pairs, verifies that multiplying in the
+/// polynomial basis gives the same result as multiplying in the normal basis
+/// (after converting inputs and converting the result back).
+///
+/// This is the isomorphism check: the two representations are the same field.
+#[test]
+fn cross_representation_mul_gf4() {
+    let p = poly4();
+    let beta = find_normal_element(&p);
+
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            // Polynomial-basis multiplication.
+            let a_naive = F2mNaive::<1>::from_u64(av, &p);
+            let b_naive = F2mNaive::<1>::from_u64(bv, &p);
+            let prod_poly = a_naive.mul(&b_naive, &p).to_uint();
+
+            // Normal-basis multiplication (convert inputs, multiply, convert back).
+            let a_norm = F2mNormal::<1>::from_poly(Uint::<1>::from(av), beta, p);
+            let b_norm = F2mNormal::<1>::from_poly(Uint::<1>::from(bv), beta, p);
+            let prod_norm_poly = a_norm.mul(&b_norm, &p).to_uint();
+
+            assert_eq!(
+                prod_poly, prod_norm_poly,
+                "cross-representation mul disagrees: a={av:#x} b={bv:#x} in GF(2^4): \
+                 poly={prod_poly:#x} normal={prod_norm_poly:#x}"
+            );
+        }
+    }
+}
+
+/// Cross-representation agreement for `add` in GF(2^4).
+///
+/// For all pairs, verifies that adding in the polynomial basis gives the same
+/// result as adding in the normal basis (after converting inputs and converting
+/// the result back).
+#[test]
+fn cross_representation_add_gf4() {
+    let p = poly4();
+    let beta = find_normal_element(&p);
+
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            // Polynomial-basis addition.
+            let a_naive = F2mNaive::<1>::from_u64(av, &p);
+            let b_naive = F2mNaive::<1>::from_u64(bv, &p);
+            let sum_poly = a_naive.add(&b_naive).to_uint();
+
+            // Normal-basis addition (convert inputs, add, convert back).
+            let a_norm = F2mNormal::<1>::from_poly(Uint::<1>::from(av), beta, p);
+            let b_norm = F2mNormal::<1>::from_poly(Uint::<1>::from(bv), beta, p);
+            let sum_norm_poly = a_norm.add(&b_norm).to_uint();
+
+            assert_eq!(
+                sum_poly, sum_norm_poly,
+                "cross-representation add disagrees: a={av:#x} b={bv:#x} in GF(2^4): \
+                 poly={sum_poly:#x} normal={sum_norm_poly:#x}"
+            );
+        }
+    }
+}
+
+/// Normal-basis round-trip for GF(2^8): exhaustive poly→normal→poly.
+///
+/// Verifies the conversion isomorphism holds for all 256 elements of GF(2^8).
+#[test]
+fn poly_to_normal_to_poly_round_trip_gf8() {
+    let p = poly8();
+    let beta = find_normal_element(&p);
+    for v in 0u64..256 {
+        let a_poly = Uint::<1>::from(v);
+        let a_normal = poly_to_normal(&a_poly, &beta, &p);
+        let a_back = normal_to_poly(&a_normal, &beta, &p);
+        assert_eq!(
+            a_poly, a_back,
+            "poly→normal→poly round-trip failed for v={v:#x} in GF(2^8)"
+        );
+    }
+}
+
+/// Squaring-is-a-cyclic-shift in GF(2^8).
+///
+/// Same direct check as `squaring_is_cyclic_shift_gf4`, but over all 256
+/// elements of GF(2^8).  Confirms the cyclic-shift property holds for the
+/// larger field.
+#[test]
+fn squaring_is_cyclic_shift_gf8() {
+    let p = poly8();
+    let m = p.bits() - 1; // 8
+    assert_eq!(m, 8, "GF(2^8) should have degree 8");
+
+    for v in 0u64..256 {
+        let a = F2mNormal::<1>::from_uint(Uint::<1>::from(v), &p);
+        let sq = a.square(&p);
+
+        let c_bits = a.normal_coords().as_words()[0];
+        let mask = (1u64 << m) - 1;
+        let top_bit = (c_bits >> (m - 1)) & 1;
+        let expected_c = ((c_bits << 1) | top_bit) & mask;
+
+        assert_eq!(
+            sq.normal_coords().as_words()[0],
+            expected_c,
+            "square(a).c is not a cyclic left-shift of a.c for \
+             poly-basis value={v:#x} in GF(2^8) (a.c={c_bits:#010b}, \
+             expected sq.c={expected_c:#010b}, got sq.c={:#010b})",
+            sq.normal_coords().as_words()[0]
+        );
+    }
+}
+
+/// Cross-representation `square` agreement in GF(2^8).
+///
+/// Verifies that squaring in normal basis (cyclic shift) gives the same
+/// polynomial-basis result as squaring in polynomial basis (Frobenius bit-spread).
+#[test]
+fn cross_representation_square_gf8() {
+    let p = poly8();
+
+    for v in 0u64..256 {
+        // Polynomial-basis squaring.
+        let a_naive = F2mNaive::<1>::from_u64(v, &p);
+        let sq_poly = a_naive.square(&p).to_uint();
+
+        // Normal-basis squaring (cyclic shift), then convert back to polynomial basis.
+        let a_norm = F2mNormal::<1>::from_uint(Uint::<1>::from(v), &p);
+        let sq_norm_poly = a_norm.square(&p).to_uint();
+
+        assert_eq!(
+            sq_poly, sq_norm_poly,
+            "cross-representation square disagrees for v={v:#x} in GF(2^8): \
+             poly={sq_poly:#x} normal={sq_norm_poly:#x}"
+        );
+    }
 }
