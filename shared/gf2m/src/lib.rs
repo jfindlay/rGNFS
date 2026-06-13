@@ -50,8 +50,10 @@
 //! the same algorithms used for crypto-scale `m` (163, 233, 571) — but the
 //! parameters are small for auditability (principle-4 boundary).
 
+pub mod inv;
 pub mod naive;
 
+pub use inv::{ext_euclid_inv, itoh_tsujii_inv};
 pub use naive::F2mNaive;
 
 use crypto_bigint::Uint;

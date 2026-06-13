@@ -216,12 +216,15 @@ macro_rules! impl_f2m_naive {
                 unimplemented!("E.G")
             }
 
-            fn inv(&self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("filled in E.F.2")
+            fn inv(&self, poly: &Uint<$L>) -> Self {
+                // Delegate to the extended-Euclidean baseline in inv.rs.
+                // Panics if self is zero (no inverse exists).
+                crate::inv::ext_euclid_inv(self, poly)
             }
 
-            fn div(&self, _rhs: &Self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("filled in E.F.2")
+            fn div(&self, rhs: &Self, poly: &Uint<$L>) -> Self {
+                // a / b = a * b⁻¹.  Panics if rhs is zero.
+                self.mul(&rhs.inv(poly), poly)
             }
         }
     };

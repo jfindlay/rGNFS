@@ -10,13 +10,18 @@
 //! - Distributivity of `mul` over `add`.
 //! - `mul` by `one` is identity.
 //! - `add` is its own inverse: `add(a, a) == zero`.
+//! - Inversion round-trip: `mul(a, inv(a)) == one` for all non-zero `a`.
+//! - Extended-Euclidean ↔ Itoh–Tsujii agreement.
+//! - `inv(one) == one`.
+//! - `inv(zero)` panics.
+//! - `div(a, b) == mul(a, inv(b))`.
 //!
 //! The Frobenius fixed-field law `a^(2^m) = a` is the loudest correctness
 //! signal: it fails immediately if modular reduction is wrong (wrong irreducible,
 //! off-by-one in the shift, etc.).
 
 use crypto_bigint::Uint;
-use shared_gf2m::{F2m, F2mNaive};
+use shared_gf2m::{ext_euclid_inv, itoh_tsujii_inv, F2m, F2mNaive};
 
 // ── Field parameters ──────────────────────────────────────────────────────────
 
@@ -435,4 +440,185 @@ fn frobenius_equals_square() {
             a.to_uint()
         );
     }
+}
+
+// ── Inversion round-trip ──────────────────────────────────────────────────────
+
+/// `mul(a, inv(a)) == one` for all non-zero `a` in GF(2^4).
+///
+/// This is the primary inversion correctness check: every non-zero element
+/// must have a multiplicative inverse.
+#[test]
+fn inv_round_trip_gf4() {
+    let p = poly4();
+    let one = F2mNaive::<1>::one();
+    for v in 1u64..16 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let a_inv = a.inv(&p);
+        let prod = a.mul(&a_inv, &p);
+        assert_eq!(
+            prod, one,
+            "a * inv(a) != 1 for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// `mul(a, inv(a)) == one` for all non-zero `a` in GF(2^8).
+///
+/// Exhaustive over all 255 non-zero elements of GF(2^8).
+#[test]
+fn inv_round_trip_gf8() {
+    let p = poly8();
+    let one = F2mNaive::<1>::one();
+    for v in 1u64..256 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let a_inv = a.inv(&p);
+        let prod = a.mul(&a_inv, &p);
+        assert_eq!(
+            prod, one,
+            "a * inv(a) != 1 for a={v:#x} in GF(2^8)"
+        );
+    }
+}
+
+/// `inv(one) == one` in GF(2^4).
+#[test]
+fn inv_one_is_one_gf4() {
+    let p = poly4();
+    let one = F2mNaive::<1>::one();
+    assert_eq!(one.inv(&p), one, "inv(1) != 1 in GF(2^4)");
+}
+
+/// `inv(one) == one` in GF(2^8).
+#[test]
+fn inv_one_is_one_gf8() {
+    let p = poly8();
+    let one = F2mNaive::<1>::one();
+    assert_eq!(one.inv(&p), one, "inv(1) != 1 in GF(2^8)");
+}
+
+/// `inv(zero)` panics — zero has no multiplicative inverse.
+#[test]
+#[should_panic]
+fn inv_zero_panics() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    let _ = zero.inv(&p);
+}
+
+// ── Extended-Euclidean ↔ Itoh–Tsujii agreement ───────────────────────────────
+
+/// Both inversion algorithms agree for all non-zero elements of GF(2^4).
+///
+/// This is the cross-check: a bug in `square`/`frobenius` shows up in
+/// Itoh–Tsujii but not in extended-Euclidean, and vice versa for a bug in
+/// polynomial division.
+#[test]
+fn ext_euclid_itoh_tsujii_agree_gf4() {
+    let p = poly4();
+    for v in 1u64..16 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let ee = ext_euclid_inv(&a, &p);
+        let it = itoh_tsujii_inv(&a, &p);
+        assert_eq!(
+            ee, it,
+            "ext_euclid_inv != itoh_tsujii_inv for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// Both inversion algorithms agree for all non-zero elements of GF(2^8).
+///
+/// Exhaustive over all 255 non-zero elements.
+#[test]
+fn ext_euclid_itoh_tsujii_agree_gf8() {
+    let p = poly8();
+    for v in 1u64..256 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let ee = ext_euclid_inv(&a, &p);
+        let it = itoh_tsujii_inv(&a, &p);
+        assert_eq!(
+            ee, it,
+            "ext_euclid_inv != itoh_tsujii_inv for a={v:#x} in GF(2^8)"
+        );
+    }
+}
+
+// ── Division ──────────────────────────────────────────────────────────────────
+
+/// `div(a, b) == mul(a, inv(b))` for all `a` and non-zero `b` in GF(2^4).
+#[test]
+fn div_equals_mul_inv_gf4() {
+    let p = poly4();
+    for av in 0u64..16 {
+        for bv in 1u64..16 {
+            let a = F2mNaive::<1>::from_u64(av, &p);
+            let b = F2mNaive::<1>::from_u64(bv, &p);
+            let lhs = a.div(&b, &p);
+            let rhs = a.mul(&b.inv(&p), &p);
+            assert_eq!(
+                lhs, rhs,
+                "div(a,b) != mul(a,inv(b)) for a={av:#x} b={bv:#x} in GF(2^4)"
+            );
+        }
+    }
+}
+
+/// `div(a, b) == mul(a, inv(b))` for a representative set in GF(2^8).
+#[test]
+fn div_equals_mul_inv_gf8() {
+    let p = poly8();
+    let elems: Vec<u64> = vec![0, 1, 2, 3, 0x53, 0xca, 0x8d, 0xf6, 0x01, 0xff, 0x1b, 0xe5];
+    for &av in &elems {
+        for &bv in &elems {
+            if bv == 0 {
+                continue; // skip zero divisor
+            }
+            let a = F2mNaive::<1>::from_u64(av, &p);
+            let b = F2mNaive::<1>::from_u64(bv, &p);
+            let lhs = a.div(&b, &p);
+            let rhs = a.mul(&b.inv(&p), &p);
+            assert_eq!(
+                lhs, rhs,
+                "div(a,b) != mul(a,inv(b)) for a={av:#x} b={bv:#x} in GF(2^8)"
+            );
+        }
+    }
+}
+
+/// `div(zero, b) == zero` for non-zero `b` in GF(2^4).
+#[test]
+fn div_zero_numerator_is_zero() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    for bv in 1u64..16 {
+        let b = F2mNaive::<1>::from_u64(bv, &p);
+        assert_eq!(
+            zero.div(&b, &p),
+            zero,
+            "0 / b != 0 for b={bv:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// `div(zero, b)` panics when `b` is zero.
+#[test]
+#[should_panic]
+fn div_zero_denominator_panics() {
+    let p = poly4();
+    let a = F2mNaive::<1>::from_u64(0x5, &p);
+    let zero = F2mNaive::<1>::zero();
+    let _ = a.div(&zero, &p);
+}
+
+// ── AES inversion KATs ────────────────────────────────────────────────────────
+
+/// AES GF(2^8): `inv(0x53) == 0xca` (known AES S-box inverse pair).
+#[test]
+fn aes_inv_known_pair() {
+    let p = poly8();
+    let a = F2mNaive::<1>::from_u64(0x53, &p);
+    let b = F2mNaive::<1>::from_u64(0xca, &p);
+    assert_eq!(a.inv(&p), b, "inv(0x53) != 0xca in AES GF(2^8)");
+    assert_eq!(b.inv(&p), a, "inv(0xca) != 0x53 in AES GF(2^8)");
 }
