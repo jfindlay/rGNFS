@@ -1176,6 +1176,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared-gf2m"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+ "proptest",
+]
+
+[[package]]
 name = "shared-numfield"
 version = "0.1.0"
 dependencies = [

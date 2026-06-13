@@ -1,0 +1,19 @@
+[package]
+name = "shared-gf2m"
+version = "0.1.0"
+edition = "2024"
+description = "GF(2^m) polynomial-basis arithmetic: F2m trait, F2mNaive carryless-mul impl"
+
+[dependencies]
+crypto-bigint = { version = "0.5", features = ["rand_core"] }
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
