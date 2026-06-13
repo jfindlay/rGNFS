@@ -745,7 +745,7 @@ deliverable); their outcomes are recorded in the Action-frame digest.
 | E.F.1 | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | done | 2ca3061 | C-F2m (+ `shared/gf2m` crate) |
 | E.F.2 | GF(2^m) inversion (ext-Euclid + Itoh–Tsujii) + division | done | c512c2d | C-F2m (additive: `inv`/`div`) |
 | E.F.3 | GF(2^m) normal-basis representation + polynomial↔normal conversion | done | 84f6d07 | — (implements C-F2m, 2nd repr) |
-| E.F.4 ◆ | GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close | pending | — | C-F2mOpt |
+| E.F.4 ◆ | GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close | done | 51c8c8d | C-F2mOpt |
 
 Contracts frozen before this sub-track (NOT read by E.F — it is standalone): the p-adic surface
 (C-Padic/C-Hensel/C-PadicLog), the SSA surface (C-AnomalousLift/C-SSA), the rho curve + ECDLP
@@ -762,6 +762,12 @@ Discovery/flex: Inflection-design juncture paged; `design-confident` returned �
 Affected: C-F2m (resolved interface written into contracts section)
 Deferred: no — one flagged recommendation noted: `frobenius` declared distinctly from `square` (both are `a→a²` in E.F.1); adjudicator judged this deliberate (E.G/E.H iterate the Frobenius by name) and not irreconcilable.
 Texture: `Cargo.lock` included in session commit as expected workspace side-effect of new crate addition.
+
+### E.F.4 ◆ — 2026-06-13
+Discovery/flex: Inflection-design juncture paged (`design-confident`); boundary-transform juncture paged (`still-on-intent`). `pclmulqdq` omitted rather than gated — `unsafe_code = "forbid"` crate lint makes the intrinsic cost real at zero toy-scale demonstration value; PLAN's "if introduced at all" latitude licenses omission; doc pointer preserved in `opt.rs`.
+Affected: C-F2mOpt (frozen: Karatsuba green-path, pclmulqdq omitted-not-gated, naive↔optimized byte-identical exhaustive KAT)
+Deferred: no — pclmulqdq omission flagged for human veto at step-3 review; boundary fork confirmed reconcilable within PLAN latitude. ROADMAP true-boundary reconciliation owed as housekeeping (not a blocker).
+Texture: `naive.rs` helpers widened to `pub(crate)` (additive visibility change, no C-F2m amendment) to enable `opt.rs` reuse of `poly_reduce`/`wide_shl`/etc.
 
 ---
 
