@@ -632,7 +632,7 @@ deliverable); their outcomes are recorded in the Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.F.1 | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | done | 2ca3061 | C-F2m (+ `shared/gf2m` crate) |
-| E.F.2 | GF(2^m) inversion (ext-Euclid + Itoh–Tsujii) + division | pending | — | C-F2m (additive: `inv`/`div`) |
+| E.F.2 | GF(2^m) inversion (ext-Euclid + Itoh–Tsujii) + division | done | c512c2d | C-F2m (additive: `inv`/`div`) |
 | E.F.3 | GF(2^m) normal-basis representation + polynomial↔normal conversion | pending | — | — (implements C-F2m, 2nd repr) |
 | E.F.4 ◆ | GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close | pending | — | C-F2mOpt |
 
