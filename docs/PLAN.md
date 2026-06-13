@@ -631,7 +631,7 @@ deliverable); their outcomes are recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.F.1 | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | pending | — | C-F2m (+ `shared/gf2m` crate) |
+| E.F.1 | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | done | 2ca3061 | C-F2m (+ `shared/gf2m` crate) |
 | E.F.2 | GF(2^m) inversion (ext-Euclid + Itoh–Tsujii) + division | pending | — | C-F2m (additive: `inv`/`div`) |
 | E.F.3 | GF(2^m) normal-basis representation + polynomial↔normal conversion | pending | — | — (implements C-F2m, 2nd repr) |
 | E.F.4 ◆ | GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close | pending | — | C-F2mOpt |
@@ -646,7 +646,11 @@ and the benchmark/textbook consumers **E.W**/**T.E**, and **opens the binary bra
 
 ## Action-frame digest
 
-*(none yet)*
+### E.F.1 — 2026-06-13
+Discovery/flex: Inflection-design juncture paged; `design-confident` returned — all five design calls (trait param `F2m<const L>`, runtime `poly: &Uint<L>`, `Uint<L>` storage, full surface frozen with stubs, `F2mNaive` macro shape) resolved cleanly against PLAN provisions.
+Affected: C-F2m (resolved interface written into contracts section)
+Deferred: no — one flagged recommendation noted: `frobenius` declared distinctly from `square` (both are `a→a²` in E.F.1); adjudicator judged this deliberate (E.G/E.H iterate the Frobenius by name) and not irreconcilable.
+Texture: `Cargo.lock` included in session commit as expected workspace side-effect of new crate addition.
 
 ---
 
