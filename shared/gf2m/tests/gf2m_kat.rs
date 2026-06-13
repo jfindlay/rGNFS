@@ -1,4 +1,4 @@
-//! Known-answer tests and field-axiom tests for `F2mNaive` and `F2mNormal`.
+//! Known-answer tests and field-axiom tests for `F2mNaive`, `F2mNormal`, and `F2mOpt`.
 //!
 //! Coverage:
 //! - Field axioms over GF(2^4) with `x⁴+x+1` (poly = 0x13).
@@ -19,6 +19,10 @@
 //! - Squaring-is-a-cyclic-shift: `square(a).c == cyclic_left_shift(a.c, m)` (direct check).
 //! - Cross-representation agreement: `mul`/`add` in polynomial basis equals the same
 //!   operation in normal basis after conversion.
+//! - **Naive↔optimized agreement**: `F2mNaive::mul` and `F2mOpt::mul` give byte-identical
+//!   results for all input pairs in GF(2^4) (256 pairs) and GF(2^8) (65536 pairs).
+//! - **`F2mOpt` field axioms**: associativity, distributivity, mul-by-one, add-self-zero
+//!   verified directly against `F2mOpt` (not only via agreement with naive).
 //!
 //! The Frobenius fixed-field law `a^(2^m) = a` is the loudest correctness
 //! signal: it fails immediately if modular reduction is wrong (wrong irreducible,
@@ -27,7 +31,7 @@
 use crypto_bigint::Uint;
 use shared_gf2m::{
     ext_euclid_inv, find_normal_element, itoh_tsujii_inv, normal_to_poly, poly_to_normal, F2m,
-    F2mNaive, F2mNormal,
+    F2mNaive, F2mNormal, F2mOpt,
 };
 
 // ── Field parameters ──────────────────────────────────────────────────────────
@@ -850,6 +854,167 @@ fn cross_representation_square_gf8() {
             sq_poly, sq_norm_poly,
             "cross-representation square disagrees for v={v:#x} in GF(2^8): \
              poly={sq_poly:#x} normal={sq_norm_poly:#x}"
+        );
+    }
+}
+
+// ── Naive↔optimized agreement KATs ───────────────────────────────────────────
+//
+// These tests are the C-F2mOpt equivalence contract: `F2mOpt::mul` must give
+// byte-identical results to `F2mNaive::mul` on every input pair.  This is the
+// `FpNaive`/`FpMonty` discipline applied to characteristic 2: the optimized
+// multiplier is *equivalent*, not just plausible.
+//
+// Exhaustive coverage:
+// - GF(2^4): 16 × 16 = 256 pairs.
+// - GF(2^8): 256 × 256 = 65536 pairs (same scale as `sub_equals_add_gf8`).
+
+/// Naive↔optimized `mul` agreement for all pairs in GF(2^4).
+///
+/// For every (a, b) in GF(2^4) × GF(2^4), asserts that
+/// `F2mNaive::mul(a, b).to_uint() == F2mOpt::mul(a, b).to_uint()`.
+/// Byte-identical equality on the canonical `Uint<1>` — the strongest correct
+/// assertion given that both types use the same canonical storage.
+#[test]
+fn naive_opt_agree_gf4() {
+    let p = poly4();
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            let a_naive = F2mNaive::<1>::from_u64(av, &p);
+            let b_naive = F2mNaive::<1>::from_u64(bv, &p);
+            let a_opt = F2mOpt::<1>::from_u64(av, &p);
+            let b_opt = F2mOpt::<1>::from_u64(bv, &p);
+
+            let naive_prod = a_naive.mul(&b_naive, &p).to_uint();
+            let opt_prod = a_opt.mul(&b_opt, &p).to_uint();
+
+            assert_eq!(
+                naive_prod, opt_prod,
+                "naive↔opt mul disagrees: a={av:#x} b={bv:#x} in GF(2^4): \
+                 naive={naive_prod:#x} opt={opt_prod:#x}"
+            );
+        }
+    }
+}
+
+/// Naive↔optimized `mul` agreement for all pairs in GF(2^8).
+///
+/// Exhaustive over all 256 × 256 = 65536 pairs.  This is the load-bearing
+/// correctness signal for the Karatsuba implementation: a bug in the
+/// recombination or reduction step gives wrong products that still pass weak
+/// smoke tests but fail here.
+#[test]
+fn naive_opt_agree_gf8() {
+    let p = poly8();
+    for av in 0u64..256 {
+        for bv in 0u64..256 {
+            let a_naive = F2mNaive::<1>::from_u64(av, &p);
+            let b_naive = F2mNaive::<1>::from_u64(bv, &p);
+            let a_opt = F2mOpt::<1>::from_u64(av, &p);
+            let b_opt = F2mOpt::<1>::from_u64(bv, &p);
+
+            let naive_prod = a_naive.mul(&b_naive, &p).to_uint();
+            let opt_prod = a_opt.mul(&b_opt, &p).to_uint();
+
+            assert_eq!(
+                naive_prod, opt_prod,
+                "naive↔opt mul disagrees: a={av:#x} b={bv:#x} in GF(2^8): \
+                 naive={naive_prod:#x} opt={opt_prod:#x}"
+            );
+        }
+    }
+}
+
+// ── F2mOpt field-axiom suite ──────────────────────────────────────────────────
+//
+// These tests verify the field axioms directly against `F2mOpt` — not only via
+// agreement with naive.  This confirms the Karatsuba multiplier satisfies the
+// axioms in its own right.
+
+/// `mul(a, one) == a` for all elements in GF(2^4) via `F2mOpt`.
+#[test]
+fn f2m_opt_mul_by_one_gf4() {
+    let p = poly4();
+    let one = F2mOpt::<1>::one();
+    for v in 0u64..16 {
+        let a = F2mOpt::<1>::from_u64(v, &p);
+        assert_eq!(
+            a.mul(&one, &p).to_uint(),
+            a.to_uint(),
+            "F2mOpt: a * 1 != a for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// `add(a, a) == zero` for all elements in GF(2^4) via `F2mOpt`.
+#[test]
+fn f2m_opt_add_self_is_zero_gf4() {
+    let zero = F2mOpt::<1>::zero();
+    let p = poly4();
+    for v in 0u64..16 {
+        let a = F2mOpt::<1>::from_u64(v, &p);
+        assert_eq!(
+            a.add(&a).to_uint(),
+            zero.to_uint(),
+            "F2mOpt: a + a != 0 for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// Associativity of `F2mOpt::mul` over GF(2^4): exhaustive 16^3 = 4096 triples.
+#[test]
+fn f2m_opt_mul_associative_gf4() {
+    let p = poly4();
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            for cv in 0u64..16 {
+                let a = F2mOpt::<1>::from_u64(av, &p);
+                let b = F2mOpt::<1>::from_u64(bv, &p);
+                let c = F2mOpt::<1>::from_u64(cv, &p);
+                let lhs = a.mul(&b, &p).mul(&c, &p);
+                let rhs = a.mul(&b.mul(&c, &p), &p);
+                assert_eq!(
+                    lhs, rhs,
+                    "F2mOpt: mul not associative: a={av:#x} b={bv:#x} c={cv:#x} in GF(2^4)"
+                );
+            }
+        }
+    }
+}
+
+/// Distributivity of `F2mOpt::mul` over `add` in GF(2^4): exhaustive 16^3 triples.
+#[test]
+fn f2m_opt_mul_distributive_gf4() {
+    let p = poly4();
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            for cv in 0u64..16 {
+                let a = F2mOpt::<1>::from_u64(av, &p);
+                let b = F2mOpt::<1>::from_u64(bv, &p);
+                let c = F2mOpt::<1>::from_u64(cv, &p);
+                let lhs = a.mul(&b.add(&c), &p);
+                let rhs = a.mul(&b, &p).add(&a.mul(&c, &p));
+                assert_eq!(
+                    lhs, rhs,
+                    "F2mOpt: distributivity failed: a={av:#x} b={bv:#x} c={cv:#x} in GF(2^4)"
+                );
+            }
+        }
+    }
+}
+
+/// Frobenius fixed-field law for `F2mOpt` in GF(2^4): `a^(2^4) == a`.
+#[test]
+fn f2m_opt_frobenius_fixed_field_gf4() {
+    let p = poly4();
+    let exp = Uint::<1>::from(16u64);
+    for v in 0u64..16 {
+        let a = F2mOpt::<1>::from_u64(v, &p);
+        let a_pow = a.pow(&exp, &p);
+        assert_eq!(
+            a_pow.to_uint(),
+            a.to_uint(),
+            "F2mOpt: a^(2^4) != a for a={v:#x} in GF(2^4) — reduction is wrong"
         );
     }
 }

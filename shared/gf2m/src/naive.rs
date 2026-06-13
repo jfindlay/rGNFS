@@ -65,7 +65,7 @@ impl<const L: usize> F2mNaive<L> {
 /// Returns 0 for the zero value.  This is the degree of the polynomial + 1.
 /// `Uint::bits()` returns `usize` in crypto-bigint 0.5.
 #[inline]
-fn uint_bits<const L: usize>(v: &Uint<L>) -> usize {
+pub(crate) fn uint_bits<const L: usize>(v: &Uint<L>) -> usize {
     v.bits()
 }
 
@@ -234,7 +234,7 @@ macro_rules! impl_f2m_naive {
 
 /// Widen a `Uint<L>` to `Uint<DL>` by zero-extending into the low half.
 #[inline]
-fn wide_from_low<const L: usize, const DL: usize>(v: Uint<L>) -> Uint<DL> {
+pub(crate) fn wide_from_low<const L: usize, const DL: usize>(v: Uint<L>) -> Uint<DL> {
     // Copy the L words of v into the low L words of a DL-word Uint.
     let src = v.as_words();
     let mut dst = [0u64; DL];
@@ -244,7 +244,7 @@ fn wide_from_low<const L: usize, const DL: usize>(v: Uint<L>) -> Uint<DL> {
 
 /// Extract the low `L` words of a `Uint<DL>`.
 #[inline]
-fn low_half<const L: usize, const DL: usize>(v: Uint<DL>) -> Uint<L> {
+pub(crate) fn low_half<const L: usize, const DL: usize>(v: Uint<DL>) -> Uint<L> {
     let words = v.as_words();
     let mut lo = [0u64; L];
     lo.copy_from_slice(&words[..L]);
@@ -256,7 +256,7 @@ fn low_half<const L: usize, const DL: usize>(v: Uint<DL>) -> Uint<L> {
 /// Used in the carryless comb multiply to shift `self.c` into the double-width
 /// accumulator without losing high bits.
 #[inline]
-fn wide_shl<const L: usize, const DL: usize>(v: Uint<L>, shift: usize) -> Uint<DL> {
+pub(crate) fn wide_shl<const L: usize, const DL: usize>(v: Uint<L>, shift: usize) -> Uint<DL> {
     let wide = wide_from_low::<L, DL>(v);
     wide.shl_vartime(shift)
 }
@@ -271,7 +271,7 @@ fn wide_shl<const L: usize, const DL: usize>(v: Uint<L>, shift: usize) -> Uint<D
 /// (at bit `deg`).  Each XOR reduces the degree by at least 1.  Terminates
 /// when degree < m.
 #[inline]
-fn poly_reduce<const DL: usize>(mut acc: Uint<DL>, poly_wide: Uint<DL>, m: usize) -> Uint<DL> {
+pub(crate) fn poly_reduce<const DL: usize>(mut acc: Uint<DL>, poly_wide: Uint<DL>, m: usize) -> Uint<DL> {
     loop {
         let deg = uint_bits(&acc);
         if deg == 0 || deg <= m {
