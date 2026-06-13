@@ -497,6 +497,100 @@ juncture and re-ratified at the E.F.4 ◆.* **Char-2 invariants:** `sub == add`,
 `mul` always reduces by the irreducible. **The irreducible defines the field** — cross-irreducible
 operations are meaningless (a consistency guard). **Toy field sizes only** (principle-4 boundary).
 
+**Resolved interface (ratified at the inline E.F.1 `@architect` juncture, 2026-06-13).** The five
+open design calls are settled as follows; this is the surface E.F.2/E.F.3/E.F.4 and downstream
+E.G/E.H/E.I consume. *(Re-ratify at the E.F.4 ◆.)*
+
+1. **Trait parameterisation — `F2m<const L: usize>` (limb count), NOT an explicit degree const.**
+   `L` = ⌈m/64⌉ = the number of `u64` limbs, mirroring `Fp<L>` exactly. The degree `m` is a
+   *runtime* property, recovered from the irreducible as `m = poly.bits() − 1` (the degree of the
+   irreducible). Rationale: stable Rust (edition 2024) forbids the `Uint<{ceil(M/64)}>` const
+   arithmetic an explicit-degree form would need — this is the same `generic_const_exprs`-avoidance
+   the `Fp` design note (`shared/field/src/lib.rs:7-18`) documents. *Load-bearing assumption:* no E.F
+   consumer needs `m` as a compile-time const for array sizing — the KATs compute `2^m` at runtime;
+   the Frobenius law `a^(2^m)=a` reads `m` from `poly`. If a downstream consumer later needs a
+   compile-time degree, that is an additive amend, not a break.
+
+2. **Irreducible — a runtime `poly: &Uint<L>` parameter (per-call), NOT a compile-time const.**
+   Mirrors `Fp`'s per-call `p: &Uint<L>` exactly: every operation that needs the field's identity
+   (`mul`, `square`/`frobenius`, `pow`, and the deferred `inv`/`div`) takes `poly: &Uint<L>`. The
+   irreducible is the bit-vector of the degree-m reduction polynomial (bit i set ⟺ coefficient of
+   x^i is 1; e.g. GF(2^4) with x⁴+x+1 is `0b1_0011`, GF(2^8) AES x⁸+x⁴+x³+x+1 is `0b1_0001_1011`).
+   Rationale: (a) the established idiom the PLAN mandates mirroring; (b) one impl exercises *both*
+   toy fields the E.F.1 KAT names (GF(2^4) and GF(2^8)) without monomorphising per-poly. *Tradeoff
+   named:* a runtime `poly` is worse at fast sparse (trinomial/pentanomial) reduction than a
+   compile-time const would be — it cannot specialise the reduction to a known sparse modulus at
+   compile time. This is deliberately deferred: the **sparse fast-reduce is an E.F.4 optimised-path
+   concern** (it lives with the optimised multiplier under C-F2mOpt), not a substrate decision; the
+   E.F.1 naive reduction (repeated XOR-of-shifted-modulus, degree-driven) is the auditable baseline
+   regardless of modulus shape.
+
+3. **Backing storage — `Uint<L>` from `crypto-bigint` (a coefficient bit-vector), NOT a raw
+   `[u64; L]`.** Mirrors `FpNaive { v: Uint<L> }`. The `Uint<L>` is consumed for `as_words`/
+   `from_words` (limb access for the comb multiply and the Frobenius bit-spread), `BitXor` (add),
+   and shifts — and it provides the `Clone`/`PartialEq`/`Eq`/`Debug` the trait bounds need for free.
+   The carryless comb multiply produces a degree-<2m intermediate in `Uint<2L>` (the same `($L, $DL =
+   2*$L)` widening the `impl_fp_naive!` macro already uses, `shared/field/src/naive.rs:48-49`), then
+   reduces back to `Uint<L>`. *Tradeoff named:* `Uint<L>` carries integer-arithmetic methods
+   (`wrapping_add`, `rem`, `mul_wide`) that are **meaningless on a GF(2) coefficient vector** — a
+   `@build` agent could call `mul_wide` (integer mul-with-carry) where the carryless comb is meant.
+   This is the storage analogue of the `sub==add` trap; the crate + impl docs MUST state "the
+   `Uint<L>` is a polynomial coefficient bit-vector, not an integer — only XOR, shift, and bit
+   operations are meaningful; `mul`/`square` use the carryless comb, never `mul_wide`." (Note:
+   `mul_wide` *is* in the Consumes column, but for the *widening-type plumbing* `(lo, hi) →
+   Uint<2L>`, not as the multiply itself — the multiply is carryless comb.)
+
+4. **Method surface — full surface frozen now; `inv`/`div` + `trace`/`half_trace` declared-and-
+   stubbed.** The trait declares, with `poly: &Uint<L>` threaded through every modulus-dependent op:
+   - **Constructors / canonical form:** `zero`/`one`/`from_u64`/`from_uint`/`to_uint`
+     (mirroring `Fp`; `from_uint`/`to_uint` treat the `Uint<L>` as the coefficient bit-vector — no
+     reduction-mod-integer, but a *polynomial* reduction mod `poly` if the input has degree ≥ m).
+   - **Char-2 arithmetic (implemented in E.F.1):** `add` (XOR, `a ^ b`); `sub` (**== `add`** —
+     documented, KAT-checked `sub(a,b)==add(a,b)`); `neg` (**== identity**, returns `self` clone);
+     `mul` (carryless comb + reduce-by-`poly`); `square` (Frobenius bit-spread + reduce); `pow`
+     (square-and-multiply, mirroring `FpNaive::pow`); plus `is_zero`/`is_one` defaults.
+   - **Curve-facing over-specification (the substrate-over-specify rule):** `frobenius(self, poly)`
+     — first-class `a → a²`, *implemented* in E.F.1 (it **is** `square`; declared distinctly because
+     E.G/E.H reach for it by that name and may iterate it as the Frobenius map); `trace(self, poly)`
+     — `Σ_{i<m} a^(2^i)`, **declared-and-stubbed** `unimplemented!("E.G")`; `half_trace`/
+     `solve_quadratic(c, poly)` — solve `x²+x=c`, **declared-and-stubbed** `unimplemented!("E.G")`.
+   - **Deferred to E.F.2 (declared-and-stubbed):** `inv(self, poly)` and `div(self, rhs, poly)` —
+     bodies `unimplemented!("filled in E.F.2")`, with a documented zero-input contract (`inv(0)`
+     panics/errors, matching `FpNaive::inv`'s zero-guard).
+
+   Rationale for **declare-and-stub** over leave-un-added (the PLAN-flagged call): the trait bounds
+   **three** downstream sub-tracks (E.G/E.H/E.I); adding a trait method later is the most expensive
+   retrofit in the sub-track (the Cat-A cost-of-wrong that holds this juncture at Opus). Freezing the
+   full surface now is the substrate goal. The PLAN's counter-consideration ("leave un-added to keep
+   E.F.1's KATs honest") is *reconciled, not traded away*: E.F.1's KATs (axioms + Frobenius, PLAN
+   line 344-347) **do not call** `inv`/`div`/`trace`/`half_trace`, so a stub that is never exercised
+   keeps the KATs honest while still freezing the surface. *Tradeoff named:* a compiling-but-panicking
+   stub is a latent trap if a future `@build` agent calls it before its session fills it — mitigated
+   by `unimplemented!` messages that name the filling session ("E.F.2"/"E.G"), and by the inline
+   juncture ratifying that no E.F.1-consumed path touches a stub.
+
+5. **`naive` impl shape — `F2mNaive<const L> { c: Uint<L> }`, per-`L` macro mirroring
+   `impl_fp_naive!`.** A struct `F2mNaive<const L: usize> { c: Uint<L> }` where `c` is the
+   coefficient bit-vector, deriving `Clone, Debug, PartialEq, Eq`. The `F2m<L>` impl is generated by
+   a macro `impl_f2m_naive!($L, $DL)` over the same `($L, $DL=2*$L)` pairs `(1,2)/(2,4)/(4,8)/(8,16)`
+   the `Fp` naive macro uses (the comb multiply widens to `Uint<$DL>` for the degree-<2m intermediate
+   before reducing). `add` = `Uint`-XOR; `mul` = comb (for each set bit i of `rhs`, XOR `self`
+   left-shifted by i into the `Uint<2L>` accumulator) then `reduce(acc, poly)` (while the
+   accumulator's degree ≥ m, XOR in `poly` shifted to align with the top set bit); `square` =
+   bit-spread (insert a zero between each coefficient bit) then reduce; `frobenius` delegates to
+   `square`. The irreducible is **not** stored on the struct — it is passed per-call as `poly`
+   (mirroring `Fp` storing `p` nowhere on `FpNaive` and threading it through every method). A
+   *cross-irreducible* consistency note is documented (operations mixing elements reduced under
+   different `poly` are meaningless — the C-MovBridge-style guard).
+
+**Crate scaffold (also ratified):** `shared/gf2m/Cargo.toml` is a leaf crate `name = "shared-gf2m"`,
+`edition = "2024"`, single dependency `crypto-bigint = { version = "0.5", features = ["rand_core"] }`
+(matching `shared/field`), `[dev-dependencies] proptest = "1"`, and the `[lints]` block mirroring the
+`shared/padic` precedent (`unsafe_code = "forbid"`, `missing_docs = "warn"`, clippy `all = "deny"` /
+`pedantic = "warn"`). Root `Cargo.toml` adds `"shared/gf2m"` to `members`. No new edge (no existing
+crate depends on it — the `rho → shared-gf2m` edge is E.G's). `cargo check --workspace` must resolve
+with no cycle.
+
 ### C-F2mOpt — GF(2^m) optimized-multiplier equivalence (compiler- + test-enforced) — *to be frozen at E.F.4 ◆*
 
 **Defined in:** E.F.4 (`shared/gf2m/src/opt.rs`). **Consumed by:** any performance-sensitive consumer
