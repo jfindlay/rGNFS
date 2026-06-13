@@ -602,6 +602,117 @@ naive↔optimized agreement KAT, mirroring `FpNaive`/`FpMonty`). **`pclmulqdq` i
 (gated demonstration-fidelity sidecar — principle 3). *Exact algorithm choice (Karatsuba vs
 López–Dahab vs both; the windowing parameters) ratified at the E.F.4 ◆.*
 
+**Resolved interface (ratified at the E.F.4 ◆ `@architect` juncture, 2026-06-13).** The five open
+design calls are settled as follows; this is the surface E.G–E.K / E.W consume. *(The substrate
+this builds on — C-F2m — is confirmed complete and binary-curve-ready; see the ◆ confirmation
+notes recorded for the step-3 review.)*
+
+1. **Algorithm — software Karatsuba (one-level split) as the sole green-path optimized multiplier;
+   López–Dahab comb NOT separately implemented.** The optimized `mul` is a single-level Karatsuba
+   split of the carryless polynomial multiply: split each operand into low/high halves, compute the
+   three half-products `lo·lo`, `hi·hi`, `(lo+hi)·(hi+lo)` via the *existing* `naive`-style comb at
+   half width, recombine by XOR (no carries in char 2 — the middle term is `mid + lo·lo + hi·hi`,
+   and `+ == −` is XOR), then reduce mod `poly` via the **same `poly_reduce` routine the naive path
+   uses**. Rationale: (a) Karatsuba is the *algorithmically distinct* optimized multiplier the PLAN's
+   title and Cat-C framing name first ("Karatsuba subquadratic split"); (b) at toy scale (m ≤ 64,
+   L = 1) a separate López–Dahab comb with windowing would be a *second* implementation of the same
+   speed-up story with no additional contract surface and no additional cross-check value — the naive
+   comb baseline *already is* the comb method, so "comb-with-windowing" vs "naive comb" is a
+   within-baseline micro-optimization, not a distinct equivalence contract. The PLAN's "Karatsuba
+   **and/or** López–Dahab" explicitly licenses choosing one; Karatsuba is the subquadratic-split
+   pedagogical payoff, López–Dahab is the windowing-engineering variant (principle-3-adjacent).
+   *Tradeoff named:* Karatsuba-only is worse at *exhibiting the comb-windowing technique* than
+   shipping both — mitigated by a doc note in `opt.rs` explaining that the E.F.1 naive comb IS the
+   comb method and that López–Dahab windowing is the scale-only (principle-2) engineering refinement,
+   deliberately not separately implemented at toy scale. *Load-bearing assumption:* no downstream
+   consumer (E.G–E.K) needs a *named* `lopez_dahab_mul` symbol — they consume the `F2m::mul` trait
+   method via `F2mOpt`, which is algorithm-agnostic at the call site. If a consumer later wants the
+   windowed comb specifically, that is an additive `opt.rs` function, not a contract break.
+
+2. **`F2mOpt` struct shape — mirrors `F2mNaive` exactly: `F2mOpt<const L: usize> { c: Uint<L> }`,
+   same canonical coefficient-bit-vector storage, different `mul` impl; macro-generated via
+   `impl_f2m_opt!($L, $DL)` over the same `(1,2)/(2,4)/(4,8)/(8,16)` pairs.** This is the *cleaner*
+   analogue of `FpNaive`/`FpMonty`: unlike Montgomery form (a genuinely different *representation*
+   `aR mod p` needing conversion), the optimized GF(2^m) multiplier produces the **identical
+   canonical representation** as the naive comb — only the multiply *algorithm* differs. So `F2mOpt`
+   is NOT a newtype wrapper over `F2mNaive` and does NOT change storage; it is a sibling struct with
+   the same `{ c: Uint<L> }` field, deriving `Clone, Debug, PartialEq, Eq`, whose `add`/`sub`/`neg`/
+   `to_uint`/`from_*`/`pow`/`inv`/`div`/`trace`/`solve_quadratic`/`square`/`frobenius` bodies are
+   **identical to `F2mNaive`'s** (the optimization is *only* in `mul`). Rationale: (a) the cross-check
+   (call 4) compares `.to_uint()` of `F2mNaive` and `F2mOpt` for byte-identical equality — this
+   requires identical canonical form, which same-storage guarantees; (b) it lets the optimized `mul`
+   reuse the *existing private helpers* `wide_from_low`/`low_half`/`wide_shl`/`poly_reduce` in
+   `naive.rs` — **E.F.4 widens these to `pub(crate)`** (they are currently private `fn` in `naive.rs`)
+   so `opt.rs` can call the shared reduction. *This is an additive, non-breaking visibility change to
+   `naive.rs` internals, NOT a C-F2m amendment* (the trait surface is untouched; only module-internal
+   visibility widens). *Tradeoff named:* mirroring `F2mNaive` duplicates the non-`mul` method bodies
+   (vs a newtype that delegates) — accepted because (i) the macro generates them so duplication is one
+   macro, not hand-copy, and (ii) a newtype `F2mOpt(F2mNaive<L>)` would force every trait method
+   through a `.0` unwrap/re-wrap, *more* boilerplate than the macro, and would make the `to_uint`
+   cross-check indirection harder to read. The `square`/`frobenius` bit-spread is **kept identical to
+   naive** (it is already the optimal bit-spread; Karatsuba does not improve squaring) — the doc must
+   say so to avoid a `@build` agent inventing a needless "optimized square."
+
+3. **`pclmulqdq` — OMITTED (not shipped even gated), with a documented rationale; the green-path
+   multiplier is the portable software Karatsuba.** **Load-bearing finding (confirmed against the
+   crate):** `shared/gf2m/Cargo.toml` sets `[lints.rust] unsafe_code = "forbid"`. The `pclmulqdq`
+   intrinsic (`core::arch::x86_64::_mm_clmulepi64_si128`) is an `unsafe` call requiring
+   `#[target_feature(enable = "pclmulqdq")]` on an `unsafe fn`. Shipping it would force either
+   (a) lifting the crate-wide `unsafe_code = "forbid"` lint to `allow`, or (b) a localized
+   `#[allow(unsafe_code)]` carve-out — both *weaken the substrate's strongest safety invariant
+   (zero unsafe) for a toy-scale demonstration sidecar that never runs on the green path*. The PLAN
+   gives explicit latitude: "an optional `pclmulqdq` … **if introduced at all**" (line 96),
+   "demonstration-fidelity option … gated behind `#[cfg(target_feature)]` **if introduced at all**."
+   The fiduciary call: at toy scale (m ≤ 8 in the KATs, ≤ 64 in the type) the carryless-multiply
+   intrinsic buys *near-zero observable demonstration value* (the software Karatsuba already exhibits
+   the algorithm; `pclmulqdq` would exhibit only an x86 micro-architectural detail), while the cost is
+   a real erosion of the `unsafe_code = "forbid"` guarantee every other `shared/` crate upholds.
+   **Decision: do NOT ship a `pclmulqdq` path.** Instead `opt.rs` carries a documented module-level
+   note naming the exact intrinsic and the `#[cfg(target_feature = "pclmulqdq")]` gate a crypto-scale
+   version would use, so the pedagogical pointer survives without the unsafe code. This
+   *over-satisfies* principle 3 (engineering kept off the green path) by keeping it off *every* path,
+   preserving the zero-unsafe invariant. *Tradeoff named:* omission is worse at *exhibiting the
+   intrinsic itself* than a gated path — mitigated by the doc note. *Reversibility:* if a future
+   reviewer judges the gated `pclmulqdq` worth the lint carve-out, adding it behind
+   `#[cfg(target_feature = "pclmulqdq")]` + a localized `#[allow(unsafe_code)]` is a purely additive
+   change — this is reversible, not a one-way door. **(Flagged recommendation for the step-3 review:
+   confirm the omit-rather-than-gate `pclmulqdq` call. It is a defensible strengthening of the
+   zero-unsafe invariant within the PLAN's "if introduced at all" latitude, but it does narrow the
+   literal "optional gated `pclmulqdq` path" the E.F.4 session entry's Expected-files column names —
+   surfaced so the human can veto if the gated path was wanted as a concrete artifact.)**
+
+4. **Naive↔optimized agreement KAT — mirrors `naive_monty_agree`/`matches_naive` exactly:
+   exhaustive `.to_uint()`-equality over all input pairs for the toy fields.** `gf2m_kat.rs` gains a
+   `naive_opt_agree_gf4` (exhaustive 16×16 = 256 pairs) and `naive_opt_agree_gf8` (exhaustive
+   256×256 = 65536 pairs — the scale the existing `sub_equals_add_gf8` already runs), each asserting
+   `F2mNaive::<1>::mul(a,b).to_uint() == F2mOpt::<1>::mul(a,b).to_uint()` for every pair. Byte-
+   identical equality on the canonical `Uint<L>` — *not* "equal as field elements" — because the
+   same-canonical-form storage (call 2) makes byte-identity the strongest correct assertion (mirroring
+   `matches_naive` in `monty.rs:205`). Optionally a `proptest` random-pair agreement for breadth. No
+   new test infrastructure — same `shared_gf2m::{F2m, F2mNaive}` import plus the new `F2mOpt`
+   re-export. *Load-bearing assumption (confirmed):* exhaustive 256×256 in GF(2^8) stays fast — the
+   existing suite already runs several such loops and is green.
+
+5. **Sub-track-close KAT suite — achievable in `gf2m_kat.rs` with NO new infrastructure; it is the
+   union of the existing (already-present) suite plus the call-4 agreement.** The field-axiom tests
+   (associativity, distributivity, mul-by-one, add-self-zero), the Frobenius fixed-field law
+   `a^(2^m)=a` (`frobenius_fixed_field_gf4`/`_gf8`), `square==mul(a,a)`, the inversion round-trip +
+   ext-Euclid↔Itoh–Tsujii agreement, the basis-conversion round-trip + cross-representation
+   agreement, and the char-2 invariants (`sub==add`, `neg==id`) **already exist and pass** in
+   `gf2m_kat.rs` (855 lines, landed E.F.1–E.F.3). E.F.4 *adds only* the naive↔optimized agreement
+   tests (call 4) and *optionally* re-runs the field-axiom suite against `F2mOpt` (a cheap parametrized
+   helper or macro of the existing bodies) to confirm the optimized multiplier satisfies the axioms
+   directly, not only agreement-with-naive. No PARI sidecar required (the self-checking suite is
+   exactly decisive — lever 5); the optional PARI `#[ignore]` sidecar may be added but is not
+   load-bearing. Needs no new dev-dependency beyond the `proptest` already present.
+
+**`lib.rs` integration (also ratified):** E.F.4 adds `pub mod opt;` and `pub use opt::F2mOpt;`
+(mirroring `pub use naive::F2mNaive;` / `pub use normal::F2mNormal;`). The private `naive.rs`
+helpers `wide_from_low`/`low_half`/`wide_shl`/`poly_reduce`/`uint_bits` widen to `pub(crate)` so
+`opt.rs` reuses the shared reduction (additive visibility change, no trait/contract amendment).
+`cargo test --workspace` green; the existing rho/gnfs/shared KATs unchanged (E.F.4 touches only
+`shared/gf2m`).
+
 ### Frozen contracts read by E.F (consumed, not amended)
 
 - **`crypto-bigint` `Uint<L>`** — `as_words`/`from_words`/`mul_wide` for the `u64`-limb word layout.
