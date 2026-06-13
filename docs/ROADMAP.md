@@ -165,11 +165,18 @@ from PLANs, where one `docs/PLAN.md` bundles several sessions.*
 | α — Foundation | 3–5 | ~6 (α.1–α.5 + S0.W) | 0 | **complete** |
 | β — GNFS factoring (G) | 16–22 | ~28 (G.A → G.F + G.W) | 0 | **complete** |
 | γ — NFS-DL (D) | 8–10 | ~12 (D.A → D.W + D.E ext.) | 0 | **complete** |
-| δ — Algebraic ECDLP (E) | 25–32 | ~8 (E.A, E.B, E.C) | 24–31 | in progress |
+| δ — Algebraic ECDLP (E) | 25–32 | ~13 (E.A, E.B, E.C, E.D, E.E) | ~19–26 | in progress |
 | ε — Shor + PQ (S) | 7–9 | 0 | 7–10 | not started |
 | ζ — Umbrella | 2–4 | 0 | 3–4 | not started |
 | τ — Textbook (T) | 2–3 | ~3 (T.0, T.G, T.D) | 1–2 (T.E folds into E.W; T.Z net-new) | in progress |
-| **Total** | **~72–93** | **~57** | **~35–47** | done ~57 / remaining ~35–47 |
+| **Total** | **~72–93** | **~62** | **~30–42** | done ~62 / remaining ~30–42 |
+
+*Track-E `Done` reconciled at the E.F sharding boundary (2026-06-13): E.D (p-adic arithmetic, 3
+sessions, `0a98148`…`95d03b7`) and E.E (Smart–Satoh–Araki, 2 sessions, `4dc5eaf`/`8a217f4`) both
+completed since the E.C-◆ reconciliation; the Discoveries log was already current through E.D ◆, but
+this Progress table and the Remaining table below had not been updated. This is a mechanical
+catch-up of commit-anchored facts (a directed mid-shard correction), not a full boundary rewrite;
+the next true boundary reconciliation is owed at the E.F ◆.*
 
 **Confirmed-complete spans** (commit-anchored): Phase α through `α.5`/`S0.W`; Track G end-to-end —
 G.A (`bdba6f5`…`967e394`), G.B (`2f43f99`…`7fa9ab9`), G.C (`c1dc0b6`…`23a5222`), G.D
@@ -177,8 +184,9 @@ G.A (`bdba6f5`…`967e394`), G.B (`2f43f99`…`7fa9ab9`), G.C (`c1dc0b6`…`23a5
 Track-τ-open — T.0 (`5c9b783`), G.W (`76f3633`), T.G (`a896198`). Track D end-to-end — D.A
 (`f2dbf0a`…`651c17e`), D.B (`652cfa6`…`a569049`), D.C (`1651993`…`9d07c51`), D.W
 (`8c92260`…`541be29`), D.E ext. (`0d02b77`…`a804a7b`). Track E through E.C ◆ — E.A
-(`054df65`…`51fd477`), E.B (`74b2ff3`…`6c082bb`), E.C (`840608c`…`2e1edf8`). Next up per the
-sequencing order: **Track E continued**, opening with E.D (p-adic arithmetic).
+(`054df65`…`51fd477`), E.B (`74b2ff3`…`6c082bb`), E.C (`840608c`…`2e1edf8`), E.D
+(`0a98148`…`95d03b7`), E.E (`4dc5eaf`/`8a217f4`). Next up per the sequencing order: **Track E
+continued**, opening with E.F (GF(2^m) field arithmetic).
 
 **Estimation-bias note (re-baselined from two completed tracks):** G landed at ~28 feature-commit
 sessions; the 16–22 design-time estimate rounded sub-letter sessions away — each `G.x.N` is a real
@@ -188,14 +196,14 @@ an additive 3-session D.E extension (k>1 F_{p^k} solver, formalised as a γ sub-
 folded into E.C). Both tracks confirm the **ceiling-bias**: realistic session counts run at or above
 the upper end of the design-time bands. The forward projection below is re-baselined accordingly.
 
-### Remaining projected sessions (from E.C ◆, 2026-06-10)
+### Remaining projected sessions (from E.C ◆, 2026-06-10; Track-E rows reconciled at the E.F sharding boundary, 2026-06-13)
 
-*Inferred from completed-track actuals; ceiling-biased. Grand total projected: ~92–104.*
+*Inferred from completed-track actuals; ceiling-biased. Grand total projected: ~92–104. E.D and E.E
+struck (completed since the E.C-◆ projection — see the reconciliation note in the Progress
+subsection above).*
 
 | Remaining sub-track | Sessions | Opus-flagged |
 |---------------------|--------:|:------------:|
-| E.D — p-adic arithmetic | 3 | |
-| E.E — Smart–Satoh–Araki | 2 | |
 | E.F — GF(2^m) field arithmetic | 4 | ✓ E.F.1 |
 | E.G — Binary curves + Koblitz automorphism | 3 | |
 | E.H — GHS/Weil descent | 5 | ✓ E.H.1 |
@@ -203,15 +211,15 @@ the upper end of the design-time bands. The forward projection below is re-basel
 | E.J — Semaev summation polynomials | 3 | |
 | E.K — Gaudry–Diem–Joux–Vitse index calculus | 5 | ✓ E.K.1 |
 | E.W — Cross-attack benchmarks + writeup (+ T.E) | 2 | ✓ |
-| **E subtotal** | **~24–31** | |
+| **E subtotal** | **~19–26** | |
 | S.A–S.D — Shor + post-quantum context | 7–10 | |
 | Z.1 — Umbrella narrative | 3–4 | ✓ all |
 | T.Z — Textbook bind | 1–2 | ✓ |
-| **Total remaining** | **~35–47** | |
+| **Total remaining** | **~30–42** | |
 
-The E subtotal's low end (24) is the frozen-band-ceiling minus done (32 − 8); the high end (31) is
-the un-compressed sum of E.D–E.W sub-track ceiling estimates. S is orthogonal and can be slotted
-anywhere after α.
+The E subtotal's low end (19) is the frozen-band-ceiling minus done (32 − 13); the high end (26) is
+the un-compressed sum of the remaining E.F–E.W sub-track ceiling estimates. S is orthogonal and can
+be slotted anywhere after α.
 
 ---
 
