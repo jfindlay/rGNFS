@@ -1,6 +1,9 @@
-//! Known-answer tests for the hyperelliptic curve and Mumford divisor representation.
+//! Known-answer tests for the hyperelliptic curve, Mumford divisor representation,
+//! and Cantor's Jacobian group law.
 //!
-//! Coverage:
+//! # Coverage
+//!
+//! ## E.I.2 — curve and Mumford representation
 //! - Point-on-curve: `is_on_curve` holds for known affine points.
 //! - Zero divisor: `[1, 0]` is valid and reports `is_zero()`.
 //! - Mumford reduced-divisor invariant: `u` monic, `deg v < deg u ≤ g`,
@@ -8,6 +11,16 @@
 //! - Divisor-from-points round-trip: build `[u,v]` from points, recover the
 //!   points as roots of `u` with `y = v(xᵢ)`.
 //! - Genus: `g = ⌊(deg f − 1)/2⌋ = 2` for the toy curve.
+//!
+//! ## E.I.3 — Cantor group law (C-Jacobian sub-track close)
+//! - Identity axiom: `D + 0 = D` and `0 + D = D`.
+//! - Negation: `D + (−D) = 0` with `−D = [u, (h+v) mod u]`.
+//! - Associativity: `(D₁+D₂)+D₃ = D₁+(D₂+D₃)` on a sample.
+//! - Cantor consistency: `2D` via doubling equals `D + D` via compose.
+//! - Divisor-order law: `n·D = 0` for a divisor of known order `n`.
+//! - Reduced-divisor invariant: every result of Cantor add is a valid
+//!   reduced divisor (`deg u ≤ g`, Mumford invariant holds).
+//! - Optional PARI cross-check (`#[ignore]`-gated).
 //!
 //! # Toy curve
 //!
@@ -26,7 +39,7 @@
 //! (principle-4 boundary).
 
 use crypto_bigint::Uint;
-use rho::hyperelliptic::{eval_poly, HyperellipticCurve, MumfordDivisor};
+use rho::hyperelliptic::{cantor, eval_poly, HyperellipticCurve, MumfordDivisor};
 use shared_gf2m::{F2m, F2mNaive, Poly};
 
 // ── Curve and field parameters ────────────────────────────────────────────────
@@ -445,4 +458,299 @@ fn conjugate_pair_sum_equals_h() {
         let y_sum = y1.add(&y2);
         assert_eq!(y_sum, hx, "y1+y2 should equal h(x) for x={}", x_val);
     }
+}
+
+// ── Cantor group-law KATs (E.I.3 sub-track close) ────────────────────────────
+
+/// Helper: build the primary test divisor D₁ = [(x+2)(x+3), v] from (2,8) and (3,12).
+fn cantor_d1() -> MumfordDivisor<F2mNaive<1>, 1> {
+    let c = toy_curve();
+    c.divisor_from_points::<F2mNaive<1>>(&[(f4(2), f4(8)), (f4(3), f4(12))])
+}
+
+/// Helper: build a second test divisor D₂ from (1,6) and (7,1).
+fn cantor_d2() -> MumfordDivisor<F2mNaive<1>, 1> {
+    let c = toy_curve();
+    c.divisor_from_points::<F2mNaive<1>>(&[(f4(1), f4(6)), (f4(7), f4(1))])
+}
+
+/// Helper: build a third test divisor D₃ from (4,8) and (5,10).
+fn cantor_d3() -> MumfordDivisor<F2mNaive<1>, 1> {
+    let c = toy_curve();
+    c.divisor_from_points::<F2mNaive<1>>(&[(f4(4), f4(8)), (f4(5), f4(10))])
+}
+
+/// Identity axiom (left): `0 + D = D`.
+///
+/// Adding the zero divisor on the left must return `D` unchanged.
+#[test]
+fn cantor_identity_left() {
+    let c = toy_curve();
+    let poly = poly4();
+    let zero: MumfordDivisor<F2mNaive<1>, 1> = c.zero_divisor();
+    let d = cantor_d1();
+    let result = cantor::add(&c, &zero, &d, &poly);
+    assert_eq!(result, d, "0 + D must equal D (left identity)");
+}
+
+/// Identity axiom (right): `D + 0 = D`.
+///
+/// Adding the zero divisor on the right must return `D` unchanged.
+#[test]
+fn cantor_identity_right() {
+    let c = toy_curve();
+    let poly = poly4();
+    let zero: MumfordDivisor<F2mNaive<1>, 1> = c.zero_divisor();
+    let d = cantor_d1();
+    let result = cantor::add(&c, &d, &zero, &poly);
+    assert_eq!(result, d, "D + 0 must equal D (right identity)");
+}
+
+/// Negation: `D + (−D) = 0`.
+///
+/// The negation is `−D = [u, (h+v) mod u]`, NOT `[u, −v]`.
+/// In char 2, `−v = v`, but the hyperelliptic involution sends
+/// `(x, y) → (x, y+h(x))`, so the divisor negation reflects `v → h+v`.
+/// This KAT is the loud signal for the char-2 negation trap.
+#[test]
+fn cantor_negate_then_add_is_zero() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let neg_d = cantor::negate(&c, &d, &poly);
+    let result = cantor::add(&c, &d, &neg_d, &poly);
+    assert!(result.is_zero(), "D + (−D) must be the identity [1,0]");
+}
+
+/// Negation of the identity is the identity: `−0 = 0`.
+#[test]
+fn cantor_negate_zero_is_zero() {
+    let c = toy_curve();
+    let poly = poly4();
+    let zero: MumfordDivisor<F2mNaive<1>, 1> = c.zero_divisor();
+    let neg_zero = cantor::negate(&c, &zero, &poly);
+    assert!(neg_zero.is_zero(), "−0 must be 0");
+}
+
+/// Negation is an involution: `−(−D) = D`.
+#[test]
+fn cantor_double_negate_is_identity() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let neg_d = cantor::negate(&c, &d, &poly);
+    let neg_neg_d = cantor::negate(&c, &neg_d, &poly);
+    assert_eq!(neg_neg_d, d, "−(−D) must equal D");
+}
+
+/// Associativity: `(D₁+D₂)+D₃ = D₁+(D₂+D₃)`.
+///
+/// Checks the group law is associative on a concrete sample of three
+/// distinct degree-2 divisors.
+#[test]
+fn cantor_associativity() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d1 = cantor_d1();
+    let d2 = cantor_d2();
+    let d3 = cantor_d3();
+
+    let lhs = cantor::add(&c, &cantor::add(&c, &d1, &d2, &poly), &d3, &poly);
+    let rhs = cantor::add(&c, &d1, &cantor::add(&c, &d2, &d3, &poly), &poly);
+    assert_eq!(lhs, rhs, "(D₁+D₂)+D₃ must equal D₁+(D₂+D₃)");
+}
+
+/// Cantor consistency: `2D` via doubling equals `D + D` via compose.
+///
+/// `scalar_mul(D, 2)` must equal `add(D, D)`.  This guards against a
+/// compose-without-reduce fracture (an unreduced divisor is not a group element).
+#[test]
+fn cantor_double_consistency() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let double_add = cantor::add(&c, &d, &d, &poly);
+    let double_scalar = cantor::scalar_mul(&c, &d, 2, &poly);
+    assert_eq!(double_add, double_scalar, "D+D must equal 2·D via scalar_mul");
+}
+
+/// Every result of Cantor add is a valid reduced divisor.
+///
+/// Checks `deg u ≤ g` and the Mumford invariant `u | (f − v·h − v²)` for
+/// several sums.
+#[test]
+fn cantor_results_are_valid_reduced_divisors() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d1 = cantor_d1();
+    let d2 = cantor_d2();
+    let d3 = cantor_d3();
+
+    let sums = [
+        cantor::add(&c, &d1, &d2, &poly),
+        cantor::add(&c, &d1, &d3, &poly),
+        cantor::add(&c, &d2, &d3, &poly),
+        cantor::add(&c, &d1, &d1, &poly), // doubling
+        cantor::add(&c, &d2, &d2, &poly),
+    ];
+
+    for (i, sum) in sums.iter().enumerate() {
+        assert!(
+            c.is_valid(sum),
+            "sum[{}] must be a valid reduced divisor",
+            i
+        );
+    }
+}
+
+/// Divisor-order law: `n·D = 0` for a divisor of known order `n`.
+///
+/// The order of `D₁` in the Jacobian is found by iterating `k·D₁` until
+/// the identity is reached (brute-force, feasible for the toy GF(2^4) group
+/// whose order is at most ~300).  The test then verifies `n·D₁ = 0`.
+///
+/// This is a self-contained KAT: no PARI required.
+#[test]
+fn cantor_divisor_order_law() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+
+    // Find the order of D by iterating D, 2D, 3D, ... until we reach 0.
+    // The Jacobian of a genus-2 curve over GF(2^4) has order at most ~300,
+    // so this terminates quickly.
+    let mut current = d.clone();
+    let mut order: u64 = 1;
+    loop {
+        if current.is_zero() {
+            break;
+        }
+        current = cantor::add(&c, &current, &d, &poly);
+        order += 1;
+        assert!(order <= 1000, "order search exceeded 1000 — something is wrong");
+    }
+
+    // Verify: n·D = 0.
+    let result = cantor::scalar_mul(&c, &d, order, &poly);
+    assert!(
+        result.is_zero(),
+        "{}·D must be the identity (divisor order law); order = {}",
+        order,
+        order
+    );
+}
+
+/// Scalar multiplication: `k·D` for small scalars matches iterated addition.
+///
+/// Verifies `3·D = D + D + D` and `4·D = D + D + D + D`.
+#[test]
+fn cantor_scalar_mul_matches_iterated_add() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+
+    // 3·D = D + D + D.
+    let three_d_add = cantor::add(&c, &cantor::add(&c, &d, &d, &poly), &d, &poly);
+    let three_d_scalar = cantor::scalar_mul(&c, &d, 3, &poly);
+    assert_eq!(three_d_add, three_d_scalar, "3·D via add must equal 3·D via scalar_mul");
+
+    // 4·D = D + D + D + D.
+    let four_d_add = cantor::add(&c, &three_d_add, &d, &poly);
+    let four_d_scalar = cantor::scalar_mul(&c, &d, 4, &poly);
+    assert_eq!(four_d_add, four_d_scalar, "4·D via add must equal 4·D via scalar_mul");
+}
+
+/// Scalar multiplication by 0 returns the identity.
+#[test]
+fn cantor_scalar_mul_zero_is_identity() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let result = cantor::scalar_mul(&c, &d, 0, &poly);
+    assert!(result.is_zero(), "0·D must be the identity");
+}
+
+/// Scalar multiplication by 1 returns D unchanged.
+#[test]
+fn cantor_scalar_mul_one_is_d() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let result = cantor::scalar_mul(&c, &d, 1, &poly);
+    assert_eq!(result, d, "1·D must equal D");
+}
+
+/// Commutativity: `D₁ + D₂ = D₂ + D₁`.
+///
+/// The Jacobian is an abelian group; addition is commutative.
+#[test]
+fn cantor_commutativity() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d1 = cantor_d1();
+    let d2 = cantor_d2();
+    let lhs = cantor::add(&c, &d1, &d2, &poly);
+    let rhs = cantor::add(&c, &d2, &d1, &poly);
+    assert_eq!(lhs, rhs, "D₁+D₂ must equal D₂+D₁ (commutativity)");
+}
+
+/// Negation structure: `−D = [u, (h+v) mod u]`.
+///
+/// Verifies the negation formula directly: the `u` component is unchanged,
+/// and the `v` component is `(h+v) mod u`.
+#[test]
+fn cantor_negate_formula() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let neg_d = cantor::negate(&c, &d, &poly);
+
+    // u is unchanged.
+    assert_eq!(neg_d.u, d.u, "negate must preserve u");
+
+    // v_neg = (h + v) mod u.
+    let h = c.h::<F2mNaive<1>>();
+    let hv = h.add(&d.v);
+    let (_, expected_v) = hv.divmod(&d.u, &poly);
+    assert_eq!(neg_d.v, expected_v, "negate: v must be (h+v) mod u");
+}
+
+/// The negation of D is a valid reduced divisor.
+#[test]
+fn cantor_negate_is_valid() {
+    let c = toy_curve();
+    let poly = poly4();
+    let d = cantor_d1();
+    let neg_d = cantor::negate(&c, &d, &poly);
+    assert!(c.is_valid(&neg_d), "−D must be a valid reduced divisor");
+}
+
+/// Optional PARI cross-check: verify the Jacobian group order via `hyperellcharpoly`.
+///
+/// This test is gated with `#[ignore]` and requires PARI/GP to be installed.
+/// Run manually with:
+/// ```text
+/// cargo test -p rho cantor_pari_cross_check -- --ignored
+/// ```
+///
+/// Expected PARI session:
+/// ```text
+/// ? K = GF(2^4, 'a, a^4+a+1);
+/// ? C = hyperelliptic(Pol([1,0,0,1,0,1]*Mod(1,2)), Pol([0,1]*Mod(1,2)));
+/// ? hyperellcharpoly(C)   \\ L-polynomial
+/// ```
+/// The group order `#Jac(C/GF(2^4))` equals `L(1)` where `L` is the L-polynomial.
+#[test]
+#[ignore = "PARI not installed; run manually when available"]
+fn cantor_pari_cross_check() {
+    // Placeholder: when PARI is available, verify that the order found by
+    // `cantor_divisor_order_law` divides the Jacobian group order returned by
+    // `hyperellcharpoly`.
+    //
+    // The toy curve `y² + xy = x⁵ + x³ + 1` over GF(2^4) with x⁴+x+1.
+    // PARI command:
+    //   K = GF(2^4, 'a, a^4+a+1);
+    //   C = hyperelliptic(Pol([1,0,0,1,0,1]*Mod(1,2)), Pol([0,1]*Mod(1,2)));
+    //   hyperellcharpoly(C)
+    unimplemented!("run manually with PARI installed");
 }

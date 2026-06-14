@@ -3,6 +3,8 @@
 //! This module defines:
 //! - [`HyperellipticCurve`] — the curve `y²+h(x)y=f(x)` over GF(2^m), genus `g = ⌊(deg f − 1)/2⌋`.
 //! - [`MumfordDivisor`] — a reduced divisor `[u(x), v(x)]` in Mumford representation.
+//! - [`cantor`] — Cantor's algorithm: the Jacobian group law (compose + reduce), negation,
+//!   identity, and scalar multiplication.
 //!
 //! # Design
 //!
@@ -31,6 +33,8 @@
 //! KATs use a genus-2 curve over GF(2^4) with irreducible `x⁴+x+1` (poly = 0x13).
 //! The algorithms are arbitrary-genus-correct; only the parameters are toy
 //! (principle-4 boundary).
+
+pub mod cantor;
 
 use crypto_bigint::Uint;
 use shared_gf2m::{F2m, Poly};
