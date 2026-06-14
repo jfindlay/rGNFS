@@ -8,6 +8,8 @@
 //! - Decompression round-trip: `decompress(x, bit)` lands on the curve and
 //!   recovers the original y-coordinate.
 //! - Char-2 negation trap: `−(x,y) = (x, x+y)`, NOT `(x, −y)`.
+//! - Koblitz τ-automorphism: `τ^m(P) = P` (order divides m); the characteristic
+//!   relation `τ²(P) − t·τ(P) + 2·P = ∞`; sub-track-close suite.
 //!
 //! # Toy curve
 //!
@@ -23,6 +25,7 @@
 
 use crypto_bigint::Uint;
 use rho::binary_curve::{BinaryAffinePoint, BinaryCurve};
+use rho::binary_ecdlp::koblitz::{tau, tau_pow};
 use shared_gf2m::{F2m, F2mNaive};
 
 // ── Curve and field parameters ────────────────────────────────────────────────
@@ -414,4 +417,189 @@ fn decompress_two_distinct_y_values() {
     // They are negations of each other: −(x,y) = (x, x+y).
     let neg_pt0 = c.negate(&pt0);
     assert_eq!(neg_pt0, pt1, "decompress: pt1 should be −pt0");
+}
+
+// ── Koblitz τ-automorphism KATs ───────────────────────────────────────────────
+//
+// These tests verify the C-Koblitz contract:
+//   - τ(x,y) = (x², y²) applies the field Frobenius to BOTH coordinates.
+//   - τ^m(P) = P for all P (automorphism order divides m=4).
+//   - The characteristic relation τ²(P) − t·τ(P) + 2·P = ∞ holds.
+//
+// Toy curve: y²+xy = x³+x²+1 over GF(2^4), group order n=4, m=4.
+// Frobenius trace: t = 2^4 + 1 − 4 = 13.
+// Known τ values (squaring in GF(2^4) with x⁴+x+1):
+//   6² = (x²+x)² = x⁴+x² = (x+1)+x² = x²+x+1 = 7
+//   7² = (x²+x+1)² = x⁴+x²+1 = (x+1)+x²+1 = x²+x = 6
+//   1² = 1, 0² = 0
+// So: τ(G) = τ(1,6) = (1,7) = 3G; τ(3G) = τ(1,7) = (1,6) = G; τ(2G) = 2G.
+
+/// τ(G) = (1, 7) = 3G: the Frobenius maps G to its negation.
+///
+/// In GF(2^4): 6² = 7 (since (x²+x)² = x⁴+x² = x²+x+1 = 7 mod x⁴+x+1).
+/// So τ(1, 6) = (1², 6²) = (1, 7) = 3G = −G. ✓
+#[test]
+fn tau_maps_g_to_three_g() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+    let three_g = c.add(&two_g, &g);
+
+    let tau_g = tau(&g, &poly);
+    assert_eq!(tau_g, three_g, "τ(G) ≠ 3G");
+}
+
+/// τ(2G) = 2G: the point (0, 1) is a fixed point of τ.
+///
+/// 2G = (0, 1). τ(0, 1) = (0², 1²) = (0, 1) = 2G. ✓
+#[test]
+fn tau_fixes_two_g() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+
+    let tau_two_g = tau(&two_g, &poly);
+    assert_eq!(tau_two_g, two_g, "τ(2G) ≠ 2G");
+}
+
+/// τ(∞) = ∞: the point at infinity is fixed by τ.
+#[test]
+fn tau_fixes_infinity() {
+    let poly = poly4();
+    let inf: BinaryAffinePoint<F2mNaive<1>> = BinaryAffinePoint::Infinity;
+    let tau_inf = tau(&inf, &poly);
+    assert!(tau_inf.is_infinity(), "τ(∞) ≠ ∞");
+}
+
+/// τ images are on the curve for all non-trivial points.
+#[test]
+fn tau_image_on_curve() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+    let three_g = c.add(&two_g, &g);
+
+    for (label, pt) in [("G", g.clone()), ("2G", two_g), ("3G", three_g)] {
+        let tau_pt = tau(&pt, &poly);
+        assert!(c.is_on_curve(&tau_pt), "τ({label}) not on curve");
+    }
+}
+
+/// τ^m(P) = P for all P: the Frobenius automorphism has order dividing m=4.
+///
+/// This is the primary C-Koblitz correctness signal.  For GF(2^m), the
+/// Frobenius `a → a²` has order m (since `a^(2^m) = a` for all `a ∈ GF(2^m)`).
+/// Applied to both coordinates: `τ^m(x, y) = (x^(2^m), y^(2^m)) = (x, y)`.
+#[test]
+fn tau_order_divides_m() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+    let three_g = c.add(&two_g, &g);
+
+    // m = 4 for GF(2^4).
+    let m = 4usize;
+
+    for (label, pt) in [("G", g.clone()), ("2G", two_g), ("3G", three_g)] {
+        let tau_m = tau_pow(&pt, m, &poly);
+        assert_eq!(tau_m, pt, "τ^{m}({label}) ≠ {label}");
+    }
+}
+
+/// τ^2(G) = G: the orbit of G has size 2 (divides m=4).
+///
+/// τ(G) = 3G, τ²(G) = τ(3G) = G. ✓
+#[test]
+fn tau_squared_g_is_g() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+
+    let tau2_g = tau_pow(&g, 2, &poly);
+    assert_eq!(tau2_g, g, "τ²(G) ≠ G");
+}
+
+/// Characteristic relation: τ²(P) − t·τ(P) + 2·P = ∞ for all P.
+///
+/// For the toy curve: t = 13, n = 4.
+/// In the group, scalar multiplication is mod n=4:
+///   t mod n = 13 mod 4 = 1.
+///   2 mod n = 2.
+///
+/// For P = G:
+///   τ²(G) = G, τ(G) = 3G.
+///   τ²(G) − t·τ(G) + 2·G = G − 13·3G + 2·G
+///   = G − (13 mod 4)·3G + 2·G  [scalar mult is mod n]
+///   = G − 1·3G + 2·G
+///   = G + (−3G) + 2·G
+///   = G + G + 2·G  [since −3G = G in this group]
+///   = 4·G = ∞. ✓
+///
+/// Note: in the group, "−t·τ(P)" means scalar multiplication by `(n − (t mod n))`.
+/// The relation holds over ℤ/nℤ scalars, not over ℤ.
+#[test]
+fn tau_characteristic_relation() {
+    let c = toy_curve();
+    let poly = poly4();
+    let n = 4u64;
+    // Frobenius trace: t = 2^4 + 1 − n = 13.
+    let t: u64 = 13;
+
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+    let three_g = c.add(&two_g, &g);
+
+    for (label, pt) in [("G", g.clone()), ("2G", two_g.clone()), ("3G", three_g.clone())] {
+        let tau1 = tau(&pt, &poly);
+        let tau2 = tau(&tau1, &poly);
+
+        // Compute t·τ(P) and 2·P as scalar multiplications.
+        let t_mod_n = t % n;
+        let t_tau1 = c.scalar_mul(&tau1, &Uint::<1>::from(t_mod_n));
+        let two_pt = c.scalar_mul(&pt, &Uint::<1>::from(2u64));
+
+        // τ²(P) − t·τ(P) + 2·P = τ²(P) + (−t·τ(P)) + 2·P.
+        // In the group, −Q = negate(Q).
+        let neg_t_tau1 = c.negate(&t_tau1);
+        let sum = c.add(&c.add(&tau2, &neg_t_tau1), &two_pt);
+
+        assert!(
+            sum.is_infinity(),
+            "characteristic relation failed for {label}: τ²(P) − t·τ(P) + 2·P ≠ ∞"
+        );
+    }
+}
+
+/// Sub-track-close: the full binary-curve axiom suite stays green after adding τ.
+///
+/// This test re-runs the core group axioms to confirm the τ implementation
+/// does not disturb the underlying curve group law.
+#[test]
+fn sub_track_close_curve_axioms_intact() {
+    let c = toy_curve();
+    let poly = poly4();
+    let g = c.generator::<F2mNaive<1>>();
+    let two_g = c.double(&g);
+    let three_g = c.add(&two_g, &g);
+    let four_g = c.scalar_mul(&g, &Uint::<1>::from(4u64));
+
+    // Group order.
+    assert!(four_g.is_infinity(), "4G ≠ ∞ (group order check)");
+
+    // Negation.
+    let neg_g = c.negate(&g);
+    assert_eq!(neg_g, three_g, "−G ≠ 3G");
+    assert!(c.add(&g, &neg_g).is_infinity(), "G + (−G) ≠ ∞");
+
+    // τ does not disturb the group law: τ(P+Q) = τ(P) + τ(Q).
+    let tau_g_plus_two_g = tau(&c.add(&g, &two_g), &poly);
+    let tau_g_plus_tau_two_g = c.add(&tau(&g, &poly), &tau(&two_g, &poly));
+    assert_eq!(
+        tau_g_plus_two_g, tau_g_plus_tau_two_g,
+        "τ is not a group homomorphism: τ(G+2G) ≠ τ(G)+τ(2G)"
+    );
 }

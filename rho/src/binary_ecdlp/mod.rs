@@ -56,6 +56,8 @@
 //! It must never be altered by E.G.3 — the Koblitz variant adds a new function,
 //! not a replacement.  The baseline stays intact for E.H benchmark comparison.
 
+pub mod koblitz;
+
 use crypto_bigint::Uint;
 use rand::RngCore;
 use rand_chacha::ChaCha20Rng;

@@ -8,6 +8,8 @@
 //!    after a sequence of steps (the C-BinaryRho prose contract).
 //! 3. **Degenerate-collision handling** — the solver retries on degenerate
 //!    collisions and eventually finds a valid `k`.
+//! 4. **τ-orbit rho** — `solve_koblitz` recovers the same `k` as the E.G.2
+//!    baseline `solve` on the same inputs (C-Koblitz contract).
 //!
 //! # Toy curve
 //!
@@ -31,6 +33,7 @@
 use crypto_bigint::Uint;
 use rho::binary_curve::{BinaryAffinePoint, BinaryCurve};
 use rho::binary_ecdlp::{solve, solve_brent, BinaryAddendTable, BinaryWalkState};
+use rho::binary_ecdlp::koblitz::solve_koblitz;
 use shared_gf2m::F2mNaive;
 
 // ── Curve and field parameters ────────────────────────────────────────────────
@@ -230,4 +233,162 @@ fn solve_brent_multiple_seeds() {
         let check = curve.scalar_mul(&g, &Uint::<1>::from(k));
         assert_eq!(check, q, "seed={seed}: k={k} gives k·G ≠ Q");
     }
+}
+
+// ── τ-orbit rho KATs (C-Koblitz) ─────────────────────────────────────────────
+//
+// These tests verify that `solve_koblitz` (the τ-orbit rho variant) recovers
+// the same `k` as the E.G.2 baseline `solve` on the same inputs.
+//
+// Toy curve parameters:
+//   - GF(2^4) with x⁴+x+1, group order n=4, field degree m=4.
+//   - Frobenius trace t = 2^4 + 1 − 4 = 13.
+//
+// The Cat-C baseline rule: `solve` and `solve_brent` are NOT modified.
+// `solve_koblitz` is a NEW function that reads the baseline walk.
+
+/// τ-orbit rho recovers a valid k for k=1 (Q = G).
+///
+/// The τ-orbit collapse reduces the effective group size.  The recovered k
+/// must satisfy k·G = Q (not necessarily k = k_target, since the group has
+/// multiple valid representations).
+#[test]
+fn koblitz_dlog_k1() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13; // Frobenius trace: 2^4 + 1 − 4 = 13
+    let k_target: u64 = 1;
+    let q = curve.scalar_mul(&g, &Uint::<1>::from(k_target));
+
+    let k = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 0, 50)
+        .expect("koblitz_dlog_k1: solve_koblitz failed");
+
+    let check = curve.scalar_mul(&g, &Uint::<1>::from(k));
+    assert_eq!(check, q, "koblitz_dlog_k1: k={k} gives k·G ≠ Q");
+}
+
+/// τ-orbit rho recovers a valid k for k=2 (Q = 2G).
+#[test]
+fn koblitz_dlog_k2() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13;
+    let k_target: u64 = 2;
+    let q = curve.scalar_mul(&g, &Uint::<1>::from(k_target));
+
+    let k = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 0, 50)
+        .expect("koblitz_dlog_k2: solve_koblitz failed");
+
+    let check = curve.scalar_mul(&g, &Uint::<1>::from(k));
+    assert_eq!(check, q, "koblitz_dlog_k2: k={k} gives k·G ≠ Q");
+}
+
+/// τ-orbit rho recovers a valid k for k=3 (Q = 3G = −G).
+#[test]
+fn koblitz_dlog_k3() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13;
+    let k_target: u64 = 3;
+    let q = curve.scalar_mul(&g, &Uint::<1>::from(k_target));
+
+    let k = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 0, 50)
+        .expect("koblitz_dlog_k3: solve_koblitz failed");
+
+    let check = curve.scalar_mul(&g, &Uint::<1>::from(k));
+    assert_eq!(check, q, "koblitz_dlog_k3: k={k} gives k·G ≠ Q");
+}
+
+/// τ-orbit rho handles Q = ∞ (k = 0).
+#[test]
+fn koblitz_dlog_k0_identity() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13;
+    let q: BinaryAffinePoint<F2mNaive<1>> = BinaryAffinePoint::Infinity;
+
+    let k = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 0, 50)
+        .expect("koblitz_dlog_k0_identity: solve_koblitz failed");
+
+    let check = curve.scalar_mul(&g, &Uint::<1>::from(k));
+    assert!(
+        check.is_infinity(),
+        "koblitz_dlog_k0_identity: k={k} gives k·G ≠ ∞"
+    );
+}
+
+/// τ-orbit rho agrees with the E.G.2 baseline on all non-trivial k values.
+///
+/// This is the primary C-Koblitz correctness signal: the τ-orbit variant
+/// recovers the same `k` (up to group equivalence: k·G = Q) as the baseline.
+/// Both solvers must return a valid k satisfying k·G = Q.
+#[test]
+fn koblitz_agrees_with_baseline() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13;
+
+    for k_target in [1u64, 2, 3] {
+        let q = curve.scalar_mul(&g, &Uint::<1>::from(k_target));
+
+        // Baseline solver.
+        let k_baseline = solve(&curve, &g, &q, n)
+            .unwrap_or_else(|| panic!("baseline solve failed for k_target={k_target}"));
+
+        // τ-orbit solver.
+        let k_koblitz = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 0, 50)
+            .unwrap_or_else(|| panic!("koblitz solve failed for k_target={k_target}"));
+
+        // Both must satisfy k·G = Q (they need not return the same k value,
+        // since the group may have multiple valid representations).
+        let check_baseline = curve.scalar_mul(&g, &Uint::<1>::from(k_baseline));
+        let check_koblitz = curve.scalar_mul(&g, &Uint::<1>::from(k_koblitz));
+
+        assert_eq!(
+            check_baseline, q,
+            "baseline: k={k_baseline} gives k·G ≠ Q for k_target={k_target}"
+        );
+        assert_eq!(
+            check_koblitz, q,
+            "koblitz: k={k_koblitz} gives k·G ≠ Q for k_target={k_target}"
+        );
+
+        // Both solvers agree on the same Q (the target point).
+        assert_eq!(
+            check_baseline, check_koblitz,
+            "baseline and koblitz disagree on Q for k_target={k_target}"
+        );
+    }
+}
+
+/// τ-orbit rho is deterministic: same seed gives same result.
+#[test]
+fn koblitz_deterministic() {
+    let curve = toy_curve();
+    let g = curve.generator::<F2mNaive<1>>();
+    let n = 4u64;
+    let m = 4usize;
+    let t: i64 = 13;
+    let k_target: u64 = 2;
+    let q = curve.scalar_mul(&g, &Uint::<1>::from(k_target));
+
+    let k1 = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 42, 50)
+        .expect("koblitz_deterministic: first call failed");
+    let k2 = solve_koblitz::<F2mNaive<1>>(&curve, &g, &q, n, m, t, 42, 50)
+        .expect("koblitz_deterministic: second call failed");
+
+    assert_eq!(k1, k2, "solve_koblitz: different results for same seed");
+
+    let check = curve.scalar_mul(&g, &Uint::<1>::from(k1));
+    assert_eq!(check, q, "koblitz_deterministic: k·G ≠ Q");
 }
