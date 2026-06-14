@@ -6,6 +6,8 @@
 //! - [`curve`] — elliptic curve group law, affine/Jacobian points, two concrete curves.
 //! - [`binary_curve`] — binary curve `y²+xy=x³+ax²+b` group law in López–Dahab
 //!   projective coordinates; point decompression via the half-trace.
+//! - [`binary_ecdlp`] — Pollard-rho ECDLP solver over binary curves (`F2m`+`BinaryCurve`):
+//!   r-adding walk, distinguished-point collision, linear recovery of `k`.
 //! - [`util`] — shared helpers: batched inversion, multi-precision utilities.
 //! - [`factor`] — integer factorization rho (Floyd → Brent → batched GCD → multi-c).
 //! - [`ecdlp`] — ECDLP rho (r-adding walk → DPs → negmap → batched inv → GLV).
@@ -13,6 +15,7 @@
 //! - [`ssa`] — Smart–Satoh–Araki p-adic attack on anomalous curves (E.E).
 
 pub mod binary_curve;
+pub mod binary_ecdlp;
 pub mod curve;
 pub mod ecdlp;
 pub mod factor;
