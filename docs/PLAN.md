@@ -523,7 +523,7 @@ Action-frame digest.
 |---|---------|--------|--------|-------|
 | E.I.1 | GF(2^m)[x] polynomial ring | done | 84a1110 | C-GF2mPoly (frozen) |
 | E.I.2 | Hyperelliptic curve + Mumford divisor representation | done | cb13d4a | C-HyperCurve (frozen) |
-| E.I.3 ◆ | Cantor's algorithm: Jacobian group law + sub-track close | pending | | C-Jacobian |
+| E.I.3 ◆ | Cantor's algorithm: Jacobian group law + sub-track close | done | 06bd257 | C-Jacobian (frozen) |
 
 Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.I,
 unchanged), the binary-curve surface (C-BinaryCurve/C-BinaryRho/C-Koblitz from E.G — untouched, the
@@ -537,7 +537,11 @@ predecessor** so the descent has a Jacobian to land on.
 
 ## Action-frame digest
 
-*(none yet)*
+### E.I.3 ◆ — 2026-06-14
+Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); one named seam: E.H's index-calculus factor base needs root-finding / `u`-factoring — correctly additive-on-`Poly`, not a C-Jacobian/C-HyperCurve amendment; no retrofit forced.
+Affected: C-Jacobian (ratified frozen — no break); C-HyperCurve (one conditional: if E.H targets the real/split model rather than imaginary/ramified, genus formula and `[1,0]` reduction would need amendment — evidence points to imaginary; confirm at E.H kickoff).
+Deferred: yes — E.H.1 (Opus-flagged) should confirm the imaginary/ramified model assumption before GHS/Weil descent starts; if real/split model needed, additive C-HyperCurve amend required. ROADMAP Progress/Remaining table reconciliation also owed (E.F+E.G completions + E.H/E.I order inversion — housekeeping, not blocking).
+Texture: All three E.I sessions ran clean (no discoveries, no fix-loop iterations); the group-axiom, `D+(−D)=0`, associativity, `n·D=0`, and `2D==D+D` KATs confirmed Cantor-on-Mumford-pairs is correctly implemented with the char-2 negation `[u,(h+v) mod u]` (not `[u,−v]`). CAPTURE-CANDIDATE: "A substrate sub-track is ◆-ready when the next consumer can build its attack as additive new methods on the frozen surface, not amendments to it."
 
 ---
 
