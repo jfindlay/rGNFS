@@ -1037,6 +1037,7 @@ dependencies = [
  "rayon",
  "shared-bigint",
  "shared-field",
+ "shared-gf2m",
  "shared-numfield",
  "shared-numth",
  "shared-padic",

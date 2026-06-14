@@ -261,12 +261,42 @@ macro_rules! impl_f2m_opt {
                 result
             }
 
-            fn trace(&self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn trace(&self, poly: &Uint<$L>) -> Self {
+                // Absolute trace: Tr(a) = Σ_{i=0}^{m-1} a^(2^i) in GF(2^m).
+                // Identical algorithm to F2mNaive::trace — iterate Frobenius and XOR-sum.
+                let m = poly.bits() - 1;
+                let mut acc = self.clone();
+                let mut cur = self.clone();
+                for _ in 1..m {
+                    cur = cur.frobenius(poly);
+                    acc = acc.add(&cur);
+                }
+                acc
             }
 
-            fn solve_quadratic(_c: &Self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn solve_quadratic(c: &Self, poly: &Uint<$L>) -> Self {
+                // Solve x² + x = c in GF(2^m).  Identical algorithm to F2mNaive.
+                // For odd m: half-trace formula.  For even m: brute-force search.
+                let m = poly.bits() - 1;
+                if m % 2 == 1 {
+                    let mut acc = c.clone();
+                    let mut cur = c.clone();
+                    for _ in 0..(m - 1) / 2 {
+                        cur = cur.frobenius(poly).frobenius(poly);
+                        acc = acc.add(&cur);
+                    }
+                    acc
+                } else {
+                    let field_size = 1u64 << m;
+                    for v in 0..field_size {
+                        let x = Self::from_u64(v, poly);
+                        let lhs = x.square(poly).add(&x);
+                        if lhs == *c {
+                            return x;
+                        }
+                    }
+                    Self::zero()
+                }
             }
 
             fn inv(&self, poly: &Uint<$L>) -> Self {

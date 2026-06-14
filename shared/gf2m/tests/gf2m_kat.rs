@@ -1018,3 +1018,313 @@ fn f2m_opt_frobenius_fixed_field_gf4() {
         );
     }
 }
+
+// ── Trace KATs ────────────────────────────────────────────────────────────────
+//
+// The absolute trace Tr: GF(2^m) → GF(2) is a linear map.  Its image is
+// always {0, 1} (as field elements).  The key properties tested:
+//   1. Tr(a) ∈ {0, 1} for all a.
+//   2. Tr(a + b) = Tr(a) ⊕ Tr(b)  (GF(2)-linearity).
+//   3. Tr(a²) = Tr(a)              (Frobenius-invariance).
+//   4. Tr(1) = m mod 2             (known value for the unit element).
+//
+// In GF(2^4) with x⁴+x+1, the trace is determined by the x³ coefficient:
+// Tr(a) = a₃ (the coefficient of x³ in the polynomial representation).
+// Elements 0–7 have trace 0; elements 8–15 have trace 1.
+
+/// `trace(a) ∈ {0, 1}` for all elements of GF(2^4).
+///
+/// The trace is valued in GF(2) ⊂ GF(2^m): it must be exactly 0 or 1.
+#[test]
+fn trace_valued_in_gf2_gf4() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    let one = F2mNaive::<1>::one();
+    for v in 0u64..16 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let tr = a.trace(&p);
+        assert!(
+            tr == zero || tr == one,
+            "trace(a) not in {{0,1}} for a={v:#x} in GF(2^4): got {:#x}",
+            tr.to_uint()
+        );
+    }
+}
+
+/// `trace(a) ∈ {0, 1}` for all elements of GF(2^8).
+#[test]
+fn trace_valued_in_gf2_gf8() {
+    let p = poly8();
+    let zero = F2mNaive::<1>::zero();
+    let one = F2mNaive::<1>::one();
+    for v in 0u64..256 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let tr = a.trace(&p);
+        assert!(
+            tr == zero || tr == one,
+            "trace(a) not in {{0,1}} for a={v:#x} in GF(2^8): got {:#x}",
+            tr.to_uint()
+        );
+    }
+}
+
+/// `trace(a + b) = trace(a) ⊕ trace(b)` (GF(2)-linearity) for all pairs in GF(2^4).
+///
+/// The trace is a GF(2)-linear map: Tr(a+b) = Tr(a) + Tr(b) in GF(2) = XOR.
+#[test]
+fn trace_linearity_gf4() {
+    let p = poly4();
+    for av in 0u64..16 {
+        for bv in 0u64..16 {
+            let a = F2mNaive::<1>::from_u64(av, &p);
+            let b = F2mNaive::<1>::from_u64(bv, &p);
+            let tr_sum = a.add(&b).trace(&p);
+            let sum_tr = a.trace(&p).add(&b.trace(&p));
+            assert_eq!(
+                tr_sum, sum_tr,
+                "trace not linear: trace(a+b) != trace(a)+trace(b) \
+                 for a={av:#x} b={bv:#x} in GF(2^4)"
+            );
+        }
+    }
+}
+
+/// `trace(a²) = trace(a)` (Frobenius-invariance) for all elements of GF(2^4).
+///
+/// The Frobenius endomorphism a → a² fixes the trace: Tr(a²) = Tr(a).
+/// This follows from Tr(a) = Σ a^(2^i) and the cyclic structure of the sum.
+#[test]
+fn trace_frobenius_invariant_gf4() {
+    let p = poly4();
+    for v in 0u64..16 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let tr_a = a.trace(&p);
+        let tr_a2 = a.square(&p).trace(&p);
+        assert_eq!(
+            tr_a, tr_a2,
+            "trace(a²) != trace(a) for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// `trace(a²) = trace(a)` (Frobenius-invariance) for all elements of GF(2^8).
+#[test]
+fn trace_frobenius_invariant_gf8() {
+    let p = poly8();
+    for v in 0u64..256 {
+        let a = F2mNaive::<1>::from_u64(v, &p);
+        let tr_a = a.trace(&p);
+        let tr_a2 = a.square(&p).trace(&p);
+        assert_eq!(
+            tr_a, tr_a2,
+            "trace(a²) != trace(a) for a={v:#x} in GF(2^8)"
+        );
+    }
+}
+
+/// Known-answer: `trace(x³) = 1` in GF(2^4) with x⁴+x+1.
+///
+/// In GF(2^4) with x⁴+x+1, the trace is determined by the x³ coefficient:
+/// Tr(a) = a₃.  So Tr(x³) = 1 and Tr(x²) = Tr(x) = Tr(1) = 0.
+#[test]
+fn trace_known_answers_gf4() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    let one = F2mNaive::<1>::one();
+
+    // Tr(0) = 0
+    assert_eq!(F2mNaive::<1>::zero().trace(&p), zero, "Tr(0) != 0");
+    // Tr(1) = 0 (m=4 is even, so Tr(1) = 1·4 mod 2 = 0)
+    assert_eq!(F2mNaive::<1>::one().trace(&p), zero, "Tr(1) != 0 in GF(2^4)");
+    // Tr(x) = 0
+    assert_eq!(
+        F2mNaive::<1>::from_u64(0b0010, &p).trace(&p),
+        zero,
+        "Tr(x) != 0 in GF(2^4)"
+    );
+    // Tr(x²) = 0
+    assert_eq!(
+        F2mNaive::<1>::from_u64(0b0100, &p).trace(&p),
+        zero,
+        "Tr(x²) != 0 in GF(2^4)"
+    );
+    // Tr(x³) = 1
+    assert_eq!(
+        F2mNaive::<1>::from_u64(0b1000, &p).trace(&p),
+        one,
+        "Tr(x³) != 1 in GF(2^4)"
+    );
+    // Tr(x³+1) = 1 (linearity: Tr(x³)+Tr(1) = 1+0 = 1)
+    assert_eq!(
+        F2mNaive::<1>::from_u64(0b1001, &p).trace(&p),
+        one,
+        "Tr(x³+1) != 1 in GF(2^4)"
+    );
+}
+
+/// `F2mOpt::trace` agrees with `F2mNaive::trace` for all elements of GF(2^4).
+#[test]
+fn trace_naive_opt_agree_gf4() {
+    let p = poly4();
+    for v in 0u64..16 {
+        let a_naive = F2mNaive::<1>::from_u64(v, &p);
+        let a_opt = F2mOpt::<1>::from_u64(v, &p);
+        assert_eq!(
+            a_naive.trace(&p).to_uint(),
+            a_opt.trace(&p).to_uint(),
+            "trace: naive↔opt disagree for a={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// `F2mOpt::trace` agrees with `F2mNaive::trace` for all elements of GF(2^8).
+#[test]
+fn trace_naive_opt_agree_gf8() {
+    let p = poly8();
+    for v in 0u64..256 {
+        let a_naive = F2mNaive::<1>::from_u64(v, &p);
+        let a_opt = F2mOpt::<1>::from_u64(v, &p);
+        assert_eq!(
+            a_naive.trace(&p).to_uint(),
+            a_opt.trace(&p).to_uint(),
+            "trace: naive↔opt disagree for a={v:#x} in GF(2^8)"
+        );
+    }
+}
+
+// ── solve_quadratic KATs ──────────────────────────────────────────────────────
+//
+// `solve_quadratic(c)` solves x² + x = c (the Artin–Schreier equation).
+// A solution exists iff trace(c) = 0.  The two solutions are x and x+1.
+//
+// Properties tested:
+//   1. For all c with trace(c) = 0: solve_quadratic(c)² + solve_quadratic(c) = c.
+//   2. The two solutions are x and x+1 (they differ by 1).
+//   3. Known-answer: x²+x = x (0b0010) has solution x = x³+x (0b1010) in GF(2^4).
+
+/// `solve_quadratic(c)` satisfies `x² + x = c` for all c with trace 0 in GF(2^4).
+///
+/// This is the primary correctness check: the returned value must actually
+/// satisfy the Artin–Schreier equation.
+#[test]
+fn solve_quadratic_correct_gf4() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    for v in 0u64..16 {
+        let c = F2mNaive::<1>::from_u64(v, &p);
+        if c.trace(&p) != zero {
+            continue; // skip unsolvable c
+        }
+        let x = F2mNaive::<1>::solve_quadratic(&c, &p);
+        let lhs = x.square(&p).add(&x);
+        assert_eq!(
+            lhs, c,
+            "solve_quadratic: x²+x != c for c={v:#x} in GF(2^4): \
+             got x={:#x}, x²+x={:#x}",
+            x.to_uint(),
+            lhs.to_uint()
+        );
+    }
+}
+
+/// `solve_quadratic(c)` satisfies `x² + x = c` for all c with trace 0 in GF(2^8).
+#[test]
+fn solve_quadratic_correct_gf8() {
+    let p = poly8();
+    let zero = F2mNaive::<1>::zero();
+    for v in 0u64..256 {
+        let c = F2mNaive::<1>::from_u64(v, &p);
+        if c.trace(&p) != zero {
+            continue;
+        }
+        let x = F2mNaive::<1>::solve_quadratic(&c, &p);
+        let lhs = x.square(&p).add(&x);
+        assert_eq!(
+            lhs, c,
+            "solve_quadratic: x²+x != c for c={v:#x} in GF(2^8): \
+             got x={:#x}, x²+x={:#x}",
+            x.to_uint(),
+            lhs.to_uint()
+        );
+    }
+}
+
+/// The two solutions to x²+x=c are x and x+1 (they differ by 1).
+///
+/// If x is a solution, then (x+1)²+(x+1) = x²+1+x+1 = x²+x = c.
+/// So x+1 is always the other solution.
+#[test]
+fn solve_quadratic_two_solutions_gf4() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    let one = F2mNaive::<1>::one();
+    for v in 0u64..16 {
+        let c = F2mNaive::<1>::from_u64(v, &p);
+        if c.trace(&p) != zero {
+            continue;
+        }
+        let x = F2mNaive::<1>::solve_quadratic(&c, &p);
+        let x_plus_1 = x.add(&one);
+        let lhs = x_plus_1.square(&p).add(&x_plus_1);
+        assert_eq!(
+            lhs, c,
+            "solve_quadratic: x+1 is not the other solution for c={v:#x} in GF(2^4)"
+        );
+    }
+}
+
+/// Known-answer: x²+x = x (0b0010) has solution x³+x (0b1010) in GF(2^4).
+///
+/// Verified by hand: (x³+x)² + (x³+x) = x⁶+x² + x³+x.
+/// x⁶ = x³+x² (mod x⁴+x+1), so x³+x²+x²+x³+x = x = 0b0010. ✓
+#[test]
+fn solve_quadratic_known_answer_gf4() {
+    let p = poly4();
+    let c = F2mNaive::<1>::from_u64(0b0010, &p); // c = x
+    let x = F2mNaive::<1>::solve_quadratic(&c, &p);
+    // The solution must satisfy x²+x = c.
+    let lhs = x.square(&p).add(&x);
+    assert_eq!(
+        lhs, c,
+        "solve_quadratic known-answer failed: x²+x != x for c=x in GF(2^4)"
+    );
+    // The solution should be x³+x (0b1010) or x³+x+1 (0b1011).
+    let sol1 = F2mNaive::<1>::from_u64(0b1010, &p);
+    let sol2 = F2mNaive::<1>::from_u64(0b1011, &p);
+    assert!(
+        x == sol1 || x == sol2,
+        "solve_quadratic: expected x³+x or x³+x+1 for c=x in GF(2^4), got {:#x}",
+        x.to_uint()
+    );
+}
+
+/// `F2mOpt::solve_quadratic` agrees with `F2mNaive::solve_quadratic` for all
+/// solvable c in GF(2^4).
+#[test]
+fn solve_quadratic_naive_opt_agree_gf4() {
+    let p = poly4();
+    let zero = F2mNaive::<1>::zero();
+    for v in 0u64..16 {
+        let c_naive = F2mNaive::<1>::from_u64(v, &p);
+        if c_naive.trace(&p) != zero {
+            continue;
+        }
+        let c_opt = F2mOpt::<1>::from_u64(v, &p);
+        let x_naive = F2mNaive::<1>::solve_quadratic(&c_naive, &p).to_uint();
+        let x_opt = F2mOpt::<1>::solve_quadratic(&c_opt, &p).to_uint();
+        // Both solutions must satisfy x²+x=c; they may differ by 1.
+        // Verify both satisfy the equation rather than requiring identical output.
+        let x_naive_elem = F2mNaive::<1>::from_uint(x_naive, &p);
+        let x_opt_elem = F2mNaive::<1>::from_uint(x_opt, &p);
+        let lhs_naive = x_naive_elem.square(&p).add(&x_naive_elem);
+        let lhs_opt = x_opt_elem.square(&p).add(&x_opt_elem);
+        assert_eq!(
+            lhs_naive, c_naive,
+            "naive solve_quadratic wrong for c={v:#x}"
+        );
+        assert_eq!(
+            lhs_opt, c_naive,
+            "opt solve_quadratic wrong for c={v:#x}"
+        );
+    }
+}

@@ -208,12 +208,57 @@ macro_rules! impl_f2m_naive {
                 result
             }
 
-            fn trace(&self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn trace(&self, poly: &Uint<$L>) -> Self {
+                // Absolute trace: Tr(a) = Σ_{i=0}^{m-1} a^(2^i) in GF(2^m).
+                //
+                // Computed by iterating Frobenius (squaring) m-1 times and XOR-summing.
+                // The result is always 0 or 1 (an element of GF(2) ⊂ GF(2^m)).
+                let m = poly.bits() - 1; // degree of the irreducible
+                let mut acc = self.clone();
+                let mut cur = self.clone();
+                for _ in 1..m {
+                    cur = cur.frobenius(poly);
+                    acc = acc.add(&cur);
+                }
+                acc
             }
 
-            fn solve_quadratic(_c: &Self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn solve_quadratic(c: &Self, poly: &Uint<$L>) -> Self {
+                // Solve x² + x = c in GF(2^m) (Artin–Schreier equation).
+                //
+                // Solvability precondition: trace(c) = 0.  The caller is responsible
+                // for ensuring this; if trace(c) ≠ 0, the result is meaningless.
+                //
+                // For odd m: the half-trace H(c) = Σ_{i=0}^{(m-1)/2} c^(2^(2i)) is
+                // a solution.  This is the standard closed form (HMV §2.3.6).
+                //
+                // For even m: no closed-form half-trace exists.  We use brute-force
+                // search over the field.  This is correct and auditable at toy scale
+                // (m ≤ 8 in the KATs); production use should target odd-m fields.
+                let m = poly.bits() - 1; // degree of the irreducible
+                if m % 2 == 1 {
+                    // Odd m: half-trace formula.
+                    let mut acc = c.clone(); // c^(2^0)
+                    let mut cur = c.clone();
+                    for _ in 0..(m - 1) / 2 {
+                        cur = cur.frobenius(poly).frobenius(poly); // advance by 2
+                        acc = acc.add(&cur);
+                    }
+                    acc
+                } else {
+                    // Even m: brute-force search (toy fields only).
+                    // Find x such that x² + x = c.
+                    let field_size = 1u64 << m;
+                    for v in 0..field_size {
+                        let x = Self::from_u64(v, poly);
+                        let lhs = x.square(poly).add(&x);
+                        if lhs == *c {
+                            return x;
+                        }
+                    }
+                    // No solution exists (trace(c) ≠ 0); return zero as sentinel.
+                    Self::zero()
+                }
             }
 
             fn inv(&self, poly: &Uint<$L>) -> Self {

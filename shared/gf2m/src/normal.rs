@@ -300,12 +300,48 @@ macro_rules! impl_f2m_normal {
                 result
             }
 
-            fn trace(&self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn trace(&self, poly: &Uint<$L>) -> Self
+            where
+                F2mNaive<$L>: F2m<$L>,
+            {
+                // Absolute trace: Tr(a) = Σ_{i=0}^{m-1} a^(2^i) in GF(2^m).
+                //
+                // In a normal basis, squaring is a cyclic left-shift of the
+                // coefficient vector.  The trace sums all m Frobenius conjugates.
+                // We iterate Frobenius (cyclic shift) m-1 times and XOR-accumulate.
+                let m = poly.bits() - 1;
+                let mut acc = self.clone();
+                let mut cur = self.clone();
+                for _ in 1..m {
+                    cur = cur.frobenius(poly);
+                    acc = acc.add(&cur);
+                }
+                acc
             }
 
-            fn solve_quadratic(_c: &Self, _poly: &Uint<$L>) -> Self {
-                unimplemented!("E.G")
+            fn solve_quadratic(c: &Self, poly: &Uint<$L>) -> Self
+            where
+                F2mNaive<$L>: F2m<$L>,
+            {
+                // Solve x² + x = c in GF(2^m).
+                // For odd m: half-trace formula (Frobenius is a cyclic shift in normal basis).
+                // For even m: convert to polynomial basis, brute-force, convert back.
+                let m = poly.bits() - 1;
+                if m % 2 == 1 {
+                    let mut acc = c.clone();
+                    let mut cur = c.clone();
+                    for _ in 0..(m - 1) / 2 {
+                        cur = cur.frobenius(poly).frobenius(poly);
+                        acc = acc.add(&cur);
+                    }
+                    acc
+                } else {
+                    // Convert c to polynomial basis, solve there, convert back.
+                    let c_poly = c.to_uint();
+                    let c_naive = F2mNaive::<$L>::from_uint(c_poly, poly);
+                    let x_naive = F2mNaive::<$L>::solve_quadratic(&c_naive, poly);
+                    Self::from_uint(x_naive.to_uint(), poly)
+                }
             }
 
             fn inv(&self, poly: &Uint<$L>) -> Self

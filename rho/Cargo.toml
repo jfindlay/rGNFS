@@ -19,6 +19,7 @@ shared-bigint = { path = "../shared/bigint" }
 shared-numth = { path = "../shared/numth" }
 shared-padic = { path = "../shared/padic" }
 shared-numfield = { path = "../shared/numfield" }
+shared-gf2m = { path = "../shared/gf2m" }
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
 num-bigint = "0.4"
 num-integer = "0.1"
