@@ -2,219 +2,190 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E (E.F — GF(2^m) field arithmetic: the characteristic-2 substrate)
+# rGNFS — Current Plan: Track-E (E.G — Binary curves + Koblitz automorphism: the first GF(2^m) curve consumer)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) on the E.F.1
-sibling-trait + word-layout substrate, against a strong lever 5 that would otherwise license an
-opt-down.** E.F is a substrate sub-track, and the **GF(2^m) field-trait design (E.F.1) is a
-Category-A representation choice consumed by *three* downstream sub-tracks** — E.G (binary curves +
-Koblitz automorphism), E.H (GHS/Weil descent), E.I (GF(2^m) hyperelliptic Jacobian). The trait shape
-(sibling to `Fp<L>`, not an impl), the polynomial-basis word layout (degree-m element in ⌈m/64⌉ `u64`
-limbs), and the irreducible-polynomial representation bound every consumer; getting any wrong is the
-most expensive retrofit in the sub-track. Lever 5 is strong and fast (GF(2^m) arithmetic is
-*exactly* checkable: field axioms — associativity, distributivity, inverse round-trip — plus the
-Frobenius fixed-field law `a^(2^m) = a`, a naive-vs-optimized cross-check mirroring the existing
-`FpNaive`/`FpMonty` pattern, and an optional PARI `ffinit`/`fflog` `#[ignore]` sidecar) and *would*
-license `juncture-tier: sonnet` in isolation; the user judged the substrate design-error cost (lever
-3, three downstream consumers) high enough to hold the ◆ juncture at **Opus**, mirroring the E.E and
-E.D calls. *(E.F.1 additionally runs as an **Opus `@architect` session** with an **inline
-`@architect` juncture** — the trait freeze is ratified before E.F.2 consumes it, not deferred to the
-◆; see the session list. E.F.2–E.F.4 are Sonnet `@build`.)*
+`juncture-tier: opus` (header above) — **held up by lever 3 (cost of design error) on the
+C-BinaryCurve surface, against a strong lever 5 that would otherwise license an opt-down.** E.G is the
+first consumer of the frozen GF(2^m) field substrate (C-F2m), and the **binary-curve surface it
+freezes (C-BinaryCurve) is descended into by E.H — "the most mathematically intricate single attack
+in the project" (ROADMAP:357-358).** The curve representation (point coordinates, the
+`y²+xy=x³+ax²+b` group law, point decompression via the half-trace) bounds what GHS/Weil descent
+reads; getting the curve surface wrong is an expensive retrofit through the single hardest attack.
+Lever 5 is strong and fast (binary-curve arithmetic is *exactly* checkable: point-on-curve, group
+axioms, `k·G = Q` round-trip, the Frobenius-orbit law `τ(x,y)=(x²,y²)` with `τ^m = id`, a
+naive-vs-optimized field cross-check inherited from C-F2m, and an optional PARI `ellinit`/`elllog`
+`#[ignore]` sidecar) and *would* license `juncture-tier: sonnet` in isolation — **the user judged the
+C-BinaryCurve design-error cost (lever 3, E.H descends from it) decisive and held the ◆ juncture at
+Opus**, mirroring the E.D/E.E/E.F calls where a substrate-adjacent juncture feeding a high-stakes
+downstream consumer is held up despite exactly-checkable KATs. *(E.G carries NO session-level Opus
+flag — the ROADMAP Opus-flagged-sessions table lists E.F.1/E.H.1/E.K.1 but not any E.G session; E.G.1
+is **Sonnet `@build`**, not an Opus `@architect` session like E.F.1 was. The juncture-tier governs
+only the paged `@plan-juncture` fork at the ◆, not the session tier.)*
 
-Last rewrite: **E.E ◆ boundary crossed; the p-adic branch of Track E is complete** (E.E.1 `4dc5eaf`,
-E.E.2 ◆ `8a217f4`; C-AnomalousLift / C-SSA frozen; the Smart–Satoh–Araki polynomial-time attack on
-anomalous curves ships, consuming the E.D p-adic substrate). The E.E ◆ Action-frame digest
-(2026-06-12) recorded the CM-fixture wrinkle (the `y²=x³+5/F_7` fixture has CM by `Z[ζ₃]`, `v_p(T)=2`,
-fixed by an O(1) CM correction and a precision bump) as a permanent annotated note flagged for T.E
-pedagogy — **not a blocker for E.W or T.E**, which consume the frozen C-SSA signature. Per the
-sequencing order (ROADMAP "Remaining projected sessions": E.D → E.E → **E.F**), the next un-started
-sub-track is **E.F — GF(2^m) field arithmetic**, the characteristic-2 field substrate the entire
-binary-curve cluster (E.G, E.H, E.I) and the index-calculus track (E.J, E.K) stand on.
+Last rewrite: **E.F ◆ boundary crossed; the GF(2^m) field substrate is complete and binary-
+curve-ready** (E.F.1 `2ca3061` froze C-F2m, E.F.2 `c512c2d` filled inv/div, E.F.3 `84f6d07`
+normal-basis, E.F.4 ◆ `51c8c8d` froze C-F2mOpt; ledger `dbd86b0`). The E.F ◆ Action-frame digest
+(2026-06-13) recorded the `pclmulqdq` omit-not-gate call (the `unsafe_code = "forbid"` crate lint
+makes the intrinsic cost real at zero toy-scale demonstration value) and confirmed C-F2m carries the
+curve-facing over-specification (`trace`/`solve_quadratic`) that E.G now consumes. Per the sequencing
+order (ROADMAP "Remaining projected sessions": E.F → **E.G** → E.H → …), the next un-started sub-track
+is **E.G — Binary curves + Koblitz automorphism**, the first GF(2^m)-curve consumer, which re-runs
+Pollard rho over binary curves as the baseline for E.H's descent benchmarks.
 
-**Static-frame debt outstanding (surfaced at this boundary — does NOT block E.F sharding).** The
-ROADMAP **Progress** subsection (line ~168) and the **Remaining projected sessions** table were
-reconciled only through the **E.C ◆** (2026-06-10): they show Track E "done ~8 (E.A, E.B, E.C)" and
-still list E.D and E.E as *remaining*, though both are complete (E.D `0a98148`…`95d03b7`; E.E
-`4dc5eaf`/`8a217f4`) and the Discoveries log *is* reconciled through E.D ◆. The Progress table's
-Track-E actuals and the Remaining table's E.D/E.E rows are stale by two completed sub-tracks. This is
-a **roadmap-frame reconciliation owed at the next sub-track ◆** (the E.F ◆, paired with this PLAN's
-close), not an E.F implementation concern — flagged here so it is not lost. *(Surfaced as a
-CAPTURE-CANDIDATE below.)*
+**Static-frame debt outstanding (surfaced at this boundary — does NOT block E.G sharding).** The E.F
+PLAN flagged that the ROADMAP **Progress** subsection (~line 168) and **Remaining projected sessions**
+table were stale by two completed sub-tracks (E.D, E.E) as of E.F sharding. The E.F ◆ digest
+(2026-06-13) recorded "ROADMAP true-boundary reconciliation owed as housekeeping (not a blocker)" —
+**this reconciliation, plus striking the now-complete E.F row from the Remaining table, is still
+owed.** The Progress table still shows Track E "Done ~13 (E.A–E.E)" and the Remaining table still
+lists E.F as remaining (it is done). This is a **roadmap-frame reconciliation owed at the E.G ◆**
+(paired with this PLAN's close), not an E.G implementation concern — flagged here so it is not lost.
+*(Surfaced as a CAPTURE-CANDIDATE below.)*
 
 The substrate survey (forked `@explore`, 2026-06-13) established the shape and confirmed every
 planning assumption:
 
-1. **E.F is fully greenfield — no GF(2^m) / characteristic-2 / polynomial-basis / normal-basis /
-   Koblitz field-arithmetic code exists anywhere** (zero source hits). The only `GF(2)` occurrences
-   are `gnfs/src/linalg/` block-Lanczos/Wiedemann **bit-vector linear algebra over the 2-element
-   field** — semantically distinct from field arithmetic over the *extension* GF(2^m); no overlap.
+1. **C-F2m carries two `unimplemented!("E.G")` stubs — `trace` and `solve_quadratic` — in all three
+   implementors (`F2mNaive`/`F2mOpt`/`F2mNormal`).** E.F.1 deliberately over-specified the trait
+   surface (the substrate-over-specify rule) and tagged these curve-facing operations for E.G.
+   Filling them is the first thing E.G.1 does, and it is an **additive C-F2m amendment** (the trait
+   *surface* is unchanged — the methods already exist, frozen at E.F.1; only the bodies go from
+   `unimplemented!` to real), mirroring exactly how E.F.2 filled the deferred `inv`/`div`. The
+   `frobenius`/`square`/`pow`/`add`/`mul`/`inv`/`div` the curve law consumes are all **already live**.
 
-2. **GF(2^m) CANNOT implement the existing `Fp<L>` trait — it needs a sibling trait.** The survey
-   confirmed four structural incompatibilities in `shared/field/src/lib.rs`: (a) `inv` is Fermat
-   `a^(p-2)` (meaningless in char 2 — inversion is extended-Euclidean over GF(2)[x] or Itoh–Tsujii);
-   (b) `legendre`/`sqrt` assume an odd prime `p`; (c) `neg` computes `p - self` but in char 2 `−a = a`
-   (negation is the identity); (d) the canonical representation is a `Uint<L>` *integer mod p*, but a
-   GF(2^m) element is a *polynomial over GF(2)*, and the per-call `p: &Uint<L>` is semantically a
-   prime modulus, not an irreducible polynomial. **E.F.1 defines the new `F2m` sibling trait** —
-   mirroring the per-call-modulus design pattern (passing the irreducible as `poly: &…`) but a
-   *separate* trait. This is the Category-A design crux.
+2. **The binary curve is fully greenfield — no `BinaryCurve` / López–Dahab / Koblitz code exists.**
+   `rho::curve::Curve` is concretely `Uint<4>`-based (prime `p`, short-Weierstrass `y²=x³+ax+b`); its
+   group-law methods (`double_jacobian`/`add_jacobian`/`add_mixed`/`scalar_mul`/`is_on_curve`) are
+   `<F: Fp<4>>` at the *method* level. Binary curves use a **different group law**
+   (`y²+xy=x³+ax²+b` for the non-supersingular case) and **López–Dahab projective coordinates**, not
+   Jacobian (Jacobian's doubling formula divides by `2y`, which is zero in char 2 — the standard
+   formulae break). E.G.1 builds a **parallel `BinaryCurve` type** mirroring the `Curve` /
+   `AffinePoint` / projective-point idiom but with the binary group law and an `F2m`-generic surface.
 
-3. **Placement: a new `shared/gf2m` crate** (user-confirmed), mirroring the `shared/padic` precedent
-   exactly (a categorically-new arithmetic substrate → a new sibling crate, depending only on
-   `crypto-bigint` for the `Uint<L>` word layout). `shared/padic` itself does **not** depend on
-   `shared/field`; `shared/gf2m` likewise stands alone. Adding GF(2^m) to `shared/field` would
-   conflate two field categories in a crate whose docstring is "Prime-field arithmetic over GF(p)"
-   and risk its **four** dependents (`shared/bigint`, `shared/numth`, `rho`, `gnfs`) on any API
-   change. **The `rho → shared-gf2m` edge is E.G's, not E.F's** — E.F ships the standalone crate;
-   the binary-curve consumer adds the workspace edge later (mirroring how `rho → shared-padic` was
-   E.E's edge, not E.D's).
+3. **The existing rho walk is `Fp<4>`+`Curve`-bound and cannot be reused — E.G.2 writes a parallel
+   binary-curve rho.** `rho/src/ecdlp/{walk,dp,negmap,coordinator}.rs` are generic over `F: Fp<4>` and
+   the concrete `Curve`; `solve_brent`/`solve_dp`/`solve_dp_negmap` cannot instantiate over `F2m` +
+   `BinaryCurve` without a parallel walk. E.G.2 re-runs Pollard rho over the binary curve as the
+   **E.H benchmark baseline** (ROADMAP:353-354 "Re-run rho over GF(2^m) curves as baseline for E.H
+   benchmarks"), mirroring the `rho/tests/ecdlp_kat.rs` `check_solver_on_curve` (`k·G=Q`) idiom.
 
-4. **The downstream curve consumer is NOT generic over a field trait at the struct level.**
-   `rho::curve::Curve` is concretely `Uint<4>`-based (prime `p`, short-Weierstrass `y²=x³+ax+b`);
-   `is_on_curve`/`scalar_mul`/`add_jacobian` are `<F: Fp<4>>` at the *method* level only. Binary
-   curves use a **different group law** (`y²+xy=x³+ax²+b` for non-supersingular, López–Dahab
-   projective coordinates, not Jacobian). E.G will need a new `BinaryCurve` type — **this is E.G's
-   problem, not E.F's** — but it imposes a *requirement on E.F.1's trait*: the `F2m` surface must
-   over-specify (per the substrate rule) to express what a binary curve will need (trace, half-trace
-   / quadratic-solve `x²+x=c` for point decompression, the Frobenius `a → a²` as a first-class op).
-   The GLV/Koblitz omission the ROADMAP names (rho "explicitly omits" the order-6 Koblitz
-   automorphism) lives only in `ROADMAP.md:344`; `glv.rs` implements the **order-3** prime-field
-   endomorphism, not the binary Koblitz automorphism — that is **E.G's** to add.
+4. **The order-6 Koblitz automorphism is fully greenfield and structurally distinct from `glv.rs`.**
+   `rho/src/ecdlp/glv.rs` implements an **order-3 prime-field endomorphism** `φ(x,y)=(βx, y)` (a
+   scalar x-scaling by a cube root of unity, with a 6-element orbit and canonical-representative
+   collapse). The binary Koblitz automorphism is the **Frobenius endomorphism** `τ(x,y)=(x², y²)` —
+   it acts on *both* coordinates via the field Frobenius, not a scalar multiply — and gives a
+   τ-adic scalar decomposition. The ROADMAP names this as "the order-6 Koblitz automorphism the
+   existing rho crate explicitly omits" (ROADMAP:352-353). E.G.3 adds it as the Cat-B/C speedup the
+   prime-field `glv.rs` *parallels in spirit* (orbit collapse in the rho walk) but shares no code with.
 
-5. **The dual-implementation pedagogical pattern is established and is the model.** `shared/field`
-   ships `FpNaive` (schoolbook baseline, "correct, slow, easy to audit") **and** `FpMonty`
-   (optimized), cross-checked in `sqrt_legendre_kat.rs` (`naive_monty_agree_p17`). E.F mirrors this:
-   a **naive comb multiplier baseline** in E.F.1 (the auditable substrate), an **optimized
-   Karatsuba/López–Dahab multiplier** in E.F.4, cross-checked. No `std::arch`/`pclmulqdq`/
-   `target_feature` exists anywhere in the tree — software multiplication is the toy-scale baseline;
-   a carryless-multiply (`pclmulqdq`) path is a *demonstration-fidelity* option for E.F.4, gated
-   behind `#[cfg(target_feature)]` if introduced at all (principle-3-adjacent: it is engineering, so
-   it ships at most at demonstration fidelity, never as the green path).
+5. **E.G adds the first `rho → shared-gf2m` edge.** No workspace crate depends on `shared-gf2m` yet
+   (E.F shipped it standalone). E.G.1 adds `shared-gf2m = { path = "../shared/gf2m" }` to
+   `rho/Cargo.toml` (mirroring how E.C added `rho → gnfs` and the C-Padic consumer added
+   `rho → shared-padic` — the substrate ships standalone, the curve consumer adds the edge). The
+   binary curve lives in `rho` (not a new crate) because it parallels the existing `rho::curve` /
+   `rho::ecdlp` modules and re-uses the rho walk machinery's structure. `cargo check --workspace`
+   confirms the new edge introduces no cycle (`shared-gf2m` depends only on `crypto-bigint`).
 
-The work splits at **four representation/contract-sharp seams**, **4 sessions** (matching the
-ROADMAP's 3–4 ceiling-biased estimate), at the boundaries between the trait-and-substrate, the
-inversion algorithm, the second (normal) basis, and the optimized multiplier:
+The work splits at **three representation/contract-sharp seams**, **3 sessions** (matching the
+ROADMAP's 2–3 ceiling-biased estimate), at the boundaries between the curve-substrate, the baseline
+rho, and the Koblitz optimization:
 
-1. **E.F.1 — GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait (Opus `@architect`,
-   Cat A, inline `@architect`).** The new `shared/gf2m` crate; the `F2m` sibling trait; the
-   polynomial-basis representation (degree-m element in ⌈m/64⌉ `u64` limbs); carryless multiply +
-   modular reduction by the irreducible polynomial; add (XOR), the Frobenius squaring `a → a²`; a
-   **naive comb multiplier** baseline. **Freezes C-F2m** — the trait + polynomial-basis surface the
-   whole binary cluster builds on. *Inline `@architect` juncture: the trait freeze is ratified
-   before E.F.2 consumes it.*
+1. **E.G.1 — Binary-curve substrate + `trace`/`solve_quadratic` (Sonnet, Cat A).** Fill the C-F2m
+   `trace`/`solve_quadratic` stubs (additive amend); the `BinaryCurve` type + the `y²+xy=x³+ax²+b`
+   group law in López–Dahab projective coordinates; point decompression (recover `y` from `x` via the
+   half-trace `solve_quadratic`). Adds the `rho → shared-gf2m` edge. **Freezes C-BinaryCurve** — the
+   curve surface E.H descends from.
 
-2. **E.F.2 — GF(2^m) inversion (extended Euclidean over GF(2)[x] + Itoh–Tsujii) + division (Sonnet,
-   Cat A).** Inversion in char 2 — algorithmically distinct from multiplication: extended Euclidean
-   over GF(2)[x] as the auditable baseline, Itoh–Tsujii (`a^(2^m−2)` via the Frobenius tower) as the
-   field-specific alternative; division as `mul`-by-`inv`. **Amends C-F2m additively** (the `inv`/
-   `div` methods the trait declared but E.F.1 may have left `unimplemented!`-stubbed or
-   `todo!`-guarded — confirm at E.F.1 freeze).
+2. **E.G.2 — Pollard rho over the binary curve + end-to-end ECDLP KAT (Sonnet, Cat B).** A parallel
+   `F2m`+`BinaryCurve` rho walk (the existing `Fp<4>` walk can't be reused); the end-to-end binary-
+   curve ECDLP solver recovering `k` from `k·G = Q`. **Consumes C-BinaryCurve.** The E.H benchmark
+   baseline. **Freezes C-BinaryRho.**
 
-3. **E.F.3 — GF(2^m) normal-basis representation + polynomial↔normal conversion (Sonnet, Cat A).**
-   The normal-basis `F2m` implementor (a *second* representation of the same field), where squaring
-   is a cyclic shift (the pedagogical payoff); the change-of-basis isomorphism between
-   polynomial-basis and normal-basis representations, cross-checked for round-trip fidelity.
-   **Consumes C-F2m** (implements the frozen trait in a second representation).
+3. **E.G.3 ◆ — Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close (Sonnet, Cat B/C,
+   `@architect`).** The order-6 Koblitz Frobenius automorphism `τ(x,y)=(x²,y²)`; the τ-adic scalar
+   decomposition; the τ-orbit collapse in the rho walk (the `glv.rs` analogue for Frobenius); the
+   sub-track-close KAT suite. **Freezes C-Koblitz.** Crosses the **E.G ◆ boundary** — binary curves
+   ship, ready for E.H to descend.
 
-4. **E.F.4 ◆ — GF(2^m) Karatsuba/López–Dahab multiplier + naive-vs-optimized cross-check + sub-track
-   close (Sonnet, Cat C, `@architect`).** The optimized polynomial-basis multiplier (Karatsuba
-   subquadratic split and/or López–Dahab comb), cross-checked against the E.F.1 naive baseline; the
-   optional `pclmulqdq` demonstration path (gated, never green-path); the sub-track-close KAT suite
-   (field axioms, Frobenius fixed-field, basis-conversion round-trip, naive↔optimized agreement).
-   **Freezes C-F2mOpt** (the optimized-multiplier equivalence contract). Crosses the **E.F ◆
-   boundary** — the GF(2^m) substrate ships, ready for E.G to instantiate binary curves.
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing GHS/Weil descent — that is
+E.H; or Cantor's algorithm / the hyperelliptic Jacobian — that is E.I; or writing the binary-curve
+*textbook chapter* in MATHEMATICS.md — that is **T.E**, paired with E.W at the Track-E ◆; E.G writes
+at most a PEDAGOGY code-tour delta) and **rigidity** (forcing the binary group law into the Jacobian
+formulae the char-2 doubling-by-`2y` breaks; re-deriving GF(2^m) field primitives rather than
+consuming the frozen C-F2m `mul`/`square`/`frobenius`/`inv`/`solve_quadratic`; or porting `glv.rs`'s
+scalar-x-scaling `φ` where the Frobenius `τ` on both coordinates is meant).
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing binary *curves* — that is
-E.G; or a general `GF(p^m)` extension-field tower — E.F is characteristic-2 only, the `FpExt`
-prime-extension work already exists in `rho/src/pairing/fpext.rs` for the odd-characteristic pairing
-case; or writing the GF(2^m) / binary-curve *textbook chapter* in MATHEMATICS.md — that is **T.E**,
-paired with E.W at the Track-E ◆, per the per-track-chapter pairing rule; E.F writes at most a
-PEDAGOGY code-tour delta) and **rigidity** (forcing the `F2m` trait into the `Fp<L>` mould the survey
-proved incompatible; or re-deriving `Uint<L>` limb primitives rather than consuming `crypto-bigint`'s
-`as_words`/`from_words`/`mul_wide`; or shipping a `pclmulqdq` path on the green compute path rather
-than as a gated demonstration sidecar).
-
-**Scoping discipline.** E.F builds the GF(2^m) substrate at **demonstration fidelity** (principle 1 —
-algorithmic content complete: polynomial-basis arithmetic, both inversion algorithms, normal-basis
-representation, the optimized multiplier all implemented head-on) and **toy field sizes** (small `m`
-— e.g. GF(2^4), GF(2^8), GF(2^163)-shaped toy parameters — enough to exercise every code path and
-exhibit the algebra, not crypto-scale). It **amends no frozen contract** (C-Padic / C-Hensel /
-C-PadicLog / C-SSA / the rho curve surface are all untouched — E.F is field-arithmetic-only, curve-
-free). It introduces **no new live oracle** on the green path (the field axioms + Frobenius law +
-naive↔optimized cross-check are exactly self-checking; an optional PARI `ffinit`/`fflog` `#[ignore]`
-sidecar is the established dev-only pattern). The **engineering-vs-mathematics disconnect** (ROADMAP
-principle 4) is explicit: the `pclmulqdq` carryless-multiply intrinsic is *engineering* (principle 3
-— omitted from the green path, present at most at demonstration fidelity, gated); the toy field
-sizes are a principle-4 boundary (the algorithms are crypto-scale-correct; only the *parameters* are
-toy), annotated, never presented as crypto-scale.
+**Scoping discipline.** E.G builds binary curves at **demonstration fidelity** (principle 1 —
+algorithmic content complete: the binary group law, point decompression, the baseline rho, the
+Koblitz automorphism all implemented head-on) and **toy field/curve sizes** (small `m` — e.g.
+GF(2^4), GF(2^8), and toy-shaped binary curves — enough to exercise every code path and exhibit the
+algebra, not crypto-scale). It **amends C-F2m additively** (the `trace`/`solve_quadratic` bodies — no
+trait-surface change) and **amends no other frozen contract** (C-Padic / C-Hensel / C-PadicLog /
+C-SSA / the prime-field rho-curve surface are untouched — E.G is the *binary* curve, a parallel
+type). It introduces **no new live oracle** on the green path (point-on-curve + group axioms +
+`k·G=Q` round-trip + the Frobenius-orbit law are self-checking; an optional PARI `ellinit`/`elllog`
+`#[ignore]` sidecar is the established dev-only pattern). The **engineering-vs-mathematics disconnect**
+(ROADMAP principle 4) is explicit: the toy curve sizes are a principle-4 boundary (the group law and
+the Koblitz speedup are crypto-scale-correct; only the *parameters* are toy), annotated, never
+presented as crypto-scale.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.F): "*E.F — GF(2^m) field arithmetic. 3-4 sessions. No structural
-predecessor. Polynomial-basis and normal-basis representations; this is a categorically new
-field-arithmetic implementation. **First session is Opus-tier** — substrate decision (basis choice,
-word layout, multiplication algorithm: comb, Karatsuba, López–Dahab) has downstream consequences for
-E.G, E.H, E.I.*" E.F is the **characteristic-2 field substrate** the entire binary-curve cluster
-stands on: where the existing `shared/field` `Fp<L>` substrate serves the odd-characteristic
-prime-field attacks (E.A–E.E), E.F builds the *categorically different* GF(2^m) arithmetic that
-binary curves, GHS/Weil descent, and the GF(2^m) hyperelliptic Jacobian all consume.
+Per ROADMAP (Phase δ, E.G): "*E.G — Binary curves + Koblitz automorphism. 2-3 sessions. Predecessor:
+E.F. The order-6 Koblitz automorphism the existing rho crate explicitly omits. Re-run rho over
+GF(2^m) curves as baseline for E.H benchmarks. Sonnet.*" E.G is the **first GF(2^m)-curve consumer**:
+where E.F built the characteristic-2 *field* substrate (C-F2m), E.G builds the *curves* over those
+fields — the non-supersingular binary curve `y²+xy=x³+ax²+b`, its group law in López–Dahab projective
+coordinates, point decompression via the half-trace, and the Pollard-rho ECDLP solver over them. It
+is the baseline E.H (GHS/Weil descent) benchmarks against, and the home of the order-6 Koblitz
+Frobenius automorphism that the prime-field rho crate "explicitly omits."
 
-The "no structural predecessor" the ROADMAP names is literal: E.F depends on no prior Track-E
-sub-track. It is a fresh substrate, sequenced here only because the binary half of Track E (E.G–E.K)
-follows the p-adic half (E.D–E.E) in the recommended order. It does, however, sit *beside* the
-established `shared/field` prime-field substrate as a deliberate sibling — and the central design
-tension is exactly that **GF(2^m) is a field, like GF(p), but a different *kind* of field**: the
-survey confirmed the existing `Fp<L>` trait cannot host it (Fermat inversion, odd-prime
-`legendre`/`sqrt`, integer-mod-p representation all break in characteristic 2). E.F therefore builds
-a *parallel* substrate, sharing the design *idiom* (a const-generic trait, per-call modulus, a naive
-baseline cross-checked against an optimized implementation) but not the trait itself.
+E.G's predecessor is E.F (now complete): it consumes the frozen C-F2m field trait directly — `add`
+(XOR), `mul` (carryless + reduce), `square`/`frobenius` (the bit-spread that *is* the curve's `τ`),
+`inv`/`div`, and the two over-specified curve-facing ops `trace` and `solve_quadratic` that E.F.1
+declared-and-stubbed *for this sub-track*. The central design tension is that **a binary curve is an
+elliptic curve, like a prime-field curve, but with a different group law**: the survey confirmed the
+existing `Curve`'s Jacobian formulae break in char 2 (doubling divides by `2y = 0`), so E.G builds a
+*parallel* `BinaryCurve` type, sharing the design *idiom* (a const-generic-`F2m`-method curve, affine
++ projective point types, a baseline rho walk, an orbit-collapsing automorphism speedup) but not the
+type itself.
 
-The substrate decomposes into four conceptual units, each a session:
+The sub-track decomposes into three conceptual units, each a session:
 
-1. **The polynomial-basis substrate + the `F2m` trait (E.F.1).** A GF(2^m) element is a polynomial
-   over GF(2) of degree < m, stored as ⌈m/64⌉ `u64` limbs (a bit-vector of coefficients). Addition
-   is XOR; multiplication is **carryless** polynomial multiplication followed by **modular reduction**
-   by the irreducible polynomial defining the field; squaring `a → a²` is the Frobenius endomorphism
-   (a bit-spreading operation). The trait surface must **over-specify** for the downstream curve
-   consumer: the Frobenius as a first-class op, the trace `Tr(a) = Σ a^(2^i)`, and the quadratic-solve
-   `x² + x = c` (half-trace) for binary-curve point operations — carried now even at the cost of
-   declaring methods E.F.4/E.G fill in, because adding them later is the expensive retrofit. The
-   **naive comb multiplier** is the auditable baseline (the `FpNaive` analogue). **(E.F.1.)**
+1. **The binary-curve substrate + the curve-facing field ops (E.G.1).** Fill the C-F2m
+   `trace`/`solve_quadratic` stubs (`trace(a) = Σ_{i<m} a^(2^i)`, valued in GF(2) ⊂ GF(2^m);
+   `solve_quadratic(c)` solves `x²+x=c` via the half-trace, the operation point decompression needs).
+   Build `BinaryCurve` — the non-supersingular `y²+xy=x³+ax²+b` curve, `BinaryAffinePoint<F>`, and
+   López–Dahab projective coordinates (the char-2 analogue of Jacobian, where the group law avoids the
+   `2y` division). Point decompression: given `x` and a bit, recover `y` by solving `x²+x = a + b/x²`
+   (the curve equation in the `λ = y/x` substitution) with `solve_quadratic`. **Freezes
+   C-BinaryCurve.** **(E.G.1.)**
 
-2. **Inversion + division (E.F.2).** Characteristic-2 inversion is its own algorithmic unit, not a
-   variation on multiplication: **extended Euclidean over GF(2)[x]** (the auditable baseline,
-   computing `a⁻¹` via the polynomial GCD with the irreducible) and **Itoh–Tsujii** (`a⁻¹ = a^(2^m−2)`
-   computed through the Frobenius tower with a logarithmic number of multiplications — the
-   field-specific optimization, exact-checkable against extended Euclidean). Division is
-   `mul(a, inv(b))`. **(E.F.2.)**
+2. **Pollard rho over the binary curve (E.G.2).** A parallel `F2m`+`BinaryCurve` rho walk (the
+   existing `Fp<4>`+`Curve` walk cannot instantiate over the binary types). The r-adding walk, the
+   distinguished-point collision, the linear-recovery of `k` from `k·G=Q` — re-run over binary
+   curves, mirroring `rho/tests/ecdlp_kat.rs`'s `check_solver_on_curve` end-to-end idiom. This is the
+   baseline E.H benchmarks the descent against. **Freezes C-BinaryRho.** **(E.G.2.)**
 
-3. **Normal-basis representation + conversion (E.F.3).** A *second* representation of the same field:
-   in a normal basis `{β, β², β⁴, …, β^(2^(m−1))}`, **squaring is a single cyclic shift** — the
-   pedagogical payoff of normal bases, and the reason they exist. E.F.3 ships the normal-basis `F2m`
-   implementor and the **change-of-basis isomorphism** (polynomial ↔ normal), cross-checked so that
-   a field operation gives the same element in either representation. **(E.F.3.)**
+3. **The Koblitz τ-automorphism + the rho speedup + close (E.G.3).** The order-6 Koblitz Frobenius
+   automorphism `τ(x,y)=(x², y²)` (an endomorphism of the binary curve, satisfying `τ² − tτ + 2 = 0`
+   for the curve's trace `t`); the τ-adic scalar decomposition; the τ-orbit collapse in the rho walk
+   (the binary analogue of `glv.rs`'s 6-element-orbit canonical-representative collapse — the speedup
+   the prime-field rho parallels). The sub-track-close KAT suite. **Freezes C-Koblitz.** **(E.G.3 ◆.)**
 
-4. **The optimized multiplier + cross-check + close (E.F.4).** The optimized polynomial-basis
-   multiplier — **Karatsuba** (subquadratic split of the carryless multiply) and/or **López–Dahab**
-   (the comb method with windowing) — cross-checked against the E.F.1 naive baseline (the
-   `FpNaive`/`FpMonty` agreement pattern). An optional **`pclmulqdq`** carryless-multiply path is a
-   gated demonstration-fidelity sidecar (principle 3 — engineering, never the green path). The
-   sub-track-close KAT suite exercises the field axioms, the Frobenius fixed-field law, the
-   basis-conversion round-trip, and naive↔optimized agreement. **(E.F.4 ◆.)**
-
-E.F is **curve-free** (the binary-curve group law, point decompression, and the Koblitz automorphism
-are all E.G), **prime-extension-free** (the odd-characteristic `FpExt` tower already exists in
-`rho/src/pairing/fpext.rs` for pairings; E.F is characteristic 2 only), and **chapter-free** (the
-GF(2^m) textbook content is T.E, paired with E.W at the Track-E ◆). Re-read this intent at the ◆
-boundary to catch defocus (binary curves, a `GF(p^m)` tower, the MATHEMATICS chapter) and rigidity
-(forcing `F2m` into `Fp<L>`; re-deriving limb primitives; a green-path `pclmulqdq`).
+E.G is **descent-free** (GHS/Weil descent is E.H; Cantor's algorithm and the hyperelliptic Jacobian
+are E.I), **field-arithmetic-frozen** (it consumes C-F2m — the only change is filling the two stubs
+E.F.1 left for it, an additive amend; no new GF(2^m) primitive), and **chapter-free** (the binary-
+curve textbook content is T.E, paired with E.W at the Track-E ◆). Re-read this intent at the ◆
+boundary to catch defocus (descent, Cantor, the MATHEMATICS chapter) and rigidity (Jacobian formulae
+in char 2; re-deriving field primitives; porting `glv.rs`'s `φ` where `τ` is meant).
 
 ---
 
@@ -222,24 +193,28 @@ boundary to catch defocus (binary curves, a `GF(p^m)` tower, the MATHEMATICS cha
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper (survey confirmed zero hits); raw `cargo` is the only
-CI surface (unchanged from E.D/E.E). Oracle KATs are `#[ignore]`-gated only — the exact form is
+CI surface (unchanged from E.D/E.E/E.F). Oracle KATs are `#[ignore]`-gated only — the exact form is
 `#[ignore = "PARI not installed; run manually when available"]`, used identically in
-`rho/tests/ssa_kat.rs:338`, `rho/tests/mov_kat.rs:253`, and `shared/padic/tests/log_kat.rs:203`.
-`/run-plan` re-discovers at preflight. E.F **adds a new workspace crate (`shared/gf2m`) but no new
-*edge*** (the `rho → shared-gf2m` edge is E.G's; E.F.1 only adds `shared/gf2m` to the workspace
-`members` list in the root `Cargo.toml`), so the gate is a **correctness + workspace-integrity gate**:
+`rho/tests/ssa_kat.rs`, `rho/tests/mov_kat.rs`, and `shared/padic/tests/log_kat.rs`. `/run-plan`
+re-discovers at preflight. E.G **adds a new workspace *edge* (`rho → shared-gf2m`) but no new crate**
+(the `BinaryCurve` + binary rho live in the existing `rho` crate), so the gate is a **correctness +
+edge-integrity gate**:
 
-- Each session's KATs (`shared/gf2m/tests/gf2m_kat.rs`, plus inline unit tests in the
-  `naive`/`normal`/`opt` modules mirroring `shared/field`'s inline-test idiom) are the primary
-  correctness signal — fast and *exactly* decisive (lever 5: the GF(2^m) field axioms, the Frobenius
-  fixed-field law `a^(2^m) = a`, the inversion round-trip `a·a⁻¹ = 1`, the basis-conversion
-  round-trip, and the naive↔optimized agreement are all self-checking with no external oracle).
-- `cargo check --workspace` must confirm the new `shared/gf2m` crate resolves cleanly with **no
-  dependency cycle** (`shared/gf2m` depends only on `crypto-bigint`, mirroring the leaf-crate shape;
-  it depends on no other workspace member, so it introduces no cycle).
-- **The existing rho / gnfs / shared KATs must stay green** after the new crate lands — E.F touches
-  no existing crate (it adds `shared/gf2m` and the one-line `members` entry), so the no-regression
-  invariant is structurally easy to hold; `cargo test --workspace` is the guard.
+- Each session's KATs (`rho/tests/binary_curve_kat.rs` for E.G.1/E.G.3, the end-to-end binary ECDLP
+  KAT in the same file or `binary_ecdlp_kat.rs` for E.G.2, plus inline unit tests mirroring the
+  `rho::curve` idiom) are the primary correctness signal — fast and *exactly* decisive (lever 5:
+  point-on-curve `y²+xy = x³+ax²+b`, the group axioms, the decompression round-trip
+  `decompress(compress(P)) = P`, the Frobenius-orbit law `τ^m(P) = P`, the τ²−tτ+2 characteristic
+  relation, and the end-to-end `k·G = Q` recovery are all self-checking with no external oracle).
+- `cargo check --workspace` must confirm the new `rho → shared-gf2m` edge resolves with **no
+  dependency cycle** (`shared-gf2m` depends only on `crypto-bigint`; nothing in `shared-gf2m` depends
+  on `rho`, so the new edge is acyclic).
+- **The existing rho / gnfs / shared KATs must stay green** after the binary-curve code lands — E.G
+  adds new modules (`rho::binary_curve`, `rho::binary_ecdlp` or similar) and fills two `shared/gf2m`
+  stubs but changes no existing prime-field-curve / pairing / SSA path, so the no-regression invariant
+  is structurally easy to hold; `cargo test --workspace` is the guard. *(One subtlety: filling the
+  C-F2m `trace`/`solve_quadratic` stubs touches `shared/gf2m` — the existing `gf2m_kat.rs` must stay
+  green and gain new tests for the now-live methods.)*
 
 ---
 
@@ -252,522 +227,328 @@ dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.F.1 `@architect` | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | A | Opus | `crypto-bigint` `Uint<L>` (`as_words`/`from_words`/`mul_wide`, read); `shared/field` `Fp<L>` (read — the *idiom* to mirror, not the trait to impl); `shared/padic/Cargo.toml` (read — the leaf-crate precedent) | `Cargo.toml` (root: add `shared/gf2m` to `members`), `shared/gf2m/Cargo.toml` (new: leaf crate, dep `crypto-bigint`), `shared/gf2m/src/lib.rs` (new: the `F2m` trait + irreducible-poly representation + crate docs), `shared/gf2m/src/naive.rs` (new: polynomial-basis impl — XOR add, carryless comb mul, modular reduction, Frobenius square), `shared/gf2m/tests/gf2m_kat.rs` (new: field-axiom + Frobenius KATs) |
-| E.F.2 | GF(2^m) inversion (extended Euclidean over GF(2)[x] + Itoh–Tsujii) + division | A | Sonnet | C-F2m (frozen E.F.1) | `shared/gf2m/src/inv.rs` (new: extended-Euclidean baseline + Itoh–Tsujii via the Frobenius tower), `shared/gf2m/src/naive.rs` (fill the `inv`/`div` trait methods), `shared/gf2m/tests/gf2m_kat.rs` (extend: inversion round-trip + ext-Euclid↔Itoh–Tsujii agreement) |
-| E.F.3 | GF(2^m) normal-basis representation + polynomial↔normal conversion | A | Sonnet | C-F2m (frozen E.F.1, implemented in a 2nd representation) | `shared/gf2m/src/normal.rs` (new: normal-basis `F2m` impl — squaring as cyclic shift), `shared/gf2m/src/convert.rs` (new: polynomial↔normal change-of-basis isomorphism), `shared/gf2m/src/lib.rs` (add `pub mod normal; pub mod convert;`), `shared/gf2m/tests/gf2m_kat.rs` (extend: basis-conversion round-trip + cross-representation agreement) |
-| E.F.4 ◆ `@architect` | GF(2^m) Karatsuba/López–Dahab multiplier + naive-vs-optimized cross-check + sub-track close | C | Sonnet | C-F2m (frozen E.F.1, read), `shared/field` `FpNaive`/`FpMonty` cross-check idiom (read) | `shared/gf2m/src/opt.rs` (new: Karatsuba + López–Dahab multiplier; optional gated `pclmulqdq` path), `shared/gf2m/src/lib.rs` (add `pub mod opt;` + re-export the optimized type), `shared/gf2m/tests/gf2m_kat.rs` (extend: naive↔optimized agreement + full sub-track-close axiom/Frobenius/basis suite) |
+| E.G.1 | Binary-curve substrate + `trace`/`solve_quadratic` + `rho → shared-gf2m` edge | A | Sonnet | C-F2m (frozen E.F.1: `mul`/`square`/`frobenius`/`inv`/`div` read; `trace`/`solve_quadratic` stubs filled — additive amend); `rho::curve::Curve` (read — the idiom to mirror, not the type to reuse); `shared/gf2m` re-exports (`F2m`, `F2mNaive`, `F2mOpt`) | `shared/gf2m/src/naive.rs` (fill `trace`/`solve_quadratic`), `shared/gf2m/src/opt.rs` (fill `trace`/`solve_quadratic`), `shared/gf2m/src/normal.rs` (fill `trace`/`solve_quadratic`), `shared/gf2m/tests/gf2m_kat.rs` (extend: trace + solve_quadratic KATs), `rho/Cargo.toml` (add `shared-gf2m` dep edge), `rho/src/binary_curve/mod.rs` (new: `BinaryCurve` + `BinaryAffinePoint` + López–Dahab projective point + group law + decompression), `rho/src/lib.rs` (add `pub mod binary_curve;`), `rho/tests/binary_curve_kat.rs` (new: point-on-curve + group-axiom + decompression-round-trip KATs) |
+| E.G.2 | Pollard rho over the binary curve + end-to-end ECDLP KAT | B | Sonnet | C-BinaryCurve (frozen E.G.1); C-F2m (read); `rho::ecdlp` walk idiom (read — `Fp<4>`-bound, mirrored not reused) | `rho/src/binary_ecdlp/mod.rs` (new: the `F2m`+`BinaryCurve` rho walk — r-adding walk, distinguished-point collision, linear recovery of `k`), `rho/src/lib.rs` (add `pub mod binary_ecdlp;`), `rho/tests/binary_ecdlp_kat.rs` (new: end-to-end `k·G = Q` recovery on toy binary curves, mirroring `check_solver_on_curve`) |
+| E.G.3 ◆ `@architect` | Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close | C | Sonnet | C-BinaryCurve (frozen E.G.1, read), C-BinaryRho (frozen E.G.2, read), `rho::ecdlp::glv` (read — the prime-field orbit-collapse idiom, structurally distinct) | `rho/src/binary_ecdlp/koblitz.rs` (new: `τ(x,y)=(x²,y²)` automorphism + τ-adic decomposition + τ-orbit canonical collapse), `rho/src/binary_ecdlp/mod.rs` (add the τ-orbit walk variant + `pub mod koblitz;`), `rho/tests/binary_curve_kat.rs` (extend: Frobenius-orbit `τ^m=id`, the τ²−tτ+2 relation, sub-track-close suite), `rho/tests/binary_ecdlp_kat.rs` (extend: τ-orbit rho recovers the same `k` as the E.G.2 baseline) |
 
-**Sequencing notes.** Strictly serial: **E.F.1 → E.F.2 → E.F.3 → E.F.4.** E.F.1 lands the crate,
-the `F2m` trait, the polynomial-basis representation, and the naive multiplier everything stands on;
-E.F.2 adds inversion (the second irreducible algorithmic unit); E.F.3 adds the normal-basis
-representation + conversion; E.F.4 adds the optimized multiplier and closes the sub-track. **Two
-`@architect` markers** sit on the design-critical points: **E.F.1** (inline — the C-F2m trait freeze
-ratified *before* E.F.2/E.F.3/E.F.4 consume it; three downstream sub-tracks make the trait shape the
-most expensive retrofit, so it is caught at its own commit, not deferred) and **E.F.4 ◆** (the Opus
-boundary juncture ratifying C-F2m / C-F2mOpt and confirming the substrate is complete and binary-
-curve-ready before the sub-track closes). *(Tradeoff named: the inline E.F.1 juncture doubles the
-juncture count on a 4-session sub-track relative to a single-◆ shard. This is the deliberate inverse
-of the E.E choice — E.E folded its substrate freeze into the ◆ to economise boundary cost on a
-2-session shard, explicitly trading away early-catch insurance. Here the trait has **three** downstream
-consumers (vs E.E's lift, consumed only by E.E.2), so the cost-of-wrong lever flips the tradeoff: the
-early E.F.1 catch is bought, not traded away. The autonomous first cadence — see Notes — still pages
-at both `@architect` markers; "autonomous" means no halt at E.F.2/E.F.3, not no juncture at the
-design-critical points.)*
+**Sequencing notes.** Strictly serial: **E.G.1 → E.G.2 → E.G.3.** E.G.1 lands the curve-facing field
+ops, the `BinaryCurve` type, the group law, and decompression everything stands on; E.G.2 adds the
+baseline rho (the algorithm over the substrate); E.G.3 adds the Koblitz optimization and closes the
+sub-track. **One `@architect` marker** sits on the **E.G.3 ◆** (the boundary juncture ratifying
+C-BinaryCurve / C-BinaryRho / C-Koblitz and confirming the substrate is complete and descent-ready
+before the sub-track closes). *(Tradeoff named: unlike E.F — which carried an inline E.F.1 juncture
+because its trait bound three downstream sub-tracks — E.G freezes C-BinaryCurve at E.G.1 but does NOT
+page an inline juncture there. The Cat-C orthogonality (the baseline E.G.2 and the Koblitz E.G.3 both
+consume C-BinaryCurve in-crate, immediately, where a wrong curve shape fails the E.G.2 `k·G=Q` KAT
+loudly at the next session) plus the single high-stakes consumer (E.H, which has its own Opus-flagged
+E.H.1 to design its descent) makes the early-catch insurance less valuable than it was for E.F's
+three-consumer trait. The ◆ juncture is held at Opus (juncture-tier) for the C-BinaryCurve → E.H
+cost-of-wrong, but a separate inline E.G.1 fork is not bought. If E.G.2's `k·G=Q` KAT surfaces a
+curve-shape concern, that is the loud signal that substitutes for an inline juncture.)*
 
-**Why 4 sessions (the ROADMAP's 3–4 ceiling-biased estimate).** The split is taken at four
+**Why 3 sessions (the ROADMAP's 2–3 ceiling-biased estimate).** The split is taken at three
 representation/contract-sharp seams:
-- **One-line-commit-title corollary.** "GF(2^m) polynomial-basis substrate + `F2m` trait",
-  "GF(2^m) inversion + division", "GF(2^m) normal-basis + conversion", and "GF(2^m)
-  Karatsuba/López–Dahab multiplier + close" are **four distinct commit titles** across two categories
-  (A substrate ×3, C optimization ×1).
+- **One-line-commit-title corollary.** "Binary-curve substrate + trace/solve_quadratic", "Pollard rho
+  over the binary curve", and "Koblitz τ-automorphism + τ-orbit speedup + close" are **three distinct
+  commit titles** across three categories (A substrate, B algorithm, C optimization).
 - **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the
-  trait-and-representation, the inversion algorithm, the second basis, the optimized multiplier.
-  Char-2 inversion is *not* a variation on multiplication (extended Euclidean / Itoh–Tsujii are a
-  distinct machine); the normal basis is a *distinct representation* with its own payoff (squaring as
-  a shift); the optimized multiplier is a *distinct algorithm* cross-checked against the baseline.
-  None fractures below its floor.
-- **Contract-sharp boundary (E.F.1 freeze).** E.F.1 **freezes** C-F2m; E.F.2 (additively amends) and
-  E.F.3 (implements in a 2nd representation) and E.F.4 (consumes + freezes C-F2mOpt) all build on
-  it. The trait freeze is the one hard produce/consume seam, and it is the inline-`@architect` point.
+  curve-and-group-law (with the field ops it needs), the baseline rho, the Koblitz automorphism.
+  None fractures below its floor — the binary group law + decompression is one unit (a curve with no
+  decompression is unusable by the rho walk's point-on-curve checks); the baseline rho is one unit;
+  the Koblitz automorphism + its rho speedup is one unit (an automorphism with no orbit-collapse in
+  the walk has no consumer).
+- **Contract-sharp boundary + Cat-B/C orthogonality.** E.G.1 **freezes** C-BinaryCurve; E.G.2
+  consumes it (the algorithm over the substrate); E.G.3 reads the baseline and adds the optimization
+  — and per the Cat-C rule (`multi-session-planning.md:217` "never alters the baseline"), the Koblitz
+  speedup must *read* the E.G.2 baseline's output and produce a new variant, **not replace it** (the
+  baseline must stay available for the E.H benchmark comparison). This is the contract-sharp seam that
+  forbids merging E.G.2 and E.G.3.
 
-They are **not** further splittable below 4: separating the `F2m` trait *declaration* from the
-naive-multiplier *implementation* would leave a trait with no implementor and no testable contract
-(a trait whose deliverable can't be a KAT has an undefined contract); separating extended-Euclidean
-from Itoh–Tsujii would split the single inversion contract across two rows with no contract-sharp
-seam (Itoh–Tsujii is checked *against* extended Euclidean — they are one unit); the normal basis +
-its conversion are one unit (a normal basis with no conversion to the polynomial basis is unusable by
-any consumer). Merging would violate the one-line-title corollary (E.F.1+E.F.2 = substrate-design +
-inversion = two titles, >400 LOC, the Opus freeze muddied by carrying inversion).
+They are **not** further splittable below 3: separating the `trace`/`solve_quadratic` stub-fill from
+the `BinaryCurve` would leave the field-op fill with no curve consumer to express its KAT against
+(`solve_quadratic`'s test is the decompression round-trip — it needs the curve; flagging a row whose
+deliverable can't be a curve-facing KAT). Separating the binary group law from point decompression
+would split the curve substrate across two rows with no contract-sharp seam (decompression *is* the
+half-trace consumer that justifies the `solve_quadratic` fill — they are one unit). Merging E.G.2 and
+E.G.3 would violate both the one-line-title corollary (baseline + optimization = two titles, likely
+>400 LOC) and the Cat-C "never alter the baseline" rule (the Koblitz orbit-collapse would be entangled
+with the baseline walk it must leave intact for benchmarking).
 
 ---
 
 ## Session detail
 
-E.F.1 is specified at near-full fidelity (the `F2m` trait + word-layout is the design crux). E.F.2–4
-are lower-fidelity sketches, correct per the substrate-first discipline: they are crisply specified
-only after C-F2m freezes.
+E.G.1 is specified at near-full fidelity (the `BinaryCurve` surface is the design crux that E.H
+descends from). E.G.2–3 are lower-fidelity sketches, correct per the substrate-first discipline: they
+are crisply specified only after C-BinaryCurve freezes.
 
-### E.F.1 — GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait (Opus `@architect`, Cat A)
+### E.G.1 — Binary-curve substrate + `trace`/`solve_quadratic` + `rho → shared-gf2m` edge (Sonnet, Cat A)
 
-**Deliverable:** the new `shared/gf2m` crate, the `F2m` sibling trait, the polynomial-basis
-representation, carryless multiplication + modular reduction, and the naive comb-multiplier baseline
-the rest of the sub-track stands on. The design choices (the Opus design call, ratified at the inline
-`@architect` juncture):
-- **The new crate** (`Cargo.toml` root `members` + `shared/gf2m/Cargo.toml`): a leaf crate depending
-  only on `crypto-bigint`, mirroring `shared/padic`'s standalone shape. `cargo check --workspace`
-  must confirm it resolves with no cycle. **Placement decision: a new `shared/gf2m` crate** (per the
-  `shared/padic` precedent for a categorically-new arithmetic substrate), *not* a module in
-  `shared/field` (which would conflate two field kinds and risk four dependents).
-- **The `F2m` trait** (`shared/gf2m/src/lib.rs`): the design crux. A **sibling** to `Fp<L>`, not an
-  impl. Mirror the const-generic-on-trait idiom (`F2m<const L: usize>` where `L` = limb count for
-  ⌈m/64⌉, or an explicit degree parameter — **a design call for the juncture**) and the per-call
-  "modulus" idiom (passing the **irreducible polynomial** as `poly: &…` where `Fp` passes `p: &Uint<L>`).
-  Surface: `zero`/`one`/`from_*`/`to_*`; `add` (XOR — note `sub == add` in char 2); `mul` (carryless +
-  reduce); `square` (the Frobenius `a → a²` bit-spread); `pow`; **and the over-specified curve-facing
-  ops** (`frobenius`/`trace`/`half_trace` or `solve_quadratic` for `x²+x=c`) declared now even if
-  E.F.4/E.G fill them — the substrate-over-specify rule, because adding a trait method later is the
-  expensive retrofit across three consumers. `inv`/`div` are **declared but deferred to E.F.2** —
-  decide at the juncture whether to declare-and-stub (`unimplemented!`/`todo!`) or leave the methods
-  un-added until E.F.2 (the former freezes the full surface now; the latter keeps E.F.1's KATs honest).
-- **The polynomial-basis `naive` impl** (`shared/gf2m/src/naive.rs`): a degree-<m polynomial over
-  GF(2) as ⌈m/64⌉ `u64` limbs (`Uint<L>` or a `[u64; L]` bit-vector — a juncture call). Add = XOR
-  (`a ^ b`). Mul = **naive comb carryless multiply** (shift-and-XOR, the auditable `FpNaive` analogue)
-  producing a degree-<2m intermediate, then **modular reduction** by the irreducible (repeated
-  XOR-of-shifted-modulus, or the sparse-trinomial/pentanomial fast-reduce if the irreducible is
-  fixed sparse — a juncture call on whether the irreducible is a const or a runtime parameter).
-  Square = Frobenius bit-spread (insert a zero bit between each coefficient bit, then reduce).
+**Deliverable:** the curve-facing field ops C-F2m deferred (filling the `trace`/`solve_quadratic`
+stubs — an additive C-F2m amend), the `BinaryCurve` type, the `y²+xy=x³+ax²+b` group law in López–
+Dahab projective coordinates, and point decompression, plus the first `rho → shared-gf2m` edge. The
+pieces:
+- **Fill the C-F2m `trace`/`solve_quadratic` stubs** (`shared/gf2m/src/{naive,opt,normal}.rs`):
+  `trace(a) = Σ_{i<m} a^(2^i)` — the absolute trace `Tr_{GF(2^m)/GF(2)}(a)`, valued in GF(2) ⊂
+  GF(2^m) (it is `0` or `1`); computed by iterating `frobenius` m−1 times and summing (XOR).
+  `solve_quadratic(c)` — solve `x²+x = c` (the half-trace): a solution exists iff `trace(c) = 0`; the
+  half-trace `H(c) = Σ_{i} c^(2^(2i))` is the closed form for odd `m`. Both go from `unimplemented!`
+  to real in all three implementors. **This is an additive C-F2m amendment** (the trait surface is
+  unchanged — the methods were frozen at E.F.1; only the bodies fill), exactly mirroring how E.F.2
+  filled `inv`/`div`. The existing `gf2m_kat.rs` stays green and gains `trace`/`solve_quadratic` KATs.
+- **The `BinaryCurve` type** (`rho/src/binary_curve/mod.rs`): the design crux. A **parallel** to
+  `rho::curve::Curve`, not a reuse. Mirror the idiom — a struct holding the curve parameters
+  (`a`, `b` as `Uint<L>` coefficient bit-vectors, the irreducible `poly`, the group order `n`, the
+  base point), with group-law methods `<F: F2m<L>>` at the *method* level (the `Curve` pattern of
+  not owning `PhantomData<F>`, threading `F` per-call). The curve is the **non-supersingular**
+  `y²+xy = x³+ax²+b` (the standard binary-curve form; `b ≠ 0`). A `BinaryAffinePoint<F>` enum
+  (`Infinity | Finite { x, y }`) mirroring `AffinePoint`, and a **López–Dahab projective** point
+  (the char-2 analogue of Jacobian — the affine representative is `(X/Z, Y/Z²)`, chosen because the
+  doubling formula avoids the `2y` division that breaks Jacobian in char 2).
+- **The binary group law** (`rho/src/binary_curve/mod.rs`): doubling and addition in López–Dahab
+  coordinates (Hankerson–Menezes–Vanstone §3.2.1 / Algorithm 3.24 for char-2 LD addition; the
+  doubling formula uses `square` heavily — cheap in char 2 — and one `inv`-free projective step).
+  `is_on_curve` checks `y²+xy = x³+ax²+b` over `F2m`. `negate`: in char 2, `−(x,y) = (x, x+y)` (NOT
+  `(x, −y)` — `−y = y` in char 2, so the negation is `(x, x+y)`, a char-2-specific trap mirroring the
+  `sub==add`/`neg==id` field trap).
+- **Point decompression** (`rho/src/binary_curve/mod.rs`): given `x` and a sign bit, recover `y`.
+  Substituting `λ = y/x` into the curve equation gives `λ²+λ = x + a + b/x²`; solve with
+  `solve_quadratic`, then `y = λ·x`. The two roots `λ` and `λ+1` give the two y-values; the sign bit
+  (e.g. `trace`-based) selects. This is the consumer that justifies the `solve_quadratic` fill.
+- **The `rho → shared-gf2m` edge** (`rho/Cargo.toml`): add `shared-gf2m = { path = "../shared/gf2m" }`.
+  `cargo check --workspace` confirms no cycle (the first edge into the standalone E.F crate).
 
-Consumes `crypto-bigint` `Uint<L>` primitives (read), the `shared/field` `Fp<L>` idiom (read — the
-pattern, not the trait), the `shared/padic` leaf-crate precedent (read). **Freezes C-F2m.**
+Consumes C-F2m (frozen E.F.1 — `mul`/`square`/`frobenius`/`inv`/`div`/`add` read; `trace`/
+`solve_quadratic` stubs filled), the `rho::curve::Curve` idiom (read — mirrored, not reused), the
+`shared/gf2m` re-exports. **Freezes C-BinaryCurve; amends C-F2m additively.**
 
-**KAT** (`shared/gf2m/tests/gf2m_kat.rs` + inline unit tests per the `shared/field` idiom): the field
-axioms over a toy field (e.g. GF(2^4) with `x⁴+x+1`, GF(2^8) with the AES polynomial `x⁸+x⁴+x³+x+1`):
-**associativity** and **distributivity** of `mul` over `add`; `add` is its own inverse (`a+a=0`);
-`mul` by `one` is identity; the **Frobenius fixed-field law** `a^(2^m) = a` for all `a` (the
-characteristic-2 signature — exactly decisive); `square(a) == mul(a, a)`. **Verify gate:** `cargo test
---workspace` green; `cargo check --workspace` resolves the new crate with no cycle; the existing
-rho/gnfs/shared KATs unchanged.
+**KAT** (`rho/tests/binary_curve_kat.rs` + extended `shared/gf2m/tests/gf2m_kat.rs` + inline unit
+tests per the `rho::curve` idiom): over toy binary curves (e.g. a curve over GF(2^4) with `x⁴+x+1`,
+and a slightly larger one over GF(2^8)): **point-on-curve** `y²+xy = x³+ax²+b` for the base point and
+its multiples; the **group axioms** (`P+∞=P`, `P+(−P)=∞` with `−P=(x,x+y)`, associativity on a
+sample); **doubling consistency** (`2P` via doubling equals `P+P` via addition); the **decompression
+round-trip** `decompress(x, bit) ` lands on the curve and recovers the original `y`; the **field-op
+KATs** for the now-live `trace` (`trace(a) ∈ {0,1}`; `trace(a+b)=trace(a)⊕trace(b)`; `trace` is
+Frobenius-invariant `trace(a²)=trace(a)`) and `solve_quadratic` (`solve_quadratic(c)` returns `x`
+with `x²+x=c` when `trace(c)=0`). **Verify gate:** `cargo test --workspace` green; `cargo check
+--workspace` resolves the new edge with no cycle; the existing rho/gnfs/shared KATs unchanged
+(including `gf2m_kat.rs` now with `trace`/`solve_quadratic` live).
 
-**Subtlety (load-bearing):** (1) **`sub == add` in char 2** — subtraction is XOR, identical to
-addition; `neg` is the identity (`−a = a`). A `@build` agent porting `Fp`'s `sub`/`neg` (which
-compute `p − self`) writes wrong code that *happens to compile* — the trait must document this and
-the KAT must check `sub(a,b) == add(a,b)`. (2) **Modular reduction is the correctness heart of `mul`**
-— a carryless multiply without reduction gives a degree-<2m polynomial *not in the field*; getting
-the reduction wrong (wrong irreducible, off-by-one in the shift) silently gives a wrong product that
-still "looks like" a field element. The Frobenius fixed-field KAT `a^(2^m)=a` is the loud signal (it
-fails loudly if reduction is wrong). (3) **The irreducible polynomial is the field's identity** —
-GF(2^m) is only well-defined relative to a chosen irreducible; the representation must carry it (as a
-const or a runtime `poly` parameter — the juncture call), and conversions/comparisons across
-*different* irreducibles are meaningless (a guard, like the C-MovBridge modulus-consistency note from
-E.C). (4) **Over-specify for the curve consumer** — the trace and half-trace (`solve_quadratic`) are
-not needed by E.F itself but *are* needed by E.G's binary-curve point operations; declaring them now
-(even stubbed) is cheaper than amending the trait across three consumers later. (5) **Toy field sizes
-only** — small `m` exercises every path; a crypto-scale `m` (163, 233, 571) would need the same
-algorithms (principle-4 annotate: the parameters are toy, the algorithms are not).
+**Subtlety (load-bearing):** (1) **The binary group law is NOT the Jacobian formula** — the char-2
+doubling avoids the `2y` division (zero in char 2). A `@build` agent porting `rho::curve`'s
+`double_jacobian` writes code that divides by zero or is silently wrong. López–Dahab (or the affine
+char-2 formulae with one `inv`) is mandatory; the curve docs and the doubling-consistency KAT
+(`2P == P+P`) are the defense. (2) **`−P = (x, x+y)`, not `(x, −y)`** — in char 2 `−y = y`, so naive
+negation gives `P`, not `−P`; the `P+(−P)=∞` KAT is the loud signal. (3) **`solve_quadratic` has a
+solvability precondition** — `x²+x=c` is solvable iff `trace(c)=0`; decompression of an `x`-coordinate
+not on the curve must fail cleanly (or the half-trace returns a wrong `y` that fails point-on-curve).
+The decompression KAT must check the round-trip lands on the curve. (4) **The trace is valued in
+GF(2)** — `trace(a)` is `0` or `1` (the field-element `zero`/`one`), not an arbitrary field element;
+a KAT asserting `trace(a) == F2m::zero() || trace(a) == F2m::one()` catches a wrong trace loop.
+(5) **Toy curve sizes only** — small `m` and toy curve parameters exercise every path; a crypto-scale
+binary curve (m = 163, 233, 571 — the NIST/SECG binary curves) needs the same algorithms (principle-4
+annotate: the parameters are toy, the group law is not). (6) **The first `rho → shared-gf2m` edge** —
+`cargo check --workspace` must resolve with no cycle; if it reports one (it must not — `shared-gf2m`
+is a leaf), that is a destructive-HALT.
 
-**Deferred:** inversion + division (E.F.2 — declared, deferred); the normal-basis representation +
-conversion (E.F.3); the optimized Karatsuba/López–Dahab multiplier + `pclmulqdq` path (E.F.4); any
-binary *curve* (E.G — out of scope, the curve group law / Koblitz automorphism); any `GF(p^m)`
-odd-characteristic tower (out of scope — `fpext.rs` already covers it); the MATHEMATICS chapter (T.E
-at the Track-E ◆).
+**Deferred:** the baseline Pollard rho over the binary curve (E.G.2); the Koblitz τ-automorphism +
+τ-orbit speedup (E.G.3); GHS/Weil descent (E.H — out of scope, the descent machinery); Cantor's
+algorithm / the hyperelliptic Jacobian (E.I); the MATHEMATICS chapter (T.E at the Track-E ◆).
 
-**`@architect` confirmation (inline, post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at
-E.F.1 to ratify the trait freeze *before* E.F.2 consumes it: (1) the `F2m` trait shape is right —
-sibling to `Fp<L>` (not an impl), the const-generic / degree parameterisation chosen, the per-call
-irreducible-polynomial idiom; (2) the curve-facing over-specification (Frobenius / trace / half-trace)
-is present so E.G need not amend the trait; (3) the polynomial-basis word layout (⌈m/64⌉ limbs) and
-the irreducible representation (const vs runtime) are settled; (4) `sub==add`/`neg==id` are correct,
-not ported from `Fp`; (5) the principle-4 boundary (toy field sizes) is annotated. One-shot findings;
-does not implement. Held at **Opus** per the header (lever 3 — the trait bounds E.G/E.H/E.I).
+### E.G.2 — Pollard rho over the binary curve + end-to-end ECDLP KAT (Sonnet, Cat B)
 
-### E.F.2 — GF(2^m) inversion (extended Euclidean + Itoh–Tsujii) + division (Sonnet, Cat A)
+**Deliverable:** a parallel `F2m`+`BinaryCurve` Pollard-rho ECDLP solver — the baseline E.H benchmarks
+against. Lower-fidelity sketch (crisp after C-BinaryCurve freezes):
+- **The binary-curve rho walk** (`rho/src/binary_ecdlp/mod.rs`): the r-adding walk (partition the
+  group into `r` classes, each with a precomputed addend `a_i·G + b_i·Q`), the distinguished-point
+  collision detection, and the linear recovery of `k` from a collision (`a₁G+b₁Q = a₂G+b₂Q ⟹
+  k = (a₁−a₂)/(b₂−b₁) mod n`). The existing `rho::ecdlp` walk is `Fp<4>`+`Curve`-bound and cannot be
+  instantiated over `F2m`+`BinaryCurve` — this is a *parallel* walk over the binary types, mirroring
+  the existing walk's structure (`walk.rs`/`dp.rs` shape) but consuming `BinaryCurve`'s group law.
+- **End-to-end ECDLP solver** (`rho/src/binary_ecdlp/mod.rs`): `solve(curve, G, Q) -> k` recovering
+  the scalar, mirroring `rho/tests/ecdlp_kat.rs`'s `check_solver_on_curve` (`k·G == Q`).
 
-**Deliverable:** characteristic-2 inversion and division, filling the `inv`/`div` methods E.F.1
-deferred. Lower-fidelity sketch (crisp after C-F2m freezes):
-- **Extended Euclidean over GF(2)[x]** (`shared/gf2m/src/inv.rs`): the auditable baseline — compute
-  `a⁻¹` via the extended polynomial GCD of `a` with the irreducible, tracking the Bézout cofactor.
-- **Itoh–Tsujii** (`shared/gf2m/src/inv.rs`): `a⁻¹ = a^(2^m−2)` computed through the **Frobenius
-  tower** (the `2^k`-power chain) with O(log m) multiplications — the field-specific optimization,
-  exact-checkable against extended Euclidean.
-- **Division** (`shared/gf2m/src/naive.rs`): `div(a, b) = mul(a, inv(b))`; the `inv`/`div` trait
-  methods E.F.1 deferred are filled.
+Consumes C-BinaryCurve (frozen E.G.1), C-F2m (read), the `rho::ecdlp` walk idiom (read — mirrored).
+**Freezes C-BinaryRho.**
 
-Consumes C-F2m (frozen E.F.1). **Amends C-F2m additively** (the deferred `inv`/`div` methods).
+**KAT:** the end-to-end `k·G = Q` recovery on toy binary curves (small known group order; the solver
+recovers the planted `k`), mirroring `check_solver_on_curve`; the walk's distinguished-point /
+collision invariant (`a·G + b·Q = walk point`) held across steps. **Verify gate:** `cargo test
+--workspace` green.
 
-**KAT:** inversion round-trip `mul(a, inv(a)) == one` for all non-zero `a` over the toy fields;
-**extended-Euclidean ↔ Itoh–Tsujii agreement** (both give the same `a⁻¹`); `inv` of zero errors/panics
-per the trait contract; `div(a,b) == mul(a, inv(b))`. **Verify gate:** `cargo test --workspace` green.
+**Subtlety:** the walk-state invariant `W = a·G + b·Q` (the prose contract preserved across the rho
+sessions, mirroring the prime-field rho's invariant) must hold across the binary walk and be the
+loud signal — a wrong addend table or a group-law bug shows up as a recovered `k` with `k·G ≠ Q`,
+which the end-to-end KAT catches.
 
-**Subtlety:** Itoh–Tsujii's Frobenius tower depends on the squaring being correct (E.F.1's Frobenius)
-— a bug in `square` shows up here as a wrong inverse, which the ext-Euclid cross-check catches.
+### E.G.3 ◆ — Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close (Sonnet, Cat C, `@architect`)
 
-### E.F.3 — GF(2^m) normal-basis representation + polynomial↔normal conversion (Sonnet, Cat A)
+**Deliverable:** the order-6 Koblitz Frobenius automorphism, the τ-orbit rho speedup (reading the
+E.G.2 baseline, not replacing it), and the sub-track close. Lower-fidelity sketch:
+- **The Koblitz automorphism** (`rho/src/binary_ecdlp/koblitz.rs`): `τ(x,y) = (x², y²)` — the
+  Frobenius endomorphism of the binary curve (well-defined because the curve coefficients are in the
+  base field, so Frobenius fixes the curve). It satisfies the characteristic relation `τ² − tτ + 2 = 0`
+  where `t` is the curve's trace of Frobenius (`#E = 2^m + 1 − t`). The τ-adic (non-adjacent-form)
+  decomposition of a scalar. This is structurally distinct from `glv.rs`'s order-3 `φ(x,y)=(βx,y)`
+  scalar-x-scaling — `τ` acts on *both* coordinates via the field `frobenius` (the C-F2m op).
+- **The τ-orbit rho speedup** (`rho/src/binary_ecdlp/mod.rs`): collapse the τ-orbit
+  `{P, τP, τ²P, …, τ^(m−1)P}` (and negatives) to a canonical representative in the walk — the binary
+  analogue of `glv.rs`'s 6-element-orbit canonical collapse (`glv_canonical`). The Cat-C discipline:
+  this **reads** the E.G.2 baseline walk and produces a *new variant*; the baseline stays intact for
+  the E.H benchmark comparison.
+- **Sub-track-close KAT suite** (`rho/tests/binary_curve_kat.rs` + `binary_ecdlp_kat.rs`, extended):
+  the Frobenius-orbit law `τ^m(P) = P` (the order of `τ` divides `m`); the characteristic relation
+  `τ²(P) − t·τ(P) + 2P = ∞`; the τ-orbit rho recovers the same `k` as the E.G.2 baseline; the full
+  binary-curve axiom + decompression suite stays green.
 
-**Deliverable:** a second representation of the same field, where squaring is a cyclic shift, plus the
-change-of-basis isomorphism. Lower-fidelity sketch:
-- **Normal-basis `F2m` impl** (`shared/gf2m/src/normal.rs`): a second implementor of the frozen
-  `F2m` trait, in the normal basis `{β, β², …, β^(2^(m−1))}` where **squaring is a cyclic shift** of
-  the coefficient vector (the payoff). Multiplication in a normal basis uses the multiplication table
-  / λ-matrix (demonstration fidelity — Gaussian-normal-basis optimization is principle-2 scale-only).
-- **Change-of-basis** (`shared/gf2m/src/convert.rs`): the polynomial↔normal isomorphism, so a field
-  element computed in one representation maps faithfully to the other.
+Consumes C-BinaryCurve (frozen E.G.1, read), C-BinaryRho (frozen E.G.2, read), the `rho::ecdlp::glv`
+orbit-collapse idiom (read — structurally distinct). **Freezes C-Koblitz.**
 
-Consumes C-F2m (frozen E.F.1, implemented in a 2nd representation).
+**KAT (primary correctness signal):** **τ^m(P) = P** (the automorphism has order dividing m); the
+**τ²−tτ+2 = 0 characteristic relation** applied to a point (`τ(τP) − t·(τP) + 2P = ∞`); the **τ-orbit
+rho recovers the same `k`** as the E.G.2 baseline on every toy curve; the full curve + rho suite stays
+green; the existing rho/gnfs/shared KATs unchanged. Optional PARI `ellinit`/`elllog` cross-check
+(`#[ignore]`-gated). **Verify gate:** `cargo test --workspace` green.
 
-**KAT:** the basis-conversion **round-trip** `to_normal(to_poly(x)) == x`; **cross-representation
-agreement** (a `mul`/`square` in the polynomial basis equals the same op in the normal basis after
-conversion); **squaring-is-a-shift** verified directly in the normal basis. **Verify gate:** `cargo
-test --workspace` green.
-
-**Subtlety:** the normal basis exists *for* the squaring-as-shift property; the KAT must check that
-property directly (not just that `square` returns the right element, but that it is implemented as a
-shift), or the pedagogical point is lost — flag if the deliverable can't exhibit it.
-
-### E.F.4 ◆ — GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close (Sonnet, Cat C, `@architect`)
-
-**Deliverable:** the optimized multiplier, the naive↔optimized cross-check, and the sub-track close.
-Lower-fidelity sketch:
-- **Optimized multiplier** (`shared/gf2m/src/opt.rs`): **Karatsuba** (subquadratic split of the
-  carryless multiply) and/or **López–Dahab** (comb method with windowing) — the optimized analogue of
-  the E.F.1 naive comb, cross-checked against it. An optional **`pclmulqdq`** carryless-multiply path
-  is a **gated** demonstration-fidelity sidecar (`#[cfg(target_feature = "pclmul")]`, never the green
-  path — principle 3: engineering, not mathematics).
-- **Sub-track-close KAT suite** (`shared/gf2m/tests/gf2m_kat.rs`, extended): the full axiom suite,
-  Frobenius fixed-field, basis-conversion round-trip, and **naive↔optimized agreement** (the
-  `FpNaive`/`FpMonty` agreement pattern — the optimized multiplier gives byte-identical results to
-  the auditable baseline). Optional PARI `ffinit`/`fflog` `#[ignore]` sidecar.
-
-Consumes C-F2m (frozen E.F.1, read), the `shared/field` naive-vs-optimized cross-check idiom (read).
-**Freezes C-F2mOpt.**
-
-**KAT (primary correctness signal):** **naive↔optimized agreement** across all toy fields (the
-optimized multiplier equals the E.F.1 baseline on every input); the full field-axiom + Frobenius +
-basis-conversion suite stays green; the existing rho/gnfs/shared KATs unchanged. Optional PARI
-cross-check. **Verify gate:** `cargo test --workspace` green.
-
-**Subtlety (load-bearing):** (1) **The optimized multiplier must be *equivalent*, not just plausible**
-— a Karatsuba/comb bug gives wrong products that still pass weak smoke tests; only the exhaustive (or
-proptest) naive↔optimized agreement catches it. This is the `FpNaive`/`FpMonty` discipline applied to
-char 2. (2) **`pclmulqdq` is never on the green path** — it is gated, optional, demonstration-fidelity
-(principle 3); the green-path multiplier is the portable software Karatsuba/comb. Shipping `pclmulqdq`
-as the default is a principle-3 violation. (3) **This is the E.F ◆ boundary** — re-read the Purpose
-intent and verify the substrate is complete (polynomial basis, both inversions, normal basis +
-conversion, optimized multiplier) and **binary-curve-ready** (the curve-facing over-specification —
-Frobenius/trace/half-trace — is present and tested), and that E.F stayed curve-free /
-prime-extension-free / chapter-free. (4) **No MATHEMATICS chapter here** — the GF(2^m) textbook
-content is T.E, paired with E.W at the *Track-E* ◆; E.F.4 writes at most a PEDAGOGY code-tour delta.
+**Subtlety (load-bearing):** (1) **`τ` is the field `frobenius`, not a scalar multiply** — a `@build`
+agent that ports `glv.rs`'s `φ(x,y)=(βx,y)` (a coordinate scaling) writes the wrong automorphism;
+`τ(x,y)=(x²,y²)` applies the C-F2m `frobenius`/`square` to *both* coordinates. The `τ^m=id` KAT is the
+loud signal. (2) **The Koblitz speedup must NOT alter the baseline** (Cat-C "never alter the
+baseline") — the E.G.2 baseline rho stays available for the E.H benchmark; the τ-orbit variant is a
+*new* walk variant reading it. (3) **This is the E.G ◆ boundary** — re-read the Purpose intent and
+verify the substrate is complete (curve group law, decompression, baseline rho, Koblitz automorphism)
+and **descent-ready** (C-BinaryCurve exposes what E.H's GHS/Weil descent reads — the curve over
+GF(2^m), the group law, the trace), and that E.G stayed descent-free / Cantor-free / chapter-free.
+(4) **No MATHEMATICS chapter here** — the binary-curve / Koblitz textbook content is T.E, paired with
+E.W at the *Track-E* ◆; E.G.3 writes at most a PEDAGOGY code-tour delta.
 
 **`@architect` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the
-E.F.4 ◆ to confirm: (1) the substrate is complete and composes (the four units — poly basis,
-inversion, normal basis, optimized multiplier — all present and cross-checked); (2) C-F2m's
-curve-facing over-specification (Frobenius/trace/half-trace) is in place so E.G can build binary
-curves without amending the trait — the substrate-over-specify defense; (3) C-F2mOpt's
-naive↔optimized equivalence holds (the optimized multiplier is exact, not approximate); (4) E.F
-stayed in scope — no binary curves (E.G), no `GF(p^m)` tower (`fpext.rs`), no MATHEMATICS chapter
-(T.E), `pclmulqdq` gated not green-path; (5) the principle-4 boundary (toy field sizes; the
-engineering-vs-mathematics `pclmulqdq` annotation) is recorded, not silently presented as
-crypto-scale. **Also: reconcile the static-frame ROADMAP debt** — the Progress / Remaining tables are
-stale by two completed sub-tracks (E.D, E.E); the E.F ◆ is the right boundary to update them.
-One-shot findings; does not implement. Held at **Opus** per the header.
+E.G.3 ◆ to confirm: (1) the binary-curve substrate is complete and composes (curve + group law +
+decompression + baseline rho + Koblitz automorphism all present and cross-checked); (2) C-BinaryCurve
+exposes what E.H descends from (the binary curve over GF(2^m), the group law, the Frobenius trace `t`)
+so E.H can build GHS/Weil descent without amending the curve surface — the substrate-readiness defense;
+(3) C-Koblitz's τ-orbit speedup reads the baseline and does not alter it (the E.H benchmark baseline
+is intact); (4) E.G stayed in scope — no GHS/Weil descent (E.H), no Cantor/hyperelliptic Jacobian
+(E.I), no MATHEMATICS chapter (T.E), `τ` is the Frobenius not a `glv.rs`-style scaling; (5) the
+principle-4 boundary (toy curve sizes; the algorithms are crypto-scale-correct) is recorded, not
+silently presented as crypto-scale. **Also: reconcile the static-frame ROADMAP debt** — the Progress
+table is stale by two completed sub-tracks (E.D, E.E) and the Remaining table still lists the
+now-complete E.F; the E.G ◆ is the right boundary to update them. One-shot findings; does not
+implement. Held at **Opus** per the header (juncture-tier — C-BinaryCurve → E.H cost-of-wrong).
 
 ---
 
 ## Cross-session contracts
 
-E.F **freezes two** contracts (C-F2m at E.F.1, C-F2mOpt at E.F.4) and **amends none of the prior
-frozen contracts** (the p-adic / SSA / rho-curve / `Fp` surfaces are all untouched — E.F is a
-standalone characteristic-2 field crate). Per the substrate-over-specify rule, C-F2m carries the
-curve-facing operations (Frobenius, trace, half-trace) now, even though E.F itself does not consume
-them, because E.G/E.H/E.I will.
+E.G **freezes three** contracts (C-BinaryCurve at E.G.1, C-BinaryRho at E.G.2, C-Koblitz at E.G.3) and
+**amends C-F2m additively** (filling the `trace`/`solve_quadratic` stubs E.F.1 left for it — no trait-
+surface change). It amends no other prior frozen contract (the p-adic / SSA / prime-field rho-curve /
+`Fp` surfaces are untouched — the binary curve is a parallel type).
 
-### C-F2m — GF(2^m) `F2m` field trait + polynomial-basis substrate (compiler- + test-enforced) — *to be frozen at E.F.1*
+### C-F2m (additive amendment) — `trace` / `solve_quadratic` bodies filled (compiler- + test-enforced)
 
-**Defined in:** E.F.1 (`shared/gf2m/src/lib.rs`, `shared/gf2m/src/naive.rs`). **Consumed by:** E.F.2
-(fills `inv`/`div`), E.F.3 (implements in the normal basis), E.F.4 (the optimized multiplier);
-**downstream: E.G** (binary curves — the Frobenius/trace/half-trace point operations), **E.H** (GHS
-descent over GF(2^m)), **E.I** (GF(2^m) hyperelliptic Jacobian). Compiler-enforced (the `F2m` trait +
-the polynomial-basis impl + the irreducible representation) + test-enforced (the field axioms + the
-Frobenius fixed-field law `a^(2^m)=a`). Exposes: the `F2m<const L: usize>` (or degree-parameterised)
-trait — `add`(XOR)/`sub`(==add)/`neg`(==id)/`mul`(carryless+reduce)/`square`(Frobenius)/`pow`, the
-over-specified `frobenius`/`trace`/`half_trace`(`solve_quadratic`), and `inv`/`div` (deferred to
-E.F.2); the polynomial-basis `naive` implementor; the irreducible-polynomial representation. *Exact
-parameterisation (`F2m<const L>` vs an explicit degree const; irreducible as compile-time const vs
-runtime parameter; `Uint<L>` vs `[u64; L]` backing) ratified at the inline E.F.1 `@architect`
-juncture and re-ratified at the E.F.4 ◆.* **Char-2 invariants:** `sub == add`, `neg == identity`,
-`mul` always reduces by the irreducible. **The irreducible defines the field** — cross-irreducible
-operations are meaningless (a consistency guard). **Toy field sizes only** (principle-4 boundary).
+**Defined in:** E.F.1 (frozen). **Amended in:** E.G.1 (`shared/gf2m/src/{naive,opt,normal}.rs` — the
+`trace`/`solve_quadratic` bodies go from `unimplemented!("E.G")` to real). **The trait surface is
+unchanged** — both methods were declared-and-frozen at E.F.1 per the substrate-over-specify rule; E.G
+only fills the bodies, exactly as E.F.2 filled the deferred `inv`/`div`. **This is an additive amend,
+NOT a re-freeze and NOT a break:** no downstream consumer of C-F2m's frozen surface is invalidated
+(the methods existed; calling them now succeeds where it previously panicked). **Semantics frozen
+here:** `trace(a) = Σ_{i<m} a^(2^i)` is the absolute trace `Tr_{GF(2^m)/GF(2)}`, valued in GF(2) ⊂
+GF(2^m) (returns `zero` or `one`); `solve_quadratic(c)` returns an `x` with `x²+x = c` when
+`trace(c) = 0` (solvability precondition), via the half-trace closed form. *Resolved at E.G.1; the
+exact half-trace form (odd-m closed form vs general linearized-polynomial solve) is an E.G.1
+implementation call recorded at the ◆.*
 
-**Resolved interface (ratified at the inline E.F.1 `@architect` juncture, 2026-06-13).** The five
-open design calls are settled as follows; this is the surface E.F.2/E.F.3/E.F.4 and downstream
-E.G/E.H/E.I consume. *(Re-ratify at the E.F.4 ◆.)*
+### C-BinaryCurve — binary elliptic curve `y²+xy=x³+ax²+b` over GF(2^m) (compiler- + test-enforced) — *to be frozen at E.G.1*
 
-1. **Trait parameterisation — `F2m<const L: usize>` (limb count), NOT an explicit degree const.**
-   `L` = ⌈m/64⌉ = the number of `u64` limbs, mirroring `Fp<L>` exactly. The degree `m` is a
-   *runtime* property, recovered from the irreducible as `m = poly.bits() − 1` (the degree of the
-   irreducible). Rationale: stable Rust (edition 2024) forbids the `Uint<{ceil(M/64)}>` const
-   arithmetic an explicit-degree form would need — this is the same `generic_const_exprs`-avoidance
-   the `Fp` design note (`shared/field/src/lib.rs:7-18`) documents. *Load-bearing assumption:* no E.F
-   consumer needs `m` as a compile-time const for array sizing — the KATs compute `2^m` at runtime;
-   the Frobenius law `a^(2^m)=a` reads `m` from `poly`. If a downstream consumer later needs a
-   compile-time degree, that is an additive amend, not a break.
+**Defined in:** E.G.1 (`rho/src/binary_curve/mod.rs`). **Consumed by:** E.G.2 (the baseline rho),
+E.G.3 (the Koblitz automorphism); **downstream: E.H** (GHS/Weil descent — descends from the binary
+curve over GF(2^m); the single highest-stakes consumer, "the most mathematically intricate single
+attack" — the cost-of-wrong that holds the ◆ juncture at Opus), **E.W** (the cross-attack benchmark
+table). Compiler-enforced (the `BinaryCurve` type + `BinaryAffinePoint` + López–Dahab projective point
++ the `<F: F2m<L>>` group-law methods) + test-enforced (point-on-curve, the group axioms, the
+decompression round-trip). Exposes: `BinaryCurve` (the non-supersingular `y²+xy=x³+ax²+b` curve, `b≠0`,
+holding `a`/`b`/`poly`/`n`/base-point as `Uint<L>`); `BinaryAffinePoint<F>` (`Infinity | Finite{x,y}`);
+the López–Dahab projective point (affine repr `(X/Z, Y/Z²)`); `is_on_curve`/`negate` (with the char-2
+`−P=(x,x+y)`)/`double`/`add`/`scalar_mul`/`generator`/decompression. **Char-2 curve invariants:**
+`−P = (x, x+y)` (NOT `(x,−y)`); doubling uses the char-2 López–Dahab formula (NOT Jacobian — the `2y`
+division is zero); decompression's `solve_quadratic` needs `trace(·)=0`. **The curve is defined
+relative to its irreducible `poly`** — the field identity threads through (C-MovBridge-style
+consistency guard). **Toy curve sizes only** (principle-4 boundary). *Exact point-representation choice
+(López–Dahab vs affine-with-one-inv; the projective coordinate convention) ratified at the E.G.3 ◆.*
 
-2. **Irreducible — a runtime `poly: &Uint<L>` parameter (per-call), NOT a compile-time const.**
-   Mirrors `Fp`'s per-call `p: &Uint<L>` exactly: every operation that needs the field's identity
-   (`mul`, `square`/`frobenius`, `pow`, and the deferred `inv`/`div`) takes `poly: &Uint<L>`. The
-   irreducible is the bit-vector of the degree-m reduction polynomial (bit i set ⟺ coefficient of
-   x^i is 1; e.g. GF(2^4) with x⁴+x+1 is `0b1_0011`, GF(2^8) AES x⁸+x⁴+x³+x+1 is `0b1_0001_1011`).
-   Rationale: (a) the established idiom the PLAN mandates mirroring; (b) one impl exercises *both*
-   toy fields the E.F.1 KAT names (GF(2^4) and GF(2^8)) without monomorphising per-poly. *Tradeoff
-   named:* a runtime `poly` is worse at fast sparse (trinomial/pentanomial) reduction than a
-   compile-time const would be — it cannot specialise the reduction to a known sparse modulus at
-   compile time. This is deliberately deferred: the **sparse fast-reduce is an E.F.4 optimised-path
-   concern** (it lives with the optimised multiplier under C-F2mOpt), not a substrate decision; the
-   E.F.1 naive reduction (repeated XOR-of-shifted-modulus, degree-driven) is the auditable baseline
-   regardless of modulus shape.
+### C-BinaryRho — Pollard rho ECDLP over the binary curve (compiler- + test-enforced) — *to be frozen at E.G.2*
 
-3. **Backing storage — `Uint<L>` from `crypto-bigint` (a coefficient bit-vector), NOT a raw
-   `[u64; L]`.** Mirrors `FpNaive { v: Uint<L> }`. The `Uint<L>` is consumed for `as_words`/
-   `from_words` (limb access for the comb multiply and the Frobenius bit-spread), `BitXor` (add),
-   and shifts — and it provides the `Clone`/`PartialEq`/`Eq`/`Debug` the trait bounds need for free.
-   The carryless comb multiply produces a degree-<2m intermediate in `Uint<2L>` (the same `($L, $DL =
-   2*$L)` widening the `impl_fp_naive!` macro already uses, `shared/field/src/naive.rs:48-49`), then
-   reduces back to `Uint<L>`. *Tradeoff named:* `Uint<L>` carries integer-arithmetic methods
-   (`wrapping_add`, `rem`, `mul_wide`) that are **meaningless on a GF(2) coefficient vector** — a
-   `@build` agent could call `mul_wide` (integer mul-with-carry) where the carryless comb is meant.
-   This is the storage analogue of the `sub==add` trap; the crate + impl docs MUST state "the
-   `Uint<L>` is a polynomial coefficient bit-vector, not an integer — only XOR, shift, and bit
-   operations are meaningful; `mul`/`square` use the carryless comb, never `mul_wide`." (Note:
-   `mul_wide` *is* in the Consumes column, but for the *widening-type plumbing* `(lo, hi) →
-   Uint<2L>`, not as the multiply itself — the multiply is carryless comb.)
+**Defined in:** E.G.2 (`rho/src/binary_ecdlp/mod.rs`). **Consumed by:** E.G.3 (the Koblitz τ-orbit
+speedup reads it — the baseline it must not alter), **E.W** (the benchmark table — binary rho is the
+baseline the descent and Koblitz variants are timed against; **E.H** benchmarks the descent against
+it). Compiler- + test-enforced. Exposes the `F2m`+`BinaryCurve` rho walk (r-adding walk, distinguished
+points, linear recovery) and the end-to-end `solve(curve, G, Q) -> k`. **The walk-state invariant
+`W = a·G + b·Q`** is the prose contract preserved across E.G.2/E.G.3 (mirroring the prime-field rho
+invariant). **The baseline must stay intact** (Cat-C rule) — E.G.3's Koblitz variant reads it, never
+replaces it, so E.W/E.H can benchmark against the un-optimized walk. *Exact walk parameters (the
+partition count `r`, the distinguished-point criterion) ratified at the E.G.3 ◆.*
 
-4. **Method surface — full surface frozen now; `inv`/`div` + `trace`/`half_trace` declared-and-
-   stubbed.** The trait declares, with `poly: &Uint<L>` threaded through every modulus-dependent op:
-   - **Constructors / canonical form:** `zero`/`one`/`from_u64`/`from_uint`/`to_uint`
-     (mirroring `Fp`; `from_uint`/`to_uint` treat the `Uint<L>` as the coefficient bit-vector — no
-     reduction-mod-integer, but a *polynomial* reduction mod `poly` if the input has degree ≥ m).
-   - **Char-2 arithmetic (implemented in E.F.1):** `add` (XOR, `a ^ b`); `sub` (**== `add`** —
-     documented, KAT-checked `sub(a,b)==add(a,b)`); `neg` (**== identity**, returns `self` clone);
-     `mul` (carryless comb + reduce-by-`poly`); `square` (Frobenius bit-spread + reduce); `pow`
-     (square-and-multiply, mirroring `FpNaive::pow`); plus `is_zero`/`is_one` defaults.
-   - **Curve-facing over-specification (the substrate-over-specify rule):** `frobenius(self, poly)`
-     — first-class `a → a²`, *implemented* in E.F.1 (it **is** `square`; declared distinctly because
-     E.G/E.H reach for it by that name and may iterate it as the Frobenius map); `trace(self, poly)`
-     — `Σ_{i<m} a^(2^i)`, **declared-and-stubbed** `unimplemented!("E.G")`; `half_trace`/
-     `solve_quadratic(c, poly)` — solve `x²+x=c`, **declared-and-stubbed** `unimplemented!("E.G")`.
-   - **Deferred to E.F.2 (declared-and-stubbed):** `inv(self, poly)` and `div(self, rhs, poly)` —
-     bodies `unimplemented!("filled in E.F.2")`, with a documented zero-input contract (`inv(0)`
-     panics/errors, matching `FpNaive::inv`'s zero-guard).
+### C-Koblitz — order-6 Koblitz Frobenius automorphism + τ-orbit rho speedup (compiler- + test-enforced) — *to be frozen at E.G.3 ◆*
 
-   Rationale for **declare-and-stub** over leave-un-added (the PLAN-flagged call): the trait bounds
-   **three** downstream sub-tracks (E.G/E.H/E.I); adding a trait method later is the most expensive
-   retrofit in the sub-track (the Cat-A cost-of-wrong that holds this juncture at Opus). Freezing the
-   full surface now is the substrate goal. The PLAN's counter-consideration ("leave un-added to keep
-   E.F.1's KATs honest") is *reconciled, not traded away*: E.F.1's KATs (axioms + Frobenius, PLAN
-   line 344-347) **do not call** `inv`/`div`/`trace`/`half_trace`, so a stub that is never exercised
-   keeps the KATs honest while still freezing the surface. *Tradeoff named:* a compiling-but-panicking
-   stub is a latent trap if a future `@build` agent calls it before its session fills it — mitigated
-   by `unimplemented!` messages that name the filling session ("E.F.2"/"E.G"), and by the inline
-   juncture ratifying that no E.F.1-consumed path touches a stub.
+**Defined in:** E.G.3 (`rho/src/binary_ecdlp/koblitz.rs`). **Consumed by:** **E.W** (the benchmark
+table — the τ-orbit speedup is one of the curves "which optimization wins" compares). Compiler- +
+test-enforced. Exposes `τ(x,y)=(x²,y²)` (the Frobenius endomorphism, applying C-F2m `frobenius`/
+`square` to both coordinates — structurally distinct from `glv.rs`'s scalar `φ`), the τ-adic scalar
+decomposition, and the τ-orbit canonical-collapse rho variant. **The characteristic relation
+`τ²−tτ+2 = 0`** (for the curve's Frobenius trace `t`) and **`τ^m = id`** are the frozen invariants.
+**`τ` is the field Frobenius, NOT a coordinate scaling** (the `glv.rs`-port trap). **The τ-orbit
+variant reads the E.G.2 baseline, does not alter it** (Cat-C). *Exact τ-adic NAF width / orbit-collapse
+canonicalization ratified at the ◆.*
 
-5. **`naive` impl shape — `F2mNaive<const L> { c: Uint<L> }`, per-`L` macro mirroring
-   `impl_fp_naive!`.** A struct `F2mNaive<const L: usize> { c: Uint<L> }` where `c` is the
-   coefficient bit-vector, deriving `Clone, Debug, PartialEq, Eq`. The `F2m<L>` impl is generated by
-   a macro `impl_f2m_naive!($L, $DL)` over the same `($L, $DL=2*$L)` pairs `(1,2)/(2,4)/(4,8)/(8,16)`
-   the `Fp` naive macro uses (the comb multiply widens to `Uint<$DL>` for the degree-<2m intermediate
-   before reducing). `add` = `Uint`-XOR; `mul` = comb (for each set bit i of `rhs`, XOR `self`
-   left-shifted by i into the `Uint<2L>` accumulator) then `reduce(acc, poly)` (while the
-   accumulator's degree ≥ m, XOR in `poly` shifted to align with the top set bit); `square` =
-   bit-spread (insert a zero between each coefficient bit) then reduce; `frobenius` delegates to
-   `square`. The irreducible is **not** stored on the struct — it is passed per-call as `poly`
-   (mirroring `Fp` storing `p` nowhere on `FpNaive` and threading it through every method). A
-   *cross-irreducible* consistency note is documented (operations mixing elements reduced under
-   different `poly` are meaningless — the C-MovBridge-style guard).
+### Frozen contracts read by E.G (consumed, not amended)
 
-**Crate scaffold (also ratified):** `shared/gf2m/Cargo.toml` is a leaf crate `name = "shared-gf2m"`,
-`edition = "2024"`, single dependency `crypto-bigint = { version = "0.5", features = ["rand_core"] }`
-(matching `shared/field`), `[dev-dependencies] proptest = "1"`, and the `[lints]` block mirroring the
-`shared/padic` precedent (`unsafe_code = "forbid"`, `missing_docs = "warn"`, clippy `all = "deny"` /
-`pedantic = "warn"`). Root `Cargo.toml` adds `"shared/gf2m"` to `members`. No new edge (no existing
-crate depends on it — the `rho → shared-gf2m` edge is E.G's). `cargo check --workspace` must resolve
-with no cycle.
+- **C-F2m (frozen surface)** — `add`(XOR)/`mul`(carryless+reduce)/`square`/`frobenius`/`inv`/`div`/
+  `pow` consumed by the binary group law and the Koblitz `τ`. Read. *(The `trace`/`solve_quadratic`
+  bodies are filled — additive amend, above; the rest of the surface is read unchanged.)*
+- **`rho::curve::Curve` + `AffinePoint`/`JacobianPoint`** — the *design idiom* E.G's `BinaryCurve`
+  mirrors (a const-generic-method curve, affine + projective point types, per-call field threading).
+  **Read for the pattern; NOT reused** (the Jacobian group law breaks in char 2). Untouched.
+- **`rho::ecdlp` walk + `rho::ecdlp::glv`** — the rho-walk idiom (E.G.2 mirrors) and the orbit-collapse
+  idiom (E.G.3 parallels, structurally distinct). Read. Untouched (the prime-field rho is unchanged).
 
-### C-F2mOpt — GF(2^m) optimized-multiplier equivalence (compiler- + test-enforced) — *to be frozen at E.F.4 ◆*
+### New workspace edge (not a new crate)
 
-**Defined in:** E.F.4 (`shared/gf2m/src/opt.rs`). **Consumed by:** any performance-sensitive consumer
-of GF(2^m) multiplication (E.G–E.K, where toy-scale benchmarks compare); E.W (the cross-attack
-benchmark table). Compiler- + test-enforced. Exposes the optimized polynomial-basis multiplier
-(Karatsuba / López–Dahab) and the optional gated `pclmulqdq` path. **The optimized multiplier is
-*equivalent* to the E.F.1 naive baseline** (byte-identical results on every input — the
-naive↔optimized agreement KAT, mirroring `FpNaive`/`FpMonty`). **`pclmulqdq` is never the green path**
-(gated demonstration-fidelity sidecar — principle 3). *Exact algorithm choice (Karatsuba vs
-López–Dahab vs both; the windowing parameters) ratified at the E.F.4 ◆.*
-
-**Resolved interface (ratified at the E.F.4 ◆ `@architect` juncture, 2026-06-13).** The five open
-design calls are settled as follows; this is the surface E.G–E.K / E.W consume. *(The substrate
-this builds on — C-F2m — is confirmed complete and binary-curve-ready; see the ◆ confirmation
-notes recorded for the step-3 review.)*
-
-1. **Algorithm — software Karatsuba (one-level split) as the sole green-path optimized multiplier;
-   López–Dahab comb NOT separately implemented.** The optimized `mul` is a single-level Karatsuba
-   split of the carryless polynomial multiply: split each operand into low/high halves, compute the
-   three half-products `lo·lo`, `hi·hi`, `(lo+hi)·(hi+lo)` via the *existing* `naive`-style comb at
-   half width, recombine by XOR (no carries in char 2 — the middle term is `mid + lo·lo + hi·hi`,
-   and `+ == −` is XOR), then reduce mod `poly` via the **same `poly_reduce` routine the naive path
-   uses**. Rationale: (a) Karatsuba is the *algorithmically distinct* optimized multiplier the PLAN's
-   title and Cat-C framing name first ("Karatsuba subquadratic split"); (b) at toy scale (m ≤ 64,
-   L = 1) a separate López–Dahab comb with windowing would be a *second* implementation of the same
-   speed-up story with no additional contract surface and no additional cross-check value — the naive
-   comb baseline *already is* the comb method, so "comb-with-windowing" vs "naive comb" is a
-   within-baseline micro-optimization, not a distinct equivalence contract. The PLAN's "Karatsuba
-   **and/or** López–Dahab" explicitly licenses choosing one; Karatsuba is the subquadratic-split
-   pedagogical payoff, López–Dahab is the windowing-engineering variant (principle-3-adjacent).
-   *Tradeoff named:* Karatsuba-only is worse at *exhibiting the comb-windowing technique* than
-   shipping both — mitigated by a doc note in `opt.rs` explaining that the E.F.1 naive comb IS the
-   comb method and that López–Dahab windowing is the scale-only (principle-2) engineering refinement,
-   deliberately not separately implemented at toy scale. *Load-bearing assumption:* no downstream
-   consumer (E.G–E.K) needs a *named* `lopez_dahab_mul` symbol — they consume the `F2m::mul` trait
-   method via `F2mOpt`, which is algorithm-agnostic at the call site. If a consumer later wants the
-   windowed comb specifically, that is an additive `opt.rs` function, not a contract break.
-
-2. **`F2mOpt` struct shape — mirrors `F2mNaive` exactly: `F2mOpt<const L: usize> { c: Uint<L> }`,
-   same canonical coefficient-bit-vector storage, different `mul` impl; macro-generated via
-   `impl_f2m_opt!($L, $DL)` over the same `(1,2)/(2,4)/(4,8)/(8,16)` pairs.** This is the *cleaner*
-   analogue of `FpNaive`/`FpMonty`: unlike Montgomery form (a genuinely different *representation*
-   `aR mod p` needing conversion), the optimized GF(2^m) multiplier produces the **identical
-   canonical representation** as the naive comb — only the multiply *algorithm* differs. So `F2mOpt`
-   is NOT a newtype wrapper over `F2mNaive` and does NOT change storage; it is a sibling struct with
-   the same `{ c: Uint<L> }` field, deriving `Clone, Debug, PartialEq, Eq`, whose `add`/`sub`/`neg`/
-   `to_uint`/`from_*`/`pow`/`inv`/`div`/`trace`/`solve_quadratic`/`square`/`frobenius` bodies are
-   **identical to `F2mNaive`'s** (the optimization is *only* in `mul`). Rationale: (a) the cross-check
-   (call 4) compares `.to_uint()` of `F2mNaive` and `F2mOpt` for byte-identical equality — this
-   requires identical canonical form, which same-storage guarantees; (b) it lets the optimized `mul`
-   reuse the *existing private helpers* `wide_from_low`/`low_half`/`wide_shl`/`poly_reduce` in
-   `naive.rs` — **E.F.4 widens these to `pub(crate)`** (they are currently private `fn` in `naive.rs`)
-   so `opt.rs` can call the shared reduction. *This is an additive, non-breaking visibility change to
-   `naive.rs` internals, NOT a C-F2m amendment* (the trait surface is untouched; only module-internal
-   visibility widens). *Tradeoff named:* mirroring `F2mNaive` duplicates the non-`mul` method bodies
-   (vs a newtype that delegates) — accepted because (i) the macro generates them so duplication is one
-   macro, not hand-copy, and (ii) a newtype `F2mOpt(F2mNaive<L>)` would force every trait method
-   through a `.0` unwrap/re-wrap, *more* boilerplate than the macro, and would make the `to_uint`
-   cross-check indirection harder to read. The `square`/`frobenius` bit-spread is **kept identical to
-   naive** (it is already the optimal bit-spread; Karatsuba does not improve squaring) — the doc must
-   say so to avoid a `@build` agent inventing a needless "optimized square."
-
-3. **`pclmulqdq` — OMITTED (not shipped even gated), with a documented rationale; the green-path
-   multiplier is the portable software Karatsuba.** **Load-bearing finding (confirmed against the
-   crate):** `shared/gf2m/Cargo.toml` sets `[lints.rust] unsafe_code = "forbid"`. The `pclmulqdq`
-   intrinsic (`core::arch::x86_64::_mm_clmulepi64_si128`) is an `unsafe` call requiring
-   `#[target_feature(enable = "pclmulqdq")]` on an `unsafe fn`. Shipping it would force either
-   (a) lifting the crate-wide `unsafe_code = "forbid"` lint to `allow`, or (b) a localized
-   `#[allow(unsafe_code)]` carve-out — both *weaken the substrate's strongest safety invariant
-   (zero unsafe) for a toy-scale demonstration sidecar that never runs on the green path*. The PLAN
-   gives explicit latitude: "an optional `pclmulqdq` … **if introduced at all**" (line 96),
-   "demonstration-fidelity option … gated behind `#[cfg(target_feature)]` **if introduced at all**."
-   The fiduciary call: at toy scale (m ≤ 8 in the KATs, ≤ 64 in the type) the carryless-multiply
-   intrinsic buys *near-zero observable demonstration value* (the software Karatsuba already exhibits
-   the algorithm; `pclmulqdq` would exhibit only an x86 micro-architectural detail), while the cost is
-   a real erosion of the `unsafe_code = "forbid"` guarantee every other `shared/` crate upholds.
-   **Decision: do NOT ship a `pclmulqdq` path.** Instead `opt.rs` carries a documented module-level
-   note naming the exact intrinsic and the `#[cfg(target_feature = "pclmulqdq")]` gate a crypto-scale
-   version would use, so the pedagogical pointer survives without the unsafe code. This
-   *over-satisfies* principle 3 (engineering kept off the green path) by keeping it off *every* path,
-   preserving the zero-unsafe invariant. *Tradeoff named:* omission is worse at *exhibiting the
-   intrinsic itself* than a gated path — mitigated by the doc note. *Reversibility:* if a future
-   reviewer judges the gated `pclmulqdq` worth the lint carve-out, adding it behind
-   `#[cfg(target_feature = "pclmulqdq")]` + a localized `#[allow(unsafe_code)]` is a purely additive
-   change — this is reversible, not a one-way door. **(Flagged recommendation for the step-3 review:
-   confirm the omit-rather-than-gate `pclmulqdq` call. It is a defensible strengthening of the
-   zero-unsafe invariant within the PLAN's "if introduced at all" latitude, but it does narrow the
-   literal "optional gated `pclmulqdq` path" the E.F.4 session entry's Expected-files column names —
-   surfaced so the human can veto if the gated path was wanted as a concrete artifact.)**
-
-4. **Naive↔optimized agreement KAT — mirrors `naive_monty_agree`/`matches_naive` exactly:
-   exhaustive `.to_uint()`-equality over all input pairs for the toy fields.** `gf2m_kat.rs` gains a
-   `naive_opt_agree_gf4` (exhaustive 16×16 = 256 pairs) and `naive_opt_agree_gf8` (exhaustive
-   256×256 = 65536 pairs — the scale the existing `sub_equals_add_gf8` already runs), each asserting
-   `F2mNaive::<1>::mul(a,b).to_uint() == F2mOpt::<1>::mul(a,b).to_uint()` for every pair. Byte-
-   identical equality on the canonical `Uint<L>` — *not* "equal as field elements" — because the
-   same-canonical-form storage (call 2) makes byte-identity the strongest correct assertion (mirroring
-   `matches_naive` in `monty.rs:205`). Optionally a `proptest` random-pair agreement for breadth. No
-   new test infrastructure — same `shared_gf2m::{F2m, F2mNaive}` import plus the new `F2mOpt`
-   re-export. *Load-bearing assumption (confirmed):* exhaustive 256×256 in GF(2^8) stays fast — the
-   existing suite already runs several such loops and is green.
-
-5. **Sub-track-close KAT suite — achievable in `gf2m_kat.rs` with NO new infrastructure; it is the
-   union of the existing (already-present) suite plus the call-4 agreement.** The field-axiom tests
-   (associativity, distributivity, mul-by-one, add-self-zero), the Frobenius fixed-field law
-   `a^(2^m)=a` (`frobenius_fixed_field_gf4`/`_gf8`), `square==mul(a,a)`, the inversion round-trip +
-   ext-Euclid↔Itoh–Tsujii agreement, the basis-conversion round-trip + cross-representation
-   agreement, and the char-2 invariants (`sub==add`, `neg==id`) **already exist and pass** in
-   `gf2m_kat.rs` (855 lines, landed E.F.1–E.F.3). E.F.4 *adds only* the naive↔optimized agreement
-   tests (call 4) and *optionally* re-runs the field-axiom suite against `F2mOpt` (a cheap parametrized
-   helper or macro of the existing bodies) to confirm the optimized multiplier satisfies the axioms
-   directly, not only agreement-with-naive. No PARI sidecar required (the self-checking suite is
-   exactly decisive — lever 5); the optional PARI `#[ignore]` sidecar may be added but is not
-   load-bearing. Needs no new dev-dependency beyond the `proptest` already present.
-
-**`lib.rs` integration (also ratified):** E.F.4 adds `pub mod opt;` and `pub use opt::F2mOpt;`
-(mirroring `pub use naive::F2mNaive;` / `pub use normal::F2mNormal;`). The private `naive.rs`
-helpers `wide_from_low`/`low_half`/`wide_shl`/`poly_reduce`/`uint_bits` widen to `pub(crate)` so
-`opt.rs` reuses the shared reduction (additive visibility change, no trait/contract amendment).
-`cargo test --workspace` green; the existing rho/gnfs/shared KATs unchanged (E.F.4 touches only
-`shared/gf2m`).
-
-### Frozen contracts read by E.F (consumed, not amended)
-
-- **`crypto-bigint` `Uint<L>`** — `as_words`/`from_words`/`mul_wide` for the `u64`-limb word layout.
-  Read (an external dependency, not a project contract).
-- **`shared/field` `Fp<L>` + `FpNaive`/`FpMonty`** — the *design idiom* E.F mirrors (const-generic
-  trait, per-call modulus, naive-baseline-vs-optimized cross-check). **Read for the pattern; NOT
-  implemented** (the survey proved GF(2^m) cannot impl `Fp<L>`). Untouched.
-- **`shared/padic` (Cargo.toml shape)** — the leaf-crate precedent `shared/gf2m` mirrors. Read.
-
-### New workspace crate (not a contract amendment, not a new edge)
-
-- **`shared/gf2m`** — E.F.1 adds it to the root `Cargo.toml` `members` list. **A new crate, no new
-  edge** (it depends only on `crypto-bigint`; no existing crate depends on it yet). The
-  `rho → shared-gf2m` edge is **E.G's** to add (mirroring how `rho → shared-padic` was E.E's, not
-  E.D's). `cargo check --workspace` confirms the crate resolves with no cycle. *(If E.F found it must
-  change an existing crate's API — it should not; E.F is standalone — that would be a discovery
-  surfaced at the ◆, never a silent patch.)*
+- **`rho → shared-gf2m`** — E.G.1 adds `shared-gf2m = { path = "../shared/gf2m" }` to `rho/Cargo.toml`.
+  **A new edge, no new crate** (the binary curve + binary rho live in the existing `rho` crate; this
+  is the first edge into the standalone E.F crate, mirroring how `rho → shared-padic` was E.E's edge
+  into the standalone E.D crate). `cargo check --workspace` confirms the edge resolves with no cycle
+  (`shared-gf2m` is a leaf depending only on `crypto-bigint`). *(If E.G found it must change
+  `shared-gf2m`'s frozen surface beyond filling the two stubs — it should not — that would be a
+  discovery surfaced at the ◆, never a silent patch.)*
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The E.F.1 inline `@architect` and the E.F.4 ◆
-`@architect` confirmations are not separate ledger rows (paged forks with no commit-shaped
-deliverable); their outcomes are recorded in the Action-frame digest.
+"Froze" names contracts this session locked. The E.G.3 ◆ `@architect` confirmation is not a separate
+ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
+Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.F.1 | GF(2^m) polynomial-basis substrate + `F2m` carryless-mul field trait | done | 2ca3061 | C-F2m (+ `shared/gf2m` crate) |
-| E.F.2 | GF(2^m) inversion (ext-Euclid + Itoh–Tsujii) + division | done | c512c2d | C-F2m (additive: `inv`/`div`) |
-| E.F.3 | GF(2^m) normal-basis representation + polynomial↔normal conversion | done | 84f6d07 | — (implements C-F2m, 2nd repr) |
-| E.F.4 ◆ | GF(2^m) Karatsuba/López–Dahab multiplier + cross-check + sub-track close | done | 51c8c8d | C-F2mOpt |
+| E.G.1 | Binary-curve substrate + `trace`/`solve_quadratic` + `rho → shared-gf2m` edge | pending | — | C-BinaryCurve (+ C-F2m additive: `trace`/`solve_quadratic`) |
+| E.G.2 | Pollard rho over the binary curve + end-to-end ECDLP KAT | pending | — | C-BinaryRho |
+| E.G.3 ◆ | Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close | pending | — | C-Koblitz |
 
-Contracts frozen before this sub-track (NOT read by E.F — it is standalone): the p-adic surface
-(C-Padic/C-Hensel/C-PadicLog), the SSA surface (C-AnomalousLift/C-SSA), the rho curve + ECDLP
-surface, `Fp<4>`. This sub-track **freezes two new contracts** (C-F2m, C-F2mOpt), serving the
-downstream **E.G** (binary curves), **E.H** (GHS descent), **E.I** (GF(2^m) hyperelliptic Jacobian),
-and the benchmark/textbook consumers **E.W**/**T.E**, and **opens the binary branch of Track E**.
+Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.G, with
+C-F2m's two stubs filled additively), the p-adic surface (C-Padic/C-Hensel/C-PadicLog), the SSA
+surface (C-AnomalousLift/C-SSA), the prime-field rho curve + ECDLP surface, `Fp<4>`. This sub-track
+**freezes three new contracts** (C-BinaryCurve, C-BinaryRho, C-Koblitz), serving the downstream **E.H**
+(GHS/Weil descent — descends from C-BinaryCurve), **E.W** (cross-attack benchmarks — baselines against
+C-BinaryRho), and **opens the binary-curve consumer cluster of Track E**.
 
 ---
 
 ## Action-frame digest
 
-### E.F.1 — 2026-06-13
-Discovery/flex: Inflection-design juncture paged; `design-confident` returned — all five design calls (trait param `F2m<const L>`, runtime `poly: &Uint<L>`, `Uint<L>` storage, full surface frozen with stubs, `F2mNaive` macro shape) resolved cleanly against PLAN provisions.
-Affected: C-F2m (resolved interface written into contracts section)
-Deferred: no — one flagged recommendation noted: `frobenius` declared distinctly from `square` (both are `a→a²` in E.F.1); adjudicator judged this deliberate (E.G/E.H iterate the Frobenius by name) and not irreconcilable.
-Texture: `Cargo.lock` included in session commit as expected workspace side-effect of new crate addition.
-
-### E.F.4 ◆ — 2026-06-13
-Discovery/flex: Inflection-design juncture paged (`design-confident`); boundary-transform juncture paged (`still-on-intent`). `pclmulqdq` omitted rather than gated — `unsafe_code = "forbid"` crate lint makes the intrinsic cost real at zero toy-scale demonstration value; PLAN's "if introduced at all" latitude licenses omission; doc pointer preserved in `opt.rs`.
-Affected: C-F2mOpt (frozen: Karatsuba green-path, pclmulqdq omitted-not-gated, naive↔optimized byte-identical exhaustive KAT)
-Deferred: no — pclmulqdq omission flagged for human veto at step-3 review; boundary fork confirmed reconcilable within PLAN latitude. ROADMAP true-boundary reconciliation owed as housekeeping (not a blocker).
-Texture: `naive.rs` helpers widened to `pub(crate)` (additive visibility change, no C-F2m amendment) to enable `opt.rs` reuse of `poly_reduce`/`wide_shl`/etc.
+*(none yet)*
 
 ---
 
@@ -776,128 +557,125 @@ Texture: `naive.rs` helpers widened to `pub(crate)` (additive visibility change,
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.F is greenfield GF(2^m) in a new `shared/gf2m` crate — building the crate + trait + poly basis
-  + inversion + normal basis + optimized multiplier is internal-continue (confirmed by survey).** No
-  characteristic-2 field code exists. A discovery that the normal-basis multiplication or the
-  Itoh–Tsujii tower needs a field-arithmetic primitive C-F2m did not over-specify is an **additive
-  amend of C-F2m** surfaced at the next `@architect` juncture (not a silent trait patch).
+- **E.G builds binary curves on the frozen C-F2m substrate — building the curve + group law +
+  decompression + baseline rho + Koblitz automorphism is internal-continue (confirmed by survey).**
+  No binary-curve code exists. A discovery that the curve law or the Koblitz decomposition needs a
+  field primitive C-F2m did not over-specify is an **additive amend of C-F2m** (like filling the
+  `trace`/`solve_quadratic` stubs) surfaced at the ◆ juncture — not a silent trait patch.
 
-- **GF(2^m) cannot implement `Fp<L>` — forcing it is a rigidity failure (the central design guard).**
-  The survey proved four incompatibilities (Fermat `inv`, odd-prime `legendre`/`sqrt`, `neg` as
-  subtraction, integer-mod-p representation). A `@build` agent that tries to `impl Fp<L> for` a
-  GF(2^m) type — or ports `Fp`'s `sub`/`neg` semantics — writes wrong code that may compile. The
-  `sub==add` / `neg==id` KAT and the sibling-trait design are the defense — **internal-continue →
-  corrected** (the inline E.F.1 juncture catches a wrong trait shape before it propagates).
+- **The binary group law is NOT the Jacobian formula — forcing it is a rigidity failure (the central
+  design guard).** The char-2 doubling divides by `2y = 0`; the standard Jacobian formulae break. A
+  `@build` agent porting `rho::curve`'s `double_jacobian` writes divide-by-zero / silently-wrong code.
+  López–Dahab (or affine-with-one-`inv`) char-2 formulae are mandatory; the `2P == P+P`
+  doubling-consistency KAT is the defense — **internal-continue → corrected.**
 
-- **Modular reduction by the irreducible is mandatory in every `mul` (the silent-wrong-product
-  guard).** A carryless multiply without reduction yields a degree-<2m polynomial not in the field; a
-  wrong irreducible or off-by-one reduction silently gives a wrong product. The **Frobenius
-  fixed-field law `a^(2^m)=a`** is the loud signal — it fails iff reduction is wrong.
-  **Internal-continue → corrected.**
+- **`−P = (x, x+y)`, not `(x, −y)` — the char-2 negation trap.** In char 2 `−y = y`, so naive
+  negation gives `P`, not `−P`. The `P + (−P) = ∞` KAT is the loud signal. **Internal-continue →
+  corrected** (mirrors the field-level `sub==add`/`neg==id` trap from E.F).
 
-- **The optimized multiplier must be *equivalent* to the naive baseline (the silent-optimization-bug
-  guard).** A Karatsuba/López–Dahab bug gives wrong products passing weak tests; only the exhaustive
-  (or proptest) **naive↔optimized agreement** catches it (the `FpNaive`/`FpMonty` discipline). A KAT
-  that only asserts the optimized `mul` returns *something* has an under-specified contract — flag it.
-  **Internal-continue → corrected.**
+- **`τ` is the field Frobenius `(x²,y²)`, NOT a `glv.rs`-style coordinate scaling.** The prime-field
+  GLV `φ(x,y)=(βx,y)` is a scalar x-scaling; the binary Koblitz `τ(x,y)=(x²,y²)` applies the C-F2m
+  `frobenius`/`square` to *both* coordinates. A `@build` agent that ports `glv_phi` writes the wrong
+  automorphism. The `τ^m = id` and `τ²−tτ+2 = 0` KATs are the loud signal — **internal-continue →
+  corrected.**
 
-- **`pclmulqdq` on the green path is a principle-3 violation (the engineering-on-the-compute-path
-  guard).** The carryless-multiply intrinsic is *engineering*; it ships at most as a gated
-  demonstration-fidelity sidecar (`#[cfg(target_feature)]`), never as the default multiplier. A
-  `@build` agent that makes `pclmulqdq` the green-path `mul` violates principle 3 —
-  **internal-continue → corrected** (gate it).
+- **The Koblitz speedup must NOT alter the E.G.2 baseline (the Cat-C "never alter the baseline"
+  guard).** The baseline binary rho must stay available for E.H/E.W benchmarking; E.G.3's τ-orbit
+  variant *reads* it and produces a new variant. A `@build` agent that rewrites the baseline walk
+  in-place destroys the benchmark baseline — **internal-continue → corrected** (add a variant, don't
+  replace).
 
-- **E.F adds a new crate, not a new edge — a dependency cycle would be a destructive-HALT.**
-  `shared/gf2m` depends only on `crypto-bigint` and is depended-on by nothing yet (the
-  `rho → shared-gf2m` edge is E.G's). If `cargo check --workspace` reports a cycle (it must not), or
-  if E.F finds it must change an *existing* crate's API (it should not — E.F is standalone), that is a
-  **destructive-HALT** — stop, surface it.
+- **E.G adds a new edge, not a new crate — a dependency cycle would be a destructive-HALT.**
+  `rho → shared-gf2m` is the first edge into the standalone E.F crate. If `cargo check --workspace`
+  reports a cycle (it must not — `shared-gf2m` is a leaf depending only on `crypto-bigint`), or if E.G
+  finds it must change `shared-gf2m`'s frozen surface beyond filling the two `trace`/`solve_quadratic`
+  stubs (it should not), that is a **destructive-HALT** — stop, surface it.
 
-- **No binary curves in E.F (defocus guard).** The binary-curve group law (`y²+xy=x³+ax²+b`),
-  López–Dahab point coordinates, point decompression, and the order-6 Koblitz automorphism are all
-  **E.G** (a different sub-track, the consumer of C-F2m). A `@build` agent that implements a binary
-  *curve* in E.F is defocus — internal-continue only within the field-arithmetic scope. *(E.F's
-  job is to over-specify the trait — Frobenius/trace/half-trace — so E.G can build the curve without
-  amending it.)*
+- **No GHS/Weil descent in E.G (defocus guard).** The descent machinery (transferring ECDLP on a
+  binary curve to DLP on a hyperelliptic Jacobian over a subfield) is **E.H** (a different sub-track,
+  the consumer of C-BinaryCurve, Opus-flagged at E.H.1). A `@build` agent that implements descent in
+  E.G is defocus — internal-continue only within the binary-curve + baseline-rho + Koblitz scope.
+  *(E.G's job is to expose C-BinaryCurve so E.H can descend without amending it.)*
 
-- **No `GF(p^m)` odd-characteristic tower in E.F (defocus / scope clarity).** The prime-extension
-  field already exists (`rho/src/pairing/fpext.rs`, C-FpExt, for the odd-characteristic pairing case).
-  E.F is **characteristic 2 only**. A `@build` agent that generalises to `GF(p^m)` for odd `p` is
-  defocus.
+- **No Cantor's algorithm / hyperelliptic Jacobian in E.G (defocus / scope clarity).** The GF(2^m)
+  hyperelliptic Jacobian (Cantor's algorithm, divisor representation, the Jacobian group law) is
+  **E.I** (predecessor E.F, a sibling consumer of the field substrate). A `@build` agent that
+  implements the Jacobian in E.G is defocus.
 
-- **No MATHEMATICS.md chapter in E.F (defocus / scope clarity).** The GF(2^m) / binary-field textbook
+- **No MATHEMATICS.md chapter in E.G (defocus / scope clarity).** The binary-curve / Koblitz textbook
   content is **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing), not at the
-  E.F sub-track ◆. E.F.4 writes at most a PEDAGOGY code-tour delta.
+  E.G sub-track ◆. E.G.3 writes at most a PEDAGOGY code-tour delta.
 
-- **No oracle dependency for correctness (principle-3 / E.D/E.E-consistent).** GF(2^m) arithmetic is
-  exactly self-checking (field axioms + Frobenius law + naive↔optimized + basis-conversion
-  round-trip); a PARI `ffinit`/`fflog` cross-check is an **optional `#[ignore]` sidecar** (the
-  established `#[ignore = "PARI not installed; run manually when available"]` pattern). E.F introduces
-  no new live oracle.
+- **No oracle dependency for correctness (principle-3 / E.D/E.E/E.F-consistent).** Binary-curve
+  arithmetic is exactly self-checking (point-on-curve + group axioms + decompression round-trip +
+  Frobenius-orbit law + end-to-end `k·G=Q`); a PARI `ellinit`/`elllog` cross-check is an **optional
+  `#[ignore]` sidecar** (the established `#[ignore = "PARI not installed; run manually when
+  available"]` pattern). E.G introduces no new live oracle.
 
-- **Toy field sizes only (scope clarity).** E.F fixes small `m` (e.g. GF(2^4), GF(2^8), and
-  toy-shaped larger fields). The toy field sizes are a principle-4 boundary — the algorithms are
-  crypto-scale-correct; only the *parameters* are toy; the `pclmulqdq` omission is the
-  engineering-vs-mathematics annotation. Presenting any as crypto-scale is a documentation defect
-  (internal-continue → corrected).
+- **Toy curve sizes only (scope clarity).** E.G fixes small `m` and toy binary curves. The toy sizes
+  are a principle-4 boundary — the group law and the Koblitz speedup are crypto-scale-correct; only
+  the *parameters* are toy. Presenting any as crypto-scale (e.g. claiming the toy curve is a NIST
+  binary curve) is a documentation defect (internal-continue → corrected).
 
-- **Static-frame ROADMAP debt (reconcile at the E.F ◆, does NOT block E.F).** The ROADMAP Progress /
-  Remaining tables are reconciled only through E.C ◆ and are stale by two completed sub-tracks (E.D,
-  E.E both done). The E.F ◆ juncture should update them. Not an implementation concern.
+- **Static-frame ROADMAP debt (reconcile at the E.G ◆, does NOT block E.G).** The ROADMAP Progress
+  subsection is stale by two completed sub-tracks (E.D, E.E) and the Remaining projected sessions
+  table still lists the now-complete E.F. The E.G ◆ juncture should update them (Progress: Track E
+  Done → E.A–E.F; Remaining: strike E.F). Not an implementation concern.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.F, "*GF(2^m) field arithmetic … polynomial-basis and
-  normal-basis representations … categorically new field-arithmetic implementation … First session is
-  Opus-tier — substrate decision (basis choice, word layout, multiplication algorithm: comb,
-  Karatsuba, López–Dahab) has downstream consequences for E.G, E.H, E.I.*"; the design statement's
-  principles 1 + 3 + 4; the "On scale" mathematical-dimension framing — GF(2^m)'s extension degree m
-  is *mathematical-dimension scale*, orthogonal to operational scale) and this PLAN before any
-  session. **NOTE: the ROADMAP Progress / Remaining tables are stale by two sub-tracks (E.D, E.E
-  done); reconcile at the E.F ◆.**
-- Read the **templates to mirror**: `shared/field/src/lib.rs` (the `Fp<L>` trait — the *idiom* to
-  mirror as a sibling, NOT the trait to implement; note the const-generic-on-trait design note at
-  `lib.rs:7-18` and why nightly `generic_const_exprs` is avoided); `shared/field/src/naive.rs` (the
-  `FpNaive` schoolbook baseline + the `impl_fp_naive!` macro for per-`L` impls — the "correct, slow,
-  easy to audit" baseline E.F.1's naive comb multiplier mirrors); `shared/field/src/monty.rs`
-  (`FpMonty` — the optimized sibling E.F.4's Karatsuba/López–Dahab mirrors);
-  `shared/field/tests/sqrt_legendre_kat.rs` (the KAT idiom + `naive_monty_agree_p17` — the
-  cross-implementation agreement pattern E.F.4 mirrors); `shared/padic/Cargo.toml` (the leaf-crate
-  shape `shared/gf2m` mirrors — depends only on the arithmetic primitive, standalone).
-- **Register:** E.F is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New crate `shared/gf2m/` with `src/{lib,naive,inv,normal,convert,opt}.rs` and
-  `tests/gf2m_kat.rs`, plus the root `Cargo.toml` `members` entry.
-- **Tier routing:** **E.F.1 is Opus `@architect`** (the substrate-design session itself, per the
-  ROADMAP Opus flag — run on Opus, not `@build`) carrying an **inline `@architect` juncture** (page
-  `@plan-juncture`) ratifying C-F2m before E.F.2 consumes it. **E.F.2–E.F.4 are Sonnet `@build`.**
-  E.F.4 carries the **◆ `@architect` juncture** (page `@plan-juncture`) ratifying C-F2m/C-F2mOpt and
-  confirming binary-curve-readiness before the sub-track closes. juncture-tier (header) is **opus** —
-  held by lever 3 (the trait + word-layout bounds three downstream sub-tracks E.G/E.H/E.I); the
-  strong lever-5 exactly-checkable KATs (field axioms + Frobenius law + naive↔optimized) would license
-  `sonnet` in isolation, but the user judged the substrate design-error cost decisive, mirroring the
-  E.D/E.E calls.
-- **Invariants to preserve:** **`sub == add`, `neg == identity`** in char 2 (NOT ported from `Fp`).
-  **Every `mul` reduces by the irreducible** (the Frobenius fixed-field law `a^(2^m)=a` is the
-  guard). **The optimized multiplier is byte-equivalent to the naive baseline** (naive↔optimized KAT).
-  **`pclmulqdq` is gated, never the green path** (principle 3). **The trait over-specifies for the
-  curve consumer** (Frobenius/trace/half-trace declared so E.G need not amend C-F2m). **E.F is
-  standalone** — depends only on `crypto-bigint`, touches no existing crate. **No binary curves**
-  (E.G). **No `GF(p^m)` tower** (`fpext.rs`). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy
-  field sizes only; no new live oracle.
-- **PARI remains a dev-only `#[ignore]` oracle** — an optional `ffinit`/`fflog` GF(2^m) cross-check
-  follows the established `#[test] #[ignore = "PARI not installed; run manually when available"]`
-  pattern; never on the green path.
-- **The new crate (load-bearing for E.F).** E.F.1 adds `shared/gf2m` to the root `Cargo.toml`
-  `members`. `cargo check --workspace` must resolve with no cycle (`shared/gf2m` depends only on
-  `crypto-bigint`; nothing depends on it yet). **A new crate, not a new edge** — the
-  `rho → shared-gf2m` edge is E.G's.
-- Suggested first invocation: **`/run-plan docs/PLAN.md`** (autonomous cadence — user-confirmed). The
-  shard pattern (a categorically-new leaf field crate mirroring `shared/padic`) is structurally
-  proven, so the autonomous cadence is warranted; the **two `@architect` markers** (inline E.F.1, ◆
-  E.F.4) still page their junctures regardless — autonomous means no halt at E.F.2/E.F.3, *not* no
-  juncture at the two design-critical points. *(Tradeoff vs `halt-at-boundaries`: autonomous trades a
-  per-boundary human glance for velocity, accepting that the trait-design risk is concentrated at
-  E.F.1, which the inline `@architect` juncture already catches at its own commit. If E.F.1's juncture
-  surfaces a trait-shape concern, fall back to `halt-at-boundaries` for E.F.2–E.F.4.)*
+- Read `docs/ROADMAP.md` (Phase δ — E.G, "*Binary curves + Koblitz automorphism … The order-6 Koblitz
+  automorphism the existing rho crate explicitly omits. Re-run rho over GF(2^m) curves as baseline for
+  E.H benchmarks. Sonnet.*"; the design statement's principles 1 + 3 + 4; the "On scale"
+  mathematical-dimension framing — the binary curve's field GF(2^m) is *mathematical-dimension scale*,
+  orthogonal to operational scale) and this PLAN before any session. **NOTE: the ROADMAP Progress /
+  Remaining tables are stale by two sub-tracks (E.D, E.E done) and list the now-complete E.F as
+  remaining; reconcile at the E.G ◆.**
+- Read the **templates to mirror**: `rho/src/curve/mod.rs` (the `Curve` / `AffinePoint` /
+  `JacobianPoint` idiom — the *pattern* E.G's `BinaryCurve` mirrors as a parallel type, NOT the type
+  to reuse; the Jacobian group law breaks in char 2); `rho/src/ecdlp/{mod,walk,dp}.rs` (the rho-walk
+  idiom E.G.2's binary rho mirrors — `Fp<4>`-bound, parallel not reused); `rho/src/ecdlp/glv.rs` (the
+  order-3 prime-field endomorphism + orbit-collapse — the idiom E.G.3's Koblitz `τ` *parallels in
+  spirit* but shares no code with, `φ(x,y)=(βx,y)` scaling vs `τ(x,y)=(x²,y²)` Frobenius);
+  `shared/gf2m/src/{naive,opt,normal}.rs` (the three implementors whose `trace`/`solve_quadratic`
+  stubs E.G.1 fills); `rho/tests/ecdlp_kat.rs` (the `check_solver_on_curve` end-to-end `k·G=Q` idiom
+  E.G.2 mirrors).
+- **Register:** E.G is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New modules `rho/src/binary_curve/` and `rho/src/binary_ecdlp/`, the
+  `rho/Cargo.toml` edge, the three `shared/gf2m` stub-fills, and new KATs in `rho/tests/`.
+- **Tier routing:** **All three E.G sessions are Sonnet `@build`** — the ROADMAP Opus-flagged-sessions
+  table lists E.F.1/E.H.1/E.K.1 but NO E.G session (unlike E.F.1, which ran as an Opus `@architect`
+  session). E.G.3 carries the **◆ `@architect` juncture** (page `@plan-juncture`) ratifying
+  C-BinaryCurve/C-BinaryRho/C-Koblitz and confirming descent-readiness before the sub-track closes.
+  juncture-tier (header) is **opus** — held by lever 3 (C-BinaryCurve is descended-into by E.H, "the
+  most mathematically intricate single attack in the project"); the strong lever-5 exactly-checkable
+  KATs (point-on-curve + group axioms + `k·G=Q` + Frobenius-orbit) would license `sonnet` in
+  isolation, but the user judged the C-BinaryCurve → E.H design-error cost decisive, mirroring the
+  E.D/E.E/E.F substrate-adjacent-juncture calls.
+- **Invariants to preserve:** **`−P = (x, x+y)`** in char 2 (NOT `(x, −y)`). **The binary group law
+  uses the char-2 López–Dahab formula** (NOT Jacobian — the `2P==P+P` KAT is the guard). **`τ(x,y) =
+  (x², y²)` is the field Frobenius** (NOT a `glv.rs`-style scaling; the `τ^m=id` / `τ²−tτ+2=0` KATs
+  are the guard). **The Koblitz τ-orbit variant reads the E.G.2 baseline, never alters it** (Cat-C —
+  the E.H/E.W benchmark baseline must stay intact). **The walk-state invariant `W = a·G + b·Q`** holds
+  across the binary rho (the `k·G=Q` end-to-end KAT is the guard). **E.G consumes the frozen C-F2m
+  surface** — the only field change is filling the two stubs E.F.1 left for it (additive amend). **No
+  GHS/Weil descent** (E.H). **No Cantor / hyperelliptic Jacobian** (E.I). **No MATHEMATICS chapter**
+  (T.E at the Track-E ◆). Toy curve sizes only; no new live oracle.
+- **PARI remains a dev-only `#[ignore]` oracle** — an optional `ellinit`/`elllog` binary-curve
+  cross-check follows the established `#[test] #[ignore = "PARI not installed; run manually when
+  available"]` pattern; never on the green path.
+- **The new edge (load-bearing for E.G).** E.G.1 adds `rho → shared-gf2m` to `rho/Cargo.toml`. `cargo
+  check --workspace` must resolve with no cycle (`shared-gf2m` is a leaf depending only on
+  `crypto-bigint`; this is the first edge into it). **A new edge, not a new crate** — the binary curve
+  + binary rho live in the existing `rho` crate.
+- Suggested first invocation: **`/run-plan docs/PLAN.md`** (autonomous cadence — the shard pattern is
+  a parallel-type curve + baseline rho + orbit-collapse optimization, structurally proven by the
+  prime-field `rho::curve` / `rho::ecdlp` / `glv.rs` precedent it mirrors, so the autonomous cadence is
+  warranted). The **single `@architect` marker** (◆ E.G.3) still pages its juncture regardless —
+  autonomous means no halt at E.G.1/E.G.2, *not* no juncture at the ◆. *(Tradeoff vs
+  `halt-at-boundaries`: autonomous trades a per-boundary human glance for velocity, accepting that the
+  curve-design risk concentrated at E.G.1 fails loudly at the E.G.2 `k·G=Q` KAT — the loud signal that
+  substitutes for an inline E.G.1 juncture. If E.G.2's end-to-end KAT surfaces a curve-shape concern,
+  fall back to `halt-at-boundaries` for E.G.3.)*
