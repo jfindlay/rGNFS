@@ -535,7 +535,7 @@ Action-frame digest.
 |---|---------|--------|--------|-------|
 | E.G.1 | Binary-curve substrate + `trace`/`solve_quadratic` + `rho → shared-gf2m` edge | done | 178c0aa | C-BinaryCurve (+ C-F2m additive: `trace`/`solve_quadratic`) |
 | E.G.2 | Pollard rho over the binary curve + end-to-end ECDLP KAT | done | 7dc5178 | C-BinaryRho |
-| E.G.3 ◆ | Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close | pending | — | C-Koblitz |
+| E.G.3 ◆ | Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close | done | ee0696c | C-Koblitz |
 
 Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.G, with
 C-F2m's two stubs filled additively), the p-adic surface (C-Padic/C-Hensel/C-PadicLog), the SSA
@@ -548,7 +548,11 @@ C-BinaryRho), and **opens the binary-curve consumer cluster of Track E**.
 
 ## Action-frame digest
 
-*(none yet)*
+### E.G.3 ◆ — 2026-06-14
+Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); Frobenius trace `t` not a `BinaryCurve` struct field — recoverable from `n` but not explicitly surfaced; flagged as additive-amend candidate for E.H.1 to confirm-or-action before GHS/Weil descent starts.
+Affected: C-BinaryCurve (soft — `t` is recoverable; no break; additive amend if E.H.1 needs it explicit)
+Deferred: yes — E.H.1 (Opus-flagged) should confirm whether `t`/cofactor needs to be a `BinaryCurve` field or can be derived; if needed, an additive C-BinaryCurve amend is cheap and anticipated by the PLAN. ROADMAP Progress/Remaining table reconciliation also owed (housekeeping).
+Texture: All three E.G sessions ran clean (no discoveries, no fix-loop iterations); the `τ^m=id` and `τ²−tτ+2=0` KATs confirmed the Frobenius automorphism is correctly implemented as field-Frobenius-on-both-coordinates, not a glv.rs-style scaling.
 
 ---
 
