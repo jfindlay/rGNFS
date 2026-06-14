@@ -521,7 +521,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.I.1 | GF(2^m)[x] polynomial ring | pending | | C-GF2mPoly |
+| E.I.1 | GF(2^m)[x] polynomial ring | done | 84a1110 | C-GF2mPoly (frozen) |
 | E.I.2 | Hyperelliptic curve + Mumford divisor representation | pending | | C-HyperCurve |
 | E.I.3 ◆ | Cantor's algorithm: Jacobian group law + sub-track close | pending | | C-Jacobian |
 
