@@ -534,7 +534,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.G.1 | Binary-curve substrate + `trace`/`solve_quadratic` + `rho → shared-gf2m` edge | done | 178c0aa | C-BinaryCurve (+ C-F2m additive: `trace`/`solve_quadratic`) |
-| E.G.2 | Pollard rho over the binary curve + end-to-end ECDLP KAT | pending | — | C-BinaryRho |
+| E.G.2 | Pollard rho over the binary curve + end-to-end ECDLP KAT | done | 7dc5178 | C-BinaryRho |
 | E.G.3 ◆ | Koblitz τ-automorphism + τ-orbit rho speedup + sub-track close | pending | — | C-Koblitz |
 
 Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.G, with
