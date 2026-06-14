@@ -55,12 +55,14 @@ pub mod inv;
 pub mod naive;
 pub mod normal;
 pub mod opt;
+pub mod poly;
 
 pub use convert::{find_normal_element, frobenius_orbit, is_normal_element, normal_to_poly, poly_to_normal};
 pub use inv::{ext_euclid_inv, itoh_tsujii_inv};
 pub use naive::F2mNaive;
 pub use normal::F2mNormal;
 pub use opt::F2mOpt;
+pub use poly::Poly;
 
 use crypto_bigint::Uint;
 
