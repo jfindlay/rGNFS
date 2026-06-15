@@ -56,6 +56,7 @@ pub mod naive;
 pub mod normal;
 pub mod opt;
 pub mod poly;
+pub mod subfield;
 
 pub use convert::{find_normal_element, frobenius_orbit, is_normal_element, normal_to_poly, poly_to_normal};
 pub use inv::{ext_euclid_inv, itoh_tsujii_inv};
@@ -63,6 +64,10 @@ pub use naive::F2mNaive;
 pub use normal::F2mNormal;
 pub use opt::F2mOpt;
 pub use poly::Poly;
+pub use subfield::{
+    embed, frobenius_subfield_orbit, is_in_subfield, relative_norm, relative_trace, restrict,
+    subfield_basis,
+};
 
 use crypto_bigint::Uint;
 
