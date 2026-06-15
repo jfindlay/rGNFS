@@ -15,6 +15,8 @@
 //! - [`ecdlp`] — ECDLP rho (r-adding walk → DPs → negmap → batched inv → GLV).
 //! - [`pairing`] — `F_{p^k}` extension-field arithmetic and bilinear pairings (E.B).
 //! - [`ssa`] — Smart–Satoh–Araki p-adic attack on anomalous curves (E.E).
+//! - [`ghs`] — GHS Weil-descent attack on binary elliptic curves (E.H): Artin–Schreier
+//!   extension, Weil restriction of scalars, hyperelliptic curve extraction.
 
 pub mod binary_curve;
 pub mod binary_ecdlp;
@@ -22,6 +24,7 @@ pub mod curve;
 pub mod ecdlp;
 pub mod factor;
 pub mod field;
+pub mod ghs;
 pub mod hyperelliptic;
 pub mod pairing;
 pub mod ssa;

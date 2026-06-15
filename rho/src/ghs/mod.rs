@@ -1,0 +1,197 @@
+//! GHS (Gaudry–Hess–Smart) Weil-descent attack on binary elliptic curves.
+//!
+//! This module implements the algebraic machinery for the GHS construction, which
+//! transfers an ECDLP on a binary elliptic curve `E/GF(2^m)` to a DLP on the
+//! Jacobian of a hyperelliptic curve `C/GF(2^l)` over a subfield.
+//!
+//! # Structure
+//!
+//! - [`mod`] (this file) — `GhsError` enum, the toy binary-curve fixture
+//!   (m=6, l=2), and `check_ghs_params` (the `l | m` precondition verifier).
+//! - [`descent`] — the Artin–Schreier extension and Weil restriction of scalars
+//!   (`ArtinSchreierData`, `WeilRestriction`, `weil_restrict_poly`).
+//!
+//! # GHS construction overview
+//!
+//! The GHS attack proceeds in three stages:
+//! 1. **Descent algebra** (this module + `descent`): build the Artin–Schreier
+//!    extension `y² + y = f(x)` of the function field of `E/GF(2^m)`, then apply
+//!    the Weil restriction `Res_{GF(2^m)/GF(2^l)}` to lower the field from
+//!    `GF(2^m)` to `GF(2^l)` and raise the dimension from 1 to `m/l`.
+//! 2. **Curve extraction** (E.H.3): extract the hyperelliptic curve `C/GF(2^l)`
+//!    from the descent algebra.
+//! 3. **Transfer map** (E.H.4): carry a point on `E` to a divisor on `Jac(C)`.
+//!
+//! # Toy fixture
+//!
+//! The canonical GHS fixture: m=6, l=2, m/l=3 (odd — imaginary model).
+//! - Source field: GF(2^6) with irreducible `x⁶+x+1` (poly = 0x43).
+//! - Subfield: GF(2^2) with irreducible `x²+x+1` (poly = 0x7).
+//! - Binary curve `E/GF(2^6)`: `y²+xy = x³+x²+1` (a=1, b=1 over GF(2^6)).
+//!
+//! Odd `m/l` keeps the descent in the imaginary/ramified hyperelliptic model
+//! that the frozen C-HyperCurve handles.
+//!
+//! # Principle-4 boundary
+//!
+//! The fixture is toy-scale (m=6, l=2). The algorithms are crypto-scale-correct;
+//! only the parameters are small for auditability.
+
+pub mod descent;
+
+pub use descent::{ArtinSchreierData, GhsParams, WeilRestriction, weil_restrict_poly};
+
+use crypto_bigint::Uint;
+
+use crate::binary_curve::BinaryCurve;
+
+// ─── error type ──────────────────────────────────────────────────────────────
+
+/// Errors from the GHS descent construction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GhsError {
+    /// `l` does not divide `m` — `GF(2^l) ⊆ GF(2^m)` requires `l | m`.
+    ///
+    /// The Weil restriction `Res_{GF(2^m)/GF(2^l)}` is only defined when
+    /// `GF(2^l)` is a subfield of `GF(2^m)`, which holds iff `l | m`.
+    SubfieldDivisibility,
+    /// The curve does not admit a GHS descent.
+    ///
+    /// For example, the extension degree `m/l` is even for the imaginary model
+    /// (even `m/l` yields the real/split model, which the frozen C-HyperCurve
+    /// does not handle).
+    NonDescendable,
+    /// The point is the point at infinity.
+    ///
+    /// The GHS transfer map requires a finite affine point on `E`.
+    PointAtInfinity,
+}
+
+impl std::fmt::Display for GhsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GhsError::SubfieldDivisibility => {
+                write!(f, "l does not divide m: GF(2^l) ⊆ GF(2^m) requires l | m")
+            }
+            GhsError::NonDescendable => {
+                write!(f, "curve does not admit a GHS descent (e.g. even m/l for imaginary model)")
+            }
+            GhsError::PointAtInfinity => {
+                write!(f, "point is the point at infinity; GHS transfer requires a finite point")
+            }
+        }
+    }
+}
+
+impl std::error::Error for GhsError {}
+
+// ─── precondition verifier ────────────────────────────────────────────────────
+
+/// Check the GHS preconditions: `l | m` (subfield divisibility).
+///
+/// Returns `Ok(())` if `l` divides `m`, or `Err(GhsError::SubfieldDivisibility)`
+/// otherwise.  This is the entry-point guard for all GHS descent operations.
+///
+/// # Arguments
+///
+/// - `m` — the extension degree of the source field `GF(2^m)`.
+/// - `l` — the subfield degree `GF(2^l)`, with `l | m` required.
+pub fn check_ghs_params(m: usize, l: usize) -> Result<(), GhsError> {
+    if l == 0 || m % l != 0 {
+        return Err(GhsError::SubfieldDivisibility);
+    }
+    Ok(())
+}
+
+// ─── toy fixture ─────────────────────────────────────────────────────────────
+
+/// The GF(2^6) irreducible polynomial: `x⁶+x+1` = 0x43.
+///
+/// This is the canonical GHS fixture field. The polynomial `x⁶+x+1` is
+/// irreducible over GF(2) (verified: no roots in GF(2), no degree-2 or
+/// degree-3 factor).
+pub const GHS_POLY6: u64 = 0x43; // x^6 + x + 1
+
+/// The GF(2^2) irreducible polynomial: `x²+x+1` = 0x7.
+///
+/// The subfield for the GHS fixture. `x²+x+1` is the unique irreducible
+/// polynomial of degree 2 over GF(2).
+pub const GHS_POLY2: u64 = 0x7; // x^2 + x + 1
+
+/// Return the toy GHS binary curve fixture: `y²+xy = x³+x²+1` over GF(2^6).
+///
+/// Parameters:
+/// - `poly = 0x43` (GF(2^6) with `x⁶+x+1`)
+/// - `a = 1`, `b = 1` (curve coefficients)
+/// - `n = 1` (placeholder group order — not used in the descent algebra)
+/// - `gx = 0`, `gy = 1` (placeholder base point)
+///
+/// The curve equation `y²+xy = x³+x²+1` over GF(2^6) is a non-supersingular
+/// binary elliptic curve (b = 1 ≠ 0). The composite extension degree m=6 with
+/// subfield l=2 (m/l=3, odd) makes this curve amenable to the GHS descent in
+/// the imaginary hyperelliptic model.
+///
+/// # Principle-4 annotation
+///
+/// The group order `n` and base point `(gx, gy)` are placeholders — the descent
+/// algebra (E.H.2) does not require them. The transfer map (E.H.4) will supply
+/// a concrete point. The curve parameters `a` and `b` are the load-bearing data.
+pub fn ghs_toy_curve() -> BinaryCurve {
+    BinaryCurve {
+        poly: Uint::<1>::from(GHS_POLY6),
+        a: Uint::<1>::ONE,
+        b: Uint::<1>::ONE,
+        // Placeholder: group order not needed for the descent algebra.
+        n: Uint::<1>::ONE,
+        // Placeholder base point: (0, 1) satisfies y²+xy = x³+x²+1 at x=0:
+        //   LHS: 1²+0·1 = 1; RHS: 0+0+1 = 1 ✓
+        gx: Uint::<1>::ZERO,
+        gy: Uint::<1>::ONE,
+    }
+}
+
+// ─── unit tests ───────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared_gf2m::F2mNaive;
+
+    #[test]
+    fn check_ghs_params_ok() {
+        // l=2 divides m=6: valid GHS parameters.
+        assert_eq!(check_ghs_params(6, 2), Ok(()));
+        // l=3 divides m=6: also valid.
+        assert_eq!(check_ghs_params(6, 3), Ok(()));
+        // l=1 divides m=6: trivial subfield.
+        assert_eq!(check_ghs_params(6, 1), Ok(()));
+        // l=6 divides m=6: trivial (same field).
+        assert_eq!(check_ghs_params(6, 6), Ok(()));
+    }
+
+    #[test]
+    fn check_ghs_params_err_subdivisibility() {
+        // l=4 does not divide m=6: invalid.
+        assert_eq!(check_ghs_params(6, 4), Err(GhsError::SubfieldDivisibility));
+        // l=5 does not divide m=6: invalid.
+        assert_eq!(check_ghs_params(6, 5), Err(GhsError::SubfieldDivisibility));
+        // l=0: invalid (zero subfield degree).
+        assert_eq!(check_ghs_params(6, 0), Err(GhsError::SubfieldDivisibility));
+    }
+
+    #[test]
+    fn toy_curve_base_point_on_curve() {
+        // The placeholder base point (0, 1) must satisfy y²+xy = x³+x²+1.
+        let c = ghs_toy_curve();
+        let g = c.generator::<F2mNaive<1>>();
+        assert!(c.is_on_curve(&g), "toy GHS base point must be on curve");
+    }
+
+    #[test]
+    fn ghs_error_display() {
+        // Smoke-test Display impls (no panic).
+        let _ = format!("{}", GhsError::SubfieldDivisibility);
+        let _ = format!("{}", GhsError::NonDescendable);
+        let _ = format!("{}", GhsError::PointAtInfinity);
+    }
+}
