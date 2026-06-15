@@ -10,6 +10,8 @@
 //!   (m=6, l=2), and `check_ghs_params` (the `l | m` precondition verifier).
 //! - [`descent`] — the Artin–Schreier extension and Weil restriction of scalars
 //!   (`ArtinSchreierData`, `WeilRestriction`, `weil_restrict_poly`).
+//! - [`curve`] — the GHS hyperelliptic-curve extraction `C/GF(2^l)` from the
+//!   descent algebra (`extract_ghs_curve`, `ghs_genus`).
 //!
 //! # GHS construction overview
 //!
@@ -18,8 +20,9 @@
 //!    extension `y² + y = f(x)` of the function field of `E/GF(2^m)`, then apply
 //!    the Weil restriction `Res_{GF(2^m)/GF(2^l)}` to lower the field from
 //!    `GF(2^m)` to `GF(2^l)` and raise the dimension from 1 to `m/l`.
-//! 2. **Curve extraction** (E.H.3): extract the hyperelliptic curve `C/GF(2^l)`
-//!    from the descent algebra.
+//! 2. **Curve extraction** (`curve`): extract the hyperelliptic curve `C/GF(2^l)`
+//!    from the descent algebra via [`extract_ghs_curve`].  The genus is
+//!    `g = (m/l − 1)/2` for odd `m/l` (imaginary model).
 //! 3. **Transfer map** (E.H.4): carry a point on `E` to a divisor on `Jac(C)`.
 //!
 //! # Toy fixture
@@ -37,8 +40,10 @@
 //! The fixture is toy-scale (m=6, l=2). The algorithms are crypto-scale-correct;
 //! only the parameters are small for auditability.
 
+pub mod curve;
 pub mod descent;
 
+pub use curve::{extract_ghs_curve, ghs_genus};
 pub use descent::{ArtinSchreierData, GhsParams, WeilRestriction, weil_restrict_poly};
 
 use crypto_bigint::Uint;

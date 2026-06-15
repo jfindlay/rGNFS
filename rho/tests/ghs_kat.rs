@@ -1,6 +1,33 @@
-//! Known-answer tests for the GHS descent algebra (E.H.2).
+//! Known-answer tests for the GHS descent algebra (E.H.2) and curve extraction (E.H.3).
 //!
 //! # Coverage
+//!
+//! ## E.H.3 — GHS hyperelliptic-curve extraction `C/GF(2^l)` (imaginary model)
+//!
+//! ### Genus formula
+//! - `ghs_genus(6, 2) == 1` — toy fixture (m=6, l=2, n=3, g=(3-1)/2=1).
+//! - `ghs_genus(10, 2) == 2` — crypto-scale n=5 gives genus 2.
+//!
+//! ### Extracted curve validity
+//! - `extract_ghs_curve(&params)` succeeds for the toy fixture.
+//! - The extracted curve passes `is_valid` for the zero divisor.
+//! - The extracted curve's `poly` is the GF(2^2) irreducible.
+//!
+//! ### Imaginary model
+//! - `deg f = 2g+1 = 3` for genus 1.
+//! - `deg H ≤ g = 1`.
+//! - `F(X)` is monic.
+//!
+//! ### Coefficients in GF(2^l)
+//! - All coefficients of `F(X)` are in GF(2^2) (is_in_subfield check).
+//! - `H(X) = X`: h_coeffs = [0, 1], all in GF(2^2).
+//!
+//! ### Genus matches extension degree
+//! - `curve.genus() == ghs_genus(6, 2)` — the extracted curve's genus matches
+//!   the formula.
+//!
+//! ### Even m/l rejection
+//! - `extract_ghs_curve` returns `Err(NonDescendable)` for even `m/l`.
 //!
 //! ## E.H.2 — Artin–Schreier / function-field Weil-restriction algebra
 //!
@@ -45,6 +72,7 @@ use crypto_bigint::Uint;
 use rho::ghs::{
     GhsError, GhsParams, check_ghs_params, ghs_toy_curve, GHS_POLY2, GHS_POLY6,
     ArtinSchreierData, WeilRestriction, weil_restrict_poly,
+    extract_ghs_curve, ghs_genus,
 };
 use shared_gf2m::{F2m, F2mNaive, Poly, is_in_subfield};
 
@@ -607,4 +635,276 @@ fn relative_norm_lands_in_subfield() {
             "N_{{6/2}}({v:#x}) must be in GF(2^2)"
         );
     }
+}
+
+// ── E.H.3 — GHS hyperelliptic-curve extraction KATs ──────────────────────────
+
+// ── Genus formula KATs ───────────────────────────────────────────────────────
+
+/// `ghs_genus(6, 2) == 1`: toy fixture (m=6, l=2, n=3, g=(3-1)/2=1).
+///
+/// The toy fixture gives genus 1 — a genus-1 hyperelliptic curve (an elliptic
+/// curve in hyperelliptic form).  This is NOT the crypto-scale case (genus ≥ 2
+/// is needed for the GHS attack to be effective), but the construction is
+/// mathematically correct.
+///
+/// # Principle-4 annotation
+///
+/// Toy parameters (m=6, l=2) give genus 1.  Crypto-scale GHS uses n ≥ 5
+/// (genus ≥ 2).  The formula `g = (n−1)/2` is crypto-scale-correct.
+#[test]
+fn ghs_genus_toy_fixture_is_1() {
+    assert_eq!(
+        ghs_genus(6, 2),
+        1,
+        "toy fixture (m=6, l=2, n=3): genus must be (3-1)/2 = 1"
+    );
+}
+
+/// `ghs_genus(10, 2) == 2`: crypto-scale n=5 gives genus 2.
+///
+/// For m=10, l=2, n=5 (odd), the genus is (5-1)/2 = 2.  This is the smallest
+/// crypto-scale GHS case (genus-2 hyperelliptic curve).
+#[test]
+fn ghs_genus_n5_is_2() {
+    assert_eq!(
+        ghs_genus(10, 2),
+        2,
+        "m=10, l=2, n=5: genus must be (5-1)/2 = 2"
+    );
+}
+
+/// `ghs_genus(14, 2) == 3`: n=7 gives genus 3.
+#[test]
+fn ghs_genus_n7_is_3() {
+    assert_eq!(
+        ghs_genus(14, 2),
+        3,
+        "m=14, l=2, n=7: genus must be (7-1)/2 = 3"
+    );
+}
+
+// ── Extracted curve validity KATs ─────────────────────────────────────────────
+
+/// `extract_ghs_curve` succeeds for the toy fixture (m=6, l=2).
+///
+/// The toy fixture has odd m/l=3 (imaginary model) and curve coefficients
+/// a=1, b=1 in GF(2^2) ⊂ GF(2^6).
+#[test]
+fn extract_ghs_curve_succeeds_for_toy_fixture() {
+    let params = toy_params();
+    let result = extract_ghs_curve(params);
+    assert!(
+        result.is_ok(),
+        "extract_ghs_curve must succeed for toy fixture (m=6, l=2)"
+    );
+}
+
+/// The extracted curve's `poly` is the GF(2^2) irreducible `x²+x+1 = 0x7`.
+///
+/// The descended curve `C/GF(2^l)` is defined over GF(2^2), so its field
+/// polynomial must be the GF(2^2) irreducible.
+#[test]
+fn extracted_curve_poly_is_gf2_2() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    assert_eq!(
+        curve.poly,
+        poly2(),
+        "extracted curve poly must be the GF(2^2) irreducible (0x7)"
+    );
+}
+
+/// The extracted curve's genus matches `ghs_genus(6, 2) = 1`.
+///
+/// The `HyperellipticCurve::genus()` method returns `⌊(deg f − 1)/2⌋`.  For
+/// the imaginary model with `deg f = 3`, this gives genus 1.  This must match
+/// the formula `ghs_genus(6, 2) = (3-1)/2 = 1`.
+#[test]
+fn extracted_curve_genus_matches_formula() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let expected_genus = ghs_genus(6, 2);
+    assert_eq!(
+        curve.genus(),
+        expected_genus,
+        "extracted curve genus must match ghs_genus(6, 2) = {expected_genus}"
+    );
+}
+
+// ── Imaginary model KATs ──────────────────────────────────────────────────────
+
+/// The extracted curve is in the imaginary model: `deg f = 2g+1`.
+///
+/// The imaginary (ramified) hyperelliptic model requires `deg f = 2g+1` (odd).
+/// For genus 1, `deg f = 3`.
+#[test]
+fn extracted_curve_imaginary_model_deg_f_eq_2g_plus_1() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let g = curve.genus();
+    let deg_f = curve.f_coeffs.len() - 1;
+    assert_eq!(
+        deg_f,
+        2 * g + 1,
+        "imaginary model: deg f = {deg_f} must equal 2g+1 = {} (g = {g})",
+        2 * g + 1
+    );
+}
+
+/// The extracted curve's `H(X)` has degree ≤ genus.
+///
+/// The imaginary model requires `deg H ≤ g`.  For genus 1, `H(X) = X` has
+/// degree 1 ≤ g = 1.
+#[test]
+fn extracted_curve_h_degree_le_genus() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let g = curve.genus();
+    let h_poly = curve.h::<F2mNaive<1>>();
+    let deg_h = h_poly.degree().unwrap_or(0);
+    assert!(
+        deg_h <= g,
+        "imaginary model: deg H = {deg_h} must be ≤ genus g = {g}"
+    );
+}
+
+/// The extracted curve's `F(X)` is monic.
+///
+/// The imaginary model requires the leading coefficient of `F` to be 1 (monic).
+/// For `F(X) = X³ + X² + 1`, the leading coefficient is 1.
+#[test]
+fn extracted_curve_f_is_monic() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let f_poly = curve.f::<F2mNaive<1>>();
+    let lc = f_poly.leading_coeff().expect("F must be non-zero");
+    assert!(lc.is_one(), "F(X) must be monic (leading coefficient = 1)");
+}
+
+// ── Coefficients in GF(2^l) KATs ─────────────────────────────────────────────
+
+/// All coefficients of `F(X)` are in GF(2^2).
+///
+/// The descended curve `C/GF(2^l)` must have all coefficients of `F(X)` in
+/// GF(2^l) = GF(2^2).  We verify this using `is_in_subfield`.
+///
+/// For the toy fixture, `F(X) = X³ + X² + 1` with coefficients 1, 0, 1, 1 —
+/// all in GF(2) ⊂ GF(2^2).
+#[test]
+fn extracted_curve_f_coeffs_in_gf2_2() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+
+    // The curve's poly is GF(2^2); we check coefficients are in GF(2^2)
+    // by embedding them into GF(2^6) and using is_in_subfield.
+    // Since the coefficients are raw bit-vectors in GF(2^2), we embed them
+    // into GF(2^6) by treating them as GF(2^6) elements (they are subfield
+    // elements, so the bit-vector is the same).
+    for (i, &coeff_bits) in curve.f_coeffs.iter().enumerate() {
+        let coeff_in_gf6 = F2mNaive::<1>::from_uint(coeff_bits, &p6);
+        assert!(
+            is_in_subfield(&coeff_in_gf6, 2, &p6),
+            "F(X) coefficient at degree {i} (bits = {coeff_bits:#x}) must be in GF(2^2)"
+        );
+    }
+}
+
+/// All coefficients of `H(X)` are in GF(2^2).
+///
+/// `H(X) = X` has coefficients 0 and 1, both in GF(2) ⊂ GF(2^2).
+#[test]
+fn extracted_curve_h_coeffs_in_gf2_2() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+
+    for (i, &coeff_bits) in curve.h_coeffs.iter().enumerate() {
+        let coeff_in_gf6 = F2mNaive::<1>::from_uint(coeff_bits, &p6);
+        assert!(
+            is_in_subfield(&coeff_in_gf6, 2, &p6),
+            "H(X) coefficient at degree {i} (bits = {coeff_bits:#x}) must be in GF(2^2)"
+        );
+    }
+}
+
+// ── Known-answer coefficient KATs ─────────────────────────────────────────────
+
+/// `H(X) = X`: the h polynomial is exactly `X` over GF(2^2).
+///
+/// The GHS construction with `y²+xy = x³+ax²+b` gives `H(X) = X` (from the
+/// `xy` term in the Weierstrass equation).  This is the standard choice for the
+/// imaginary model.
+#[test]
+fn extracted_curve_h_is_x() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let h_poly = curve.h::<F2mNaive<1>>();
+
+    assert_eq!(h_poly.degree(), Some(1), "H(X) must have degree 1 (H = X)");
+    assert!(h_poly.coeff(0).is_zero(), "H(X) constant term must be 0");
+    assert!(h_poly.coeff(1).is_one(), "H(X) coefficient of X must be 1");
+}
+
+/// `F(X) = X³ + X² + 1`: the f polynomial matches the Artin–Schreier polynomial.
+///
+/// For the toy curve `y²+xy = x³+x²+1` (a=1, b=1), the Artin–Schreier polynomial
+/// is `f_AS(x) = x³+x²+1`.  Since a=1, b=1 ∈ GF(2^2), the descended curve's
+/// `F(X) = X³+X²+1` over GF(2^2).
+#[test]
+fn extracted_curve_f_is_x3_plus_x2_plus_1() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let f_poly = curve.f::<F2mNaive<1>>();
+
+    assert_eq!(f_poly.degree(), Some(3), "F(X) must have degree 3");
+    // F(X) = X³ + X² + 1: coefficients [1, 0, 1, 1] (index = degree).
+    assert!(f_poly.coeff(0).is_one(), "F(X) constant term must be 1 (= b)");
+    assert!(f_poly.coeff(1).is_zero(), "F(X) coefficient of X must be 0");
+    assert!(f_poly.coeff(2).is_one(), "F(X) coefficient of X² must be 1 (= a)");
+    assert!(f_poly.coeff(3).is_one(), "F(X) coefficient of X³ must be 1 (monic)");
+}
+
+// ── Curve validity KATs ───────────────────────────────────────────────────────
+
+/// The zero divisor `[1, 0]` is valid on the extracted curve.
+///
+/// The zero divisor is the group identity of the Jacobian.  It must satisfy the
+/// Mumford invariant on the extracted curve.
+#[test]
+fn extracted_curve_zero_divisor_is_valid() {
+    let params = toy_params();
+    let curve = extract_ghs_curve(params).expect("extraction must succeed");
+    let zero_div = curve.zero_divisor::<F2mNaive<1>>();
+    assert!(
+        curve.is_valid(&zero_div),
+        "zero divisor [1, 0] must be valid on the extracted GHS curve"
+    );
+}
+
+/// Even `m/l` is rejected with `NonDescendable`.
+///
+/// The imaginary model requires odd `m/l`.  Even `m/l` yields the real/split
+/// model, which the frozen C-HyperCurve does not handle.
+///
+/// We test with m=4, l=2, n=2 (even).
+#[test]
+fn extract_ghs_curve_rejects_even_extension_degree() {
+    use rho::binary_curve::BinaryCurve;
+    let poly4 = Uint::<1>::from(0x13u64); // x⁴+x+1
+    let curve = BinaryCurve {
+        poly: poly4,
+        a: Uint::<1>::ONE,
+        b: Uint::<1>::ONE,
+        n: Uint::<1>::ONE,
+        gx: Uint::<1>::ZERO,
+        gy: Uint::<1>::ONE,
+    };
+    let params = GhsParams::new(4, 2, curve, poly2()).expect("4/2 is valid");
+    let result = extract_ghs_curve(params);
+    assert!(
+        matches!(result, Err(GhsError::NonDescendable)),
+        "even m/l = 2 must be rejected with NonDescendable"
+    );
 }
