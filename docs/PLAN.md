@@ -643,7 +643,7 @@ names contracts this session locked. The E.H.5 ◆ `@architect` confirmation is 
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.H.1 | Subfield substrate GF(2^l) ⊂ GF(2^m) | pending | — | C-Subfield |
+| E.H.1 | Subfield substrate GF(2^l) ⊂ GF(2^m) | done | d37e2e9 | C-Subfield (frozen) |
 | E.H.2 | Artin–Schreier / function-field Weil-restriction algebra | pending | — | C-DescentAlgebra |
 | E.H.3 | GHS hyperelliptic-curve extraction C/GF(2^l) | pending | — | C-GHSCurve |
 | E.H.4 | Transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) | pending | — | C-DescentMap |
