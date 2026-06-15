@@ -12,10 +12,12 @@
 //!   (`ArtinSchreierData`, `WeilRestriction`, `weil_restrict_poly`).
 //! - [`curve`] — the GHS hyperelliptic-curve extraction `C/GF(2^l)` from the
 //!   descent algebra (`extract_ghs_curve`, `ghs_genus`).
+//! - [`reduce`] — the GHS reduction `(E, g, h) → (C, D_g, D_h)` and the
+//!   logarithm-preservation verifier (`ghs_descend`, `GhsDescentResult`).
 //!
 //! # GHS construction overview
 //!
-//! The GHS attack proceeds in three stages:
+//! The GHS attack proceeds in four stages:
 //! 1. **Descent algebra** (this module + `descent`): build the Artin–Schreier
 //!    extension `y² + y = f(x)` of the function field of `E/GF(2^m)`, then apply
 //!    the Weil restriction `Res_{GF(2^m)/GF(2^l)}` to lower the field from
@@ -24,6 +26,8 @@
 //!    from the descent algebra via [`extract_ghs_curve`].  The genus is
 //!    `g = (m/l − 1)/2` for odd `m/l` (imaginary model).
 //! 3. **Transfer map** (E.H.4): carry a point on `E` to a divisor on `Jac(C)`.
+//! 4. **Reduction** (`reduce`): combine steps 2–3 into the top-level reduction
+//!    `(E, g, h) → (C, D_g, D_h)` with logarithm-preservation guarantee.
 //!
 //! # Toy fixture
 //!
@@ -42,10 +46,12 @@
 
 pub mod curve;
 pub mod descent;
+pub mod reduce;
 pub mod transfer;
 
 pub use curve::{extract_ghs_curve, ghs_genus};
 pub use descent::{ArtinSchreierData, GhsParams, WeilRestriction, weil_restrict_poly};
+pub use reduce::{GhsDescentResult, ghs_descend, verify_log_preservation};
 pub use transfer::{transfer_point, verify_homomorphism};
 
 use crypto_bigint::Uint;
