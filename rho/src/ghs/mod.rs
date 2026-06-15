@@ -42,9 +42,11 @@
 
 pub mod curve;
 pub mod descent;
+pub mod transfer;
 
 pub use curve::{extract_ghs_curve, ghs_genus};
 pub use descent::{ArtinSchreierData, GhsParams, WeilRestriction, weil_restrict_poly};
+pub use transfer::{transfer_point, verify_homomorphism};
 
 use crypto_bigint::Uint;
 

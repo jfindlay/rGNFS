@@ -1,6 +1,25 @@
-//! Known-answer tests for the GHS descent algebra (E.H.2) and curve extraction (E.H.3).
+//! Known-answer tests for the GHS descent algebra (E.H.2), curve extraction (E.H.3),
+//! and transfer map (E.H.4).
 //!
 //! # Coverage
+//!
+//! ## E.H.4 — GHS transfer map `E(GF(2^m)) → Jac(C)(GF(2^l))`
+//!
+//! ### Identity maps to identity
+//! - `transfer_point(∞, ...) == [1, 0]` (zero divisor).
+//!
+//! ### Transferred divisors are valid
+//! - `transfer_point(G, ...)` returns a valid reduced divisor.
+//! - `transfer_point(P, ...)` returns a valid reduced divisor.
+//!
+//! ### Transfer of base point
+//! - `transfer_point(G, ...)` succeeds and gives a non-zero divisor.
+//! - Known-answer: `D_G = [X, 1]` (u = X, v = 1).
+//!
+//! ### Homomorphism property (decisive correctness guard)
+//! - `compose(D_G, D_P) == D_{G+P}` — the transfer is a group homomorphism.
+//! - Known-answer: `D_G = [X, 1]`, `D_P = [X+1, 3]`, `D_{G+P} = [X+1, 2]`.
+//! - `D_G + D_G (Cantor) == D_{2G}` — doubling case.
 //!
 //! ## E.H.3 — GHS hyperelliptic-curve extraction `C/GF(2^l)` (imaginary model)
 //!
@@ -69,11 +88,14 @@
 //! (principle-4 boundary).
 
 use crypto_bigint::Uint;
+use rho::binary_curve::BinaryAffinePoint;
 use rho::ghs::{
     GhsError, GhsParams, check_ghs_params, ghs_toy_curve, GHS_POLY2, GHS_POLY6,
     ArtinSchreierData, WeilRestriction, weil_restrict_poly,
     extract_ghs_curve, ghs_genus,
+    transfer_point, verify_homomorphism,
 };
+use rho::hyperelliptic::cantor;
 use shared_gf2m::{F2m, F2mNaive, Poly, is_in_subfield};
 
 // ── Field and fixture helpers ─────────────────────────────────────────────────
@@ -907,4 +929,416 @@ fn extract_ghs_curve_rejects_even_extension_degree() {
         matches!(result, Err(GhsError::NonDescendable)),
         "even m/l = 2 must be rejected with NonDescendable"
     );
+}
+
+// ── E.H.4 — GHS transfer map KATs ────────────────────────────────────────────
+
+// ── Identity maps to identity ─────────────────────────────────────────────────
+
+/// `transfer_point(∞, ...) == [1, 0]` — the point at infinity maps to the zero divisor.
+///
+/// The GHS transfer map is a group homomorphism, so the identity must map to the
+/// identity.  The point at infinity `∞ ∈ E(GF(2^m))` is the group identity of `E`,
+/// and `[1, 0]` is the group identity of `Jac(C)`.
+#[test]
+fn transfer_infinity_is_zero_divisor() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let inf = BinaryAffinePoint::<F2mNaive<1>>::Infinity;
+    let d = transfer_point(&inf, &curve_c, &params).expect("transfer must succeed");
+    assert!(
+        d.is_zero(),
+        "transfer(∞) must be the zero divisor [1, 0]"
+    );
+}
+
+/// The zero divisor returned for `∞` is valid on the extracted curve.
+///
+/// The zero divisor `[1, 0]` must satisfy the Mumford invariant on `C`.
+#[test]
+fn transfer_infinity_result_is_valid() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let inf = BinaryAffinePoint::<F2mNaive<1>>::Infinity;
+    let d = transfer_point(&inf, &curve_c, &params).expect("transfer must succeed");
+    assert!(
+        curve_c.is_valid(&d),
+        "transfer(∞) = [1, 0] must be a valid divisor on C"
+    );
+}
+
+// ── Transfer of base point ────────────────────────────────────────────────────
+
+/// `transfer_point(G, ...)` succeeds and gives a non-zero divisor.
+///
+/// The base point `G = (0, 1)` on `E` must transfer to a non-trivial divisor on
+/// `Jac(C)`.  A zero result would mean `G` is in the kernel of the transfer map,
+/// which would break the homomorphism property for the DLP.
+#[test]
+fn transfer_base_point_is_nonzero() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+    let g = curve_e.generator::<F2mNaive<1>>();
+    let d = transfer_point(&g, &curve_c, &params).expect("transfer must succeed");
+    assert!(
+        !d.is_zero(),
+        "transfer(G) must be a non-zero divisor (G is not in the kernel)"
+    );
+}
+
+/// `transfer_point(G, ...)` returns a valid reduced divisor.
+///
+/// The transferred divisor must satisfy the Mumford invariant: `u` monic,
+/// `deg v < deg u ≤ g`, and `u | (f − v·h − v²)`.
+#[test]
+fn transfer_base_point_is_valid_divisor() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+    let g = curve_e.generator::<F2mNaive<1>>();
+    let d = transfer_point(&g, &curve_c, &params).expect("transfer must succeed");
+    assert!(
+        curve_c.is_valid(&d),
+        "transfer(G) must be a valid reduced Mumford divisor"
+    );
+}
+
+/// Known-answer: `D_G = [X, 1]` — the base point `G = (0, 1)` transfers to `[X, 1]`.
+///
+/// For `G = (0, 1)`:
+/// - `X_G = Tr_{6/2}(0) = 0` — the trace of 0 is 0.
+/// - `Y_G = 1` — from `Y² = F(0) = 1` over GF(2^2), so `Y = 1`.
+/// - Divisor: `u(X) = X + 0 = X`, `v(X) = 1`.
+///
+/// In GF(2^2) with poly `x²+x+1 = 0x7`:
+/// - `u` has coefficients `[0, 1]` (constant 0, X-coefficient 1).
+/// - `v` has coefficients `[1]` (constant 1).
+#[test]
+fn transfer_base_point_known_answer() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+    let g = curve_e.generator::<F2mNaive<1>>();
+    let d = transfer_point(&g, &curve_c, &params).expect("transfer must succeed");
+
+    // u(X) = X: degree 1, constant term 0, X-coefficient 1.
+    assert_eq!(
+        d.u.degree(),
+        Some(1),
+        "D_G: u must have degree 1"
+    );
+    assert!(
+        d.u.coeff(0).is_zero(),
+        "D_G: u constant term must be 0 (X_G = Tr(0) = 0)"
+    );
+    assert!(
+        d.u.coeff(1).is_one(),
+        "D_G: u X-coefficient must be 1 (monic)"
+    );
+
+    // v(X) = 1: constant polynomial.
+    assert_eq!(
+        d.v.degree(),
+        Some(0),
+        "D_G: v must have degree 0 (constant)"
+    );
+    assert!(
+        d.v.coeff(0).is_one(),
+        "D_G: v constant term must be 1 (Y_G = 1)"
+    );
+}
+
+// ── Transfer of a sample point ────────────────────────────────────────────────
+
+/// `transfer_point(P, ...)` returns a valid reduced divisor for `P = (0x01, 0x3a)`.
+///
+/// `P = (0x01, 0x3a)` is a non-base affine point on `E/GF(2^6)`.  Its transfer
+/// must be a valid reduced Mumford divisor on `Jac(C)`.
+#[test]
+fn transfer_sample_point_is_valid_divisor() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    // P = (0x01, 0x3a) is on E (verified: y²+xy = x³+x²+1 at x=1, y=0x3a).
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+    let d = transfer_point(&p, &curve_c, &params).expect("transfer must succeed");
+    assert!(
+        curve_c.is_valid(&d),
+        "transfer(P) must be a valid reduced Mumford divisor"
+    );
+}
+
+/// Known-answer: `D_P = [X+1, 3]` for `P = (0x01, 0x3a)`.
+///
+/// For `P = (0x01, 0x3a)` over GF(2^6) with poly 0x43, the conorm map computes:
+/// - `φ_2(P) = (0x01^4, 0x3a^4) = (0x01, 0x3b)` (Frobenius conjugate).
+/// - `φ_2²(P) = (0x01^16, 0x3a^16) = (0x01, 0x3a)` (second conjugate).
+/// - `R = P + φ_2(P) + φ_2²(P)` in the group law of E.
+///
+/// The known-answer `D_P = [X+1, 3]` means:
+/// - `u(X) = X + 1`: constant term 1, X-coefficient 1.
+/// - `v(X) = 3 = β+1` in GF(2^2).
+#[test]
+fn transfer_sample_point_known_answer() {
+    let p6 = poly6();
+    let p2 = poly2();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+    let d = transfer_point(&p, &curve_c, &params).expect("transfer must succeed");
+
+    // u(X) = X + 1: degree 1, constant term 1, X-coefficient 1.
+    assert_eq!(d.u.degree(), Some(1), "D_P: u must have degree 1");
+    assert!(d.u.coeff(1).is_one(), "D_P: u X-coefficient must be 1 (monic)");
+    assert!(
+        d.u.coeff(0).is_one(),
+        "D_P: u constant term must be 1 (x_R = 1 from conorm)"
+    );
+
+    // v(X) = 3 = β+1 in GF(2^2).
+    let beta_plus_1 = F2mNaive::<1>::from_u64(3, &p2);
+    assert_eq!(
+        d.v.coeff(0),
+        beta_plus_1,
+        "D_P: v constant term must be β+1 = 3 in GF(2^2)"
+    );
+}
+
+// ── Homomorphism property (decisive correctness guard) ────────────────────────
+
+/// `D_{G+P} = D_G + D_P` via Cantor compose — the homomorphism property.
+///
+/// This is the decisive correctness guard for the GHS transfer map.  The transfer
+/// is a group homomorphism iff `D_{P+Q} = D_P + D_Q` for all `P, Q ∈ E(GF(2^m))`.
+///
+/// Known-answer:
+/// - `D_G = [X, 1]`, `D_P = [X+1, 3]`.
+/// - `G + P = (0x01, 0x3b)` on `E`.
+/// - `D_{G+P} = [X+1, 2]`.
+/// - `D_G + D_P (Cantor) = [X+1, 2]` ✓.
+#[test]
+fn transfer_homomorphism_g_plus_p() {
+    let p6 = poly6();
+    let p2 = poly2();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+
+    // G = (0, 1) — the base point.
+    let g = curve_e.generator::<F2mNaive<1>>();
+    // P = (0x01, 0x3a) — a sample point on E.
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+
+    // Compute D_G, D_P, and D_{G+P}.
+    let d_g = transfer_point(&g, &curve_c, &params).expect("transfer(G) must succeed");
+    let d_p = transfer_point(&p, &curve_c, &params).expect("transfer(P) must succeed");
+    let g_plus_p = curve_e.add(&g, &p);
+    let d_g_plus_p = transfer_point(&g_plus_p, &curve_c, &params)
+        .expect("transfer(G+P) must succeed");
+
+    // Compute D_G + D_P via Cantor compose.
+    let d_sum = cantor::add(&curve_c, &d_g, &d_p, &p2);
+
+    assert_eq!(
+        d_sum, d_g_plus_p,
+        "homomorphism must hold: D_G + D_P (Cantor) must equal D_{{G+P}}"
+    );
+}
+
+/// `D_{G+P} = D_G + D_P` — homomorphism via `verify_homomorphism` helper.
+///
+/// Cross-checks the homomorphism using the `verify_homomorphism` convenience
+/// function, which encapsulates the full check.
+#[test]
+fn transfer_homomorphism_via_helper() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+
+    let g = curve_e.generator::<F2mNaive<1>>();
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+
+    assert!(
+        verify_homomorphism(&g, &p, &curve_e, &curve_c, &params),
+        "verify_homomorphism(G, P) must return true"
+    );
+}
+
+/// `D_{G+G} = D_G + D_G` — the doubling case of the homomorphism.
+///
+/// The homomorphism must hold for `P = Q` (doubling).  This tests that the
+/// transfer map is consistent with the Cantor doubling formula.
+#[test]
+fn transfer_homomorphism_doubling() {
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+    let g = curve_e.generator::<F2mNaive<1>>();
+
+    assert!(
+        verify_homomorphism(&g, &g, &curve_e, &curve_c, &params),
+        "homomorphism must hold for G + G (doubling case)"
+    );
+}
+
+/// `D_{∞+P} = D_∞ + D_P = [1,0] + D_P = D_P` — identity element homomorphism.
+///
+/// The transfer of `∞ + P = P` must equal `transfer(∞) + transfer(P) = [1,0] + D_P = D_P`.
+/// This verifies the identity-element case of the homomorphism.
+#[test]
+fn transfer_homomorphism_identity_element() {
+    let p6 = poly6();
+    let p2 = poly2();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+
+    let inf = BinaryAffinePoint::<F2mNaive<1>>::Infinity;
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+
+    let d_inf = transfer_point(&inf, &curve_c, &params).expect("transfer(∞) must succeed");
+    let d_p = transfer_point(&p, &curve_c, &params).expect("transfer(P) must succeed");
+
+    // D_∞ + D_P = [1,0] + D_P = D_P (Cantor identity).
+    let d_sum = cantor::add(&curve_c, &d_inf, &d_p, &p2);
+    assert_eq!(
+        d_sum, d_p,
+        "D_∞ + D_P must equal D_P (identity element homomorphism)"
+    );
+}
+
+/// Known-answer: `D_{G+P} = [X+1, 2]` for `G = (0,1)` and `P = (0x01, 0x3a)`.
+///
+/// `G + P = (0x01, 0x3b)` on `E`.  The conorm map computes the sum of the
+/// Frobenius conjugates of `G+P`, giving a point on `C(GF(2^2))`.
+/// The known-answer `D_{G+P} = [X+1, 2]` means:
+/// - `u(X) = X + 1`.
+/// - `v(X) = 2 = β` in GF(2^2).
+///
+/// This is consistent with the homomorphism: `D_G + D_P = [X, 1] + [X+1, 3] = [X+1, 2]`.
+#[test]
+fn transfer_g_plus_p_known_answer() {
+    let p6 = poly6();
+    let p2 = poly2();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+
+    let g = curve_e.generator::<F2mNaive<1>>();
+    let p = BinaryAffinePoint::new(
+        F2mNaive::<1>::from_u64(0x01, &p6),
+        F2mNaive::<1>::from_u64(0x3a, &p6),
+    );
+    let g_plus_p = curve_e.add(&g, &p);
+    let d = transfer_point(&g_plus_p, &curve_c, &params)
+        .expect("transfer(G+P) must succeed");
+
+    // u(X) = X + 1.
+    assert_eq!(d.u.degree(), Some(1), "D_{{G+P}}: u must have degree 1");
+    assert!(d.u.coeff(1).is_one(), "D_{{G+P}}: u X-coefficient must be 1 (monic)");
+    assert!(
+        d.u.coeff(0).is_one(),
+        "D_{{G+P}}: u constant term must be 1 (x_R = 1 from conorm)"
+    );
+
+    // v(X) = 2 = β in GF(2^2).
+    let beta = F2mNaive::<1>::from_u64(2, &p2);
+    assert_eq!(
+        d.v.coeff(0),
+        beta,
+        "D_{{G+P}}: v constant term must be β = 2 in GF(2^2)"
+    );
+}
+
+/// All transferred divisors are valid reduced divisors.
+///
+/// For all affine points on `E/GF(2^6)`, the transferred divisor must satisfy
+/// the Mumford invariant on `C/GF(2^2)`.  This is a bulk validity check over
+/// a sample of points.
+#[test]
+fn transfer_all_sample_points_are_valid() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+
+    // Sample points on E (known to be on the curve from the fixture).
+    let sample_points: &[(u64, u64)] = &[
+        (0x00, 0x01), // G = base point
+        (0x01, 0x3a), // P
+        (0x01, 0x3b), // -P (negation of P)
+        (0x06, 0x39), // another point
+        (0x06, 0x3f), // its negation
+    ];
+
+    for &(x, y) in sample_points {
+        let pt = BinaryAffinePoint::new(
+            F2mNaive::<1>::from_u64(x, &p6),
+            F2mNaive::<1>::from_u64(y, &p6),
+        );
+        assert!(
+            curve_e.is_on_curve(&pt),
+            "sample point ({x:#04x}, {y:#04x}) must be on E"
+        );
+        let d = transfer_point(&pt, &curve_c, &params)
+            .expect("transfer must succeed for all finite points");
+        assert!(
+            curve_c.is_valid(&d),
+            "transfer({x:#04x}, {y:#04x}) must be a valid reduced divisor"
+        );
+    }
+}
+
+/// The transfer map is consistent with the Cantor group law for multiple pairs.
+///
+/// Checks the homomorphism property for several pairs of points, not just G and P.
+/// This is a stronger correctness signal than a single pair.
+#[test]
+fn transfer_homomorphism_multiple_pairs() {
+    let p6 = poly6();
+    let params = toy_params();
+    let curve_c = extract_ghs_curve(params.clone()).expect("extraction must succeed");
+    let curve_e = ghs_toy_curve();
+
+    let sample_points: &[(u64, u64)] = &[
+        (0x00, 0x01), // G
+        (0x01, 0x3a), // P
+        (0x06, 0x39), // Q
+    ];
+
+    let pts: Vec<BinaryAffinePoint<F2mNaive<1>>> = sample_points
+        .iter()
+        .map(|&(x, y)| {
+            BinaryAffinePoint::new(
+                F2mNaive::<1>::from_u64(x, &p6),
+                F2mNaive::<1>::from_u64(y, &p6),
+            )
+        })
+        .collect();
+
+    // Check all pairs (including self-pairs for doubling).
+    for (i, pi) in pts.iter().enumerate() {
+        for (j, pj) in pts.iter().enumerate() {
+            assert!(
+                verify_homomorphism(pi, pj, &curve_e, &curve_c, &params),
+                "homomorphism must hold for pair ({i}, {j})"
+            );
+        }
+    }
 }
