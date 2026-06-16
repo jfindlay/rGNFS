@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2 + E.K.3 + E.K.4).
+//! Known-answer tests (KATs) for the index-calculus module (E.K.1–E.K.5).
 //!
 //! # Fixture
 //!
@@ -47,6 +47,20 @@
 //!    `M·v = 0` over F_ℓ (i.e., for each relation row, the dot product of the exponent
 //!    vector with `v` is 0 mod ℓ). Guards the Z/ℓZ linear algebra step.
 //!
+//! # KAT coverage (E.K.5 ◆ — C-IndexCalc, sub-track close)
+//!
+//! 11. **ecdlp_agreement** (decisive): `index_calculus_dlp(G, Q)` returns `x = log_G(Q) mod ℓ`
+//!    that agrees with the frozen `rho::ecdlp::pohlig::solve_ecdlp_composite` oracle: `k % ℓ == x`.
+//!    Also verifies `x·G_ℓ = Q_ℓ` (the ℓ-subgroup projection check). This is the green-path
+//!    correctness signal — exactly self-checking, oracle-free.
+//! 12. **recovery_soundness**: `x·G_ℓ = Q_ℓ` via the frozen `scalar_mul` (the ℓ-subgroup
+//!    projection check). Guards the DLP recovery step independently of the rho cross-check.
+//! 13. **end_to_end**: the full pipeline solves a non-trivial toy ECDLP instance end-to-end
+//!    (factor base → decomposition → collection → linalg → recovery → verification).
+//! 14. **principle4_annotation**: records the principle-4 boundary — E.K-over-F_p is the
+//!    index-calculus MECHANISM; the asymptotic win requires the extension-field setting
+//!    E(F_{p^n}); at toy scale index calculus is NOT faster than Pollard-rho.
+//!
 //! # Principle-4 boundary
 //!
 //! The fixture is toy-scale (`p = 47`, `n = 60`). The algorithms are mechanism-correct;
@@ -55,10 +69,11 @@
 
 use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
+use rho::ecdlp::pohlig::solve_ecdlp_composite;
 use rho::field::{Fp, FpNaive};
 use rho::index_calculus::{
-    build_ek_matrix, collect_relations, decompose, solve_ek_linalg, IndexCalcStrategy, Relation,
-    TOY_ELL, TOY_FB_SIZE,
+    build_ek_matrix, collect_relations, decompose, index_calculus_dlp, solve_ek_linalg,
+    IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE,
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -701,4 +716,264 @@ fn kernel_correctness() {
             dot
         );
     }
+}
+
+// ─── KAT 11: ecdlp_agreement (C-IndexCalc, E.K.5 ◆ — decisive cross-check) ──
+
+/// Decisive cross-check: `index_calculus_dlp(G, Q)` agrees with `rho::ecdlp` on the
+/// same toy instance.
+///
+/// This is the green-path correctness signal for C-IndexCalc (E.K.5 ◆): the index-
+/// calculus recovered `x = log_G(Q) mod ℓ` must satisfy `k % ℓ == x` where `k` is
+/// the full discrete log returned by the frozen `rho::ecdlp::pohlig::solve_ecdlp_composite`
+/// oracle. Also verifies the ℓ-subgroup projection: `x·G_ℓ = Q_ℓ`.
+///
+/// # Principle-4 annotation
+///
+/// E.K-over-F_p is the index-calculus MECHANISM. The asymptotic win (index calculus
+/// faster than Pollard-rho) requires the extension-field setting E(F_{p^n}) — the
+/// genuine Gaudry–Diem setting, a deferred re-shard. Over E(F_p) at toy scale, index
+/// calculus is NOT faster than Pollard-rho. The mechanism is demonstrated, not the
+/// asymptotic advantage.
+///
+/// # Cross-check design
+///
+/// `index_calculus_dlp` returns `x = log_G(Q) mod ℓ` (mod 5 for the toy).
+/// `solve_ecdlp_composite` returns `k` such that `k·G = Q` (the full discrete log mod n).
+/// The cross-check: `k % ℓ == x` — the index-calculus result is the correct residue of
+/// the full discrete log modulo the prime-order subgroup modulus ℓ.
+///
+/// Additionally: `x·G_ℓ = Q_ℓ` where `G_ℓ = (n/ℓ)·G` and `Q_ℓ = (n/ℓ)·Q` (the
+/// ℓ-order subgroup projections). This is the ℓ-subgroup projection check — the
+/// index-calculus result is the correct discrete log in the ℓ-order subgroup.
+#[test]
+fn ecdlp_agreement() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    // Use Q = 7·G as the non-trivial target (not in the factor base).
+    // log_G(Q) = 7; log_G(Q) mod ℓ = 7 mod 5 = 2.
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    // ── Step 1: Index-calculus DLP recovery ──────────────────────────────────
+    let x = index_calculus_dlp(g.clone(), q.clone(), &strategy)
+        .expect("index_calculus_dlp should not error for the toy fixture")
+        .expect("index_calculus_dlp should recover log_G(Q) mod ℓ for Q = 7·G");
+
+    // x must be in [0, ℓ).
+    let ell_u64 = strategy.ell.as_words()[0];
+    assert!(
+        x < ell_u64,
+        "recovered x = {x} is not in [0, ℓ = {ell_u64})"
+    );
+
+    // ── Step 2: rho::ecdlp cross-check ───────────────────────────────────────
+    // solve_ecdlp_composite returns k such that k·G = Q (full discrete log mod n).
+    let n_u64 = curve.n.as_words()[0];
+    let k = solve_ecdlp_composite(curve, &g, &q, n_u64)
+        .expect("solve_ecdlp_composite should succeed for Q = 7·G on the toy fixture");
+
+    // Verify the rho oracle is correct: k·G = Q.
+    let k_g = scalar_mul_u64(curve, &g, k);
+    assert_eq!(
+        k_g, q,
+        "rho oracle sanity: k·G ≠ Q (k = {k})"
+    );
+
+    // Cross-check: k % ℓ == x (the index-calculus residue matches the full log mod ℓ).
+    assert_eq!(
+        k % ell_u64,
+        x,
+        "ecdlp_agreement FAILED: index-calculus x = {x}, rho k = {k}, k % ℓ = {} ≠ x",
+        k % ell_u64
+    );
+
+    // ── Step 3: ℓ-subgroup projection check ──────────────────────────────────
+    // G_ℓ = (n/ℓ)·G, Q_ℓ = (n/ℓ)·Q. Verify x·G_ℓ = Q_ℓ.
+    let cofactor = n_u64 / ell_u64;
+    let g_ell = scalar_mul_u64(curve, &g, cofactor);
+    let q_ell = scalar_mul_u64(curve, &q, cofactor);
+
+    // x·G_ℓ should equal Q_ℓ.
+    let x_g_ell = scalar_mul_u64(curve, &g_ell, x);
+    assert_eq!(
+        x_g_ell, q_ell,
+        "ℓ-subgroup projection check FAILED: x·G_ℓ = {:?}, Q_ℓ = {:?} (x = {x})",
+        x_g_ell, q_ell
+    );
+}
+
+// ─── KAT 12: recovery_soundness (C-IndexCalc, E.K.5 ◆) ──────────────────────
+
+/// Recovery soundness: `x·G_ℓ = Q_ℓ` via the frozen `scalar_mul`.
+///
+/// Verifies the ℓ-subgroup projection check independently of the rho cross-check:
+/// the index-calculus recovered `x = log_G(Q) mod ℓ` satisfies `x·G_ℓ = Q_ℓ` where
+/// `G_ℓ = (n/ℓ)·G` and `Q_ℓ = (n/ℓ)·Q` are the ℓ-order subgroup projections.
+///
+/// This guards the DLP recovery step (the Gaussian elimination over F_ℓ) independently
+/// of the rho oracle. The check is: the recovered `x` is the correct discrete log in
+/// the ℓ-order subgroup, verified by the frozen group law.
+#[test]
+fn recovery_soundness() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    let x = index_calculus_dlp(g.clone(), q.clone(), &strategy)
+        .expect("index_calculus_dlp should not error")
+        .expect("index_calculus_dlp should recover log_G(Q) mod ℓ");
+
+    let n_u64 = curve.n.as_words()[0];
+    let ell_u64 = strategy.ell.as_words()[0];
+    let cofactor = n_u64 / ell_u64;
+
+    // Compute G_ℓ = (n/ℓ)·G and Q_ℓ = (n/ℓ)·Q.
+    let g_ell = scalar_mul_u64(curve, &g, cofactor);
+    let q_ell = scalar_mul_u64(curve, &q, cofactor);
+
+    // G_ℓ must not be ∞ (it has order ℓ = 5).
+    assert!(
+        !g_ell.is_infinity(),
+        "G_ℓ = (n/ℓ)·G should not be ∞ (it has order ℓ = {ell_u64})"
+    );
+
+    // Q_ℓ must not be ∞ (since log_G(Q) mod ℓ ≠ 0 for Q = 7·G, 7 mod 5 = 2 ≠ 0).
+    assert!(
+        !q_ell.is_infinity(),
+        "Q_ℓ = (n/ℓ)·Q should not be ∞ for Q = 7·G (7 mod 5 = 2 ≠ 0)"
+    );
+
+    // x·G_ℓ must equal Q_ℓ.
+    let x_g_ell = scalar_mul_u64(curve, &g_ell, x);
+    assert_eq!(
+        x_g_ell, q_ell,
+        "recovery_soundness FAILED: x·G_ℓ = {:?}, Q_ℓ = {:?} (x = {x})",
+        x_g_ell, q_ell
+    );
+}
+
+// ─── KAT 13: end_to_end (C-IndexCalc, E.K.5 ◆) ──────────────────────────────
+
+/// End-to-end: the full index-calculus pipeline solves a non-trivial toy ECDLP.
+///
+/// Runs the complete pipeline (factor base → decomposition → collection → linalg →
+/// recovery) on the toy fixture for Q = 7·G and verifies:
+/// - The pipeline returns `Ok(Some(x))` (no error, non-trivial result).
+/// - `x` is in `[0, ℓ)` (a valid F_ℓ element).
+/// - `x·G_ℓ = Q_ℓ` (the ℓ-subgroup projection check — the primary soundness signal).
+///
+/// This is the sub-track-close KAT: the index-calculus solver is complete and
+/// mechanism-correct at toy scale.
+#[test]
+fn end_to_end() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    // Run the full pipeline.
+    let result = index_calculus_dlp(g.clone(), q.clone(), &strategy);
+    assert!(
+        result.is_ok(),
+        "end_to_end: index_calculus_dlp returned an error: {:?}",
+        result
+    );
+
+    let x = result.unwrap().expect(
+        "end_to_end: index_calculus_dlp returned None — pipeline failed to recover log_G(Q) mod ℓ"
+    );
+
+    let ell_u64 = strategy.ell.as_words()[0];
+    assert!(
+        x < ell_u64,
+        "end_to_end: recovered x = {x} is not in [0, ℓ = {ell_u64})"
+    );
+
+    // ℓ-subgroup projection check: x·G_ℓ = Q_ℓ.
+    let n_u64 = curve.n.as_words()[0];
+    let cofactor = n_u64 / ell_u64;
+    let g_ell = scalar_mul_u64(curve, &g, cofactor);
+    let q_ell = scalar_mul_u64(curve, &q, cofactor);
+    let x_g_ell = scalar_mul_u64(curve, &g_ell, x);
+
+    assert_eq!(
+        x_g_ell, q_ell,
+        "end_to_end: ℓ-subgroup check FAILED: x·G_ℓ = {:?}, Q_ℓ = {:?} (x = {x})",
+        x_g_ell, q_ell
+    );
+}
+
+// ─── KAT 14: principle4_annotation (E.K.5 ◆ — sub-track close) ──────────────
+
+/// Principle-4 annotation: records the E.K mechanism boundary.
+///
+/// This test is a load-bearing annotation, not a computation. It records the
+/// principle-4 boundary for the E.K sub-track close:
+///
+/// - E.K-over-F_p is the index-calculus MECHANISM over E(F_p).
+/// - The asymptotic win (index calculus faster than Pollard-rho) requires the
+///   extension-field setting E(F_{p^n}) — the genuine Gaudry–Diem setting.
+/// - Over E(F_p) at toy scale, index calculus is NOT faster than Pollard-rho.
+/// - The toy F_p/m/ℓ are a principle-4 boundary: mechanism-correct, asymptotic
+///   win NOT observable.
+/// - The F_{p^n} asymptotic-win case and the GHS-coupled end-to-end attack are
+///   deferred to later, separately-sharded sub-tracks (re-shards, not exclusions).
+///
+/// The assertion verifies the toy fixture constants that define the boundary:
+/// - ℓ = 5 (prime-order subgroup modulus, the linear-algebra field).
+/// - n = 60 = 2²·3·5 (composite group order — index calculus works mod ℓ, not mod n).
+/// - m = 2 (decomposition arity — the smallest non-trivial arity, using S_3).
+/// - p = 47 (the toy prime field — crypto-scale would need p >> 2^128).
+#[test]
+fn principle4_annotation() {
+    // PRINCIPLE-4 BOUNDARY: E.K-over-F_p is the index-calculus MECHANISM.
+    // The asymptotic win requires E(F_{p^n}); at toy scale index calculus is NOT
+    // faster than Pollard-rho. This is mechanism-correct, asymptotic win NOT observable.
+    //
+    // The toy fixture constants that define the boundary:
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    // ℓ = 5: the prime-order subgroup modulus (the linear-algebra field F_ℓ).
+    // The index calculus recovers log_G(Q) mod ℓ, NOT mod n.
+    // Full log_G(Q) mod n would require CRT over all prime-power factors of n — out of scope.
+    let ell_u64 = strategy.ell.as_words()[0];
+    assert_eq!(ell_u64, 5, "toy ℓ should be 5 (the largest prime factor of n = 60)");
+
+    // n = 60 = 2²·3·5: composite group order.
+    // Index calculus over E(F_p) with composite n works mod ℓ (a prime factor).
+    let n_u64 = curve.n.as_words()[0];
+    assert_eq!(n_u64, 60, "toy n should be 60 = 2²·3·5");
+    assert_eq!(n_u64 % ell_u64, 0, "ℓ must divide n");
+
+    // m = 2: decomposition arity (the smallest non-trivial arity, using S_3).
+    // Crypto-scale index calculus uses larger m (Gröbner-basis decomposition).
+    assert_eq!(strategy.m, 2, "toy m should be 2 (principle-4 boundary: native enumeration)");
+
+    // p = 47: the toy prime field.
+    // Crypto-scale would need p >> 2^128; the asymptotic win needs E(F_{p^n}).
+    let p_u64 = curve.p.as_words()[0];
+    assert_eq!(p_u64, 47, "toy p should be 47 (the semaev_toy prime field)");
+
+    // FB_SIZE = 6: the factor-base size.
+    // Over-determinable at m = 2: the collection target is ≥ FB_SIZE + 1 = 7 relations.
+    assert_eq!(
+        strategy.fb_size(),
+        TOY_FB_SIZE,
+        "toy FB_SIZE should be {TOY_FB_SIZE}"
+    );
+
+    // Verify the ℓ-order subgroup generator has order exactly ℓ.
+    let g_ell = strategy.subgroup_generator();
+    assert!(!g_ell.is_infinity(), "G_ℓ = (n/ℓ)·G should not be ∞");
+    let ell_g_ell = curve.scalar_mul(&g_ell, &strategy.ell);
+    assert!(
+        ell_g_ell.is_infinity(),
+        "ℓ·G_ℓ should be ∞ (G_ℓ has order ℓ = {ell_u64})"
+    );
 }

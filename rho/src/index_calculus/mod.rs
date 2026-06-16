@@ -11,6 +11,8 @@
 //! - [`mod`] (this file) — `IndexCalcError` enum, module skeleton.
 //! - [`strategy`] — `FbPoint`, `IndexCalcStrategy`, `Relation` (C-IndexCalcStrategy,
 //!   C-EKRelation, frozen at E.K.1).
+//! - [`solve`] — `index_calculus_dlp` — the full pipeline assembler (C-IndexCalc,
+//!   frozen at E.K.5 ◆).
 //!
 //! # Toy fixture
 //!
@@ -30,11 +32,13 @@
 pub mod collect;
 pub mod decompose;
 pub mod linalg;
+pub mod solve;
 pub mod strategy;
 
 pub use collect::collect_relations;
 pub use decompose::decompose;
 pub use linalg::{build_ek_matrix, solve_ek_linalg};
+pub use solve::index_calculus_dlp;
 pub use strategy::{FbPoint, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE, TOY_M};
 
 // ─── error type ──────────────────────────────────────────────────────────────
@@ -91,9 +95,13 @@ pub enum IndexCalcError {
     /// kernel vector. This should not occur for an over-determined relation system
     /// (guaranteed by `collect_relations`), but guards against degenerate inputs.
     NoKernel,
-    // E.K.5+ extend additively:
-    //   RecoveryFailed — DLP recovery from the kernel failed.
-    //   CrossCheckMismatch — recovered log disagrees with rho::ecdlp (E.K.5).
+    /// DLP recovery from the augmented linear system failed.
+    ///
+    /// Raised by `index_calculus_dlp` when the Gaussian elimination over `F_ℓ` cannot
+    /// recover a unique `log_G(Q) mod ℓ` from the collected relations. This can occur
+    /// if all relations have `b_i ≡ 0 mod ℓ` (no information about `Q`'s log) or if
+    /// the augmented system is degenerate.
+    RecoveryFailed,
 }
 
 impl std::fmt::Display for IndexCalcError {
@@ -118,6 +126,13 @@ impl std::fmt::Display for IndexCalcError {
             IndexCalcError::NoKernel => {
                 write!(f, "no kernel: the Z/ℓℤ linear system has no non-trivial kernel vector")
             }
+            IndexCalcError::RecoveryFailed => {
+                write!(
+                    f,
+                    "recovery failed: Gaussian elimination over F_ℓ could not recover \
+                     a unique log_G(Q) mod ℓ from the collected relations"
+                )
+            }
         }
     }
 }
@@ -129,7 +144,8 @@ impl std::error::Error for IndexCalcError {
             IndexCalcError::InvalidSubgroup { .. }
             | IndexCalcError::FactorBaseTooSmall { .. }
             | IndexCalcError::UnderdeterminedSystem { .. }
-            | IndexCalcError::NoKernel => None,
+            | IndexCalcError::NoKernel
+            | IndexCalcError::RecoveryFailed => None,
         }
     }
 }
@@ -156,6 +172,7 @@ mod tests {
             IndexCalcError::Semaev(crate::semaev::SemaevError::DegreeZero)
         );
         let _ = format!("{}", IndexCalcError::NoKernel);
+        let _ = format!("{}", IndexCalcError::RecoveryFailed);
     }
 
     #[test]
