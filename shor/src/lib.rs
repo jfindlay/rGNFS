@@ -7,6 +7,15 @@
 //! - [`gates`] — universal gate set applied by amplitude-pair iteration (O(2^n) per gate, never
 //!   matrix materialization): single-qubit X, Y, Z, H, S, T, phase(θ), arbitrary unitary;
 //!   two-qubit CNOT, controlled-phase, SWAP; multi-qubit Toffoli, multi-controlled.
+//! - [`sparse`] — sparse-state register: a `HashMap` of nonzero basis amplitudes. Same gate
+//!   semantics as the dense register, iterating only nonzero entries. Dense↔sparse conversion.
+//!   Sparsity is state-dependent (principle 4): a Hadamard on every qubit makes the state dense.
+//! - [`measure`] — Born-rule measurement: sample a basis state with probability |aᵢ|², collapse
+//!   the register. Single-qubit and full-register measurement. Deterministic seeded sampler
+//!   (`rand_chacha::ChaCha8Rng`) for reproducible KATs.
+//! - [`qft`] — Quantum Fourier Transform over the dense register: Hadamard + controlled-phase
+//!   ladder (O(n²) gates), built from the frozen S.A.1 gate set. Inverse QFT. Bit-reversal
+//!   convention documented and included (see [`qft`] module for the load-bearing note).
 //!
 //! # Basis-indexing convention (FIXED — C-StateVec)
 //!
@@ -17,6 +26,13 @@
 //! This convention is fixed at S.A.1 and consumed by S.A.2 (QFT), S.B (modular exponentiation),
 //! and S.C (Proos–Zalka ECDLP circuit). A silent flip is a wrong-answer bug.
 //!
+//! # QFT bit-reversal convention (FIXED — C-QFT)
+//!
+//! The standard QFT circuit (N&C) is designed for big-endian. [`qft::qft`] adapts it for
+//! little-endian with **two bit-reversal steps** (input + output), so the output is in natural
+//! little-endian order. Without both steps, S.B/S.C read the period from the wrong qubit order.
+//! See [`qft`] module documentation for the full load-bearing note.
+//!
 //! # Resource-scale ceiling (~25 qubits)
 //!
 //! The dense register holds `2^n` complex amplitudes. At n = 25 that is 2^25 ≈ 33 M entries
@@ -26,4 +42,7 @@
 //! claim quantum speedup, which requires real quantum hardware out of scope by construction.
 
 pub mod gates;
+pub mod measure;
+pub mod qft;
+pub mod sparse;
 pub mod statevec;

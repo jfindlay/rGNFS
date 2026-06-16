@@ -6,6 +6,8 @@ description = "Classical state-vector quantum-circuit simulator: Shor's algorith
 
 [dependencies]
 num-complex = "0.4"
+rand = "0.8"
+rand_chacha = "0.3"
 
 [dev-dependencies]
 proptest = "1"
