@@ -831,7 +831,7 @@ recorded in the Action-frame digest.
 | E.K.1 ◆-start | Index-calculus strategy + factor base + relation/matrix contract | done | 1f6757b | C-IndexCalcStrategy, C-EKRelation |
 | E.K.2 | Index-calculus point decomposition via Semaev | done | 07c4b70 | C-PointDecomp |
 | E.K.3 | Index-calculus relation collection | done | bbabf10 | C-RelationCollect |
-| E.K.4 | Index-calculus `Z/ℓℤ` linear algebra adapter + solve | pending | | C-EKLinAlg |
+| E.K.4 | Index-calculus `Z/ℓℤ` linear algebra adapter + solve | done | a5d6751 | C-EKLinAlg |
 | E.K.5 ◆ | Index-calculus DLP recovery + `rho::ecdlp` cross-check + close | pending | | C-IndexCalc |
 
 Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.K, unchanged), the
