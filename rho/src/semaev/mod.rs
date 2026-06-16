@@ -12,6 +12,8 @@
 //!   and the `semaev_toy` constructor.
 //! - [`poly`] — the `F_p[x]` univariate resultant and the multivariate/symmetric-polynomial
 //!   type `S_m` (C-SemaevPoly, frozen at E.J.1).
+//! - [`recursion`] — `semaev_poly(m)` via the resultant ladder `S_m = Res_X(S_{m-1}, S_3)`
+//!   (C-Semaev, frozen at E.J.3).
 //!
 //! # Toy fixture
 //!
@@ -28,6 +30,9 @@
 
 pub mod base;
 pub mod poly;
+pub mod recursion;
+
+pub use recursion::semaev_poly;
 
 use crypto_bigint::Uint;
 
