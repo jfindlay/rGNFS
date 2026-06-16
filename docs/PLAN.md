@@ -443,7 +443,7 @@ the principle-4 caveat (asymptotic L-notation separations not observable at toy 
 the empirical substrate the Track-E synthesis stands on — the closeout analogue of a per-stage
 BENCHMARKS.md section, e.g. the G.W timing table.)*
 
-### C-TrackE — the Track-E cross-attack synthesis + design-statement verdict (prose-enforced) — *to be frozen at E.W.2 ◆*
+### C-TrackE — the Track-E cross-attack synthesis + design-statement verdict (prose-enforced) — *frozen at E.W.2 ◆ (commit 10c9d54)*
 
 **Defined in:** E.W.2 (`docs/PEDAGOGY.md` Track-E code-tour + `docs/MATHEMATICS.md` ch. 10 / T.E).
 **Consumed by:** **Z.1** (the umbrella narrative — the cross-track L-notation synthesis + the
@@ -456,6 +456,120 @@ statement; the synthesis obeys the C-Textbook register; the MOV payoff proof is 
 **Track E is the algebraic-ECDLP attack survey complete — the structure-based-escape-from-search
 through-line realised across eight attacks, NOT a new attack.** *Exact chapter scope + the verdict
 recorded at the ◆.*
+
+#### Resolved interface (E.W.2 ◆ inflection design — `@plan-juncture`, Opus, 2026-06-16)
+
+The substrate survey confirmed every artifact the writeup mirrors: the C-EWBench table (frozen at
+E.W.1, commit 1916c65) is the five-column structural-precondition-conditional table the PLAN
+ratified (Attack / Curve-precondition / Applies? / Toy-scale cost / Escape structure); the eight
+frozen solver surfaces exist as named (`solve_ecdlp_composite`, `mov_reduce`, `ssa_solve`,
+`ghs_descend`/`verify_log_preservation`/`transfer_point`, `index_calculus_dlp` +
+`collect_relations`/`decompose` public re-exports, `semaev_poly`); the G.W/D.W code-tour genre
+(`gnfs/docs/PEDAGOGY.md` §52–§71) and the C-Textbook register + §"Escape from Search" through-line
+(`docs/MATHEMATICS.md`) are the templates. The resolved interface fixes the per-section structure.
+
+**(A) T.E — `docs/MATHEMATICS.md` ch. 10 "Algebraic ECDLP Attacks" (fill the existing stub).** The
+maths-first chapter at the C-Textbook register (undergraduate-maths audience floor, proof-sketch
+depth, MathJax markup), maths-first sibling to the Track-E code-tour. Section outline:
+
+- **§10.0 The through-line for this chapter.** One paragraph re-stating (citing, not re-deriving)
+  the §"Escape from Search" frame: each Track-E attack finds a curve structure that escapes the
+  generic $\sqrt n$ bound the Pollard-rho chapter (ch. 6) established. Names the five structures and
+  forward-points to the per-attack sections. *(Rigidity guard: extend, do not re-derive the frozen
+  taxonomy.)*
+- **§10.1 Pohlig–Hellman (composite order, CRT).** The order-reduction warm-up: $\#E$ composite
+  $\Rightarrow$ ECDLP factors over prime-order subgroups via CRT (cite §Prerequisites CRT). Cost
+  $O(\sum e_i(\log n + \sqrt{p_i}))$. Proof-sketch depth.
+- **§10.2 Smart–Satoh–Araki (anomalous, polynomial-time).** $\#E(\mathbb F_p)=p$ $\Rightarrow$
+  $p$-adic lift + formal-group logarithm gives a polynomial-time solve. Proof-sketch depth (the
+  $p$-adic elliptic logarithm is named + cited, not fully derived).
+- **§10.3 GHS / Weil descent (the binary-curve TRANSFER).** $E/\mathbb F_{2^m}$ with a subfield
+  tower $\Rightarrow$ Weil restriction transfers ECDLP to a hyperelliptic-Jacobian DLP over
+  $\mathbb F_{2^l}$. **Represented as a transfer/structure/solve, NOT an end-to-end break** — the
+  downstream solve is index calculus (deferred re-shard). Proof-sketch depth.
+- **§10.4 Index calculus over $E(\mathbb F_{p^n})$ (Gaudry–Diem–Joux–Vitse).** The factor-base /
+  Semaev-decomposition engine: summation polynomials (cite C-Semaev) build a relation matrix over
+  $\mathbb F_\ell$; the asymptotic win is the extension-field setting $E(\mathbb F_{p^n})$, $n>1$
+  (the toy is over $E(\mathbb F_p)$ — annotate the principle-4 gap). Proof-sketch depth.
+- **§10.5 The MOV / Frey–Rück reduction — THE PAYOFF PROOF (full, not sketch).** The designated
+  Opus climax + the one full proof in this chapter (the C-Textbook payoff carve-out, alongside
+  T.G's $L$-notation derivation). Develops *why* the bilinear pairing $e:E[n]\times E[n]\to\mu_n$
+  is non-degenerate and Galois-equivariant, hence maps ECDLP on $E$ to DLP in $\mathbb F_{p^k}^*$
+  (where $k$ is the embedding degree and index calculus applies subexponentially) — the cross-track
+  bridge to NFS-DL. Cites the frozen `rho::pairing` realisation (`mov_reduce`, the Tate/Weil
+  pairing). Proof given in full.
+- **§10.6 The per-attack $L$-notation comparison.** Extends (cites) the frozen §"Escape from
+  Search" $L$-notation hierarchy table with a per-attack row: rho $L_n[1,1/2]$; Pohlig–Hellman
+  $\sqrt{p_{\max}}$ (largest prime factor); SSA polynomial; GHS conditional (transfer cost +
+  downstream Jacobian index calculus); MOV reducing to $\mathbb F_{p^k}^*$ DLP, subexponential
+  ($L[1/2]$ direct, $L[1/3]$ via NFS-DL). The principle-4 boundary stated: these asymptotic
+  separations are NOT observable at the C-EWBench toy scale.
+- **§10.7 Cross-reference** to the Track-E code-tour (the code realisation) + ch. 6 (the rho
+  baseline this chapter's bound-breaking extends) + the §"Escape from Search" through-line.
+- **§10.8 Further reading** (Menezes–Okamoto–Vanstone; Frey–Rück; Smart; Satoh–Araki; Semaev;
+  Gaudry; Diem; GHS), matching the per-chapter Further-Reading genre.
+
+*Section ordering — flagged recommendation (writer holds fiduciary latitude).* The PLAN's
+through-line text lists MOV second (immediately after the pairing family). The resolved outline
+places MOV **last (§10.5) as the climax**, so the chapter builds Pohlig–Hellman → SSA → GHS →
+index-calculus *engine* → and lands MOV as the bridge that connects ECDLP to that engine — which
+the PLAN's "MOV is the designated payoff/climax" framing favours. *Tradeoff: this departs from the
+ch.-6 "When the bound breaks" bullet order (MOV-first), so a reader cross-walking the two chapters
+sees a re-ordering; the code-tour's per-attack tour should follow the same order for consistency.*
+Either order is PLAN-consistent; surfaced for the human glance, not halted.
+
+**(B) The Track-E code-tour — `docs/PEDAGOGY.md` (append after the existing Phase 0–8 rho content).**
+In the G.W/D.W integrative genre, adapted for an **attack survey (not a linear pipeline)** — the
+"at a glance" is a taxonomy table, not a data-flow diagram (the load-bearing precondition-
+conditional finding). Section outline (continuing the existing `## N.` numbering):
+
+- **§N. The Track-E attacks at a glance.** A taxonomy table (Attack | Curve structure exploited |
+  Module surface | Toy fixture | C-contract), the survey analogue of the G.W §52 pipeline diagram.
+  Six rows: Pollard rho (baseline, `rho::ecdlp`), Pohlig–Hellman, MOV, SSA, GHS (transfer), Semaev
+  / index calculus. Opens with the through-line: which structure unlocks which escape.
+- **§N+1…N+6. The per-attack code-tour** (one section each: Pohlig–Hellman, MOV, SSA, GHS, Semaev,
+  index calculus). Each in the G.W per-stage shape: *what it exploits* (the structure), *the module
+  surface* (the frozen public API — `solve_ecdlp_composite`, `mov_reduce`, `ssa_solve`,
+  `ghs_descend`/`verify_log_preservation`, `semaev_poly`, `index_calculus_dlp` +
+  `collect_relations`/`decompose`), *the toy KAT/fixture*, *cross-ref to the matching T.E section*.
+  GHS section states it is a **transfer** (no `ghs_dlp`; downstream solve is index calculus).
+- **§N+7. The cross-phase contract view.** The G.W §58 analogue: a unified table of the frozen
+  Track-E contracts (C-Pollard, C-Pohlig, C-Mov, C-Ssa, C-GHSDescent, C-Semaev, C-IndexCalc — with
+  frozen-at session + what each exposes), naming them in one place. All read, none amended by E.W.
+- **§N+8. Design-statement verification (principles 1/3/4).** The G.W §59 / D.W §69 analogue — the
+  load-bearing section. Walks each principle against the realised Track-E (E.A→E.K):
+  - **Principle 1 (algorithmic content complete):** all eight attacks implemented head-on, not
+    stubbed — verdict + per-attack one-liner.
+  - **Principle 3 (no engineering optimisation crept in):** PARI/msolve oracles stay `#[ignore]`-
+    gated dev-only; no production solver acceleration — verdict.
+  - **Principle 4 (scale-only at demonstration fidelity):** a toy-scale annotations table (the
+    asymptotic $L$-notation separations non-observable at $p=47$/$p=7$; GHS-as-transfer; index
+    calculus's extension-field asymptotic win not exhibited at toy scale) — verdict.
+  - **Summary verdict** (pass/pass/pass expected, but recorded against the actual realisation — a
+    divergence here is a discovery surfaced at the ◆, not pre-judged).
+- **§N+9. KAT summary (E.W — integrative).** The G.W §62 / D.W §70 analogue: a table of the
+  existing Track-E KATs + the `attacks.rs` bench pre-check asserts (each benched attack still solves
+  / transfers its toy instance — the C-EWBench no-regression smoke test). No new KATs (code-tour,
+  not new implementation).
+- **§N+10. Cross-references** (to T.E ch. 10, the C-EWBench table in `docs/BENCHMARKS.md` ## E.W,
+  the per-attack contract definitions) + **Further reading**.
+
+**(C) The C-TrackE frozen invariant — what Z.1 (umbrella) + T.Z (textbook bind) consume.** At the
+◆, C-TrackE freezes and exposes, for the downstream integrative sessions to build on without
+re-opening Track E:
+1. **T.E ch. 10** — the algebraic-ECDLP chapter (five-attack development + the full MOV payoff
+   proof + the per-attack $L$-notation comparison row extending the frozen hierarchy table), at the
+   C-Textbook register. *Z.1's cross-track $L$-notation synthesis + structure-based-escape master
+   chapter consume this; T.Z's consistency pass binds it.*
+2. **The Track-E code-tour** in `docs/PEDAGOGY.md` — the attacks-at-a-glance taxonomy + per-attack
+   tour + unified contract view. *Z.1 consumes the cross-attack comparison; T.Z binds the
+   code-tour↔chapter pairing.*
+3. **The design-statement verdict** — Track E met principles 1/3/4 (recorded in the action-frame
+   digest at the ◆). *The umbrella's "the project met its scoping principles" claim rests on this.*
+**Frozen invariant:** the Track-E arc E.A→E.K is coherent, complete, and verified against the
+design statement; the synthesis obeys the C-Textbook register; the MOV payoff proof is the
+designated climax given in full; GHS is represented honestly as a transfer; the §"Escape from
+Search" through-line is extended (not re-derived); no Track-E solver contract is amended.
 
 ### Frozen contracts read by E.W (consumed, not amended)
 
@@ -506,7 +620,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.W.1 | Cross-attack ECDLP benchmark harness + table | done | 1916c65 | C-EWBench |
-| E.W.2 ◆ | Track-E code-tour + T.E chapter (MOV payoff) + Track-E close | pending | — | C-TrackE |
+| E.W.2 ◆ | Track-E code-tour + T.E chapter (MOV payoff) + Track-E close | done | 10c9d54 | C-TrackE |
 
 Contracts frozen before this sub-track: the complete Track-E attack surface — C-Pollard (`rho::ecdlp`,
 the generic-√n baseline), C-CompositeCurve / C-FactorOrder / C-Pohlig (`rho::ecdlp::pohlig`,
@@ -526,7 +640,17 @@ forward arc.**
 
 ## Action-frame digest
 
-*(none yet)*
+### E.W.2 inflection — 2026-06-16
+Discovery/flex: Inflection fork returned design-confident; C-TrackE resolved interface written into PLAN. MOV placed last as climax (§10.5) rather than first — departs from ch. 6 bullet order but matches PLAN's "MOV is the designated payoff" framing; code-tour per-attack order follows suit.
+Affected: C-TrackE (interface resolved, not yet frozen — frozen at E.W.2 ◆ commit)
+Deferred: no — design-confident, self-continued. One fiduciary-latitude flag: section ordering (MOV last as climax vs. ch. 6 first-bullet order) surfaced for human awareness, not a halt.
+Texture: Design-statement verdict assumed pass/pass/pass but recorded against actual realisation — a divergence at write-time is a discovery for the ◆, not pre-judged.
+
+### E.W.2 ◆ close — 2026-06-16
+Discovery/flex: Boundary-transform juncture returned still-on-intent. The committed E.W.2 deliverables (docs-only diff: docs/MATHEMATICS.md ch.10 T.E + docs/PEDAGOGY.md §8–§18 Track-E code-tour; 1212 insertions, zero code) track the Purpose intent on all seven verification points. MOV placed last as the climax (§10.5, full payoff proof given in full — Weil pairing bilinearity/non-degeneracy/Galois-equivariance + the 5-step reduction to F_{p^k}* DLP) per the resolved interface; the design-statement verdict is pass/pass/pass (principles 1/3/4), recorded against the actual realisation with no divergence found. C-EWBench cited accurately; GHS represented honestly as a transfer (no ghs_dlp); index-calculus F_{p^n} lift correctly deferred. C-TrackE freezes.
+Affected: C-TrackE (frozen at this ◆, commit 10c9d54). Track E closed end-to-end (E.A→E.K synthesised + verified). Phase δ complete.
+Deferred: no halt. One capture candidate surfaced (not a PLAN edit, out of @architect PLAN-write scope): the static-frame ROADMAP Progress/Remaining debt — stale by six sub-tracks (E.F–E.K) + the E.H-before-E.I dependency inversion — is owed at this natural reconciliation point (Track E now complete). User to action via /note or a ROADMAP edit.
+Texture: No-regression gate green (cargo test --workspace: all completed crates 0 failed; the run's only timeout was a slow rho timing test, not a failure — consistent with the docs-only diff making the no-regression invariant hold trivially). The boundary-transform verification was the gate; documentation has no cargo gate.
 
 ---
 
