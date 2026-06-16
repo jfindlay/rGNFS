@@ -2665,3 +2665,542 @@ dimension axis, not resource/operational axis).
 
 31. **Crandall, R., and Pomerance, C. (2005).** *Prime Numbers: A Computational Perspective*.
     2nd ed. Springer. §6.2 for the NFS complexity analysis; §6.3 for NFS-DL. [CP05]
+
+---
+
+## Algebraic ECDLP Attacks
+
+*Maths-first sibling to `docs/PEDAGOGY.md` §8–§18 (the Track-E code-tour). For the
+phase-by-phase implementation — module surfaces, toy fixtures, KAT summary, and design-statement
+verification — see `docs/PEDAGOGY.md`. This chapter is the mathematical development: proof
+sketches, the full MOV payoff proof, and the per-attack L-notation comparison.*
+
+### §10.0 The through-line for this chapter
+
+The §"Escape from Search" chapter above established the five-family structure taxonomy and the
+L-notation hierarchy. This chapter extends that taxonomy per-attack: each of the five algebraic
+ECDLP attacks finds a specific curve structure that escapes the generic $\sqrt{n}$ bound the
+Pollard rho chapter (§Pollard Rho for ECDLP) established.
+
+The five structures, named here and developed in the sections below:
+
+1. **Composite group order** (Pohlig–Hellman, §10.1): $\#E$ composite $\Rightarrow$ CRT
+   reduction to prime-order subgroup DLPs.
+2. **Anomalous order** (Smart–Satoh–Araki, §10.2): $\#E(\mathbb{F}_p) = p$ $\Rightarrow$
+   p-adic lift + formal group logarithm gives polynomial time.
+3. **Binary field tower** (GHS/Weil descent, §10.3): $E/\mathbb{F}_{2^m}$ with subfield
+   $\mathbb{F}_{2^l}$ $\Rightarrow$ Weil restriction transfers ECDLP to a hyperelliptic
+   Jacobian DLP (a transfer, not an end-to-end solve).
+4. **Factor-base decomposability** (index calculus, §10.4): Semaev-decomposable points
+   $\Rightarrow$ relation matrix over $\mathbb{Z}/\ell\mathbb{Z}$; asymptotic win in the
+   extension-field setting.
+5. **Small embedding degree** (MOV/Frey–Rück, §10.5): $\ell \mid p^k - 1$ for small $k$
+   $\Rightarrow$ bilinear pairing maps ECDLP to $\mathbb{F}_{p^k}^*$ DLP, where index calculus
+   applies (the cross-track bridge to NFS-DL).
+
+The chapter follows the ordering Pohlig–Hellman → SSA → GHS → index calculus → MOV, placing
+MOV last as the designated climax: the chapter builds the engine (index calculus) before
+presenting the bridge (MOV) that connects ECDLP to that engine.
+
+---
+
+### §10.1 Pohlig–Hellman: CRT to Prime-Order Subgroups
+
+#### The structure
+
+The group order $n = \#E(\mathbb{F}_p)$ is composite: $n = \prod_{i=1}^r p_i^{e_i}$. The
+Chinese Remainder Theorem (§Prerequisites) gives an isomorphism
+
+$$\mathbb{Z}/n\mathbb{Z} \;\cong\; \mathbb{Z}/p_1^{e_1}\mathbb{Z} \times \cdots \times
+\mathbb{Z}/p_r^{e_r}\mathbb{Z}.$$
+
+The ECDLP in $\langle G \rangle$ (a cyclic group of order $n$) therefore reduces to independent
+DLPs in each prime-power subgroup $\langle G_i \rangle$ of order $p_i^{e_i}$.
+
+#### The escape
+
+**Subgroup projection.** For each prime power $p_i^{e_i}$, define
+
+$$G_i = \frac{n}{p_i^{e_i}} \cdot G, \qquad Q_i = \frac{n}{p_i^{e_i}} \cdot Q.$$
+
+Then $G_i$ has order $p_i^{e_i}$ and $Q_i = k \cdot G_i$ in $\langle G_i \rangle$. The ECDLP
+in the full group reduces to the ECDLP $Q_i = k_i \cdot G_i$ in the prime-power subgroup, where
+$k_i = k \bmod p_i^{e_i}$.
+
+**Prime-power lift.** For $e_i > 1$, recover $k_i = k \bmod p_i^{e_i}$ digit-by-digit in base
+$p_i$. At digit step $j$ (recovering $k_i \bmod p_i^{j+1}$ from $k_i \bmod p_i^j$), project to
+the order-$p_i$ sub-subgroup and solve a single DLP in a group of prime order $p_i$ — one rho
+call.
+
+**CRT reconstruction.** Given $k_i = k \bmod p_i^{e_i}$ for each $i$, the CRT gives $k \bmod n$
+uniquely.
+
+#### Proof sketch
+
+The key step is the subgroup projection: $G_i = (n/p_i^{e_i}) \cdot G$ has order $p_i^{e_i}$
+because $p_i^{e_i} \cdot G_i = n \cdot G = \mathcal{O}$, and no smaller multiple of $G_i$ is
+$\mathcal{O}$ (since $n/p_i^{e_i}$ is the exact cofactor). The projection $Q_i = (n/p_i^{e_i})
+\cdot Q = (n/p_i^{e_i}) \cdot k \cdot G = k \cdot G_i$ follows directly.
+
+The prime-power lift is a standard Hensel-style digit extraction: at step $j$, the known
+$k_i \bmod p_i^j$ is subtracted from $Q_i$ (scaled by the appropriate cofactor), and the
+residue is projected to the order-$p_i$ sub-subgroup for a single rho call.
+
+#### L-notation
+
+The cost is $O\!\left(\sum_{i=1}^r e_i (\log n + \sqrt{p_i})\right)$. For a group of prime
+order $n$, this is $O(\sqrt{n})$ — the same as rho. The gain is structural, not asymptotic:
+when $n$ has small prime factors, the cost is dominated by $\sqrt{p_{\max}}$ (the largest prime
+factor), which can be exponentially smaller than $\sqrt{n}$.
+
+In L-notation: Pohlig–Hellman achieves $L_n[1, 1/2]$ in the worst case (prime $n$), but
+$L_{p_{\max}}[1, 1/2]$ when $n$ has a small largest prime factor. The asymptotic gain over rho
+is structural, not a change in the $L$-notation exponent.
+
+**Principle-4 annotation.** At toy scale ($n = 60 = 2^2 \cdot 3 \cdot 5$), the speedup over
+rho is invisible — the group is too small for the birthday bound to be meaningful. At crypto
+scale, Pohlig–Hellman is catastrophic for curves whose order has a small largest prime factor
+(e.g. $n = 2^{255} \cdot q$ for a small $q$).
+
+#### Cross-reference
+
+Code realisation: `docs/PEDAGOGY.md` §9 (Pohlig–Hellman code-tour, `rho::ecdlp::pohlig`).
+
+---
+
+### §10.2 Smart–Satoh–Araki: The Anomalous-Curve Polynomial-Time Attack
+
+#### The structure
+
+The curve is *anomalous*: $\#E(\mathbb{F}_p) = p$ (equivalently, the trace of Frobenius
+$t = p + 1 - \#E = 1$). This is a rare but constructible condition. The anomalous structure
+admits a polynomial-time ECDLP algorithm via the p-adic formal group.
+
+#### The escape
+
+**The formal group.** The formal group $\hat{E}$ of an elliptic curve over $\mathbb{Z}_p$ is a
+one-dimensional formal group law $\hat{F}(X, Y) \in \mathbb{Z}_p[[X, Y]]$ that encodes the
+group law of $E$ in a neighbourhood of the identity. The formal group logarithm
+$\log_{\hat{E}}: p\mathbb{Z}_p \to p\mathbb{Z}_p$ is a power series that linearises the formal
+group law.
+
+**The Hensel lift.** Given $G = (x_0, y_0) \in E(\mathbb{F}_p)$, lift to
+$\tilde{G} = (\tilde{x}, \tilde{y}) \in E(\mathbb{Z}/p^2\mathbb{Z})$ via Hensel's lemma: solve
+$y^2 = x^3 + ax + b$ over $\mathbb{Z}/p^2\mathbb{Z}$ with $\tilde{x} \equiv x_0 \pmod{p}$ and
+$\tilde{y} \equiv y_0 \pmod{p}$. The lift exists and is unique when $y_0 \neq 0$ (i.e. $G$ is
+not a 2-torsion point), since $f'(y_0) = 2y_0 \not\equiv 0 \pmod{p}$ for $p > 2$.
+
+**The p-adic logarithm.** The formal group logarithm maps $\tilde{G}$ to
+$\log_{\hat{E}}(\tilde{G}) \in p\mathbb{Z}_p$. For the anomalous curve, the key identity is:
+
+$$p \cdot \tilde{G} = \mathcal{O} \quad \text{in } E(\mathbb{Z}/p^2\mathbb{Z}),$$
+
+which holds because $\#E(\mathbb{F}_p) = p$ implies $p \cdot G = \mathcal{O}$ in
+$E(\mathbb{F}_p)$, and the lift preserves this. The formal group logarithm then gives:
+
+$$\log_{\hat{E}}(p \cdot \tilde{G}) = p \cdot \log_{\hat{E}}(\tilde{G}) = 0 \quad
+\text{in } p\mathbb{Z}_p / p^2\mathbb{Z}_p.$$
+
+**The DLP recovery.** Given $Q = k \cdot G$, lift both to $\tilde{G}$ and $\tilde{Q}$. Then:
+
+$$\log_{\hat{E}}(\tilde{Q}) = k \cdot \log_{\hat{E}}(\tilde{G}) \quad \text{in } p\mathbb{Z}_p,$$
+
+so $k \equiv \log_{\hat{E}}(\tilde{Q}) / \log_{\hat{E}}(\tilde{G}) \pmod{p}$.
+
+#### Proof sketch
+
+The key step is that the formal group logarithm is a group homomorphism from $\hat{E}(p\mathbb{Z}_p)$
+to $(p\mathbb{Z}_p, +)$. For the anomalous curve, the map $E(\mathbb{F}_p) \to \hat{E}(p\mathbb{Z}_p)$
+(via the Hensel lift composed with the reduction-mod-$p$ map) is an isomorphism of groups of order
+$p$. The formal group logarithm then linearises the ECDLP: the ratio of the two logarithms gives
+$k$ directly. The computation requires only $O(\log p)$ arithmetic operations in $\mathbb{Z}/p^2\mathbb{Z}$.
+
+#### L-notation
+
+$L_p[0]$ — polynomial time. The Hensel lift and formal group logarithm each cost $O(\log p)$
+arithmetic operations. This is the sharpest escape in this chapter: the anomalous structure
+collapses the ECDLP to a linear computation.
+
+**Principle-4 annotation.** The polynomial-time complexity is present at all scales. At toy
+scale ($p = 7$), the constant factors are invisible — the computation is instantaneous. The
+pedagogical content is the mechanism, not the timing.
+
+#### Cross-reference
+
+Code realisation: `docs/PEDAGOGY.md` §11 (SSA code-tour, `rho::ssa`).
+
+---
+
+### §10.3 GHS/Weil Descent: The Binary-Curve Transfer
+
+#### The structure
+
+The curve is defined over a binary field $E/\mathbb{F}_{2^m}$ with a subfield tower
+$\mathbb{F}_{2^l} \subset \mathbb{F}_{2^m}$ (with $l \mid m$). The Weil restriction
+$\mathrm{Res}_{\mathbb{F}_{2^m}/\mathbb{F}_{2^l}}(E)$ is an abelian variety of dimension $m/l$
+over $\mathbb{F}_{2^l}$. When $m/l$ is odd, this abelian variety contains the Jacobian of a
+hyperelliptic curve $C/\mathbb{F}_{2^l}$ of genus $g = (m/l - 1)/2$.
+
+#### The escape (as a transfer)
+
+**This section represents GHS honestly as a transfer.** The GHS construction reduces the ECDLP
+on $E/\mathbb{F}_{2^m}$ to a DLP on the Jacobian $\mathrm{Jac}(C)/\mathbb{F}_{2^l}$. The
+downstream solve — index calculus on the hyperelliptic Jacobian — is a separate step (a deferred
+re-shard in this project). The chapter covers the descent reduction and log-preservation
+verification; the downstream solve is not developed here.
+
+**The Artin–Schreier extension.** The function field of $E/\mathbb{F}_{2^m}$ is a degree-2
+extension of $\mathbb{F}_{2^m}(x)$ defined by $y^2 + h(x)y = f(x)$ (the Artin–Schreier form
+for characteristic 2). The Weil restriction replaces the field $\mathbb{F}_{2^m}$ with the
+subfield $\mathbb{F}_{2^l}$ and raises the dimension from 1 to $m/l$: the single variable $x$
+over $\mathbb{F}_{2^m}$ becomes $m/l$ variables over $\mathbb{F}_{2^l}$.
+
+**The hyperelliptic curve.** The Weil restriction produces an abelian variety over
+$\mathbb{F}_{2^l}$. When $m/l$ is odd (the imaginary hyperelliptic model), this abelian variety
+is the Jacobian of a hyperelliptic curve $C/\mathbb{F}_{2^l}$ of genus $g = (m/l - 1)/2$.
+
+**Log-preservation.** The transfer map $\phi: E(\mathbb{F}_{2^m}) \to \mathrm{Jac}(C)(\mathbb{F}_{2^l})$
+is a group homomorphism. It preserves the discrete logarithm: if $Q = k \cdot G$ in
+$E(\mathbb{F}_{2^m})$, then $\phi(Q) = k \cdot \phi(G)$ in $\mathrm{Jac}(C)(\mathbb{F}_{2^l})$.
+
+#### L-notation
+
+The L-notation for GHS is conditional on the genus $g$ of the hyperelliptic curve:
+
+- For small genus $g$ (e.g. $g = 1$, which reduces to an elliptic curve DLP — no gain), the
+  transfer does not help.
+- For large genus $g$, index calculus on $\mathrm{Jac}(C)$ achieves subexponential complexity.
+  The asymptotic win depends on the genus and the specific index-calculus algorithm applied.
+
+The transfer itself (the descent reduction) costs $O(\mathrm{poly}(m))$ — polynomial in the
+field extension degree. The asymptotic win, if any, comes from the downstream solve.
+
+**Principle-4 annotation.** The toy fixture ($m = 6$, $l = 2$, $g = 1$) has genus 1 — the
+hyperelliptic Jacobian is an elliptic curve, and the downstream DLP is no easier than the
+original. The GHS construction is demonstrated at toy scale for the mechanism; the asymptotic
+win requires larger $m/l$ (and hence larger genus).
+
+#### Cross-reference
+
+Code realisation: `docs/PEDAGOGY.md` §12 (GHS code-tour, `rho::ghs`).
+
+---
+
+### §10.4 Index Calculus: Semaev Decomposition over the Factor Base
+
+#### The structure
+
+The factor base $\mathcal{F} = \{F_1, \ldots, F_B\}$ is a set of points on $E$ with small
+x-coordinates. A point $P \in E(\mathbb{F}_{p^n})$ is *decomposable* over $\mathcal{F}$ if
+$P = \sum_{i=1}^m F_{j_i}$ for some $F_{j_i} \in \mathcal{F}$. The Semaev summation polynomial
+$S_m$ detects decomposability: $S_m(x_{F_{j_1}}, \ldots, x_{F_{j_{m-1}}}, x_P) = 0$ iff $P$
+decomposes with the given $F_{j_i}$.
+
+#### The escape
+
+**Relation collection.** Choose random scalars $k_i$ and compute $P_i = k_i \cdot G + l_i \cdot Q$
+for random $l_i$. For each $P_i$, attempt to decompose $P_i$ over $\mathcal{F}$ using the
+Semaev polynomial. A successful decomposition $P_i = \sum_j c_{ij} F_j$ gives a linear relation:
+
+$$k_i + l_i \cdot k \equiv \sum_j c_{ij} \cdot \log_G(F_j) \pmod{\ell},$$
+
+where $k = \log_G(Q)$ is the unknown and $\log_G(F_j)$ are the unknown factor-base logarithms.
+
+**Linear algebra.** Collect $B + O(1)$ relations (one per factor-base element plus a small
+overdetermination). The system is a $(B + O(1)) \times (B + 1)$ matrix over $\mathbb{Z}/\ell\mathbb{Z}$.
+Solve via block-Lanczos or block-Wiedemann (the same infrastructure as NFS-DL, §9) to recover
+$\log_G(F_j)$ for each $j$ and hence $k = \log_G(Q)$.
+
+**The Semaev polynomial.** $S_m(X_1, \ldots, X_m)$ is defined recursively:
+- $S_2(X_1, X_2) = X_1 - X_2$ (trivial: two points sum to $\mathcal{O}$ iff they are equal).
+- $S_3(X_1, X_2, X_3)$: the resultant of the chord-and-tangent addition formula, giving a
+  degree-4 polynomial in each variable.
+- $S_m = \mathrm{Res}_X(S_{m-1}(X_1, \ldots, X_{m-2}, X),\; S_3(X_{m-1}, X_m, X))$ for $m > 3$.
+
+The degree of $S_m$ in each variable is $2^{m-2}$, growing exponentially with $m$.
+
+#### Proof sketch
+
+The key step is that $S_m(x_1, \ldots, x_m) = 0$ iff there exist $y_i$ such that
+$(x_i, y_i) \in E$ and $(x_1, y_1) + \cdots + (x_m, y_m) = \mathcal{O}$. This follows from
+the definition of the summation polynomial as the resultant of the addition law. The relation
+collection loop finds decomposable points by evaluating $S_m$ at random multiples of $G$ and
+$Q$; the linear algebra step recovers the discrete log from the collected relations.
+
+#### L-notation
+
+Over $E(\mathbb{F}_p)$ (the toy setting): index calculus is **not** faster than Pollard rho.
+The asymptotic win requires the extension-field setting $E(\mathbb{F}_{p^n})$ with $n > 1$
+(the Gaudry–Diem setting). In that setting, the complexity is subexponential:
+
+$$\text{Index calculus over } E(\mathbb{F}_{p^n}) = L_{p^n}\!\left[\tfrac{1}{2}, c\right]
+\quad \text{(heuristic, for } n > 1\text{)}.$$
+
+The exponent $1/2$ is a genuine improvement over rho's $L[1, 1/2]$ (fully exponential), but
+not as sharp as NFS-DL's $L[1/3]$.
+
+**Principle-4 annotation.** The toy fixture operates over $E(\mathbb{F}_p)$ ($n = 1$). The
+asymptotic win is not observable at toy scale — the mechanism is demonstrated, but the
+complexity separation requires $n > 1$ (the deferred re-shard).
+
+#### Cross-reference
+
+Code realisation: `docs/PEDAGOGY.md` §13–§14 (Semaev and index-calculus code-tours,
+`rho::semaev` and `rho::index_calculus`).
+
+---
+
+### §10.5 MOV/Frey–Rück: The Pairing Reduction (The Payoff Proof)
+
+*This is the designated payoff proof for this chapter — the one full proof at C-Textbook
+payoff depth. It is the cross-track bridge of this project: the MOV reduction connects the
+ECDLP (Track E) to the NFS-DL setting (Track D), where index calculus applies.*
+
+#### The structure
+
+The curve $E/\mathbb{F}_p$ has *small embedding degree* $k$: $\ell \mid p^k - 1$ but
+$\ell \nmid p^j - 1$ for $j < k$. Here $\ell$ is the prime order of the subgroup $\langle G
+\rangle \subset E(\mathbb{F}_p)$ in which the ECDLP is posed.
+
+The embedding degree $k$ is the smallest positive integer such that $\mathbb{F}_{p^k}$ contains
+all $\ell$-th roots of unity — equivalently, $\mu_\ell \subset \mathbb{F}_{p^k}^*$.
+
+#### The Weil pairing
+
+**Definition.** Let $E[\ell] = \{P \in E(\overline{\mathbb{F}_p}) : \ell \cdot P = \mathcal{O}\}$
+be the $\ell$-torsion subgroup of $E$ over the algebraic closure. The *Weil pairing* is a map
+
+$$e_\ell: E[\ell] \times E[\ell] \to \mu_\ell \subset \overline{\mathbb{F}_p}^*$$
+
+defined via the divisor theory of $E$. Concretely: for $P, Q \in E[\ell]$, choose rational
+functions $f_P, f_Q$ on $E$ with divisors $\mathrm{div}(f_P) = \ell \cdot (P) - \ell \cdot
+(\mathcal{O})$ and $\mathrm{div}(f_Q) = \ell \cdot (Q) - \ell \cdot (\mathcal{O})$. Then
+
+$$e_\ell(P, Q) = \frac{f_P(Q + S)}{f_P(S)} \cdot \frac{f_Q(P + T)}{f_Q(T)}^{-1}$$
+
+for generic auxiliary points $S, T$ (the value is independent of the choice of $S, T$).
+
+**Bilinearity.** The Weil pairing is bilinear in both arguments:
+
+$$e_\ell(P_1 + P_2, Q) = e_\ell(P_1, Q) \cdot e_\ell(P_2, Q), \qquad
+e_\ell(P, Q_1 + Q_2) = e_\ell(P, Q_1) \cdot e_\ell(P, Q_2).$$
+
+*Proof.* Bilinearity follows from the linearity of the divisor map: $\mathrm{div}(f_{P_1+P_2})
+= \mathrm{div}(f_{P_1}) + \mathrm{div}(f_{P_2})$ (up to principal divisors), so $f_{P_1+P_2}
+= f_{P_1} \cdot f_{P_2}$ (up to a constant), and the pairing value multiplies accordingly.
+$\square$
+
+**Non-degeneracy.** The Weil pairing is non-degenerate: for every $P \in E[\ell]$ with
+$P \neq \mathcal{O}$, there exists $Q \in E[\ell]$ such that $e_\ell(P, Q) \neq 1$.
+
+*Proof sketch.* Non-degeneracy follows from the Riemann–Roch theorem applied to the divisor
+class group of $E$: the pairing is a perfect pairing on $E[\ell] \times E[\ell]$, which is a
+free $\mathbb{Z}/\ell\mathbb{Z}$-module of rank 2. See Silverman [S09, §III.8]. $\square$
+
+**Galois equivariance.** For $\sigma \in \mathrm{Gal}(\overline{\mathbb{F}_p}/\mathbb{F}_p)$:
+
+$$e_\ell(\sigma(P), \sigma(Q)) = \sigma(e_\ell(P, Q)).$$
+
+This implies that if $P, Q \in E(\mathbb{F}_p)$ (i.e. they are defined over $\mathbb{F}_p$),
+then $e_\ell(P, Q) \in \mathbb{F}_{p^k}$ (the smallest field containing all $\ell$-th roots of
+unity).
+
+#### The Tate pairing and Miller's algorithm
+
+The Weil pairing is theoretically clean but computationally expensive. In practice, the
+*reduced Tate pairing* is used:
+
+$$\hat{e}: E(\mathbb{F}_{p^k})[\ell] \times E(\mathbb{F}_{p^k}) / \ell E(\mathbb{F}_{p^k})
+\to \mathbb{F}_{p^k}^* / (\mathbb{F}_{p^k}^*)^\ell.$$
+
+After the *final exponentiation* (raising to the power $(p^k - 1)/\ell$), the reduced Tate
+pairing lands in $\mu_\ell \subset \mathbb{F}_{p^k}^*$ and is efficiently computable via
+*Miller's algorithm* in $O(k \log p)$ field operations.
+
+**Miller's algorithm** evaluates the rational function $f_P$ (whose divisor is
+$\ell \cdot (P) - \ell \cdot (\mathcal{O})$) at a point $Q$ by a double-and-add loop over the
+binary expansion of $\ell$. At each step, the current function $f$ is updated by the line
+function through the current accumulator point and the next doubling/addition. The final value
+is $f_P(Q)$, which is then raised to the power $(p^k - 1)/\ell$ (the final exponentiation).
+
+#### The MOV reduction
+
+**Setup.** Let $G \in E(\mathbb{F}_p)$ have prime order $\ell$, and let $Q = k \cdot G$ be the
+ECDLP target. Let $k$ be the embedding degree of $E$ with respect to $\ell$.
+
+**Step 1: Choose a $\mu_\ell$-generator.** Find a point $R \in E(\mathbb{F}_{p^k})[\ell]$ such
+that $e(G, R) \neq 1$ (where $e$ is the reduced Tate pairing). Such $R$ exists by
+non-degeneracy. In practice, $R$ is chosen as a random point in $E(\mathbb{F}_{p^k})[\ell]$
+and the condition $e(G, R) \neq 1$ is verified.
+
+**Step 2: Compute the pairing values.** Compute
+
+$$g_0 = e(G, R) \in \mu_\ell \subset \mathbb{F}_{p^k}^*, \qquad
+h_0 = e(Q, R) \in \mu_\ell \subset \mathbb{F}_{p^k}^*.$$
+
+**Step 3: Apply bilinearity.** By bilinearity of the pairing:
+
+$$h_0 = e(Q, R) = e(k \cdot G, R) = e(G, R)^k = g_0^k.$$
+
+Therefore $k = \log_{g_0}(h_0)$ in $\mathbb{F}_{p^k}^*$.
+
+**Step 4: Solve the DLP in $\mathbb{F}_{p^k}^*$.** The DLP $h_0 = g_0^k$ in $\mathbb{F}_{p^k}^*$
+is solved by NFS-DL (the frozen `gnfs::dl::solve_dl` entry point, Track D). Since $g_0, h_0
+\in \mu_\ell \subset \mathbb{F}_{p^k}^*$, the DLP is in the order-$\ell$ subgroup of
+$\mathbb{F}_{p^k}^*$.
+
+**Step 5: Recover $k$.** The NFS-DL solver returns $k \bmod \ell$, which is the ECDLP scalar.
+
+#### Why this is a polynomial-time reduction
+
+The reduction from ECDLP to DLP in $\mathbb{F}_{p^k}^*$ is polynomial-time:
+
+1. **Finding $R$:** a random point in $E(\mathbb{F}_{p^k})[\ell]$ can be found in $O(\mathrm{poly}(k
+   \log p))$ time by computing $(\#E(\mathbb{F}_{p^k}) / \ell) \cdot P$ for a random $P$.
+2. **Computing the pairing:** Miller's algorithm costs $O(k \log p)$ field operations in
+   $\mathbb{F}_{p^k}$.
+3. **The final exponentiation:** costs $O(k \log p)$ field operations.
+
+The total reduction cost is $O(\mathrm{poly}(k \log p))$ — polynomial in $k \log p$. For small
+$k$ (the MOV threshold), this is efficient.
+
+#### The embedding-degree condition (the MOV threshold)
+
+The MOV reduction is effective only when $k$ is small. For a generic elliptic curve over
+$\mathbb{F}_p$, the embedding degree $k$ is $\Theta(p)$ — exponentially large — and the
+reduction is useless (the DLP in $\mathbb{F}_{p^k}^*$ is harder than the original ECDLP).
+
+The *MOV threshold* is the condition $k \leq C \log p$ for a small constant $C$. Curves with
+small embedding degree are called *MOV-vulnerable*. For a random curve over $\mathbb{F}_p$,
+the probability that $k \leq C \log p$ is negligibly small (roughly $1/p$), so most curves
+are not MOV-vulnerable. Cryptographic curves are specifically chosen to have large embedding
+degree (e.g. secp256k1 has $k \approx 2^{128}$).
+
+#### L-notation
+
+The MOV reduction reduces the ECDLP to a DLP in $\mathbb{F}_{p^k}^*$. The DLP in
+$\mathbb{F}_{p^k}^*$ is solved by NFS-DL in time $L_{p^k}[1/3, (64/9)^{1/3}]$ (§9 of this
+textbook). For small $k$, $p^k$ is polynomial in $p$, so:
+
+$$\text{MOV-reduced ECDLP complexity} = L_{p^k}\!\left[\tfrac{1}{3},\, \left(\tfrac{64}{9}\right)^{1/3}\right]
+= L_p\!\left[\tfrac{1}{3},\, k^{1/3} \cdot \left(\tfrac{64}{9}\right)^{1/3}\right].$$
+
+This is subexponential in $\log p$ — a dramatic improvement over rho's $L_p[1, 1/2]$ (fully
+exponential). The cross-track bridge: the MOV reduction connects the ECDLP (Track E) to the
+NFS-DL setting (Track D), where the $L[1/3]$ complexity applies.
+
+**Principle-4 annotation.** At toy scale ($p = 47$, $k = 2$, $\ell = 3$), the pairing + NFS-DL
+overhead dominates the toy rho cost. The asymptotic win requires crypto-scale $p$ where the
+$L[1/3]$ vs $L[1, 1/2]$ separation is observable.
+
+#### Cross-reference
+
+Code realisation: `docs/PEDAGOGY.md` §10 (MOV code-tour, `rho::pairing::mov`). The NFS-DL
+solver that `mov_reduce` calls is documented in `docs/PEDAGOGY.md` §63–§71 (D.W chapter) and
+developed mathematically in §9 of this textbook.
+
+---
+
+### §10.6 Per-Attack L-Notation Comparison
+
+This table extends the frozen §"Escape from Search" L-notation hierarchy table with a per-attack
+row for the five algebraic ECDLP attacks. The baseline is Pollard rho.
+
+| Attack | Escape structure | L-notation complexity | Precondition | Toy-scale observable? |
+|--------|-----------------|----------------------|--------------|----------------------|
+| Pollard rho (baseline) | None — generic $\sqrt{n}$ walk | $L_n[1, 1/2] = \Theta(\sqrt{n})$ | None | Yes (the baseline) |
+| Pohlig–Hellman | Composite group order | $L_{p_{\max}}[1, 1/2]$ (largest prime factor) | $n$ composite with small $p_{\max}$ | No — speedup requires $p_{\max} \ll n$ |
+| Smart–Satoh–Araki | Anomalous order ($\#E = p$) | $L_p[0] = O(\log p)$ (polynomial time) | $\#E(\mathbb{F}_p) = p$ | Mechanism yes; timing separation no |
+| GHS/Weil descent | Binary field tower | Conditional: $L_{p^{m/l}}[1/2, c]$ (downstream index calculus on Jacobian) | $E/\mathbb{F}_{2^m}$, $l \mid m$, $m/l$ odd | No — transfer only at toy scale |
+| Index calculus | Factor-base decomposability | $L_{p^n}[1/2, c]$ (subexponential, $n > 1$) | $E(\mathbb{F}_{p^n})$, $n > 1$ | No — toy fixture is $n = 1$ |
+| MOV/Frey–Rück | Small embedding degree | $L_{p^k}[1/3, (64/9)^{1/3}]$ (via NFS-DL) | $\ell \mid p^k - 1$, $k$ small | No — pairing overhead dominates at toy scale |
+
+**The principle-4 boundary, stated explicitly.** The asymptotic L-notation separations in this
+table are NOT observable at the toy scale of the C-EWBench fixtures ($p = 47$, $p = 7$). The
+table reports the theoretical complexity class; the toy-scale costs are in `docs/BENCHMARKS.md`
+§E.W. The separation between $L[1, 1/2]$ (rho), $L[1/2]$ (index calculus), $L[1/3]$ (MOV via
+NFS-DL), and $L[0]$ (SSA) is a statement about asymptotic behaviour at cryptographic scale —
+not a ranking of the toy-scale timings.
+
+---
+
+### §10.7 Cross-References
+
+#### Code realisation
+
+The Track-E code-tour in `docs/PEDAGOGY.md` §8–§18 is the code-first sibling to this chapter.
+It documents the module surfaces, toy fixtures, KAT summary, and design-statement verification
+for the five attacks. The chapter-pairing is:
+
+| This chapter | Code-tour section |
+|-------------|-------------------|
+| §10.1 Pohlig–Hellman | `docs/PEDAGOGY.md` §9 |
+| §10.2 Smart–Satoh–Araki | `docs/PEDAGOGY.md` §11 |
+| §10.3 GHS/Weil descent | `docs/PEDAGOGY.md` §12 |
+| §10.4 Index calculus | `docs/PEDAGOGY.md` §13–§14 |
+| §10.5 MOV/Frey–Rück | `docs/PEDAGOGY.md` §10 |
+
+#### Within this textbook
+
+- **§Pollard Rho for ECDLP** — the generic $\sqrt{n}$ baseline this chapter's attacks escape.
+  The "When the bound breaks" subsection names the five attacks; this chapter develops them.
+
+- **§"Escape from Search: The Through-Line"** — the five-family structure taxonomy and the
+  L-notation hierarchy table. This chapter extends that taxonomy per-attack.
+
+- **§9 (NFS-DL)** — the Track-D chapter. The MOV reduction (§10.5) calls `gnfs::dl::solve_dl`
+  (the frozen C2 interface from D.C.3); the NFS-DL complexity analysis (§9.7) is the
+  mathematical basis for the MOV L-notation claim.
+
+- **§Prerequisites** — the CRT (used in Pohlig–Hellman), the discrete logarithm problem
+  definition, and the polynomial-time reduction definition (used in the MOV reduction).
+
+#### Benchmark data
+
+- **`docs/BENCHMARKS.md` §E.W** — the C-EWBench structural-precondition-conditional table:
+  the empirical substrate this chapter's L-notation claims stand on (at toy scale).
+
+---
+
+### §10.8 Further Reading
+
+32. **Menezes, A. J., Okamoto, T., and Vanstone, S. A. (1993).** "Reducing elliptic curve
+    logarithms to logarithms in a finite field." *IEEE Transactions on Information Theory*,
+    39(5), 1639–1646. [MOV93] The original MOV reduction paper — the source for §10.5.
+
+33. **Frey, G., and Rück, H.-G. (1994).** "A remark concerning m-divisibility and the discrete
+    logarithm in the divisor class group of curves." *Mathematics of Computation*, 62(206),
+    865–874. [FR94] The Frey–Rück variant of the pairing reduction.
+
+34. **Smart, N. P. (1999).** "The discrete logarithm problem on elliptic curves of trace one."
+    *Journal of Cryptology*, 12(3), 193–196. [S99] The SSA polynomial-time attack (§10.2).
+
+35. **Satoh, T., and Araki, K. (1998).** "Fermat quotients and the polynomial time discrete log
+    algorithm for anomalous elliptic curves." *IEICE Transactions on Fundamentals*, E81-A(6),
+    1228–1233. [SA98] The Satoh–Araki variant of the anomalous-curve attack.
+
+36. **Gaudry, P., Hess, F., and Smart, N. P. (2002).** "Constructive and destructive facets of
+    Weil descent on elliptic curves." *Journal of Cryptology*, 15(1), 19–46. [GHS02] The GHS
+    Weil-descent attack (§10.3).
+
+37. **Semaev, I. (2004).** "Summation polynomials and the discrete logarithm problem on elliptic
+    curves." Cryptology ePrint Archive, Report 2004/031. [Sem04] The summation polynomial
+    primitive (§10.4).
+
+38. **Gaudry, P. (2009).** "Index calculus for abelian varieties of small dimension and the
+    elliptic curve discrete logarithm problem." *Journal of Symbolic Computation*, 44(12),
+    1690–1702. [Gau09] The Gaudry index-calculus algorithm (§10.4).
+
+39. **Silverman, J. H. (2009).** *The Arithmetic of Elliptic Curves*. 2nd ed. Springer. [S09]
+    §III.8 for the Weil pairing (non-degeneracy, bilinearity); §V.1 for Hasse's bound.
+
+40. **Washington, L. C. (2008).** *Elliptic Curves: Number Theory and Cryptography*. 2nd ed.
+    CRC Press. Chapter 11 for the MOV attack; Chapter 4 for the Weil and Tate pairings.
+
+41. **Blake, I. F., Seroussi, G., and Smart, N. P. (2005).** *Advances in Elliptic Curve
+    Cryptography*. Cambridge University Press. Chapter IX for the MOV and Frey–Rück attacks;
+    Chapter X for the GHS descent.
+
+42. **Galbraith, S. D. (2012).** *Mathematics of Public Key Cryptography*. Cambridge University
+    Press. Chapter 19 for pairings and the MOV reduction; Chapter 21 for index calculus on
+    elliptic curves.

@@ -491,3 +491,676 @@ rho-dlog --curve secp-toy --walkers 4 --batch-size 16 --glv --theta 8
 8. **Brent, R. P. (1980).** "An improved Monte Carlo factorization algorithm." *BIT*, 20(2),
    176–184. Brent's cycle detection algorithm, used in both the factoring (Phase 2) and ECDLP
    (Phase 4) solvers.
+
+---
+
+# Track E — Algebraic ECDLP Attacks: An Integrative Chapter
+
+This chapter is the integrative code-tour for the complete Track-E algebraic ECDLP attack survey.
+The eight Track-E sessions (E.A–E.K) each implemented one attack or primitive in isolation. This
+chapter surveys the whole attack landscape in a single narrative, names the cross-attack contracts
+that connect the attacks, verifies the project's design statement against the realised Track-E
+implementation, and annotates the scale-dependent phenomena at demonstration fidelity.
+
+Track E is an *attack survey*, not a linear pipeline. The attacks do not compose sequentially —
+each exploits a different curve structure and applies only on the curve whose precondition it
+requires. The "at a glance" view is therefore a **taxonomy table** (which structure unlocks which
+escape), not a data-flow diagram.
+
+For the mathematics — the pairing reduction, the p-adic logarithm, the Weil descent, and the
+per-attack L-notation complexity — see `docs/MATHEMATICS.md` ch. 10 (the T.E chapter). This
+chapter is code-first: it assumes the reader knows the mathematics and shows how the code
+realises it.
+
+---
+
+## 8. Track E — Algebraic ECDLP Attacks: At a Glance
+
+The through-line of Track E is the §"Escape from Search" framing from `docs/MATHEMATICS.md`:
+every attack finds a curve structure that escapes the generic $\sqrt{n}$ bound. The table below
+names the structure, the module that realises it, the toy fixture, and the frozen contract.
+
+| Attack | Curve structure exploited | Module surface | Toy fixture | C-contract |
+|--------|--------------------------|----------------|-------------|------------|
+| Pollard rho (baseline) | None — generic group | `rho::ecdlp` (`solve_brent`, `solve_dp`, `solve_dp_negmap`, `solve_dp_batch`, `solve_dp_glv`) | `secp_k1_toy` (63-bit, prime order) | C-Pollard |
+| Pohlig–Hellman | Composite group order $n = \prod p_i^{e_i}$ | `rho::ecdlp::pohlig` (`solve_ecdlp_composite`) | `composite_toy()` ($n = 60 = 2^2 \cdot 3 \cdot 5$) | C-Pohlig |
+| MOV/Frey–Rück | Small embedding degree $k$; $\ell \mid p^k - 1$ | `rho::pairing::mov` (`mov_reduce`) | `pairing_toy()` ($\ell = 3$, $k = 2$, $\mathbb{F}_{47^2}$) | C-Mov |
+| Smart–Satoh–Araki (SSA) | Anomalous curve: $\#E(\mathbb{F}_p) = p$ (trace = 1) | `rho::ssa` (`ssa_solve`) | `anomalous_toy()` ($y^2 = x^3 + 5 \bmod 7$, $\#E = 7 = p$) | C-Ssa |
+| GHS/Weil descent (**transfer**) | Binary curve $E/\mathbb{F}_{2^m}$ with subfield tower | `rho::ghs` (`ghs_descend`, `verify_log_preservation`, `transfer_point`) | `ghs_toy_curve()` ($\mathbb{F}_{2^6}$, $m = 6$, $l = 2$) | C-GHSDescent |
+| Semaev / index calculus | Semaev-decomposable points over a factor base | `rho::semaev` + `rho::index_calculus` (`semaev_poly`, `index_calculus_dlp`, `collect_relations`, `decompose`) | `IndexCalcStrategy::toy()` ($\ell = 5$, $|FB| = 6$, $m = 2$) | C-Semaev, C-IndexCalc |
+
+**The through-line in one sentence per row.** Pollard rho is the generic $\sqrt{n}$ baseline —
+no structure exploited. Pohlig–Hellman finds a *group-order homomorphism*: composite order
+factors the ECDLP over prime-order subgroups via CRT. MOV finds a *pairing*: the bilinear map
+$e: E[n] \times E[n] \to \mu_n$ transports the ECDLP to $\mathbb{F}_{p^k}^*$, where index
+calculus applies. SSA finds an *anomalous endomorphism*: the p-adic formal group logarithm
+gives a polynomial-time solve. GHS finds a *field tower*: Weil restriction transfers the ECDLP
+to a hyperelliptic Jacobian DLP over $\mathbb{F}_{2^l}$ (a transfer, not an end-to-end solve).
+Index calculus finds *factor-base decomposability*: Semaev summation polynomials build a
+relation matrix whose solution recovers the discrete log.
+
+---
+
+## 9. Pohlig–Hellman: CRT to Prime-Order Subgroups
+
+### What it exploits
+
+The group order $n = \#E(\mathbb{F}_p)$ is composite: $n = \prod p_i^{e_i}$. The ECDLP in a
+group of composite order reduces to independent DLPs in each prime-power subgroup via the
+Chinese Remainder Theorem. Each prime-order subgroup DLP is solved by the frozen rho solvers
+(which require prime order). The CRT reassembles the answer.
+
+The escape: instead of running rho on the full group of order $n$, run rho on the largest
+prime-power subgroup of order $p_{\max}^{e_{\max}}$. The cost drops from $O(\sqrt{n})$ to
+$O(\sum e_i (\log n + \sqrt{p_i}))$ — a dramatic speedup when $n$ has small prime factors.
+
+### The module surface (C-Pohlig, frozen E.A)
+
+```rust
+// rho::ecdlp::pohlig
+
+/// Decompose a u64 group order into prime-power factors.
+pub fn factor_order(n: u64) -> Vec<(u64, u32)>;
+
+/// Project (G, Q) to the order-p^e subgroup via [n / p^e]-scalar-multiplication.
+pub fn project_to_subgroup<F: Fp>(
+    curve: &Curve<F>,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+    p_power: u64,
+) -> (AffinePoint<F>, AffinePoint<F>);
+
+/// Composite-order ECDLP via prime-power lift + CRT combine.
+pub fn solve_ecdlp_composite<F: Fp>(
+    curve: &Curve<F>,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    n: u64,
+) -> Option<u64>;
+```
+
+`solve_ecdlp_composite` is the entry point. It calls `factor_order` to decompose $n$, projects
+to each prime-power subgroup via `project_to_subgroup`, solves each subgroup DLP by calling the
+frozen `solve_brent` (which requires prime order), and reassembles via CRT.
+
+### The toy KAT/fixture
+
+The fixture is `composite_toy()`: $y^2 = x^3 + x + 33 \bmod 47$, $n = 60 = 2^2 \cdot 3 \cdot 5$.
+The generator $G = (10, 3)$. The known scalar is $k = 7$: $Q = 7 \cdot G$.
+
+```rust
+let curve = composite_toy();
+let g = curve.generator::<FpMonty>();
+let q = curve.scalar_mul(&g, &Uint::<4>::from(7u64));
+let k = solve_ecdlp_composite(&curve, &g, &q, COMPOSITE_TOY_N)
+    .expect("Pohlig–Hellman must succeed on composite_toy");
+assert_eq!(curve.scalar_mul(&g, &Uint::<4>::from(k)), q);
+```
+
+The bench pre-check in `rho/benches/attacks.rs` (`bench_pohlig_hellman`) asserts this before
+timing.
+
+### Cross-reference
+
+For the mathematical development — the CRT reduction, the prime-power lift, and the L-notation
+cost — see `docs/MATHEMATICS.md` §10.1.
+
+---
+
+## 10. MOV/Frey–Rück: The Pairing Reduction
+
+### What it exploits
+
+The curve has small embedding degree $k$: $\ell \mid p^k - 1$ but $\ell \nmid p^j - 1$ for
+$j < k$. The Weil/Tate pairing $e: E[\ell] \times E[\ell] \to \mu_\ell \subset \mathbb{F}_{p^k}^*$
+is bilinear and non-degenerate. Given $Q = k \cdot G$, compute $e(G, R)$ and $e(Q, R)$ for a
+$\mu_\ell$-generator $R$. By bilinearity, $e(Q, R) = e(k \cdot G, R) = e(G, R)^k$. Writing
+$g_0 = e(G, R)$ and $h_0 = e(Q, R)$, the ECDLP scalar $k$ is exactly $\log_{g_0}(h_0)$ in
+$\mathbb{F}_{p^k}^*$ — where index calculus applies.
+
+This is the cross-track bridge: the MOV reduction transports the ECDLP to the NFS-DL setting
+(Track D), which the frozen `gnfs::dl::solve_dl` entry point solves.
+
+### The module surface (C-Mov, frozen E.C)
+
+```rust
+// rho::pairing::mov
+
+/// MOV/Frey–Rück reduction: ECDLP → F_{p^k}* DLP via the Tate pairing.
+///
+/// Given (curve, G, Q, R, ell) where Q = k·G in the order-ℓ subgroup and R is a
+/// μ_ℓ-generator with e(G, R) ≠ 1, returns k mod ℓ.
+pub fn mov_reduce<F: Fp<4>>(
+    curve: &Curve<FpNaive4<4>>,
+    modulus: &IrreducibleModulus<F>,
+    p_point: &PairingPoint<F>,
+    q_point: &PairingPoint<F>,
+    r_point: &PairingPoint<F>,
+    ell: u64,
+) -> Result<u64, MovError>;
+```
+
+`mov_reduce` evaluates the reduced Tate pairing twice (via `reduced_tate` in `rho::pairing::tate`),
+encodes both outputs through the C-MovBridge (`fpext_to_bigint`), and calls `gnfs::dl::solve_dl`
+to recover $k \bmod \ell$.
+
+The pairing infrastructure:
+- `rho::pairing::miller` — Miller's algorithm (the efficient pairing evaluation).
+- `rho::pairing::tate` — the reduced Tate pairing (Miller loop + final exponentiation).
+- `rho::pairing::weil` — the Weil pairing (for reference; the Tate pairing is used in `mov_reduce`).
+- `rho::pairing::fpext` — $\mathbb{F}_{p^k}$ arithmetic (the target field).
+- `rho::pairing::ecext` — elliptic curve arithmetic over $\mathbb{F}_{p^k}$ (for the extension-field
+  torsion points).
+
+### The toy KAT/fixture
+
+The fixture is `pairing_toy()`: the base curve $y^2 = x^3 + x + 33 \bmod 47$, $\ell = 3$,
+$k = 2$, $\mathbb{F}_{47^2}$. The known scalar is $k = 2$: $Q' = 2 \cdot G$ in the order-3
+subgroup.
+
+```rust
+let (curve, modulus, ell, p_point, q_point) = pairing_toy();
+let q_prime = p_point.scalar_mul(2, &a_ext, &modulus, &p);
+let result = mov_reduce::<FpNaive4<4>>(&curve, &modulus, &p_point, &q_prime, &q_point, ell)
+    .expect("MOV must succeed on pairing_toy");
+assert_eq!(result, 2u64);
+```
+
+The bench pre-check in `rho/benches/attacks.rs` (`bench_mov`) asserts this before timing.
+
+### Cross-reference
+
+For the full proof of the MOV reduction — the bilinearity, non-degeneracy, and the reduction
+argument — see `docs/MATHEMATICS.md` §10.5 (the designated payoff proof).
+
+---
+
+## 11. Smart–Satoh–Araki: The Anomalous-Curve Polynomial-Time Attack
+
+### What it exploits
+
+The curve is *anomalous*: $\#E(\mathbb{F}_p) = p$ (trace of Frobenius = 1). The p-adic formal
+group logarithm lifts the ECDLP to $\mathbb{Z}_p$ via Hensel's lemma, where it is trivially
+linear. The escape is polynomial time — the sharpest escape in Track E.
+
+The key steps: (1) lift the affine point $G \in E(\mathbb{F}_p)$ to a point $\tilde{G}$ on the
+formal group $\hat{E}(\mathbb{Z}_p)$ via Hensel's lemma; (2) apply the formal group logarithm
+$\log_{\hat{E}}$ to get $\log_{\hat{E}}(\tilde{G}) \in p\mathbb{Z}_p$; (3) the ECDLP scalar
+$k$ is recovered as $\log_{\hat{E}}(\tilde{Q}) / \log_{\hat{E}}(\tilde{G}) \bmod p$.
+
+### The module surface (C-Ssa, frozen E.E)
+
+```rust
+// rho::ssa
+
+/// Solve the ECDLP on an anomalous curve via the p-adic formal group logarithm.
+///
+/// Requires #E(F_p) = p (anomalous). Returns k mod p such that Q = k·G.
+pub fn ssa_solve<F: Fp>(
+    curve: &Curve<F>,
+    g: &AffinePoint<F>,
+    q: &AffinePoint<F>,
+    p: u64,
+) -> Result<u64, SsaError>;
+```
+
+The internal structure:
+- `rho::ssa::lift` — Hensel lift: $F_p$ point → $\mathbb{Z}_p$ point (`hensel_lift_point`).
+- `rho::ssa::formal_log` — formal group logarithm: $\hat{E}(\mathbb{Z}_p) \to p\mathbb{Z}_p$
+  (`formal_group_log`).
+- `rho::ssa::reduce` — the full SSA reduction assembling the three steps (`ssa_solve`).
+
+The p-adic substrate is provided by `shared-padic` (C-Padic, C-Hensel, C-PadicLog — frozen
+before E.E).
+
+### The toy KAT/fixture
+
+The fixture is `anomalous_toy()`: $y^2 = x^3 + 5 \bmod 7$, $p = 7$, $\#E = 7 = p$. The
+generator $G = (3, 2)$. The known scalar is $k = 3$: $Q = 3 \cdot G$.
+
+```rust
+let curve = anomalous_toy();
+let g = curve.generator::<FpNaive>();
+let q = curve.scalar_mul(&g, &Uint::<4>::from(3u64));
+let k = ssa_solve::<FpNaive>(&curve, &g, &q, ANOMALOUS_TOY_P)
+    .expect("SSA must succeed on anomalous_toy");
+assert_eq!(k, 3u64);
+```
+
+The bench pre-check in `rho/benches/attacks.rs` (`bench_ssa`) asserts this before timing.
+
+### Cross-reference
+
+For the mathematical development — the formal group logarithm, the Hensel lift, and the
+polynomial-time complexity — see `docs/MATHEMATICS.md` §10.2.
+
+---
+
+## 12. GHS/Weil Descent: The Binary-Curve Transfer
+
+### What it exploits
+
+The curve is defined over a binary field $E/\mathbb{F}_{2^m}$ with a subfield tower
+$\mathbb{F}_{2^l} \subset \mathbb{F}_{2^m}$ (with $l \mid m$). The Weil restriction
+$\mathrm{Res}_{\mathbb{F}_{2^m}/\mathbb{F}_{2^l}}$ transfers the ECDLP on $E$ to a DLP on the
+Jacobian of a hyperelliptic curve $C/\mathbb{F}_{2^l}$, where index calculus applies.
+
+**GHS is a transfer, not an end-to-end solve.** `rho::ghs` exposes the descent reduction and
+log-preservation verification, but has no `ghs_dlp` solver. The downstream solve is index
+calculus (a deferred re-shard). Representing GHS as an end-to-end solve time would misrepresent
+the attack's scope.
+
+### The module surface (C-GHSDescent, frozen E.H)
+
+```rust
+// rho::ghs
+
+/// Top-level GHS descent: (E, g, h) → (C, D_g, D_h) with log-preservation guarantee.
+pub fn ghs_descend(
+    params: &GhsParams,
+    g: &BinaryPoint<F2mNaive<1>>,
+    h: &BinaryPoint<F2mNaive<1>>,
+) -> Result<GhsDescentResult, GhsError>;
+
+/// Verify that the descent preserves the discrete logarithm.
+/// Returns true iff log_{D_g}(D_h) = k (the known scalar).
+pub fn verify_log_preservation(result: &GhsDescentResult, k: u64) -> bool;
+
+/// Transfer a single point on E to a divisor on Jac(C).
+pub fn transfer_point(
+    params: &GhsParams,
+    point: &BinaryPoint<F2mNaive<1>>,
+) -> Result<HyperellipticDivisor, GhsError>;
+```
+
+The internal structure:
+- `rho::ghs::descent` — Artin–Schreier extension and Weil restriction of scalars
+  (`ArtinSchreierData`, `WeilRestriction`, `weil_restrict_poly`).
+- `rho::ghs::curve` — hyperelliptic curve extraction from the descent algebra
+  (`extract_ghs_curve`, `ghs_genus`).
+- `rho::ghs::reduce` — the GHS reduction assembling descent + transfer (`ghs_descend`,
+  `GhsDescentResult`).
+- `rho::ghs::transfer` — the point-to-divisor transfer map (`transfer_point`,
+  `verify_homomorphism`).
+
+### The toy KAT/fixture
+
+The fixture is `ghs_toy_curve()`: $E/\mathbb{F}_{2^6}$ with $m = 6$, $l = 2$, $m/l = 3$ (odd —
+imaginary hyperelliptic model). The source field uses irreducible $x^6 + x + 1$ (poly = 0x43);
+the subfield uses $x^2 + x + 1$ (poly = 0x7). The binary curve is $y^2 + xy = x^3 + x^2 + 1$.
+
+```rust
+let curve_e = ghs_toy_curve();
+let params = GhsParams::new(6, 2, curve_e.clone(), Uint::<1>::from(GHS_POLY2))
+    .expect("GHS params must be valid");
+let g = curve_e.generator::<F2mNaive<1>>();
+let h = g.clone(); // h = 1·g
+let result = ghs_descend(&params, &g, &h)
+    .expect("GHS descent must succeed");
+assert!(verify_log_preservation(&result, 1));
+```
+
+The bench pre-check in `rho/benches/attacks.rs` (`bench_ghs_transfer`) asserts this before
+timing. The bench measures the *descent reduction + log-preservation verification*, annotated
+as a transfer.
+
+### Cross-reference
+
+For the mathematical development — the Weil restriction, the hyperelliptic Jacobian, and the
+conditional L-notation — see `docs/MATHEMATICS.md` §10.3.
+
+---
+
+## 13. Semaev Summation Polynomials: The Index-Calculus Primitive
+
+### What it exploits
+
+The Semaev summation polynomial $S_m(X_1, \ldots, X_m)$ is a symmetric multivariate polynomial
+over $\mathbb{F}_p$ that vanishes on $(x_1, \ldots, x_m)$ precisely when there exist $y_i$ such
+that $P_i = (x_i, y_i) \in E(\mathbb{F}_p)$ with $P_1 + \cdots + P_m = \mathcal{O}$. This is
+the combinatorial primitive at the heart of the Gaudry–Diem–Joux–Vitse index calculus.
+
+The factor base $\mathcal{F}$ is a set of points on $E$ with small x-coordinates. A point $P$
+is *decomposable* over $\mathcal{F}$ if $P = \sum_{i=1}^m F_i$ for some $F_i \in \mathcal{F}$.
+The Semaev polynomial detects this: $S_m(x_{F_1}, \ldots, x_{F_{m-1}}, x_P) = 0$ iff $P$
+decomposes over $\mathcal{F}$ with the given $F_i$.
+
+### The module surface (C-Semaev, frozen E.J)
+
+```rust
+// rho::semaev
+
+/// Compute the m-th Semaev summation polynomial S_m via the resultant ladder.
+///
+/// S_3 is the base case (computed from the curve equation).
+/// S_m = Res_X(S_{m-1}(X_1, ..., X_{m-2}, X), S_3(X_{m-1}, X_m, X)) for m > 3.
+pub fn semaev_poly(m: usize, curve: &Curve<FpNaive>) -> Result<MultiPoly, SemaevError>;
+```
+
+The `MultiPoly` type is a symmetric multivariate polynomial over $\mathbb{F}_p$, supporting
+evaluation, resultant computation, and variable substitution. The recursion ladder builds
+$S_m$ from $S_3$ via iterated resultants.
+
+### Cross-reference
+
+The Semaev primitive is consumed by the index-calculus solver (§14 below). For the mathematical
+development — the summation polynomial definition and the relation-collection loop — see
+`docs/MATHEMATICS.md` §10.4.
+
+---
+
+## 14. Index Calculus: Semaev Decomposition over the Factor Base
+
+### What it exploits
+
+The index-calculus attack collects *relations*: random multiples $k_i \cdot G$ that decompose
+over the factor base $\mathcal{F}$ (detected via the Semaev polynomial). Each decomposition
+gives a linear equation over $\mathbb{Z}/\ell\mathbb{Z}$. Once enough relations are collected,
+the linear system is solved (block-Lanczos/Wiedemann over $\mathbb{F}_\ell$) to recover the
+discrete logarithm.
+
+**Principle-4 boundary.** Over $E(\mathbb{F}_p)$, index calculus is NOT faster than Pollard
+rho — the asymptotic win requires the extension-field setting $E(\mathbb{F}_{p^n})$ with $n > 1$
+(the genuine Gaudry–Diem setting, a deferred re-shard). The toy fixture demonstrates the
+mechanism; the asymptotic win is not observable at $p = 47$.
+
+### The module surface (C-IndexCalc, frozen E.K)
+
+```rust
+// rho::index_calculus
+
+/// Full index-calculus ECDLP pipeline: collect relations → solve linear system → recover log.
+pub fn index_calculus_dlp(
+    g: AffinePoint<FpNaive>,
+    q: AffinePoint<FpNaive>,
+    strategy: &IndexCalcStrategy,
+) -> Result<Option<u64>, IndexCalcError>;
+
+/// Collect relations: random multiples of G that decompose over the factor base.
+pub fn collect_relations(
+    g: AffinePoint<FpNaive>,
+    q: AffinePoint<FpNaive>,
+    strategy: &IndexCalcStrategy,
+) -> Result<Vec<Relation>, IndexCalcError>;
+
+/// Decompose a point over the factor base (returns None if not decomposable).
+pub fn decompose(
+    point: AffinePoint<FpNaive>,
+    strategy: &IndexCalcStrategy,
+) -> Option<Vec<u64>>;
+```
+
+The `IndexCalcStrategy` bundles the curve, factor base, subgroup modulus $\ell$, and Semaev
+polynomial degree $m$. The `toy()` constructor builds the canonical toy fixture.
+
+The internal structure:
+- `rho::index_calculus::strategy` — `FbPoint`, `IndexCalcStrategy`, `Relation` (C-IndexCalcStrategy,
+  C-EKRelation).
+- `rho::index_calculus::collect` — relation collection loop (`collect_relations`).
+- `rho::index_calculus::decompose` — point decomposition via Semaev polynomial (`decompose`).
+- `rho::index_calculus::linalg` — $\mathbb{F}_\ell$ linear algebra (`build_ek_matrix`,
+  `solve_ek_linalg`).
+- `rho::index_calculus::solve` — full pipeline assembler (`index_calculus_dlp`).
+
+**Index-calculus counts.** `index_calculus_dlp` returns only the log. The relation count and
+decomposition count are derived from the public re-exports `collect_relations(...).len()` and
+`decompose(...)` (C-IndexCalc unamended — the E.K.5-flagged decision).
+
+### The toy KAT/fixture
+
+The fixture is `IndexCalcStrategy::toy()`: $y^2 = x^3 + x + 33 \bmod 47$, $\ell = 5$,
+$|FB| = 6$, $m = 2$. The known scalar is $k = 7$: $Q = 7 \cdot G$ (with $Q_\ell = (n/\ell) \cdot Q$
+in the order-$\ell$ subgroup).
+
+```rust
+let strategy = IndexCalcStrategy::toy().expect("toy strategy must build");
+let curve = strategy.curve.clone();
+let g = curve.generator::<FpNaive>();
+let q = curve.scalar_mul(&g, &Uint::<4>::from(7u64));
+let k = index_calculus_dlp(g.clone(), q.clone(), &strategy)
+    .expect("index_calculus_dlp must not error")
+    .expect("index_calculus_dlp must recover k");
+// Verify k·G_ℓ = Q_ℓ (subgroup-log correctness).
+let cofactor = n / ell;
+let g_ell = curve.scalar_mul(&g, &Uint::<4>::from(cofactor));
+let q_ell = curve.scalar_mul(&q, &Uint::<4>::from(cofactor));
+assert_eq!(curve.scalar_mul(&g_ell, &Uint::<4>::from(k)), q_ell);
+```
+
+The bench pre-check in `rho/benches/attacks.rs` (`bench_index_calculus`) asserts this before
+timing.
+
+### Cross-reference
+
+For the mathematical development — the Semaev polynomial, the relation-collection loop, the
+$\mathbb{Z}/\ell\mathbb{Z}$ linear algebra, and the L-notation — see `docs/MATHEMATICS.md` §10.4.
+
+---
+
+## 15. The Cross-Phase Contract View
+
+The seven frozen Track-E contracts are the interfaces that allow the attacks to be developed,
+tested, and reasoned about independently. This section names them in one place.
+
+| Contract | Frozen at | What it exposes | Consumed by |
+|----------|-----------|-----------------|-------------|
+| **C-Pollard** | E.A | `solve_brent`, `solve_dp`, `solve_dp_negmap`, `solve_dp_batch`, `solve_dp_glv` — the generic-$\sqrt{n}$ rho solvers | E.W (baseline column), all Track-E attacks (rho as sub-solver in Pohlig–Hellman) |
+| **C-Pohlig** | E.A | `solve_ecdlp_composite`, `factor_order`, `project_to_subgroup` — composite-order ECDLP via CRT | E.W (Pohlig–Hellman bench + code-tour) |
+| **C-Mov** | E.C | `mov_reduce` — MOV/Frey–Rück reduction to $\mathbb{F}_{p^k}^*$ DLP | E.W (MOV bench + code-tour); T.E §10.5 (the payoff proof) |
+| **C-Ssa** | E.E | `ssa_solve` — SSA polynomial-time anomalous-curve attack | E.W (SSA bench + code-tour) |
+| **C-GHSDescent** | E.H | `ghs_descend`, `verify_log_preservation`, `transfer_point` — binary-curve transfer (NOT a solver) | E.W (GHS bench + code-tour, annotated as transfer) |
+| **C-Semaev** | E.J | `semaev_poly` + `MultiPoly` operations — the index-calculus primitive | E.K (index calculus consumes C-Semaev); E.W (code-tour) |
+| **C-IndexCalc** | E.K.5 ◆ | `index_calculus_dlp`, `collect_relations`, `decompose` — full index-calculus pipeline | E.W (index-calculus bench + code-tour) |
+
+**All read, none amended by E.W.** The E.W sessions (E.W.1 and E.W.2) read every frozen
+Track-E contract and add only additive Criterion benches + prose. No solver surface is touched.
+
+---
+
+## 16. Design-Statement Verification (Principles 1/3/4)
+
+The ROADMAP names E.W.2 as "the moment where the design statement is verified against the
+actual Track-E implementation." The design statement has three scoping principles. This section
+walks each principle against what E.A–E.K actually shipped.
+
+### Principle 1: Algorithmic content complete
+
+**Statement.** All eight Track-E attacks are implemented head-on, not stubbed. Every attack —
+Pollard rho, Pohlig–Hellman, MOV, SSA, GHS, Semaev, and index calculus — is present and
+KAT-verified.
+
+**Verification.**
+
+- **Pollard rho (E.A).** `solve_brent`, `solve_dp`, `solve_dp_negmap`, `solve_dp_batch`,
+  `solve_dp_glv` — all five solver variants implemented and KAT-verified on `secp_k1_toy`.
+  **Complete.**
+
+- **Pohlig–Hellman (E.A).** `solve_ecdlp_composite` with `factor_order` and
+  `project_to_subgroup` — composite-order ECDLP via CRT, implemented and KAT-verified on
+  `composite_toy()` ($n = 60$). **Complete.**
+
+- **MOV/Frey–Rück (E.C).** `mov_reduce` with the full pairing infrastructure (Miller's
+  algorithm, reduced Tate pairing, $\mathbb{F}_{p^k}$ arithmetic, C-MovBridge to
+  `gnfs::dl::solve_dl`) — implemented and KAT-verified on `pairing_toy()` ($\ell = 3$, $k = 2$).
+  **Complete.**
+
+- **Smart–Satoh–Araki (E.E).** `ssa_solve` with Hensel lift and formal group logarithm —
+  polynomial-time anomalous-curve attack, implemented and KAT-verified on `anomalous_toy()`
+  ($p = 7$, $\#E = 7$). **Complete.**
+
+- **GHS/Weil descent (E.H).** `ghs_descend`, `verify_log_preservation`, `transfer_point` —
+  binary-curve transfer to hyperelliptic Jacobian, implemented and KAT-verified on
+  `ghs_toy_curve()` ($\mathbb{F}_{2^6}$). Represented honestly as a transfer (no `ghs_dlp`).
+  **Complete (as a transfer).**
+
+- **Semaev summation polynomials (E.J).** `semaev_poly` via the resultant ladder — the
+  index-calculus primitive, implemented and KAT-verified. **Complete.**
+
+- **Index calculus (E.K).** `index_calculus_dlp` with `collect_relations`, `decompose`,
+  `build_ek_matrix`, `solve_ek_linalg` — full Gaudry–Diem–Joux–Vitse pipeline, implemented
+  and KAT-verified on `IndexCalcStrategy::toy()`. **Complete.**
+
+**Verdict: Principle 1 — pass.** All eight attacks implemented end-to-end. No attack is a stub.
+GHS is complete as a transfer (the honest representation of the attack's scope).
+
+### Principle 3: No engineering optimisation crept in
+
+**Statement.** PARI/msolve oracles remain `#[ignore]`-gated dev-only. No production solver
+acceleration, no GPU, no distributed computation.
+
+**Verification.**
+
+- **PARI/msolve oracles.** All oracle KATs across Track E are gated behind
+  `#[ignore = "PARI not installed; run manually when available"]` (or the msolve analogue).
+  None are on the green test path. No production dependency was added.
+
+- **Pairing computation.** Miller's algorithm is implemented at demonstration fidelity: the
+  standard Miller loop with the final exponentiation. No optimised pairing (ate pairing, optimal
+  ate) was introduced.
+
+- **Index calculus.** The relation-collection loop uses the Semaev polynomial at degree $m = 2$
+  (the toy setting). No Gröbner-basis acceleration, no Weil descent optimisation, no
+  large-prime variation.
+
+- **GHS descent.** The Weil restriction and Artin–Schreier extension are implemented at
+  demonstration fidelity. No optimised descent (no Magma/PARI oracle for the hyperelliptic
+  Jacobian DLP).
+
+**Verdict: Principle 3 — pass.** No engineering optimisations were added. All oracle cross-checks
+remain `#[ignore]`-gated.
+
+### Principle 4: Scale-only at demonstration fidelity
+
+**Statement.** The implementation is correct but not production-scale. Scale-dependent phenomena
+are annotated explicitly; the annotations document the science↔engineering gap.
+
+**Verification.** The principle-4 annotations are present throughout Track E:
+
+| Attack | Phenomenon | Annotation |
+|--------|-----------|------------|
+| Pohlig–Hellman | Speedup over rho only exponential at crypto scale; at toy scale ($n = 60$) the gain is invisible | §10.1 of T.E; BENCHMARKS.md §E.W |
+| MOV/Frey–Rück | At $k = 2$, $p = 47$: pairing + $\mathbb{F}_{p^2}$ DLP overhead dominates; asymptotic win requires crypto-scale $p$ | §10.5 of T.E; BENCHMARKS.md §E.W |
+| SSA | Polynomial-time at all scales; toy fixture ($p = 7$) makes constant factors invisible | §10.2 of T.E |
+| GHS | Transfer only; asymptotic win comes from downstream index calculus on the Jacobian (deferred re-shard) | §10.3 of T.E; BENCHMARKS.md §E.W |
+| Index calculus | Over $E(\mathbb{F}_p)$: NOT faster than rho; asymptotic win requires $E(\mathbb{F}_{p^n})$, $n > 1$ | §10.4 of T.E; BENCHMARKS.md §E.W |
+| L-notation separations | $L[1, 1/2]$ (rho) vs $L[0]$ (SSA) vs $L[1/3]$ (MOV via NFS-DL) are NOT observable at $p = 47$/$p = 7$ | §10.6 of T.E |
+
+**Verdict: Principle 4 — pass.** The implementation is correct at demonstration fidelity.
+Scale-dependent phenomena are annotated explicitly throughout. No phenomenon is silently omitted.
+
+### Design-statement verification summary
+
+**Design-statement verified: pass on all three principles.**
+
+- Principle 1 (algorithmic content complete): **pass** — all eight attacks implemented
+  end-to-end; GHS complete as a transfer.
+- Principle 3 (no engineering optimisation crept in): **pass** — PARI/msolve oracles remain
+  `#[ignore]`-gated; no production acceleration.
+- Principle 4 (scale-only at demonstration fidelity): **pass** — all scale-dependent phenomena
+  annotated explicitly; L-notation separations annotated as non-observable at toy scale.
+
+No divergence requiring a corrective follow-on session was found. Track E is complete and
+KAT-green.
+
+---
+
+## 17. KAT Summary (E.W — Integrative)
+
+The integrative chapter does not add new KATs (it is a code-tour, not a new implementation).
+The KATs that verify the Track-E attacks are the existing per-attack KAT suites plus the
+`attacks.rs` bench pre-check asserts (the C-EWBench no-regression smoke tests).
+
+### Per-attack KATs
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `rho/tests/pohlig_kat.rs` | Pohlig–Hellman KATs | `solve_ecdlp_composite` on `composite_toy()` ($n = 60$); CRT correctness; prime-power lift |
+| `rho/tests/mov_kat.rs` | MOV/Frey–Rück KATs | `mov_reduce` on `pairing_toy()` ($\ell = 3$, $k = 2$); pairing bilinearity; $k = 2$ recovery |
+| `rho/tests/ssa_kat.rs` | SSA KATs | `ssa_solve` on `anomalous_toy()` ($p = 7$); Hensel lift; formal group log; $k = 3$ recovery |
+| `rho/tests/ghs_kat.rs` | GHS KATs | `ghs_descend` + `verify_log_preservation` on `ghs_toy_curve()` ($\mathbb{F}_{2^6}$); log-preservation |
+| `rho/tests/semaev_kat.rs` | Semaev KATs | `semaev_poly` correctness; $S_3$ base case; resultant ladder |
+| `rho/tests/index_calculus_kat.rs` | Index-calculus KATs | `index_calculus_dlp` on `IndexCalcStrategy::toy()`; relation collection; decomposition; linear algebra |
+
+### Bench pre-check asserts (C-EWBench no-regression smoke tests)
+
+Each bench in `rho/benches/attacks.rs` asserts the solver returns the known correct answer
+before timing. These asserts are the C-EWBench invariant: every benched attack still solves
+(or, for GHS, transfers) its toy instance.
+
+| Bench function | Pre-check assert | Known answer |
+|----------------|-----------------|--------------|
+| `attacks/pohlig_hellman` | `k·G = Q` for $k$ returned by `solve_ecdlp_composite` | $k = 7$ on `composite_toy()` |
+| `attacks/mov_frey_ruck` | `mov_reduce` returns $k = 2$ | $k = 2$ on `pairing_toy()` |
+| `attacks/ssa` | `ssa_solve` returns $k = 3$ | $k = 3$ on `anomalous_toy()` |
+| `attacks/ghs_transfer` | `verify_log_preservation` returns `true` for $k = 1$ | $k = 1$ on `ghs_toy_curve()` |
+| `attacks/index_calculus` | $k \cdot G_\ell = Q_\ell$ for $k$ returned by `index_calculus_dlp` | $k \cdot G_\ell = Q_\ell$ on `IndexCalcStrategy::toy()` |
+
+---
+
+## 18. Cross-References
+
+### Mathematical textbook
+
+- **`docs/MATHEMATICS.md` ch. 10** (T.E chapter) — the maths-first sibling to this integrative
+  chapter. Develops the five algebraic ECDLP attacks mathematically: Pohlig–Hellman (§10.1),
+  Smart–Satoh–Araki (§10.2), GHS/Weil descent (§10.3), index calculus (§10.4), and the
+  **MOV/Frey–Rück reduction (§10.5 — the designated payoff proof)**. Carries the per-attack
+  L-notation comparison (§10.6). Cross-references this chapter for the code realisation.
+
+- **`docs/MATHEMATICS.md` §Pollard Rho for ECDLP** — the rho baseline this chapter's
+  bound-breaking extends. The $\sqrt{n}$ generic bound established there is the baseline all
+  Track-E attacks escape.
+
+- **`docs/MATHEMATICS.md` §"Escape from Search: The Through-Line"** — the five-family structure
+  taxonomy and the L-notation hierarchy table. The scaffold Track E realises.
+
+### Benchmark data
+
+- **`docs/BENCHMARKS.md` ## E.W** — the C-EWBench table: the structural-precondition-conditional
+  benchmark table (Attack / Curve-precondition / Applies? / Toy-scale cost / Escape structure).
+  The empirical substrate this code-tour stands on.
+
+### Contract definitions
+
+- **C-Pollard:** `rho/src/ecdlp/mod.rs` (frozen E.A).
+- **C-Pohlig:** `rho/src/ecdlp/pohlig.rs` (frozen E.A).
+- **C-Mov:** `rho/src/pairing/mov.rs` (frozen E.C).
+- **C-Ssa:** `rho/src/ssa/mod.rs` (frozen E.E).
+- **C-GHSDescent:** `rho/src/ghs/mod.rs` (frozen E.H).
+- **C-Semaev:** `rho/src/semaev/mod.rs` (frozen E.J).
+- **C-IndexCalc:** `rho/src/index_calculus/mod.rs` (frozen E.K.5 ◆).
+
+---
+
+## Further Reading (E.W — Integrative)
+
+1. **Menezes, A. J., Okamoto, T., and Vanstone, S. A. (1993).** "Reducing elliptic curve
+   logarithms to logarithms in a finite field." *IEEE Transactions on Information Theory*,
+   39(5), 1639–1646. The original MOV reduction paper.
+
+2. **Frey, G., and Rück, H.-G. (1994).** "A remark concerning m-divisibility and the discrete
+   logarithm in the divisor class group of curves." *Mathematics of Computation*, 62(206),
+   865–874. The Frey–Rück variant of the pairing reduction.
+
+3. **Smart, N. P. (1999).** "The discrete logarithm problem on elliptic curves of trace one."
+   *Journal of Cryptology*, 12(3), 193–196. The SSA polynomial-time attack.
+
+4. **Satoh, T., and Araki, K. (1998).** "Fermat quotients and the polynomial time discrete log
+   algorithm for anomalous elliptic curves." *IEICE Transactions on Fundamentals*, E81-A(6),
+   1228–1233. The Satoh–Araki variant of the anomalous-curve attack.
+
+5. **Gaudry, P., Hess, F., and Smart, N. P. (2002).** "Constructive and destructive facets of
+   Weil descent on elliptic curves." *Journal of Cryptology*, 15(1), 19–46. The GHS Weil-descent
+   attack.
+
+6. **Semaev, I. (2004).** "Summation polynomials and the discrete logarithm problem on elliptic
+   curves." Cryptology ePrint Archive, Report 2004/031. The summation polynomial primitive.
+
+7. **Gaudry, P. (2009).** "Index calculus for abelian varieties of small dimension and the
+   elliptic curve discrete logarithm problem." *Journal of Symbolic Computation*, 44(12),
+   1690–1702. The Gaudry index-calculus algorithm.
+
+8. **`docs/MATHEMATICS.md` ch. 10** (T.E chapter). The maths-first sibling to this chapter:
+   the full MOV payoff proof (§10.5), the per-attack L-notation comparison (§10.6), and the
+   algebraic ECDLP attacks developed mathematically from first principles.
