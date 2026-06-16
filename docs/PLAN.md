@@ -832,7 +832,7 @@ recorded in the Action-frame digest.
 | E.K.2 | Index-calculus point decomposition via Semaev | done | 07c4b70 | C-PointDecomp |
 | E.K.3 | Index-calculus relation collection | done | bbabf10 | C-RelationCollect |
 | E.K.4 | Index-calculus `Z/ℓℤ` linear algebra adapter + solve | done | a5d6751 | C-EKLinAlg |
-| E.K.5 ◆ | Index-calculus DLP recovery + `rho::ecdlp` cross-check + close | pending | | C-IndexCalc |
+| E.K.5 ◆ | Index-calculus DLP recovery + `rho::ecdlp` cross-check + close | done | 592c593 | C-IndexCalc |
 
 Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.K, unchanged), the
 prime-field curve + ECDLP surface (`rho::curve::Curve`/`AffinePoint` + `rho::ecdlp` — read as the
@@ -856,6 +856,12 @@ Discovery/flex: The ◆-start inflection fork confirmed the C-EKRelation sparse-
 Affected: C-EKRelation (ratified, not changed — confirmed sound)
 Deferred: no — all four ratification questions resolved affirmatively; ℓ=5/FB_SIZE=6/m=2 additive-reshard escapes pre-authorized if density falls short at E.K.3
 Texture: The inflection fork returned design-confident; self-continued. C1 trial_smooth confirmed NOT literally consumed — Relation mirrors the SmoothWitness idiom but does not call it.
+
+### E.K.5 ◆ — 2026-06-16
+Discovery/flex: Boundary fork returned still-on-intent. Two flags surfaced (non-halting): (1) C-IndexCalc returns only Option<u64> — E.W benchmark counts (decomp/relation counts) must be derived from the public collect_relations/decompose re-exports, not from a single solver call; additive in E.W's shard. (2) ROADMAP Progress/Remaining tables now stale by six completed sub-tracks (E.F–E.K) + E.H-before-E.I inversion — carried capture candidate, not a blocker. Cross-check oracle: solve_ecdlp_composite (correct for composite n=60, hands off to Pollard-rho) — reconciled, not a deviation.
+Affected: C-IndexCalc (frozen as-is; E.W benchmark ergonomics flagged as additive)
+Deferred: yes — E.W benchmark counts: if E.W needs counts as a first-class return, a small additive amend to C-IndexCalc is best decided before E.W shards. ROADMAP write owed.
+Texture: The adapter did NOT grow (near-identity as ratified); additive-reshard escapes (grow FB_SIZE, raise m, merge E.K.2/E.K.3) were not needed — density held at m=2/FB_SIZE=6.
 
 ---
 
