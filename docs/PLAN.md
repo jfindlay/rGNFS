@@ -647,7 +647,7 @@ names contracts this session locked. The E.H.5 ◆ `@architect` confirmation is 
 | E.H.2 | Artin–Schreier / function-field Weil-restriction algebra | done | 7a4a72f | C-DescentAlgebra (frozen) |
 | E.H.3 | GHS hyperelliptic-curve extraction C/GF(2^l) | done | 2cc5205 | C-GHSCurve (frozen) |
 | E.H.4 | Transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) | done | 95d9fac | C-DescentMap (frozen) |
-| E.H.5 ◆ | GHS/Weil descent: ECDLP → Jacobian-DLP reduction + close | pending | — | C-GHSDescent |
+| E.H.5 ◆ | GHS/Weil descent: ECDLP → Jacobian-DLP reduction + close | done | 9edcb88 | C-GHSDescent (frozen) |
 
 Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.H,
 unchanged), the binary-curve surface (C-BinaryCurve/C-BinaryRho/C-Koblitz from E.G — read as the ECDLP
@@ -664,7 +664,11 @@ index-calculus attack (E.H transfers; E.J+E.K solve).
 
 ## Action-frame digest
 
-*(none yet)*
+### E.H.5 ◆ — 2026-06-15
+Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); one named deviation: the toy fixture (m=6, l=2, n=3) yields genus 1 (not genus 2–4 as E.H.3's sketch anticipated) — the `weil_restrict_poly` algebra is built and unit-tested but bypassed on the extraction path (curve coefficients already in GF(2^2)); log-preservation is non-vacuous and green.
+Affected: C-GHSCurve (ratified frozen — genus-1 fixture is within PLAN's principle-4 toy-scale provisions); C-GHSDescent (ratified frozen — transfer-only, log-preservation verified).
+Deferred: yes — E.K.1 (Opus-flagged) should treat "first genus≥2 extraction through `weil_restrict_poly`" as an explicit risk item; the Weil-restriction algebra is exercised only on linearity/dimension unit tests, not on a full genus-raising extraction. ROADMAP Progress/Remaining table reconciliation also owed (E.F+E.G+E.I completions + E.H/E.I order inversion — housekeeping, not blocking).
+Texture: All five E.H sessions ran clean (no fix-loop iterations); the trace/norm identities, homomorphism D_{P+Q}=D_P+D_Q, and log-preservation D_h=k·D_g (k=1,2,3) KATs confirmed the GHS/Weil descent is transfer-correct. The genus-1 degeneracy is a principle-4 boundary (toy parameters; GHS is crypto-scale-correct over composite binary fields with genus≥2). CAPTURE-CANDIDATE: "A transfer attack's sub-track-close KAT is relationship-preservation (log-preservation), not an end-to-end break; the solve is delegated to the consumer sub-track."
 
 ---
 
