@@ -27,8 +27,10 @@
 //! a deferred re-shard). The toy `F_p`/`m`/`ℓ` are a principle-4 boundary: mechanism-
 //! correct, asymptotic win NOT observable.
 
+pub mod decompose;
 pub mod strategy;
 
+pub use decompose::decompose;
 pub use strategy::{FbPoint, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE, TOY_M};
 
 // ─── error type ──────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the index-calculus module (E.K.1).
+//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2).
 //!
 //! # Fixture
 //!
@@ -19,6 +19,17 @@
 //!    law) equals the expected point sum. Guards the exponent-vector encoding and the
 //!    `from_decomposition` / `exponent` API.
 //!
+//! # KAT coverage (E.K.2 — C-PointDecomp)
+//!
+//! 4. **decomposition-correctness**: `decompose(Q)` returns `Some(pts)` for a point `Q`
+//!    that is a sum of two factor-base points; the returned decomposition sums to `Q` via
+//!    the frozen group law.
+//! 5. **decomposition-none-for-non-decomposable**: `decompose(Q)` returns `None` for a
+//!    point `Q` that is not a sum of any two factor-base points (verified by exhaustive
+//!    enumeration of all factor-base pairs).
+//! 6. **decomposition-sum-check**: for any returned decomposition `[P_i, P_j]`, verify
+//!    `P_i + P_j = Q` using the group law (the primary correctness signal).
+//!
 //! # Principle-4 boundary
 //!
 //! The fixture is toy-scale (`p = 47`, `n = 60`). The algorithms are mechanism-correct;
@@ -28,7 +39,7 @@
 use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
 use rho::field::{Fp, FpNaive};
-use rho::index_calculus::{IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE};
+use rho::index_calculus::{decompose, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -260,5 +271,198 @@ fn c_ek_relation_round_trip_repeated() {
         reconstructed_affine, expected_sum,
         "round-trip (repeated) failed: 2·P_0 via relation = {:?}, direct = {:?}",
         reconstructed_affine, expected_sum
+    );
+}
+
+// ─── KAT 4: decomposition-correctness (C-PointDecomp) ────────────────────────
+
+/// Decomposition correctness: `decompose(Q)` returns `Some(pts)` for a point `Q` that
+/// is a sum of two factor-base points; the returned decomposition sums to `Q` via the
+/// frozen group law.
+///
+/// Constructs `Q = P_0 + P_1` (the sum of the first two factor-base points) directly
+/// via the frozen group law, then calls `decompose(Q)` and verifies:
+/// - The result is `Some(...)` (the point is decomposable).
+/// - The returned decomposition has exactly `m = 2` points.
+/// - The sum of the returned points equals `Q` via the frozen group law.
+///
+/// Guards the Semaev root-finding step (the primary correctness signal for C-PointDecomp).
+#[test]
+fn decomposition_correctness() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    // Construct Q = P_0 + P_1 directly via the frozen group law.
+    // This Q is guaranteed to be decomposable (it is a sum of two factor-base points).
+    let p0 = &strategy.factor_base[0].point;
+    let p1 = &strategy.factor_base[1].point;
+    let q = add_points(curve, p0, p1);
+
+    assert!(
+        !q.is_infinity(),
+        "P_0 + P_1 should not be ∞ for the toy fixture (they are distinct non-negation points)"
+    );
+
+    // Call decompose(Q) — must return Some(...).
+    let decomp = decompose(q.clone(), &strategy)
+        .expect("decompose(P_0 + P_1) should return Some(...): Q is a sum of two FB points");
+
+    // The decomposition must have exactly m = 2 points.
+    assert_eq!(
+        decomp.len(),
+        strategy.m,
+        "decomposition should have exactly m = {} points",
+        strategy.m
+    );
+
+    // All returned points must be factor-base points (valid indices).
+    for fb_pt in &decomp {
+        assert!(
+            fb_pt.index < strategy.fb_size(),
+            "decomposition point index {} is out of factor-base range [0, {})",
+            fb_pt.index,
+            strategy.fb_size()
+        );
+        assert!(
+            curve.is_on_curve(&fb_pt.point),
+            "decomposition point {} is not on the curve: {:?}",
+            fb_pt.index,
+            fb_pt.point
+        );
+    }
+
+    // The sum of the returned points must equal Q via the frozen group law.
+    let sum = add_points(curve, &decomp[0].point, &decomp[1].point);
+    assert_eq!(
+        sum, q,
+        "decompose returned a decomposition that does not sum to Q: \
+         decomp[0] = {:?}, decomp[1] = {:?}, sum = {:?}, Q = {:?}",
+        decomp[0].point, decomp[1].point, sum, q
+    );
+}
+
+// ─── KAT 5: decomposition-none-for-non-decomposable (C-PointDecomp) ──────────
+
+/// Decomposition returns `None` for a point that is not a sum of any two factor-base
+/// points.
+///
+/// Finds a point `Q` (a multiple of `G`) that is not the sum of any two factor-base
+/// points by exhaustive enumeration of all factor-base pairs. Then calls `decompose(Q)`
+/// and verifies it returns `None`.
+///
+/// Guards the `None` path of `decompose` — the Semaev polynomial correctly identifies
+/// non-decomposable points.
+#[test]
+fn decomposition_none_for_non_decomposable() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    // Build the set of all points that ARE sums of two factor-base points.
+    // This is the set { P_i + P_j : 0 ≤ i, j < FB_SIZE, P_i + P_j ≠ ∞ }.
+    let mut decomposable_points: Vec<AffinePoint<FpNaive>> = Vec::new();
+    for fb_i in &strategy.factor_base {
+        for fb_j in &strategy.factor_base {
+            let sum = add_points(curve, &fb_i.point, &fb_j.point);
+            if !sum.is_infinity() {
+                decomposable_points.push(sum);
+            }
+        }
+    }
+
+    // Find a multiple of G that is NOT in the decomposable set.
+    // Try k·G for k = 1, 2, ..., n-1 until we find a non-decomposable point.
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let n_u64 = curve.n.as_words()[0]; // n = 60
+
+    let mut non_decomposable_q: Option<AffinePoint<FpNaive>> = None;
+    for k in 1..n_u64 {
+        let q = scalar_mul_u64(curve, &g, k);
+        if q.is_infinity() {
+            continue;
+        }
+        if !decomposable_points.contains(&q) {
+            non_decomposable_q = Some(q);
+            break;
+        }
+    }
+
+    let q = non_decomposable_q
+        .expect("should find a non-decomposable multiple of G in the toy fixture");
+
+    // decompose(Q) must return None.
+    let result = decompose(q.clone(), &strategy);
+    assert!(
+        result.is_none(),
+        "decompose(Q) should return None for a non-decomposable point Q = {:?}, \
+         but returned {:?}",
+        q,
+        result
+    );
+}
+
+// ─── KAT 6: decomposition-sum-check (C-PointDecomp) ─────────────────────────
+
+/// For every returned decomposition `[P_i, P_j]`, verify `P_i + P_j = Q` using the
+/// frozen group law.
+///
+/// Exhaustively tries all factor-base pairs as candidate Q values, calls `decompose(Q)`
+/// for each, and verifies that every returned decomposition sums to Q. This is the
+/// primary correctness signal: the Semaev polynomial correctly identifies decomposable
+/// points and the returned decomposition is valid.
+///
+/// Guards the sum-to-Q invariant across all decomposable points in the factor-base
+/// span (not just one example).
+#[test]
+fn decomposition_sum_check() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    let mut checked = 0usize;
+
+    // Try all sums of two factor-base points as candidate Q values.
+    for fb_i in &strategy.factor_base {
+        for fb_j in &strategy.factor_base {
+            let q = add_points(curve, &fb_i.point, &fb_j.point);
+            if q.is_infinity() {
+                continue;
+            }
+
+            // Call decompose(Q).
+            if let Some(decomp) = decompose(q.clone(), &strategy) {
+                assert_eq!(
+                    decomp.len(),
+                    strategy.m,
+                    "decomposition should have exactly m = {} points",
+                    strategy.m
+                );
+
+                // Verify P_i + P_j = Q via the frozen group law.
+                let sum = add_points(curve, &decomp[0].point, &decomp[1].point);
+                assert_eq!(
+                    sum, q,
+                    "decomposition sum check failed: decomp[0] = {:?}, decomp[1] = {:?}, \
+                     sum = {:?}, Q = {:?}",
+                    decomp[0].point, decomp[1].point, sum, q
+                );
+
+                // Verify all returned points are on the curve.
+                for fb_pt in &decomp {
+                    assert!(
+                        curve.is_on_curve(&fb_pt.point),
+                        "decomposition point {} is not on the curve: {:?}",
+                        fb_pt.index,
+                        fb_pt.point
+                    );
+                }
+
+                checked += 1;
+            }
+        }
+    }
+
+    assert!(
+        checked > 0,
+        "no decomposable Q found among all factor-base pairs — \
+         unexpected for the toy fixture (factor base should span some decomposable points)"
     );
 }
