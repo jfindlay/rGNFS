@@ -565,29 +565,180 @@ contract** (C-Semaev / `rho::curve::Curve` / `AffinePoint` / C-Fp / C1 `trial_sm
 `gnfs::dl::linalg` engine are all consumed-or-untouched). E.K adds the `rho::index_calculus` module +
 the relation→matrix adapter — all **additive**, no trait amendment.
 
-### C-EKRelation — the index-calculus relation/matrix contract (compiler- + test-enforced) — *to be frozen at E.K.1*
+### C-EKRelation — the index-calculus relation/matrix contract (compiler- + test-enforced) — *frozen at E.K.1; ratified at the ◆-start fork 2026-06-16*
 
 **Defined in:** E.K.1 (`rho/src/index_calculus/strategy.rs`). **Consumed by:** E.K.2 (decomposition
 *produces* relations), E.K.3 (collection *accumulates* them), E.K.4 (the adapter *builds the matrix*
 from them), E.K.5 (recovery *reads the provenance*); **downstream: E.W** (the per-run relation counts
-for the benchmark table). Compiler- + test-enforced. Exposes: the `Relation` type — an exponent vector
-over `Z/ℓℤ` indexed by factor-base points + the `(a, b)` provenance of the `a·G + b·Q` multiple it
-came from; the factor-base index map. **Invariants:** exponents live in `Z/ℓℤ` (the prime-order
-subgroup — the matrix-over-a-field precondition); a relation's exponent vector reconstructs its
-recorded factor-base-point sum. **Over-specified** (substrate rule) for E.K.4's adapter + E.K.5's
-recovery. *(The index-calculus analogue of NFS's C-Relation — the expensive contract the Opus E.K.1
-freezes. Exact representation ratified at the E.K.1 ◆-start fork.)*
+for the benchmark table). Compiler- + test-enforced. **Over-specified** (substrate rule) for E.K.4's
+adapter + E.K.5's recovery.
 
-### C-IndexCalcStrategy — the factor base + prime-order subgroup + decomposition arity (compiler- + test-enforced) — *to be frozen at E.K.1*
+**Ratified representation (◆-start fork).** The relation carries (i) the `(a, b)` provenance of the
+`R = a·G + b·Q` multiple, (ii) the factor-base decomposition as a **sparse exponent vector over
+`F_ℓ = Z/ℓℤ`**, stored in the **exact shape E.K.4's adapter feeds to `FlSparseMatrix`** — `Vec<(usize,
+F)>` of `(factor-base index, exponent mod ℓ)` pairs. The field element type is the workspace `Fp`
+trait (`rho::field::Fp` *is* a re-export of `shared_field::Fp`, so the curve field and the
+`gnfs::dl::linalg` engine share one trait — confirmed at the fork; no cross-crate adapter on the
+scalar type). The factor-base index map lives in C-IndexCalcStrategy (`IndexCalcStrategy::factor_base:
+Vec<FbPoint>`), not duplicated here — a `Relation` references factor-base points by their index.
+
+```rust
+use crypto_bigint::Uint;
+use crate::field::FpNaive;            // = shared_field::FpNaive<4>; the F_ℓ scalar the linalg engine consumes
+type Fl = FpNaive;                    // F_ℓ element type; L = 4 fixes the Uint<4> ceiling (toy p, ℓ)
+
+/// One index-calculus relation: a decomposition of `R = a·G + b·Q` over the factor base.
+///
+/// The exponent vector is **sparse over `F_ℓ`** (`Vec<(fb_index, exp mod ℓ)>`) — exactly the row
+/// shape E.K.4's `build_ek_matrix` pushes into `FlSparseRow`, so the adapter is a near-identity
+/// copy (no re-encoding). Provenance `(a, b)` is load-bearing for E.K.5 recovery (the kernel
+/// relation involving `Q` yields `log_G(Q)` mod ℓ); never dropped.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Relation {
+    /// Provenance: the multiple `R = a·G + b·Q` this relation decomposes. Recovery (E.K.5) reads it.
+    pub a: u64,
+    pub b: u64,
+    /// Sparse exponent vector over `F_ℓ`, indexed by factor-base point index.
+    /// `exponents[k] = (i, e_i)` means factor-base point `i` appears with coefficient `e_i mod ℓ`
+    /// in the decomposition `R = Σ e_i · P_i`. Entries are sorted by index; no index repeats.
+    pub exponents: Vec<(usize, Fl)>,
+}
+
+impl Relation {
+    /// Construct from a list of factor-base indices the decomposition `R = Σ P_{i_k}` hit.
+    /// Accumulates repeated indices into `F_ℓ` exponents, sorts, drops zero entries.
+    pub fn from_decomposition(a: u64, b: u64, fb_indices: &[usize], ell: &Uint<4>) -> Self { /* E.K.1 */ }
+
+    /// The exponent of factor-base point `i` (zero `F_ℓ` element if absent).
+    pub fn exponent(&self, i: usize, ell: &Uint<4>) -> Fl { /* E.K.1 */ }
+}
+```
+
+**Invariants:** exponents live in `F_ℓ` (the prime-order subgroup — the matrix-over-a-field
+precondition); a `Relation`'s exponent vector reconstructs its recorded factor-base-point sum (the
+round-trip KAT: `Σ e_i·P_i` over the frozen group law equals `a·G + b·Q`); `exponents` is sorted by
+index with no duplicate index (the `FlSparseRow` CSR invariant, so `build_ek_matrix` need not re-sort).
+*(The index-calculus analogue of NFS's C-Relation — the expensive contract the Opus E.K.1 freezes.
+The sparse-`Vec<(usize, Fl)>` shape is chosen specifically so E.K.4's adapter is a near-identity map
+onto `FlSparseRow { entries: Vec<(usize, F)> }` — the partial-reuse survey finding cashed out in the
+type.)*
+
+### C-IndexCalcStrategy — the factor base + prime-order subgroup + decomposition arity (compiler- + test-enforced) — *frozen at E.K.1; ratified at the ◆-start fork 2026-06-16*
 
 **Defined in:** E.K.1 (`rho/src/index_calculus/strategy.rs` + `mod.rs`). **Consumed by:** E.K.2
 (decomposes over the factor base at arity `m`), E.K.3 (collects relative to the factor base), E.K.4
-(the matrix is over `Z/ℓℤ`), E.K.5 (recovery works mod `ℓ`). Compiler- + test-enforced. Exposes: the
-factor-base point enumeration (`{(x, y) on E : x ∈ chosen set}`); the prime-order subgroup `ℓ | n`;
-the decomposition arity `m`; the `IndexCalcError` enum; the toy fixture (`semaev_toy()` + `ℓ` + factor
-base). **Invariants:** every factor-base point is on the curve (frozen `is_on_curve`); `ℓ` is prime
-and divides `n` (the matrix-over-a-field precondition); the factor base is large enough to
-over-determine. *Exact `ℓ`, factor-base shape, and arity `m` ratified at the E.K.1 ◆-start fork.*
+(the matrix is over `Z/ℓℤ`), E.K.5 (recovery works mod `ℓ`). Compiler- + test-enforced.
+
+**Ratified values (◆-start fork).**
+- **Prime-order subgroup `ℓ = 5`** — the largest prime factor of `n = 60 = 2²·3·5`. The relation
+  exponents and the linear algebra live over `F_ℓ = F_5` (a field — the block-Lanczos precondition).
+  The `ℓ`-order subgroup is generated by `G_ℓ = (n/ℓ)·G = 12·G`; recovery yields `log_G(Q) mod ℓ`.
+  *(Mechanism-only: a single small prime `ℓ` demonstrates the index-calculus pipeline; full
+  `log_G(Q) mod n` would CRT over all prime-power factors — out of scope, a principle-4 boundary.)*
+- **Factor base** — the small-x-coordinate points: enumerate `x ∈ {0, 1, 2, …}` in ascending order,
+  keep `x` for which `x³ + ax + b` is a QR mod `p`, lift the **canonical** root `y` (the smaller of
+  `±y`), take the first `FB_SIZE` such points. Ratified `FB_SIZE = 6` (over-determinable at `m = 2`:
+  the collection target is `≥ FB_SIZE + 1 = 7` relations; the toy curve's ~30 affine x-coordinates
+  with a QR supply ample candidates). Each point gets a stable factor-base index (its position in the
+  enumeration). *(Tradeoff named: a fixed small `FB_SIZE` is worse at decomposition success-rate than
+  a larger base — fewer target points means more `(a,b)` trials per relation — but better at keeping
+  the `F_5` matrix small and the round-trip KAT auditable. If E.K.3's collection cannot over-determine
+  at `FB_SIZE = 6`, grow it — an additive-reshard, not a contract break, since `FB_SIZE` is a strategy
+  constant, not a type.)*
+- **Decomposition arity `m = 2`** — a point `Q` decomposes as a sum of `m = 2` factor-base points,
+  found via `semaev_poly(m + 1) = semaev_poly(3) = S_3` specialised at `Q`'s x-coordinate (E.K.2).
+  `m = 2` is the smallest non-trivial arity (`S_3` is already built and KAT-covered in `rho::semaev`);
+  it keeps the native root-enumeration green path at `O(FB_SIZE)` per decomposition. *(Tradeoff: `m = 2`
+  is worse at decomposition density than larger `m` — fewer points decompose as a 2-sum than as a
+  3-sum — but `S_3` is the frozen, tested polynomial and `m = 2` is the minimal mechanism. If density
+  is too low to over-determine, E.K.2/E.K.3 surface raising to `m = 3` via `S_4` — additive-reshard.)*
+
+```rust
+use crypto_bigint::Uint;
+use crate::curve::{AffinePoint, Curve};
+use crate::field::FpNaive;            // = shared_field::FpNaive<4>
+
+/// The prime-order subgroup modulus for the toy fixture: ℓ = 5 (the largest prime factor of n = 60).
+pub const TOY_ELL: u64 = 5;
+/// Factor-base size for the toy fixture (over-determinable at m = 2).
+pub const TOY_FB_SIZE: usize = 6;
+/// Decomposition arity: a point decomposes as a sum of `m` factor-base points (via S_{m+1}).
+pub const TOY_M: usize = 2;
+
+/// A factor-base point: a curve point plus its stable factor-base index.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FbPoint {
+    /// Index into the factor base (the relation exponent-vector column).
+    pub index: usize,
+    /// The curve point (a finite affine point on the frozen `Curve`).
+    pub point: AffinePoint<FpNaive>,
+}
+
+/// The index-calculus strategy substrate: factor base + subgroup + arity, bound to a curve.
+#[derive(Clone, Debug)]
+pub struct IndexCalcStrategy {
+    /// The curve (the frozen `semaev_toy()` fixture for the toy instance).
+    pub curve: Curve,
+    /// The prime-order subgroup modulus ℓ | n (ℓ = 5 for the toy).
+    pub ell: Uint<4>,
+    /// The factor base: small-x-coordinate points, each with its index.
+    pub factor_base: Vec<FbPoint>,
+    /// The decomposition arity m (m = 2 for the toy).
+    pub m: usize,
+}
+
+impl IndexCalcStrategy {
+    /// Build the toy strategy: `semaev_toy()` curve, ℓ = 5, the first `TOY_FB_SIZE` small-x points,
+    /// m = 2. Enumerates the factor base via QR-test + canonical-root lift over the frozen field.
+    pub fn toy() -> Result<Self, IndexCalcError> { /* E.K.1 */ }
+
+    /// Enumerate factor-base points: ascending `x`, keep QR, lift canonical `y`, take `fb_size`.
+    pub fn enumerate_factor_base(
+        curve: &Curve,
+        fb_size: usize,
+    ) -> Result<Vec<FbPoint>, IndexCalcError> { /* E.K.1 */ }
+
+    /// The factor-base size (the relation exponent-vector dimension).
+    pub fn fb_size(&self) -> usize { self.factor_base.len() }
+
+    /// The ℓ-order subgroup generator `(n/ℓ)·G` (recovery and KAT use it).
+    pub fn subgroup_generator(&self) -> AffinePoint<FpNaive> { /* E.K.1 */ }
+}
+```
+
+**Invariants:** every factor-base point is on the curve (frozen `is_on_curve`); `ℓ` is prime and
+divides `n` (the matrix-over-a-field precondition — KAT: `ℓ | n` and `ℓ·G_ℓ = ∞`); the factor base is
+large enough to over-determine the system at arity `m` (`FB_SIZE + 1` relations collectible). The
+factor-base index is stable (a point's index is fixed by enumeration order — relations across E.K.3
+share one column indexing).
+
+**The `IndexCalcError` enum (`rho/src/index_calculus/mod.rs`)** — mirrors the attack-module idiom
+(`rho::ssa::SsaError`, `rho::ghs::GhsError`, `rho::semaev::SemaevError`): a small `Debug + Clone +
+PartialEq + Eq` enum with `Display` + `std::error::Error` impls. Ratified variants (E.K.1 lands these;
+E.K.2–E.K.5 extend additively as their steps need):
+
+```rust
+/// Errors from the index-calculus ECDLP solver.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IndexCalcError {
+    /// The chosen subgroup modulus ℓ does not divide the group order n, or is not prime.
+    InvalidSubgroup { ell: u64, n: u64 },
+    /// Factor-base enumeration could not find `requested` QR points (curve too small).
+    FactorBaseTooSmall { requested: usize, found: usize },
+    /// A Semaev / curve operation surfaced an arity or variable error (wraps `SemaevError`).
+    Semaev(crate::semaev::SemaevError),
+    // E.K.2+ extend additively: DecompositionFailed, UnderdeterminedSystem, NoKernel,
+    // RecoveryFailed, CrossCheckMismatch — each session adds the variant its step needs.
+}
+```
+
+**C1 `trial_smooth` decision (subtlety 4, resolved).** E.K does **not** literally call `trial_smooth`
+— E.K's "smoothness" is *decomposes-over-the-factor-base* (a points-on-a-curve sum), not integer
+trial division, and `SmoothWitness` is `(prime, exponent)`-shaped over `Uint<4>`, structurally wrong
+for an `F_ℓ` exponent vector indexed by curve points. The `Relation` type **mirrors the
+`SmoothWitness` idiom** (a witness carrying the factored decomposition + a reconstruct/verify method —
+cf. `SmoothWitness::verify`) but does not consume the type. C1 is read for the pattern, untouched —
+exactly the PLAN's "structural analogue, not literal consumer" anticipation.
 
 ### C-PointDecomp — the Semaev point-decomposition step (compiler- + test-enforced) — *to be frozen at E.K.2*
 
