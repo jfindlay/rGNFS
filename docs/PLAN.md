@@ -2,673 +2,552 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E (E.H — GHS/Weil descent: ECDLP → hyperelliptic-Jacobian DLP transfer, "the most mathematically intricate single attack in the project")
+# rGNFS — Current Plan: Track-E (E.J — Semaev summation polynomials: "the combinatorial heart of Gaudry–Diem index calculus; mathematically beautiful")
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **held up by levers 2 (irreducible complexity) and 3 (cost of
-design error), with lever 5 too weak to license an opt-down.** E.H is "**the most mathematically
-intricate single attack in the project**" (ROADMAP:357-358): GHS/Weil descent transfers the ECDLP on a
-binary elliptic curve `E/GF(2^m)` to a DLP on the Jacobian of a hyperelliptic curve `C/GF(2^l)` over a
-subfield (`l | m`), via the Artin–Schreier / function-field Weil-restriction construction. The descent
-*algebra* (the function-field setup, the curve extraction) is the FLOOR (lever 2) — it cannot be
-fractured below its irreducible mathematical content. The cost-of-design-error (lever 3) is high: a
-wrong subfield-substrate or descent-algebra shape is the **most expensive retrofit in the project** (the
-construction is intricate and there is no in-repo precedent). Lever 5 is **weaker than E.I's**: descent
-correctness is checkable (PARI `hyperellcharpoly` on `#Jac` + the logarithm-preservation relation
-`h = k·g ⟹ D_h = k·D_g`), but it is *not* exactly self-checking the way group axioms are — the
-transfer-correctness KAT leans on a correct PARI oracle and a correct genus/order relationship, so lever
-5 does not buy the `sonnet` opt-down. **This is a cleaner Opus call than E.I's** (where lever 5 was
-strong and the user overrode it on lever 3); here levers 2+3 hold the juncture up directly and lever 5
-is too weak to contest. *(E.H carries a session-level Opus flag on **E.H.1** — the subfield-substrate
-design session — matching the ROADMAP Opus-flagged-sessions table, which lists E.H.1. The juncture-tier
-governs the paged `@plan-juncture` fork at the ◆; the session tier governs the `@build` model per row.)*
+`juncture-tier: opus` (header above) — **set by lever-3 (cost of design error), a deliberate
+user override of the lever-5 `sonnet` recommendation.** The default tuning-law read pointed to
+`sonnet`: lever 5 is **strong** (the Semaev vanishing relation `S_m(x_1,…,x_m)=0 ⟺ ∃ y_i: Σ P_i = ∞`
+is **exactly self-checking** — a fast, decisive, oracle-free KAT, like E.I's group axioms and
+*unlike* E.H's oracle-leaning log-preservation that held E.H at opus), and correctness-criticality
+(lever 4) is moderate (the ROADMAP marks E.J Sonnet throughout with **no Opus-flagged session**).
+That coincidence — strong lever 5 + moderate lever 4 — is the textbook lever-5 opt-down license.
+**The user held the ◆ juncture at opus on lever 3:** the multivariate/symmetric-polynomial
+representation E.J freezes (C-SemaevPoly) is consumed by the **Opus-flagged E.K** (Gaudry–Diem–
+Joux–Vitse index calculus), and the user judges the cost-of-wrong on that substrate worth paying
+Opus at the boundary to de-risk — mirroring the E.I precedent (where lever 5 was strong and the
+user likewise overrode on lever 3). *(This is the inverse situation to E.H, where levers 2+3 held
+the juncture up directly; here lever 5 would license the opt-down and the override is a deliberate
+lever-3 call, recorded so the disagreement stays visible. The ◆ fork pages `@plan-juncture` at
+opus; per-row session tiers are all Sonnet — E.J has no Opus-flagged session.)*
 
-**Scope boundary — load-bearing, surfaced and adjudicated at shard time (the central decision).** E.H
-is the **transfer/reduction**, NOT the solve. The ROADMAP separates three sub-tracks: **E.H** (GHS/Weil
-descent — transfer ECDLP → Jacobian DLP), **E.J** (Semaev summation polynomials — the combinatorial
-heart of index calculus), and **E.K** (Gaudry–Diem–Joux–Vitse index calculus — the Jacobian
-index-calculus DLP *solver*, consuming E.J). The substrate survey (forked `@explore`, 2026-06-15)
-confirmed the Jacobian index calculus (relation collection, the divisor factor base, linear algebra over
-`Z/ℓZ`) is **entirely greenfield and structurally belongs to E.K** — the existing `gnfs` index-calculus
-machinery (`block_lanczos_fl`, the NFS-DL relation format) is number-field-coupled and not reusable for
-a Jacobian DLP. **The user adjudicated transfer-only, verified structurally** (mirroring E.I, which
-built the Jacobian group and left the attack to its consumer; and the MOV/SSA reduction idiom — transfer
-verified by relationship-preservation, the solve delegated). E.H's sub-track-close KAT verifies the
-transfer is **correct** (right genus, `#Jac` matches PARI, the logarithm relation `D_h = k·D_g` holds
-via Cantor `scalar_mul` for known small `k`), **not** that an ECDLP is solved end-to-end — that closes
-when E.K lands. *(Tradeoff named: no single end-to-end "ECDLP broken" KAT until E.K; bought to keep the
-delicate descent design decoupled from the equally-delicate index-calculus design, the coupling the
-inflection-juncture discipline warns against.)*
+**Scope boundary — load-bearing, surfaced and adjudicated at shard time.** E.J is the **Semaev
+summation-polynomial machinery**, NOT the index-calculus solver that consumes it. The ROADMAP
+separates **E.J** (Semaev polynomials — the combinatorial primitive) from **E.K** (Gaudry–Diem–
+Joux–Vitse index calculus — the DLP *solver* that uses the Semaev polynomials for the
+point-decomposition / relation-collection step, consuming E.J + G.B scoring + G.E linear algebra).
+**The user adjudicated E.J = Semaev-only**, verified structurally by the **vanishing relation**
+(`S_m` vanishes on the x-coordinates of `m` points summing to the identity). E.J builds and verifies
+the summation polynomials; it does **not** run index calculus (relation collection over a factor
+base, linear algebra over `Z/nZ`) — that is E.K. *(Tradeoff named: no end-to-end "DLP solved via
+index calculus" signal in E.J; bought to keep the delicate Semaev construction decoupled from the
+equally-delicate index-calculus design — the same transfer/structure/solve decoupling NOTES.md
+records from the E.H shard, and the coupling the inflection-juncture discipline warns against.)*
 
-The substrate survey (forked `@explore`, 2026-06-15) established the shape and confirmed the planning
-assumptions:
+**Target field — adjudicated F_p / Weierstrass (the classical Gaudry–Diem setting).** Semaev
+polynomials have two classical homes: the prime/Weierstrass curve `E/F_p` (or `F_{p^n}`) and the
+binary-curve / descended-Jacobian setting coupled to the E.H GHS chain. **The user adjudicated the
+prime/Weierstrass target:** E.J builds `S_m` over the short-Weierstrass curve `E/F_p` using the
+existing `rho::curve::Curve` (`y² = x³ + ax + b`) + `shared-field` `Fp` surface — the standalone
+"combinatorial heart" the ROADMAP names (predecessor **G.A polynomial machinery only**, *not* the
+GF(2^m) chain). This keeps E.J independent of E.H/E.I and defers the binary-field coupling to E.K.
+*(Tradeoff named: the F_p Semaev polynomials are not the binary-curve ones E.K's GHS-descended
+attack will ultimately need; the F_p construction is the textbook primitive — E.K adapts the
+representation to its field. Bought because the ROADMAP's G.A-predecessor framing implies the F_p
+setting and it keeps the two delicate designs decoupled.)*
 
-1. **E.H descends ONTO the frozen E.I Jacobian surface** (C-Jacobian / C-HyperCurve / C-GF2mPoly, all
-   frozen at E.I, commits `84a1110`/`cb13d4a`/`06bd257`). The survey verified the public API:
-   `HyperellipticCurve<L>` (fields `poly`/`h_coeffs`/`f_coeffs`, `genus()`, on-demand `h::<F>()`/`f::<F>()`),
-   `MumfordDivisor<F,L>` (`u`/`v`, `zero_divisor`, `divisor_from_points`), and the free-function group
-   law (`compose`/`reduce`/`add`/`negate`/`scalar_mul`/identity in `cantor.rs`). `Poly<F,L>` ships the
-   **full** ring surface including `resultant` and `mod_inverse` (nothing deferred) — the descent algebra
-   (function-field / Artin–Schreier work) consumes it. **E.H amends no E.I contract** (it *consumes*
-   C-Jacobian, builds its descended curve as a `HyperellipticCurve`, and reads the group law).
+The substrate survey (forked `@explore`, 2026-06-15) established the shape and confirmed the
+planning assumptions:
 
-2. **The subfield infrastructure GF(2^l) ⊂ GF(2^m) is entirely greenfield** (the load-bearing finding,
-   item 4). The existing Frobenius machinery (`convert.rs::frobenius_orbit`, `is_normal_element`) is
-   **GF(2^m)-over-GF(2) only** — the orbit spans the *whole* field. E.H needs **relative** machinery:
-   subfield embedding, relative trace `Tr_{m/l}` and norm `N_{m/l}`, Frobenius-by-subfield orbit
-   (iterate `frobenius` `l` times). **E.H.1 builds this first** — the substrate the Weil restriction
-   stands on, and a genuinely reusable one (E.K's index calculus over the subfield may consume it —
-   over-specify per the substrate rule). This is why **E.H.1 is the Opus-flagged session.**
+1. **E.J's polynomial substrate is doubly greenfield** (the load-bearing finding). The survey
+   confirmed: (a) **no univariate `Poly` over a prime field exists** — the only resultant surfaces
+   are `shared-numfield::resultant` (over `ℤ[x]`, Sylvester-matrix, with `subresultant_gcd`) and
+   `gf2m::Poly::resultant` (over `GF(2^m)`); **neither is an `F_p[x]` resultant**. (b) **No
+   multivariate polynomial type exists anywhere** — and Semaev's `S_m(X_1,…,X_m)` is genuinely
+   multivariate and *symmetric* in its `m` arguments. **E.J.1 builds both** — the `F_p[x]`
+   resultant and the multivariate/symmetric-polynomial representation — the substrate the whole
+   construction stands on. This is the design crux (the symmetric representation — dense vs
+   elementary-symmetric-basis vs Lagrange — is a genuine, downstream-consumed decision), which is
+   why the user held the ◆ juncture at opus despite the strong lever-5 signal.
 
-3. **The GHS construction is fully greenfield** (item 6 — zero `ghs`/`weil-descent`/`subfield`/
-   `weil_restrict` code anywhere; the only `weil_pairing` hits are the MOV Weil pairing over `F_p`,
-   unrelated). E.H builds the Artin–Schreier / function-field Weil-restriction construction and extracts
-   the hyperelliptic curve `C/GF(2^l)` from scratch in `rho` (a new `rho::ghs` module).
+2. **The source curve is `rho::curve::Curve` over `F_p`, hardcoded `Uint<4>`** (the C1 ceiling the
+   ROADMAP flags for E.K). The survey verified the public API: `Curve` (`y² = x³ + ax + b`),
+   `AffinePoint<F>` (`Infinity` / `Finite { x, y }`, generic over `Fp<4>`), point addition /
+   doubling. E.J **amends no curve contract** — it reads `Curve`/`AffinePoint` as the geometry the
+   summation relation is checked against (the `S_m` vanishing KAT computes `Σ P_i` via the frozen
+   group law and asserts `S_m` vanishes on the x-coordinates). The toy `F_p` scale and the
+   `Uint<4>` ceiling are a **principle-4 boundary** (Semaev is crypto-scale-correct; only the
+   parameters are toy), recorded not silently presented as crypto-scale.
 
-4. **The descended curve is the imaginary/ramified model — resolves the E.I.3 ◆ conditional.** The E.I.3
-   ◆ digest flagged: "if E.H targets the real/split model rather than imaginary/ramified, the genus
-   formula and `[1,0]` reduction would need amendment — evidence points to imaginary; confirm at E.H
-   kickoff." The survey **confirmed** the frozen C-HyperCurve/C-Jacobian code assumes the imaginary model
-   exclusively (`genus() = (deg f − 1)/2`, doc "imaginary/ramified model: deg f = 2g+1", single point at
-   infinity; `cantor.rs` reduce has no split-model branch). **GHS with odd extension degree `m/l`
-   produces imaginary-model curves** (the standard case), so the frozen surface is compatible and **no
-   C-HyperCurve amend is needed for E.H's standard target.** *(E.H.1 confirms-and-records this; if E.H
-   ever needs the real/split model — even `m/l` — that is an additive C-HyperCurve amend surfaced at the
-   ◆, never a silent patch. The fixture is chosen with odd `m/l` to stay in-model — surfaced below.)*
+3. **The Semaev construction is fully greenfield** — the survey found zero `semaev` /
+   `summation_poly` / `summation_polynomial` hits anywhere. E.J builds `S_2`, `S_3`, and the
+   resultant recursion `S_m = Res_X(S_{m-1}(X_1,…,X_{m-2},X), S_3(X_{m-1},X_m,X))` from scratch in
+   a new `rho::semaev` module.
 
-5. **The `BinaryCurve` source surface is hardcoded `Uint<1>`** (item 3 — GF(2^4)/GF(2^8) toy scale).
-   GHS's mathematically interesting cases are over composite-degree fields, but the existing toy
-   `BinaryCurve` is `L=1`. **E.H targets a tiny composite `m` (e.g. `m = 4 = 2·2`, `l = 2`, or
-   `m = 6 = 2·3`, `l = 2`/`l = 3`) that fits `Uint<1>`** — keeping E.H from amending the frozen
-   C-BinaryCurve surface. *(Design tension to resolve at E.H.1: if no in-`Uint<1>` composite `m` exhibits
-   a non-degenerate descent, generalizing `BinaryCurve` to `L>1` is a **surfaced discovery** at the ◆,
-   not silent in-flight scope growth — the established C1-widening discipline. The survey's read is that
-   a toy composite `m ≤ 8` suffices for demonstration fidelity.)*
+4. **`rho` already depends on every needed crate; no new edge, no new crate.** `rho → shared-field`,
+   `rho → shared-numfield`, `rho → shared-gf2m`, `rho → gnfs` all exist. The Semaev machinery lives
+   entirely in `rho` (new `rho::semaev`); the `F_p[x]` resultant + multivariate-symmetric type live
+   with it (or, if judged field-substrate-shaped at E.J.1, in a `shared` module — a placement call
+   ratified at the ◆). No `Cargo.toml` edge changes; `cargo check --workspace` stays green.
 
-6. **`rho` already depends on every needed crate; no new edge, no new crate** (item 1). `rho → gnfs`,
-   `rho → shared-gf2m`, `rho → shared-field`, `rho → shared-padic` all exist. The subfield substrate is
-   an **additive `shared/gf2m` module** (new `shared/gf2m/src/subfield.rs`) and the GHS descent lives in
-   `rho` (new `rho::ghs`). No `Cargo.toml` edge changes; `cargo check --workspace` stays green (no new
-   edge to cycle). *(One asymmetry vs E.I: `gnfs` does NOT depend on `shared-gf2m`, confirming the
-   Jacobian DLP solver cannot live in `gnfs` and reuse NFS-DL — reinforcing the E.H/E.K boundary.)*
+The work splits at **three representation/contract-sharp seams**, **3 sessions** (top of the
+ROADMAP's 2–3-session band, consistent with the project's documented ceiling-bias — G/D both landed
+at or above their upper bands), at the boundaries between the polynomial substrate, the low-order
+base cases, and the resultant recursion:
 
-The work splits at **five representation/contract-sharp seams**, **5 sessions** (matching the ROADMAP's
-5-session estimate, confirmed by the project's documented ceiling-bias), at the boundaries between the
-subfield substrate, the descent algebra, the curve extraction, the transfer map, and the reduction
-wiring:
+1. **E.J.1 — Polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type
+   (Sonnet, Cat A).** The `F_p[x]` univariate resultant (greenfield — distinct from the `ℤ[x]` and
+   `GF(2^m)` resultants) and the multivariate/symmetric-polynomial representation `S_m` lives in.
+   **Freezes C-SemaevPoly** — the substrate the whole construction (and E.K) stands on. Confirms-
+   and-records the F_p toy fixture and the symmetric-representation choice. *(The substrate-design
+   session; the ◆ juncture is held at opus for the cost-of-wrong on this representation, but the
+   per-row tier is Sonnet per the ROADMAP — E.J has no Opus-flagged session.)*
 
-1. **E.H.1 — Subfield substrate GF(2^l) ⊂ GF(2^m) (Opus, Cat A).** Subfield embedding, relative trace
-   `Tr_{m/l}` / norm `N_{m/l}`, Frobenius-by-subfield orbit, subfield-membership test. **Freezes
-   C-Subfield** — the substrate the Weil restriction stands on. Additive `shared/gf2m` module. **Opus**
-   per the ROADMAP flag (substrate design with downstream consumption — E.H.2–5 and potentially E.K).
-   Confirms-and-records the imaginary-model target and the `Uint<1>` composite-`m` fixture choice.
+2. **E.J.2 — Base cases `S_2`, `S_3` + the vanishing relation (Sonnet, Cat B).** The explicit
+   low-order summation polynomials: `S_2(X_1,X_2) = X_1 − X_2` and the symmetric `S_3(X_1,X_2,X_3)`
+   that vanishes when three points sum to `∞`; the **vanishing KAT** (`S_m` vanishes on the
+   x-coordinates of points summing to the identity, checked against the frozen `Curve` group law).
+   **Consumes C-SemaevPoly. Freezes C-SemaevBase.**
 
-2. **E.H.2 — Artin–Schreier / function-field Weil-restriction algebra (Sonnet, Cat B).** The descent
-   algebra: the Artin–Schreier extension of the function field, the Weil restriction of scalars from
-   GF(2^m) to GF(2^l), the polynomial-over-GF(2^m)-and-subfield machinery the curve extraction consumes.
-   **Consumes C-Subfield, C-GF2mPoly.** **Freezes C-DescentAlgebra.**
+3. **E.J.3 ◆ — Resultant recursion `S_m` + sub-track close (Sonnet, Cat B, `@architect`).** The
+   elimination ladder `S_m = Res_X(S_{m-1}(X_1,…,X_{m-2},X), S_3(X_{m-1},X_m,X))` building the
+   higher summation polynomials; the recursion-correctness + vanishing KATs at `S_4` (and `S_5` if
+   cheap); the sub-track close. **Consumes C-SemaevBase, C-SemaevPoly. Freezes C-Semaev** — the
+   surface E.K's index calculus (point decomposition / relation collection) consumes. Crosses the
+   **E.J ◆ boundary** — the Semaev machinery ships, vanishing-verified, ready for E.K.
 
-3. **E.H.3 — GHS hyperelliptic-curve extraction (Sonnet, Cat B).** Extract the hyperelliptic curve
-   `C/GF(2^l)` (`y² + h(x)y = f(x)`, the GHS image) from the descent algebra; verify it as a frozen
-   `HyperellipticCurve`; compute/relate its genus to the extension degree. **Consumes C-DescentAlgebra,
-   C-HyperCurve (frozen E.I, read).** **Freezes C-GHSCurve.**
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing the index-calculus *solver*
+— relation collection, the factor base, linear algebra over `Z/nZ`, the Gröbner/`msolve` step —
+that is **E.K**; or building the GHS descent — that is E.H, frozen; or writing the Semaev *textbook
+chapter* in MATHEMATICS.md — that is **T.E**, paired with E.W at the Track-E ◆; E.J.3 writes at most
+a PEDAGOGY code-tour delta) and **rigidity** (forcing the binary-curve / descended-Jacobian Semaev
+when the adjudicated F_p/Weierstrass target uses the frozen `rho::curve::Curve`; or re-deriving the
+`ℤ[x]` resultant `shared-numfield` already ships when E.J needs an `F_p[x]` one; or coupling the
+Semaev construction to the E.H GHS chain in-flight — that coupling is E.K's job, not E.J's).
 
-4. **E.H.4 — The transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) (Sonnet, Cat B).** Map a point `P ∈ E(GF(2^m))`
-   to a reduced Mumford divisor `D_P ∈ Jac(C)(GF(2^l))`; the homomorphism property
-   (`D_{P+Q} = D_P + D_Q` via Cantor). **Consumes C-GHSCurve, C-Jacobian (frozen E.I, read).** **Freezes
-   C-DescentMap.**
-
-5. **E.H.5 ◆ — ECDLP → Jacobian-DLP reduction + sub-track close (Sonnet, Cat I, `@architect`).** Wire the
-   reduction: given an ECDLP instance `(E, g, h)` find the Jacobian-DLP instance `(C, D_g, D_h)` such that
-   `log_g h = log_{D_g} D_h`; the logarithm-preservation KAT + PARI `#Jac` oracle; the sub-track close.
-   **Consumes C-DescentMap, C-GHSCurve, C-Jacobian.** **Freezes C-GHSDescent** — the surface E.K's index
-   calculus and E.W's benchmark table consume. Crosses the **E.H ◆ boundary** — the descent ships,
-   transfer-correct and verified, ready for E.K to solve the resulting Jacobian DLP.
-
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing the Jacobian *index-calculus DLP
-solver* / relation collection / linear algebra over `Z/ℓZ` — that is **E.K**, consuming **E.J**'s Semaev
-polynomials; or building Semaev polynomials — that is E.J; or re-deriving the Jacobian group law — that
-is E.I, frozen; or writing the GHS *textbook chapter* in MATHEMATICS.md — that is **T.E**, paired with
-E.W at the Track-E ◆; E.H.5 writes at most a PEDAGOGY code-tour delta) and **rigidity** (forcing the
-real/split hyperelliptic model when GHS-with-odd-`m/l` gives the imaginary model the frozen C-HyperCurve
-already handles; or re-deriving the GF(2^m)[x] ring / the Cantor group law rather than consuming the
-frozen E.I surfaces; or amending the frozen C-BinaryCurve `Uint<1>` surface in-flight rather than
-choosing a composite `m` that fits — generalizing to `L>1` is a surfaced discovery, not a silent edit).
-
-**Scoping discipline.** E.H builds the GHS/Weil descent at **demonstration fidelity** (principle 1 —
-algorithmic content complete: the subfield substrate, the Artin–Schreier/function-field algebra, the
-curve extraction, and the transfer map all implemented head-on) and **toy field/extension sizes** (small
-composite `m ≤ 8`, `l | m` with odd `m/l`; genus follows the extension degree; the descended curve is
-the canonical GHS imaginary-model target). It **amends no frozen contract** (C-Jacobian / C-HyperCurve /
-C-GF2mPoly / C-F2m / C-BinaryCurve / C-Koblitz are all consumed-or-untouched; the only `shared/gf2m`
-change is the additive `subfield` module). It introduces **no Jacobian DLP solver** (transfer-only,
-verified structurally — the index-calculus solve is E.K). The correctness signal is the
-**logarithm-preservation relation** (`D_h = k·D_g` for known small `k`, via the frozen Cantor
-`scalar_mul`) + the genus/order checks; an optional PARI `hyperellcharpoly` `#[ignore]` sidecar on `#Jac`
-is the established dev-only oracle. The **engineering-vs-mathematics disconnect** (ROADMAP principle 4)
-is explicit: the toy `m`/`l`/genus are a principle-4 boundary (GHS is crypto-scale-correct over composite
-binary fields; only the *parameters* are toy), annotated, never presented as crypto-scale.
+**Scoping discipline.** E.J builds the Semaev summation polynomials at **demonstration fidelity**
+(principle 1 — algorithmic content complete: the `F_p[x]` resultant, the multivariate-symmetric
+representation, the `S_2`/`S_3` base cases, and the resultant recursion `S_m` all implemented
+head-on) and **toy field sizes** (small `F_p`, `Uint<4>` ceiling; the polynomials computed for small
+`m` — `S_2…S_4`, possibly `S_5`). It **amends no frozen contract** (`rho::curve::Curve` /
+`AffinePoint` / the `Fp` field surface / the `ℤ[x]` and `GF(2^m)` resultants are all
+consumed-or-untouched; E.J adds the `F_p[x]` resultant + the multivariate-symmetric type + the
+`rho::semaev` module). It introduces **no index-calculus solver** (Semaev-only, verified
+structurally by the vanishing relation — the solve is E.K). The correctness signal is the
+**vanishing relation** (`S_m` vanishes on the x-coordinates of `m` points summing to `∞`, via the
+frozen `Curve` group law) — **exactly self-checking, oracle-free** (no PARI/`msolve` dependency on
+the green path; the lever-5 strength the header records). The **engineering-vs-mathematics
+disconnect** (ROADMAP principle 4) is explicit: the toy `F_p`/`m` are a principle-4 boundary (Semaev
+is crypto-scale-correct; only the *parameters* are toy), annotated, never presented as crypto-scale.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.H): "*E.H — GHS/Weil descent. 4-5 sessions. Predecessor: E.G, E.I. Transfer
-ECDLP on a binary curve to DLP on a hyperelliptic Jacobian over a subfield. First session is Opus-tier —
-the descent machinery is the most mathematically intricate single attack in the project.*" E.H is the
-**consumer of E.I's frozen Jacobian** (C-Jacobian) and the **structurally hardest attack in the
-project**: where E.I built the hyperelliptic curve and its Jacobian group law (Cantor on Mumford pairs),
-E.H builds the **GHS/Weil-descent transfer** that maps an ECDLP on a binary elliptic curve `E/GF(2^m)`
-onto a DLP on the Jacobian `Jac(C)/GF(2^l)` of a hyperelliptic curve over a subfield. The descent is the
-function-field / Artin–Schreier Weil-restriction construction: it builds `C/GF(2^l)` from `E/GF(2^m)`
-and transports the discrete-log problem onto `Jac(C)`, where (in E.K) index calculus solves it faster
-than generic search on `E`.
+Per ROADMAP (Phase δ, E.J): "*E.J — Semaev summation polynomials. 2-3 sessions. Predecessor: G.A
+(polynomial machinery). The combinatorial heart of Gaudry–Diem index calculus; mathematically
+beautiful. Sonnet.*" E.J builds the **Semaev summation polynomials** `S_m(X_1,…,X_m)` — the symmetric
+multivariate polynomials whose vanishing characterises `m`-tuples of points on an elliptic curve
+that sum to the group identity. `S_m(x_1,…,x_m) = 0` precisely when there exist `y_i` such that
+`P_i = (x_i, y_i)` are points on `E` with `P_1 + ⋯ + P_m = ∞`. This is the combinatorial primitive
+at the heart of the Gaudry–Diem–Joux–Vitse index calculus (E.K): it turns "does this point
+decompose over the factor base?" into "does this Semaev polynomial have a root with all coordinates
+in the factor base?", the step that makes index calculus on elliptic/hyperelliptic curves work.
 
-E.H's structural predecessors are **E.G** (binary curves `E/GF(2^m)`, the descent source — C-BinaryCurve
-/ C-Koblitz, frozen, read) and **E.I** (the hyperelliptic Jacobian, the descent target — C-Jacobian /
-C-HyperCurve / C-GF2mPoly, frozen, read). E.H **amends neither**: it consumes the binary curve as the
-ECDLP source and the Jacobian as the DLP destination, and builds the *map between them*. The central
-design tension is that **the descent is a transfer, not a solve**: GHS does not break the ECDLP directly;
-it *relocates* it to a group (the Jacobian) where index calculus (E.K) is asymptotically faster. E.H's
-job is to build the relocation correctly and prove it preserves the logarithm; the speed-up is realised
-only when E.K's index calculus runs on the relocated problem.
+E.J's structural predecessor is **G.A** (the polynomial machinery — number-field / resultant
+substrate, frozen, read) — *not* the GF(2^m) / hyperelliptic chain (E.F/E.G/E.H/E.I). The
+adjudicated target is the **prime/Weierstrass curve `E/F_p`** (the classical Gaudry–Diem setting),
+built on the frozen `rho::curve::Curve` + `shared-field` `Fp` surface. The central design tension is
+that **E.J builds the primitive, not the solver**: the Semaev polynomials are *combinatorial input*
+to index calculus (E.K); E.J's job is to construct them correctly and prove they vanish on the right
+configurations, and the index-calculus speed-up is realised only when E.K runs relation collection
+using them.
 
-The sub-track decomposes into five conceptual units, each a session:
+The sub-track decomposes into three conceptual units, each a session:
 
-1. **The subfield substrate GF(2^l) ⊂ GF(2^m) (E.H.1, Opus).** Subfield embedding, relative trace
-   `Tr_{m/l}` / norm `N_{m/l}`, Frobenius-by-subfield orbit, subfield-membership — greenfield (the survey
-   confirmed the existing Frobenius machinery is GF(2^m)-over-GF(2) only). The substrate the Weil
-   restriction stands on; reusable (E.K may consume). **Freezes C-Subfield.** **(E.H.1.)**
+1. **The polynomial substrate (E.J.1).** The `F_p[x]` univariate resultant (greenfield — distinct
+   from the `ℤ[x]` resultant `shared-numfield` ships and the `GF(2^m)` resultant `gf2m` ships) and
+   the multivariate/symmetric-polynomial representation `S_m` lives in (also greenfield — no
+   multivariate type exists). The substrate the construction stands on; reusable (E.K consumes).
+   **Freezes C-SemaevPoly. (E.J.1.)**
 
-2. **The Artin–Schreier / function-field Weil-restriction algebra (E.H.2).** The descent algebra — the
-   Artin–Schreier extension of the function field of `E`, the Weil restriction of scalars to GF(2^l), the
-   polynomial machinery over GF(2^m) and the subfield. **Freezes C-DescentAlgebra.** **(E.H.2.)**
+2. **The base cases `S_2`, `S_3` (E.J.2).** The explicit low-order summation polynomials — `S_2 =
+   X_1 − X_2` and the symmetric `S_3(X_1,X_2,X_3)` — and the vanishing relation verified against the
+   frozen `Curve` group law. **Freezes C-SemaevBase. (E.J.2.)**
 
-3. **The GHS hyperelliptic-curve extraction (E.H.3).** Extract `C/GF(2^l)` (`y²+h(x)y=f(x)`, imaginary
-   model) from the descent algebra, verify it as a frozen `HyperellipticCurve`, relate its genus to the
-   extension degree. **Freezes C-GHSCurve.** **(E.H.3.)**
+3. **The resultant recursion `S_m` + close (E.J.3 ◆).** The elimination ladder `S_m =
+   Res_X(S_{m-1}, S_3)` building the higher summation polynomials; the recursion-correctness +
+   vanishing KATs; the sub-track close. **Freezes C-Semaev. (E.J.3 ◆.)**
 
-4. **The transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) (E.H.4).** Map points to reduced Mumford divisors; the
-   homomorphism property via Cantor. **Freezes C-DescentMap.** **(E.H.4.)**
-
-5. **The ECDLP → Jacobian-DLP reduction + close (E.H.5 ◆).** The reduction wiring `(E,g,h) → (C,D_g,D_h)`;
-   the logarithm-preservation KAT (`D_h = k·D_g`) + PARI `#Jac` oracle; the sub-track close. **Freezes
-   C-GHSDescent.** **(E.H.5 ◆.)**
-
-E.H is **solver-free** (the Jacobian index-calculus DLP solver is E.K — E.H builds the transfer the
-solver consumes, not the solver), **Semaev-free** (the summation polynomials are E.J), **Jacobian-group-
-frozen** (it consumes C-Jacobian unchanged — no group-law amend), and **chapter-free** (the GHS textbook
-content is T.E, paired with E.W at the Track-E ◆). Re-read this intent at the ◆ boundary to catch defocus
-(the Jacobian DLP solver / index calculus / Semaev polynomials, the MATHEMATICS chapter) and rigidity
-(the real/split model when GHS gives imaginary; re-deriving the frozen E.I surfaces; amending the
-C-BinaryCurve `Uint<1>` surface in-flight).
+E.J is **solver-free** (the index-calculus DLP solver is E.K — E.J builds the Semaev primitive the
+solver consumes, not the solver), **GHS-free** (it does not couple to the E.H descent — that
+coupling is E.K's), and **chapter-free** (the Semaev textbook content is T.E, paired with E.W at the
+Track-E ◆). Re-read this intent at the ◆ boundary to catch defocus (the index-calculus solver /
+relation collection / linear algebra / `msolve`, the MATHEMATICS chapter) and rigidity (the
+binary-curve Semaev when the adjudicated target is F_p; re-deriving the `ℤ[x]` resultant; coupling
+to the GHS chain in-flight).
 
 ---
 
 ## Verify gate
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
-assumed: no Makefile / justfile / xtask wrapper (survey re-confirmed zero hits, 2026-06-15); raw `cargo`
-is the only CI surface (unchanged from E.D…E.I). Oracle KATs are `#[ignore]`-gated only — the exact form
-is `#[ignore = "PARI not installed; run manually when available"]`, used identically in
-`rho/tests/ssa_kat.rs`, `rho/tests/mov_kat.rs`, `rho/tests/hyperelliptic_kat.rs`, and
-`shared/padic/tests/log_kat.rs`. `/run-plan` re-discovers at preflight. E.H **adds no new workspace edge
-and no new crate** (`rho` already depends on `gnfs`/`shared-gf2m`/`shared-field`/`shared-padic`; the
-subfield substrate is an additive `shared/gf2m` module, the descent a new `rho` module), so the gate is a
+assumed: no Makefile / justfile / xtask wrapper (survey re-confirmed zero hits, 2026-06-15); raw
+`cargo` is the only CI surface (unchanged from E.D…E.H). Oracle KATs are `#[ignore]`-gated only —
+the exact form is `#[ignore = "PARI not installed; run manually when available"]`, used identically
+in `rho/tests/ssa_kat.rs`, `rho/tests/mov_kat.rs`, `rho/tests/hyperelliptic_kat.rs`,
+`rho/tests/ghs_kat.rs`, and `shared/padic/tests/log_kat.rs`. `/run-plan` re-discovers at preflight.
+E.J **adds no new workspace edge and no new crate** (`rho` already depends on
+`shared-field`/`shared-numfield`/`shared-gf2m`/`gnfs`; the Semaev machinery is a new `rho` module,
+the `F_p[x]` resultant + multivariate type live with it or in `shared`), so the gate is a
 **correctness + no-regression gate**:
 
-- Each session's KATs are the primary correctness signal — fast and decisive (lever 5): for E.H.1,
-  the relative trace/norm identities (`Tr_{m/l}(a) ∈ GF(2^l)`, `N_{m/l}` multiplicative, the
-  embed∘restrict round-trip, Frobenius-by-subfield fixed-point = subfield membership) for C-Subfield;
-  for E.H.2/E.H.3, the descent-algebra round-trips and the extracted curve's validity (it *is* a valid
-  `HyperellipticCurve`, the genus matches the extension degree) for C-DescentAlgebra/C-GHSCurve; for
-  E.H.4, the transfer-map **homomorphism** (`D_{P+Q} = D_P + D_Q` via Cantor) for C-DescentMap; for
-  E.H.5, the **logarithm-preservation** relation (`D_h = k·D_g` for known small `k` via the frozen
-  Cantor `scalar_mul`) + the `#Jac`/genus checks for C-GHSDescent. The logarithm-preservation KAT is the
-  decisive transfer-correctness signal (the descent is correct iff it preserves the log).
-- `cargo check --workspace` must stay green — **no edge change**, so no cycle risk. The additive
-  `shared/gf2m::subfield` module is a leaf addition.
-- **The existing rho / gnfs / shared KATs must stay green** after the descent code lands — E.H adds new
-  modules (`shared/gf2m::subfield`, `rho::ghs`) and changes no existing field / curve / Jacobian / rho
-  path, so the no-regression invariant is structurally easy to hold; `cargo test --workspace` is the
-  guard. *(One subtlety: the new `shared/gf2m::subfield` module touches `shared/gf2m`'s public surface
-  additively — the existing `gf2m_kat.rs` and `gf2m_poly_kat.rs` must stay green and the subfield
-  substrate gets its own `gf2m_subfield_kat.rs`.)*
-- **PARI oracle:** the `hyperellcharpoly` `#[ignore]` sidecar (cross-checking the descended curve's
-  `#Jac` / L-polynomial against the binary curve's group order via the descent relationship) follows the
-  established `#[ignore = "PARI not installed; run manually when available"]` pattern; never on the green
-  path. The green-path transfer-correctness signal is the self-checking logarithm-preservation relation.
+- Each session's KATs are the primary correctness signal — fast, decisive, and **oracle-free**
+  (lever 5): for E.J.1, the `F_p[x]` resultant identities (`Res(f,g) = 0 ⟺ gcd(f,g) ≠ 1`, symmetry
+  up to sign, the multivariate-symmetric round-trip) for C-SemaevPoly; for E.J.2, the
+  **vanishing relation** at `S_2`/`S_3` (`S_m(x_1,…,x_m) = 0` for points summing to `∞`, computed
+  via the frozen `Curve` group law) for C-SemaevBase; for E.J.3, the **recursion correctness**
+  (`S_m` built by `Res_X(S_{m-1}, S_3)` agrees with the direct construction at `S_4`) + the
+  vanishing relation at `S_4` for C-Semaev. The vanishing relation is the decisive
+  Semaev-correctness signal (the polynomial is right iff it vanishes on exactly the configurations
+  summing to the identity) and it is **exactly self-checking** — no PARI / `msolve` on the green
+  path.
+- `cargo check --workspace` must stay green — **no edge change**, so no cycle risk. The `F_p[x]`
+  resultant + multivariate type + `rho::semaev` are leaf additions.
+- **The existing rho / gnfs / shared KATs must stay green** after the Semaev code lands — E.J adds
+  new modules and changes no existing field / curve / resultant path, so the no-regression invariant
+  is structurally easy to hold; `cargo test --workspace` is the guard.
+- **No live oracle:** the green-path Semaev-correctness signal is the self-checking vanishing
+  relation. An optional `msolve` / PARI cross-check (e.g. cross-checking `S_m`'s factorisation or a
+  decomposition root) would follow the established `#[ignore = "PARI not installed; run manually when
+  available"]` pattern; never on the green path. E.J introduces **no new live oracle** (principle 3).
 
 ---
 
 ## Session list
 
 One commit-shaped session per row. `Cat` = category (A substrate / B algorithm / C optimization /
-I integrative). `◆` marks a sub-track-final session. `@architect` marks an inflection or contract-freeze
-point requiring a juncture fork + human sign-off before the next session is dispatched.
+I integrative). `◆` marks a sub-track-final session. `@architect` marks an inflection or
+contract-freeze point requiring a juncture fork + human sign-off before the next session is
+dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.H.1 | Subfield substrate GF(2^l) ⊂ GF(2^m): embedding + relative trace/norm + Frobenius-by-subfield | A | **Opus** | C-F2m (frozen — `mul`/`square`/`frobenius`/`pow`/`trace` read; no amend); `shared/gf2m::convert` (read — the `frobenius_orbit` / per-call `poly` idiom to extend) | `shared/gf2m/src/subfield.rs` (new: subfield embed/restrict + `Tr_{m/l}` + `N_{m/l}` + Frobenius-by-subfield orbit + membership), `shared/gf2m/src/lib.rs` (add `pub mod subfield;` + re-export), `shared/gf2m/tests/gf2m_subfield_kat.rs` (new: trace/norm identities, embed∘restrict round-trip, subfield-membership KATs) |
-| E.H.2 | Artin–Schreier / function-field Weil-restriction algebra | B | Sonnet | C-Subfield (frozen E.H.1); C-GF2mPoly (frozen E.I, read — the descent algebra is polynomial-over-GF(2^m) work); C-F2m (read) | `rho/src/ghs/mod.rs` (new: `GhsError` enum + the toy binary-curve fixture + the Artin–Schreier extension setup), `rho/src/ghs/descent.rs` (new: the Weil-restriction algebra over GF(2^m)/GF(2^l)), `rho/src/lib.rs` (add `pub mod ghs;`), `rho/tests/ghs_kat.rs` (new: descent-algebra round-trip KATs) |
-| E.H.3 | GHS hyperelliptic-curve extraction `C/GF(2^l)` (imaginary model) | B | Sonnet | C-DescentAlgebra (frozen E.H.2); C-HyperCurve (frozen E.I, read — the extracted curve *is* a `HyperellipticCurve`); C-Subfield (read) | `rho/src/ghs/curve.rs` (new: extract `C/GF(2^l)` = `HyperellipticCurve`, genus↔extension-degree relation, imaginary-model validity), `rho/src/ghs/mod.rs` (add `pub mod curve;`), `rho/tests/ghs_kat.rs` (extend: extracted-curve validity, genus = expected from `m/l`, the curve is a valid frozen `HyperellipticCurve`) |
-| E.H.4 | Transfer map E(GF(2^m)) → Jac(C)(GF(2^l)): point → Mumford divisor + homomorphism | B | Sonnet | C-GHSCurve (frozen E.H.3); C-Jacobian (frozen E.I, read — `compose`/`add`/`divisor_from_points`/`scalar_mul`); C-BinaryCurve (frozen E.G, read — the source point type) | `rho/src/ghs/transfer.rs` (new: `P ∈ E(GF(2^m)) ↦ D_P ∈ Jac(C)(GF(2^l))` + the homomorphism property), `rho/src/ghs/mod.rs` (add `pub mod transfer;`), `rho/tests/ghs_kat.rs` (extend: `D_{P+Q} = D_P + D_Q` via Cantor, transfer of the base point and a sample point) |
-| E.H.5 ◆ `@architect` | GHS/Weil descent: ECDLP → Jacobian-DLP reduction + sub-track close | I | Sonnet | C-DescentMap (frozen E.H.4); C-GHSCurve (frozen E.H.3, read); C-Jacobian (frozen E.I, read — `scalar_mul` for log-preservation); `rho::ssa` reduction idiom (read — the verify→transfer→reduce shape) | `rho/src/ghs/reduce.rs` (new: `ghs_descend((E,g,h)) → (C, D_g, D_h)` reduction + logarithm-preservation), `rho/src/ghs/mod.rs` (add `pub mod reduce;` + `pub use`), `rho/tests/ghs_kat.rs` (extend: `D_h = k·D_g` for known `k`, `#Jac`/genus checks, sub-track-close suite; optional PARI `hyperellcharpoly` `#[ignore]` sidecar) |
+| E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type | A | Sonnet | C-Fp (frozen — `shared-field::Fp<L>` read; no amend); `shared-numfield::resultant`/`subresultant_gcd` (read — the `ℤ[x]` Sylvester-resultant idiom to mirror over `F_p`); `gf2m::Poly::resultant` (read — the field-resultant idiom) | `rho/src/semaev/mod.rs` (new: module skeleton + the toy `F_p`/curve fixture + `SemaevError`), `rho/src/semaev/poly.rs` (new: `F_p[x]` univariate resultant + the multivariate/symmetric-polynomial type `S_m` lives in), `rho/src/lib.rs` (add `pub mod semaev;`), `rho/tests/semaev_kat.rs` (new: `F_p[x]` resultant identities, multivariate-symmetric round-trip KATs) |
+| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | B | Sonnet | C-SemaevPoly (frozen E.J.1); `rho::curve::Curve`/`AffinePoint` (frozen, read — the group law the vanishing relation checks against); C-Fp (read) | `rho/src/semaev/base.rs` (new: `S_2 = X_1 − X_2`, the symmetric `S_3(X_1,X_2,X_3)`, the vanishing predicate), `rho/src/semaev/mod.rs` (add `pub mod base;`), `rho/tests/semaev_kat.rs` (extend: `S_2`/`S_3` vanish on points summing to `∞` via the frozen group law) |
+| E.J.3 ◆ `@architect` | Semaev resultant recursion `S_m = Res_X(S_{m-1}, S_3)` + sub-track close | B | Sonnet | C-SemaevBase (frozen E.J.2); C-SemaevPoly (frozen E.J.1, read — the resultant + multivariate type); `rho::curve::Curve` (read — vanishing at `S_4`) | `rho/src/semaev/recursion.rs` (new: `semaev_poly(m) → S_m` via the resultant ladder + `pub use`), `rho/src/semaev/mod.rs` (add `pub mod recursion;` + `pub use`), `rho/tests/semaev_kat.rs` (extend: recursion agrees with direct `S_4`, `S_4` vanishing, sub-track-close suite; optional `#[ignore]` `msolve`/PARI sidecar) |
 
-**Sequencing notes.** Strictly serial: **E.H.1 → E.H.2 → E.H.3 → E.H.4 → E.H.5.** E.H.1 lands the
-subfield substrate the descent stands on; E.H.2 the Weil-restriction algebra; E.H.3 extracts the curve
-(consuming the algebra); E.H.4 the transfer map (consuming the curve + the frozen Jacobian); E.H.5 wires
-the reduction and closes. **One `@architect` marker** sits on the **E.H.5 ◆** (the boundary juncture
-ratifying the five frozen contracts and confirming the descent is transfer-correct and E.K-ready before
-the sub-track closes). *(Tradeoff named: E.H freezes four contracts before the ◆ — C-Subfield (E.H.1),
-C-DescentAlgebra (E.H.2), C-GHSCurve (E.H.3), C-DescentMap (E.H.4) — but pages NO inline juncture there,
-mirroring the E.G/E.I calls. The in-crate orthogonality (each later session consumes the earlier freeze
-immediately, where a wrong shape fails the next session's KAT loudly) plus the single primary downstream
-consumer (E.K, which has its own Opus-flagged E.K.1 to design the index calculus) makes the early-catch
-insurance less valuable than a separate inline fork would cost. The ◆ juncture is held at Opus
-(juncture-tier) for the descent-algebra cost-of-wrong, but separate inline forks are not bought. If a
-later session's KAT surfaces a substrate concern — e.g. the transfer-map homomorphism fails because
-C-DescentAlgebra has the wrong shape — that is the loud signal that substitutes for an inline juncture.)*
+**Sequencing notes.** Strictly serial: **E.J.1 → E.J.2 → E.J.3.** E.J.1 lands the polynomial
+substrate the construction stands on (the `F_p[x]` resultant + the multivariate-symmetric type);
+E.J.2 the `S_2`/`S_3` base cases + the vanishing relation; E.J.3 the resultant recursion and close.
+**One `@architect` marker** sits on the **E.J.3 ◆** (the boundary juncture ratifying the three frozen
+contracts and confirming the Semaev machinery is vanishing-verified and E.K-ready before the
+sub-track closes). *(Tradeoff named: E.J freezes two contracts before the ◆ — C-SemaevPoly (E.J.1),
+C-SemaevBase (E.J.2) — but pages NO inline juncture there, mirroring the E.G/E.H/E.I calls. The
+in-crate orthogonality (each later session consumes the earlier freeze immediately, where a wrong
+shape fails the next session's vanishing KAT loudly) plus the single primary downstream consumer
+(E.K, with its own Opus-flagged E.K.1) makes the early-catch insurance less valuable than a separate
+inline fork would cost. The ◆ juncture is held at Opus (juncture-tier — the user's lever-3 override
+on the representation E.K consumes), but separate inline forks are not bought.)*
 
-**Why 5 sessions (the ROADMAP's 5-session estimate, confirmed by ceiling-bias).** The split is taken at
-five representation/contract-sharp seams:
-- **One-line-commit-title corollary.** "Subfield substrate", "Artin–Schreier Weil-restriction algebra",
-  "GHS curve extraction", "Transfer map E → Jac", and "ECDLP → Jacobian-DLP reduction + close" are **five
-  distinct commit titles** across three categories (A substrate ×1, B algorithm ×3, I integrative ×1).
-- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the subfield
-  substrate, the descent algebra, the curve extraction, the transfer map, the reduction. The descent
-  **algebra↔curve seam** (E.H.2↔E.H.3) is the one deliberated split (see the shard-time decision below):
-  the Artin–Schreier / Weil-restriction *algebra* (the function-field setup) is contract-distinct from
-  the *curve extraction* it feeds — freezing C-DescentAlgebra at E.H.2 buys an early contract on the
-  hardest piece, lowering the cost-of-wrong on "the most mathematically intricate single attack."
-- **Contract-sharp boundary.** E.H.1 **freezes** C-Subfield; E.H.2 consumes it and **freezes**
-  C-DescentAlgebra; E.H.3 consumes that and **freezes** C-GHSCurve; E.H.4 consumes the curve + the frozen
-  Jacobian and **freezes** C-DescentMap; E.H.5 consumes the map and **freezes** C-GHSDescent. Each later
-  session is meaningless without the earlier freeze — which is what licenses and bounds the 5-way split.
+**Why 3 sessions (the top of the ROADMAP's 2–3-session band, confirmed by ceiling-bias).** The split
+is taken at three representation/contract-sharp seams:
+- **One-line-commit-title corollary.** "Semaev polynomial substrate (`F_p[x]` resultant +
+  multivariate type)", "Semaev base cases `S_2`/`S_3` + vanishing", and "Semaev resultant recursion
+  `S_m` + close" are **three distinct commit titles** across two categories (A substrate ×1, B
+  algorithm ×2).
+- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the polynomial
+  substrate, the base cases, the recursion. The **substrate↔base seam** (E.J.1↔E.J.2) is the
+  deliberated split (see the shard-time decision below): the `F_p[x]` resultant + multivariate-
+  symmetric representation (the substrate) is contract-distinct from the `S_2`/`S_3` base cases that
+  populate it — freezing C-SemaevPoly at E.J.1 buys an early contract on the doubly-greenfield
+  polynomial machinery E.K consumes.
+- **Contract-sharp boundary.** E.J.1 **freezes** C-SemaevPoly; E.J.2 consumes it and **freezes**
+  C-SemaevBase; E.J.3 consumes both and **freezes** C-Semaev. Each later session is meaningless
+  without the earlier freeze — which is what licenses and bounds the 3-way split.
 
-**The deliberated algebra↔curve split (shard-time decision, user-adjudicated).** The GHS construction
-*could* be one session (algebra + extraction as one irreducible unit, giving 4 sessions). The user chose
-**5: split the GHS construction at the algebra↔curve seam**, matching the ROADMAP estimate and the
-project's documented ceiling-bias (G/D both landed at or above their upper bands). The split buys an
-early contract freeze (C-DescentAlgebra) on the most expensive-to-retrofit piece. **If E.H.2 and E.H.3
-prove tightly coupled** (the Artin–Schreier setup and the curve extraction have no clean seam — the
-extraction is a thin wrapper over the algebra), the split is artificial and **E.H.2/E.H.3 should
-re-merge** — a judgment E.H.2 can surface once the algebra shape is concrete (an additive-reshard
-discovery, not a silent merge). This is the one place the 5-vs-4 sizing is genuinely uncertain until the
-algebra lands.
+**The deliberated substrate↔base split (shard-time decision, user-adjudicated).** The substrate and
+the `S_2`/`S_3` base cases *could* be one session (set up the polynomial machinery and the low-order
+cases together, giving 2 sessions). The user chose **3: split at the substrate↔base seam**, matching
+the ROADMAP's upper estimate and the project's documented ceiling-bias (G/D both landed at or above
+their upper bands). The split buys an early contract freeze (C-SemaevPoly) on the doubly-greenfield
+polynomial machinery (the `F_p[x]` resultant AND the multivariate-symmetric type — the
+representation crux E.K depends on). **If E.J.1's substrate and E.J.2's base cases prove tightly
+coupled** (the base cases are a thin instantiation of the substrate with no clean seam), the split is
+artificial and **E.J.1/E.J.2 should re-merge** — a judgment E.J.1 can surface once the
+representation shape is concrete (an additive-reshard discovery, not a silent merge). This is the one
+place the 3-vs-2 sizing is genuinely uncertain until the substrate lands.
 
 ---
 
 ## Session detail
 
-E.H.1 and E.H.2 are specified at near-full fidelity (the subfield substrate and the descent algebra are
-the design crux the whole descent — and downstream E.K — stand on). E.H.3–E.H.5 are lower-fidelity
-sketches, correct per the substrate-first discipline: they are crisply specified only after C-Subfield
-and C-DescentAlgebra freeze.
+E.J.1 and E.J.2 are specified at near-full fidelity (the polynomial substrate and the base cases are
+the design crux the whole construction — and downstream E.K — stand on). E.J.3 is a lower-fidelity
+sketch, correct per the substrate-first discipline: it is crisply specified only after C-SemaevPoly
+and C-SemaevBase freeze.
 
-### E.H.1 — Subfield substrate GF(2^l) ⊂ GF(2^m) (Opus, Cat A)
+### E.J.1 — Semaev polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type (Sonnet, Cat A)
 
-**Deliverable:** the relative-field substrate the Weil restriction stands on — greenfield (the survey
-confirmed the existing Frobenius machinery in `convert.rs` is GF(2^m)-over-GF(2) only: `frobenius_orbit`
-spans the *whole* field, there is no relative trace/norm, no subfield embedding). The pieces:
-- **Subfield embedding / restriction** (`shared/gf2m/src/subfield.rs`): the embedding `GF(2^l) ↪ GF(2^m)`
-  (`l | m`) and the partial restriction `GF(2^m) ⊃ GF(2^l)` (defined on subfield elements). The subfield
-  is `{a ∈ GF(2^m) : a^(2^l) = a}` (the fixed field of the `l`-th Frobenius power). Threads the field
-  modulus per-call (`poly: &Uint<L>`), the C-F2m idiom.
-- **Relative trace and norm** (`shared/gf2m/src/subfield.rs`): `Tr_{m/l}(a) = Σ_{i=0}^{m/l−1} a^(2^(il))`
-  (the relative trace, landing in GF(2^l)) and `N_{m/l}(a) = Π_{i=0}^{m/l−1} a^(2^(il))` (the relative
-  norm, multiplicative, landing in GF(2^l)). These iterate the `l`-th Frobenius power, distinct from the
-  absolute `trace` (to GF(2)) already on the C-F2m trait. The **char-2 trap**: the relative trace is over
-  the *subfield* tower, not the absolute tower — iterate `frobenius` in steps of `l`, not `1`.
-- **Frobenius-by-subfield orbit + membership** (`shared/gf2m/src/subfield.rs`): the orbit
-  `[a, a^(2^l), a^(2^(2l)), …]` (length `m/l`), and `is_in_subfield(a, l) = (a^(2^l) == a)`. Over-specify
-  (substrate rule): include the subfield *basis* (a normal/polynomial basis for GF(2^l) inside GF(2^m))
-  if confidence is reasonable — E.K's index calculus over the subfield may consume it.
-- **Confirm-and-record (the load-bearing E.H.1 acts):** (a) **the imaginary-model target** — record that
-  GHS with odd `m/l` produces the imaginary/ramified hyperelliptic model the frozen C-HyperCurve handles
-  (resolving the E.I.3 ◆ conditional); (b) **the `Uint<1>` composite-`m` fixture** — choose a toy
-  composite `m ≤ 8` with `l | m`, odd `m/l` (e.g. `m=4, l=2, m/l=2` is *even* — degenerate; `m=6, l=2,
-  m/l=3` odd, or `m=6, l=3, m/l=2` even; the survey read is a small composite exists; **resolving the
-  exact fixture is an E.H.1 design act** and a KAT asserts the descent is non-degenerate at it). If no
-  in-`Uint<1>` composite `m` gives a non-degenerate odd-`m/l` descent, **generalizing `BinaryCurve` to
-  `L>1` is a surfaced discovery at the ◆** (the C1-widening discipline), never silent in-flight growth.
+**Deliverable:** the polynomial substrate the Semaev construction stands on — **doubly greenfield**
+(the survey confirmed: no `F_p[x]` univariate resultant exists — only `ℤ[x]` in `shared-numfield`
+and `GF(2^m)` in `gf2m`; and no multivariate polynomial type exists anywhere). The pieces:
+- **The `F_p[x]` univariate resultant** (`rho/src/semaev/poly.rs`): `Res(f, g) ∈ F_p` for `f, g ∈
+  F_p[x]`, via the Euclidean/subresultant remainder sequence (mirroring the `gf2m::Poly::resultant`
+  field-resultant idiom and the `shared-numfield` `ℤ[x]` Sylvester idiom). Zero iff `gcd(f,g) ≠ 1`.
+- **The multivariate/symmetric-polynomial type** (`rho/src/semaev/poly.rs`): the representation `S_m`
+  lives in — a multivariate polynomial over `F_p`, *symmetric* in its arguments (Semaev polynomials
+  are symmetric). **The representation choice is the design crux** (dense multivariate vs
+  elementary-symmetric-basis vs a hybrid). Over-specify (substrate rule): carry the operations E.K's
+  point-decomposition step will need (evaluation at a partial assignment, the resultant-elimination
+  one variable at a time, symmetric-reduction) if confidence is reasonable — adding them later is
+  costlier.
+- **The module skeleton + fixture** (`rho/src/semaev/mod.rs`): a `SemaevError` enum (the established
+  reduction-attack idiom — cf. `rho::ssa::SsaError`, `rho::ghs::GhsError`), the toy `F_p` + Weierstrass
+  curve fixture (a small prime `p`, a curve `y² = x³ + ax + b` with known small-order points).
+- **Confirm-and-record (the load-bearing E.J.1 acts):** (a) **the symmetric representation** — record
+  the chosen multivariate-symmetric representation and why (the property the vanishing relation and
+  the resultant recursion exploit); (b) **the F_p fixture** — choose a toy `p` and curve with enough
+  small points to exhibit `S_3`/`S_4` vanishing non-vacuously (`Uint<4>` ceiling — a principle-4
+  boundary, annotated); (c) **the module home** — `rho::semaev` for the construction; the `F_p[x]`
+  resultant + multivariate type live with it unless judged field-substrate-shaped enough for a
+  `shared` module (a placement call ratified at the ◆, no edge consequence either way).
 
-Consumes C-F2m (frozen — `mul`/`square`/`frobenius`/`pow`/`trace` read; **no amend**), the
-`convert.rs::frobenius_orbit` idiom (read — extended to relative orbits). **Freezes C-Subfield.**
+Consumes C-Fp (frozen — `shared-field::Fp<L>` read; **no amend**), `shared-numfield::resultant` /
+`subresultant_gcd` (read — the `ℤ[x]` idiom to mirror over `F_p`), `gf2m::Poly::resultant` (read —
+the field-resultant idiom). **Freezes C-SemaevPoly.**
 
-**KAT** (`shared/gf2m/tests/gf2m_subfield_kat.rs` + inline unit tests): over toy fields (GF(2^6) over
-GF(2^2) and GF(2^3), with explicit irreducibles): **trace landing** (`Tr_{m/l}(a) ∈ GF(2^l)` —
-`is_in_subfield(Tr_{m/l}(a), l)`); **trace additivity** (`Tr_{m/l}(a+b) = Tr_{m/l}(a) + Tr_{m/l}(b)`);
-**norm multiplicativity** (`N_{m/l}(a·b) = N_{m/l}(a)·N_{m/l}(b)`, landing in GF(2^l)); **embed∘restrict
-round-trip** (`restrict(embed(c)) = c` for `c ∈ GF(2^l)`); **subfield membership** (`is_in_subfield(a, l)
-⟺ a^(2^l) = a`, and GF(2^l) has exactly `2^l` elements); **Frobenius-by-subfield orbit** (length `m/l`,
-`a^(2^(il))` correct). **Verify gate:** `cargo test --workspace` green; `cargo check --workspace` green
-(additive module, no edge change); existing rho/gnfs/shared KATs unchanged.
+**KAT** (`rho/tests/semaev_kat.rs` + inline unit tests): over the toy `F_p` fixture: **resultant
+zero-iff-common-factor** (`Res(f,g) = 0 ⟺ gcd(f,g) ≠ 1`); **resultant symmetry** (`Res(f,g) =
+±Res(g,f)`); **resultant of coprime quadratics is nonzero**; **multivariate-symmetric round-trip**
+(a symmetric polynomial round-trips through the representation; evaluation at a permutation of its
+arguments is invariant). **Verify gate:** `cargo test --workspace` green; `cargo check --workspace`
+green (leaf additions, no edge change); existing rho/gnfs/shared KATs unchanged.
 
-**Subtlety (load-bearing):** (1) **The relative trace/norm iterate the `l`-th Frobenius power, not the
-1st** — `Tr_{m/l}(a) = Σ a^(2^(il))` sums `m/l` terms stepping by `l`, NOT the `m` terms of the absolute
-trace. A `@build` agent reusing the absolute `trace` (already on C-F2m) writes the wrong map; the
-"trace lands in GF(2^l)" KAT is the loud signal (the absolute trace lands in GF(2), a *different*
-subfield). (2) **The subfield is the Frobenius fixed field** — `GF(2^l) = {a : a^(2^l) = a}`, characterised
-by membership, not by a stored basis. (3) **`l | m` is mandatory** — GF(2^l) ⊆ GF(2^m) iff `l | m`; a
-fixture with `l ∤ m` has no subfield and the whole descent is undefined (assert `l | m` loudly). (4)
-**Odd `m/l` keeps the descent in the imaginary model** — the genus of the GHS curve scales with the
-extension degree, and odd `m/l` lands the imaginary/ramified model the frozen C-HyperCurve handles; even
-`m/l` risks the real/split model (an additive C-HyperCurve amend). The fixture choice (act (b) above) is
-constrained by this. (5) **Module placement** — the substrate lives in `shared/gf2m` (not `rho`) because
-it is field-substrate-shaped and reusable (E.K may consume it); the principled home, ratified at the ◆.
+**Subtlety (load-bearing):** (1) **The `F_p[x]` resultant is distinct from the `ℤ[x]` and `GF(2^m)`
+ones** — a `@build` agent reaching for `shared-numfield::resultant` gets a `ℤ[x]` Sylvester-matrix
+resultant (wrong ring); the construction needs the *field* resultant over `F_p` (the
+`gf2m::Poly::resultant` field idiom, ported to `F_p`). (2) **The symmetric representation is the
+crux** — `S_m` is symmetric, and the resultant recursion (E.J.3) eliminates one variable at a time;
+a representation that does not make symmetric-reduction and partial-evaluation cheap fights the
+recursion. (3) **Over-specify the substrate** — carry the partial-evaluation and one-variable-
+elimination operations E.K needs (the point-decomposition step assigns factor-base x-coordinates and
+asks for roots). (4) **Module placement** — `rho::semaev` for the construction; the resultant +
+multivariate type live with it unless field-substrate-shaped (the principled home, ratified at the
+◆). (5) **`Uint<4>` ceiling** — the source curve is hardcoded `Uint<4>` (the C1 ceiling the ROADMAP
+flags for E.K); E.J's toy `p` fits it; if E.K later needs a wider field, that is the C1-widening
+discovery, not E.J's concern.
 
-**Deferred:** the descent algebra (E.H.2); the curve extraction (E.H.3); the transfer map (E.H.4); the
-reduction (E.H.5); the Jacobian index-calculus DLP solver (E.K); Semaev polynomials (E.J); the
+**Deferred:** the base cases (E.J.2); the recursion (E.J.3); the index-calculus solver (E.K); the
 MATHEMATICS chapter (T.E at the Track-E ◆).
 
-### E.H.2 — Artin–Schreier / function-field Weil-restriction algebra (Sonnet, Cat B)
+### E.J.2 — Semaev base cases `S_2`, `S_3` + the vanishing relation (Sonnet, Cat B)
 
-**Deliverable:** the descent algebra — the Artin–Schreier / function-field Weil-restriction machinery
-that the GHS curve extraction (E.H.3) consumes. Near-full fidelity (the algebra is the descent crux).
-The pieces:
-- **The `rho::ghs` module skeleton** (`rho/src/ghs/mod.rs`): a `GhsError` enum (the established
-  reduction-attack idiom — cf. `rho::ssa::SsaError`), the toy binary-curve fixture (the composite-`m`
-  `BinaryCurve` chosen at E.H.1), and the precondition verifier (`l | m`, the curve admits the descent).
-- **The Artin–Schreier extension** (`rho/src/ghs/descent.rs`): the char-2 Artin–Schreier extension of the
-  function field of `E/GF(2^m)` (the GHS construction builds the hyperelliptic function field as an
-  Artin–Schreier extension `y² + y = ...` lifted through the Weil restriction). The char-2 Artin–Schreier
-  form `y^2 - y = f` is *the* char-2 separable-extension primitive — the descent's algebraic core.
-- **The Weil restriction of scalars** (`rho/src/ghs/descent.rs`): restrict the function-field data from
-  GF(2^m) to GF(2^l) using the C-Subfield relative trace/norm and the Frobenius-by-subfield orbit (the
-  Weil restriction `Res_{GF(2^m)/GF(2^l)}` expresses GF(2^m)-objects as GF(2^l)-objects of dimension
-  `m/l`). This is the polynomial-over-GF(2^m)-and-subfield work consuming C-GF2mPoly.
+**Deliverable:** the explicit low-order summation polynomials and the vanishing relation that makes
+them correct. Near-full fidelity (the base cases anchor the recursion). The pieces:
+- **`S_2`** (`rho/src/semaev/base.rs`): `S_2(X_1, X_2) = X_1 − X_2` — two points `P_1, P_2` sum to
+  `∞` iff `P_2 = −P_1`, which for the x-coordinates means `x_1 = x_2` (the negation `−(x,y) = (x,−y)`
+  fixes `x`). The degenerate but foundational base case.
+- **`S_3`** (`rho/src/semaev/base.rs`): the symmetric `S_3(X_1, X_2, X_3)` that vanishes when three
+  points `P_1 + P_2 + P_3 = ∞`. This is the genuine first summation polynomial — derived from the
+  curve's group law (the collinearity / addition relation), symmetric in `X_1, X_2, X_3`, of degree
+  2 in each. The seed the resultant recursion (E.J.3) builds all higher `S_m` from.
+- **The vanishing predicate** (`rho/src/semaev/base.rs`): given `m` points on the frozen `Curve`,
+  compute `Σ P_i` via the group law and assert `S_m(x_1, …, x_m) = 0 ⟺ Σ P_i = ∞`.
 
-Consumes C-Subfield (frozen E.H.1), C-GF2mPoly (frozen E.I, read), C-F2m (read), the `rho::ssa` module
-idiom (read — the error-enum + fixture + verifier shape). **Freezes C-DescentAlgebra.**
+Consumes C-SemaevPoly (frozen E.J.1), `rho::curve::Curve` / `AffinePoint` (frozen, read — the group
+law the vanishing relation checks against), C-Fp (read). **Freezes C-SemaevBase.**
 
-**KAT** (`rho/tests/ghs_kat.rs` + inline unit tests): over the toy composite-field fixture: the
-**Artin–Schreier round-trip** (the extension is well-formed — `y² + y = f` has the expected structure);
-the **Weil-restriction dimension** (a GF(2^m)-object restricts to an `m/l`-dimensional GF(2^l)-object);
-the **precondition verifier** (`l | m` accepted, `l ∤ m` rejected with `GhsError`). **Verify gate:**
-`cargo test --workspace` green.
+**KAT** (`rho/tests/semaev_kat.rs`, extended): over the toy `F_p` curve fixture: **`S_2` vanishing**
+(`S_2(x_1, x_2) = 0 ⟺ P_2 = −P_1`); **`S_3` vanishing** (`S_3(x_1, x_2, x_3) = 0` for triples with
+`P_1 + P_2 + P_3 = ∞`, computed via the frozen group law; nonzero for triples that do not sum to
+`∞`); **`S_3` symmetry** (invariant under permuting its three arguments); **`S_3` degree** (degree 2
+in each variable). **Verify gate:** `cargo test --workspace` green.
 
-**Subtlety (load-bearing):** (1) **The char-2 Artin–Schreier form is `y² + y = f`, NOT `y² = f`** — in
-char 2 the separable degree-2 extensions are Artin–Schreier (`℘(y) = y² + y`), not Kummer (`y² = f`,
-which is inseparable in char 2). A `@build` agent porting an odd-char Kummer construction writes an
-inseparable extension with no GHS curve. (2) **The Weil restriction lowers the field and raises the
-dimension** — `Res_{m/l}` of a 1-dimensional GF(2^m)-object is an `m/l`-dimensional GF(2^l)-object; the
-genus of the GHS curve grows with `m/l` (the source of the descent's leverage and its toy-scale genus).
-(3) **The descent algebra consumes C-Subfield's relative trace/norm, not the absolute trace** — the Weil
-restriction is *relative* to GF(2^l) (the subtlety E.H.1's KAT guards). (4) **The algebra↔curve seam** —
-if the curve extraction (E.H.3) turns out to be a thin wrapper over this algebra (no clean seam), surface
-an additive-reshard merge of E.H.2/E.H.3 at the ◆; if the seam is genuine (the algebra is a reusable
-function-field layer the extraction reads), the split holds.
+**Subtlety (load-bearing):** (1) **The vanishing relation is the correctness signal** — `S_m` is
+correct iff it vanishes on *exactly* the x-coordinate tuples of points summing to `∞`; the vanishing
+KAT (checked against the frozen `Curve` group law) is the decisive guard and it is **exactly
+self-checking** (no oracle — the lever-5 strength). (2) **`S_3` is derived from the group law, not
+guessed** — the symmetric `S_3` encodes the curve's addition/collinearity relation; a `@build` agent
+must derive it from `y² = x³ + ax + b` and the group law, not transcribe a formula for the wrong
+curve form. (3) **Symmetry is load-bearing** — `S_3` (and all `S_m`) are symmetric; a non-symmetric
+construction breaks the recursion. (4) **The substrate↔base seam check** — if the base cases are a
+thin instantiation of the C-SemaevPoly substrate (no genuine seam), this is the loud signal to
+surface the E.J.1/E.J.2 merge.
 
-**Deferred:** the curve extraction (E.H.3); the transfer map (E.H.4); the reduction (E.H.5); the
-Jacobian DLP solver / Semaev (E.K/E.J); the MATHEMATICS chapter (T.E).
+**Deferred:** the recursion (E.J.3); the index-calculus solver (E.K); the MATHEMATICS chapter (T.E).
 
-### E.H.3 — GHS hyperelliptic-curve extraction `C/GF(2^l)` (Sonnet, Cat B)
+### E.J.3 ◆ — Semaev resultant recursion `S_m = Res_X(S_{m-1}, S_3)` + sub-track close (Sonnet, Cat B, `@architect`)
 
-**Deliverable:** extract the hyperelliptic curve `C/GF(2^l)` (the GHS image) from the descent algebra,
-and verify it as a frozen `HyperellipticCurve`. Lower-fidelity sketch (crisp after C-DescentAlgebra
-freezes):
-- **Curve extraction** (`rho/src/ghs/curve.rs`): from the Artin–Schreier / Weil-restriction data, extract
-  the hyperelliptic curve `C: y² + h(x)y = f(x)` over GF(2^l) — populate a frozen
-  `HyperellipticCurve<L>` (its `poly`/`h_coeffs`/`f_coeffs`). The extracted curve is the **imaginary
-  model** (deg f = 2g+1, odd `m/l`).
-- **Genus ↔ extension-degree relation** (`rho/src/ghs/curve.rs`): the genus `g` of the GHS curve is
-  determined by the extension degree `m/l` (and the curve's structure); record/verify
-  `g = HyperellipticCurve::genus()` matches the expected value from the descent.
-- **Imaginary-model validity** (`rho/src/ghs/curve.rs`): confirm the extracted curve is a *valid* frozen
-  `HyperellipticCurve` (the C-HyperCurve invariants hold — `is_on_curve` for sample points, the model is
-  imaginary).
+**Deliverable:** the resultant recursion that builds the higher summation polynomials, and the
+sub-track close. Lower-fidelity sketch (crisp after C-SemaevBase freezes):
+- **The recursion** (`rho/src/semaev/recursion.rs`): `semaev_poly(m) → S_m` via the elimination
+  ladder `S_m(X_1, …, X_m) = Res_X(S_{m-1}(X_1, …, X_{m-2}, X), S_3(X_{m-1}, X_m, X))` — eliminate a
+  shared variable `X` between `S_{m-1}` and `S_3` using the frozen C-SemaevPoly `F_p[x]` resultant.
+  Builds `S_4` (and `S_5` if cheap) from `S_3`.
+- **Recursion correctness** (`rho/src/semaev/recursion.rs` + KAT): `S_4` built by the recursion
+  agrees with the direct construction (the vanishing relation holds for `S_4`); the recursion
+  preserves symmetry and the expected degree growth.
+- **Sub-track-close KAT suite** (`rho/tests/semaev_kat.rs`, extended): `S_4` vanishing, recursion-vs-
+  direct agreement, and (optional) an `msolve`/PARI cross-check on a Semaev-root decomposition,
+  `#[ignore]`-gated.
 
-Consumes C-DescentAlgebra (frozen E.H.2), C-HyperCurve (frozen E.I, read — the extracted curve *is* a
-`HyperellipticCurve`), C-Subfield (read). **Freezes C-GHSCurve.**
+Consumes C-SemaevBase (frozen E.J.2), C-SemaevPoly (frozen E.J.1, read — the `F_p[x]` resultant +
+multivariate type), `rho::curve::Curve` (read — vanishing at `S_4`). **Freezes C-Semaev.**
 
-**KAT** (`rho/tests/ghs_kat.rs`, extended): the **extracted curve is a valid `HyperellipticCurve`** (the
-C-HyperCurve `is_on_curve` / model checks pass); the **genus matches** the expected value from `m/l`; the
-curve is the **imaginary model** (deg f = 2g+1). **Verify gate:** `cargo test --workspace` green.
+**KAT (primary correctness signal):** over the toy `F_p` curve fixture: **recursion correctness**
+(`S_4 = Res_X(S_3, S_3)` agrees with the direct construction); **`S_4` vanishing**
+(`S_4(x_1, …, x_4) = 0 ⟺ P_1 + P_2 + P_3 + P_4 = ∞`, via the frozen group law — the decisive Semaev-
+correctness signal); **symmetry preservation** (`S_4` is symmetric); **degree growth** (`S_4` has
+the expected degree from `m`). Optional `msolve`/PARI cross-check (`#[ignore = "PARI not installed;
+run manually when available"]`). **Verify gate:** `cargo test --workspace` green; existing
+rho/gnfs/shared KATs unchanged.
 
-**Subtlety (load-bearing):** (1) **The extracted curve must satisfy the frozen C-HyperCurve contract** —
-it is consumed by E.H.4/E.H.5 and E.K as a `HyperellipticCurve`, so the extraction must produce
-imaginary-model `h_coeffs`/`f_coeffs` the frozen `genus()`/`is_valid` accept. (2) **The genus grows with
-`m/l`** — at toy `m/l` the genus is small (2–4); the principle-4 annotation records that the genus and
-field are toy, GHS is crypto-scale-correct. (3) **Even `m/l` would break the model** — if the extraction
-yields deg f = 2g+2 (real/split), the frozen C-HyperCurve does not handle it (an additive amend); the
-fixture's odd `m/l` (E.H.1) keeps it imaginary. (4) **The algebra↔curve seam check** — if the extraction
-is a thin wrapper (no genuine seam over E.H.2), this is the loud signal to surface the E.H.2/E.H.3 merge.
+**Subtlety (load-bearing):** (1) **Semaev-only — NO index-calculus solver here** — E.J builds `S_m`
+and verifies the vanishing relation; it does NOT run relation collection / a factor base / linear
+algebra over `Z/nZ` / the Gröbner/`msolve` step (that is E.K, the central scope boundary). A
+`@build` agent implementing point decomposition over a factor base is defocus. (2) **The vanishing
+relation is the correctness signal** — `S_m` is correct iff it vanishes on exactly the configurations
+summing to `∞`; the vanishing KAT (known points, computed sum) is the green-path guard, the
+`msolve`/PARI cross-check the optional sidecar. (3) **This is the E.J ◆ boundary** — re-read the
+Purpose intent and verify the Semaev machinery is complete (substrate + base cases + recursion all
+present and vanishing-verified) and **E.K-ready** (C-Semaev exposes what E.K's index calculus
+consumes — `semaev_poly(m)`, partial evaluation / one-variable elimination for the point-
+decomposition step), and that E.J stayed solver-free / GHS-free / chapter-free. (4) **No index
+calculus and no GHS coupling** — E.K runs the index calculus and couples to the descended curve; E.J
+builds the F_p Semaev primitive. (5) **No MATHEMATICS chapter** — the Semaev textbook content is
+T.E, paired with E.W at the *Track-E* ◆; E.J.3 writes at most a PEDAGOGY code-tour delta.
 
-**Deferred:** the transfer map (E.H.4); the reduction (E.H.5); the Jacobian DLP solver / Semaev
-(E.K/E.J); the MATHEMATICS chapter (T.E).
-
-### E.H.4 — Transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) (Sonnet, Cat B)
-
-**Deliverable:** the transfer map carrying a point on the binary elliptic curve to a reduced Mumford
-divisor on the descended Jacobian, and its homomorphism property. Lower-fidelity sketch:
-- **The point → divisor map** (`rho/src/ghs/transfer.rs`): `P ∈ E(GF(2^m)) ↦ D_P ∈ Jac(C)(GF(2^l))` —
-  the GHS conorm/transfer map, built using the C-Subfield relative machinery and the frozen
-  `divisor_from_points` / `compose`. Maps the base point `G` and a sample point.
-- **The homomorphism property** (`rho/src/ghs/transfer.rs`): the transfer is a group homomorphism —
-  `D_{P+Q} = D_P + D_Q` (where `P+Q` is binary-curve point addition and `D_P + D_Q` is Cantor compose).
-  This is the property that makes the descent preserve discrete logs.
-
-Consumes C-GHSCurve (frozen E.H.3), C-Jacobian (frozen E.I, read — `compose`/`add`/`divisor_from_points`/
-`scalar_mul`), C-BinaryCurve (frozen E.G, read — the source point type `BinaryAffinePoint`). **Freezes
-C-DescentMap.**
-
-**KAT** (`rho/tests/ghs_kat.rs`, extended): the **homomorphism** `D_{P+Q} = D_P + D_Q` (transfer the
-base point `G`, a sample `P`, and `G+P`; check `D_{G+P} = compose(D_G, D_P)` via Cantor); the **identity
-maps to identity** (`D_∞ = [1,0]`, the zero divisor); transferred divisors are **valid reduced divisors**
-(C-HyperCurve invariant holds). **Verify gate:** `cargo test --workspace` green.
-
-**Subtlety (load-bearing):** (1) **The homomorphism is the descent's whole point** — if `D_{P+Q} ≠ D_P +
-D_Q`, the transfer does not preserve discrete logs and the descent is wrong; the homomorphism KAT is the
-decisive guard (it is the E.H.4 analogue of E.I's group-axiom KATs). (2) **The transfer consumes the
-frozen Cantor group law unchanged** — `D_P + D_Q` is `cantor::compose` + `reduce`; E.H builds the *map*,
-not a new group law (rigidity guard — do not re-derive Cantor). (3) **The identity must map to the
-identity** — `∞ ↦ [1,0]`; a transfer that mishandles the point at infinity breaks the homomorphism at the
-identity. (4) **The map uses C-Subfield's relative trace/norm** (the GHS conorm), not the absolute trace.
-
-**Deferred:** the reduction (E.H.5); the Jacobian DLP solver / Semaev (E.K/E.J); the MATHEMATICS chapter
-(T.E).
-
-### E.H.5 ◆ — GHS/Weil descent: ECDLP → Jacobian-DLP reduction + sub-track close (Sonnet, Cat I, `@architect`)
-
-**Deliverable:** the reduction wiring that turns an ECDLP instance into a Jacobian-DLP instance, the
-logarithm-preservation verification, and the sub-track close. Lower-fidelity sketch (crisp after
-C-DescentMap freezes):
-- **The reduction** (`rho/src/ghs/reduce.rs`): `ghs_descend((E, g, h)) → (C, D_g, D_h)` — given an ECDLP
-  instance (find `k` with `h = k·g` on `E`), produce the Jacobian-DLP instance (`D_g`, `D_h` on `Jac(C)`)
-  via the E.H.4 transfer map, such that `log_g h = log_{D_g} D_h`. Mirrors the `rho::ssa` reduction idiom
-  (verify precondition → transfer → produce the relocated problem). **E.H produces the relocated problem;
-  E.K solves it** (transfer-only — the scope boundary).
-- **Logarithm preservation** (`rho/src/ghs/reduce.rs` + KAT): the decisive correctness property — for a
-  known small `k`, `D_h = k·D_g` (via the frozen Cantor `scalar_mul`), confirming the transfer preserves
-  the discrete log.
-- **Sub-track-close KAT suite** (`rho/tests/ghs_kat.rs`, extended): logarithm preservation, the `#Jac` /
-  genus checks, and (optional) the PARI `hyperellcharpoly` cross-check on the descended curve's order.
-
-Consumes C-DescentMap (frozen E.H.4), C-GHSCurve (frozen E.H.3, read), C-Jacobian (frozen E.I, read —
-`scalar_mul` for log-preservation), the `rho::ssa` reduction idiom (read). **Freezes C-GHSDescent.**
-
-**KAT (primary correctness signal):** over the toy composite-field fixture: **logarithm preservation**
-(`D_h = k·D_g` for a known small `k`, via `cantor::scalar_mul` — the decisive transfer-correctness
-signal); the **`#Jac` / genus relationship** (the descended Jacobian's order relates to `#E(GF(2^m))`
-via the descent; genus matches `m/l`); every transferred divisor is a **valid reduced divisor**. Optional
-PARI cross-check (`hyperellcharpoly` for `#Jac` / the L-polynomial of the descended curve)
-`#[ignore]`-gated (`#[ignore = "PARI not installed; run manually when available"]`). **Verify gate:**
-`cargo test --workspace` green; existing rho/gnfs/shared KATs unchanged.
-
-**Subtlety (load-bearing):** (1) **Transfer-only — NO Jacobian DLP solver here** — E.H produces
-`(C, D_g, D_h)` and verifies `D_h = k·D_g`; it does NOT solve for `k` via index calculus (that is E.K,
-consuming E.J's Semaev polynomials). A `@build` agent implementing relation collection / a divisor factor
-base / linear algebra over `Z/ℓZ` is defocus (the central scope boundary). (2) **Logarithm preservation
-is the correctness signal** — the descent is correct iff `log_g h = log_{D_g} D_h`; the `D_h = k·D_g`
-KAT (known `k`) is the green-path guard, the PARI `#Jac` oracle the optional sidecar. (3) **This is the
-E.H ◆ boundary** — re-read the Purpose intent and verify the descent is complete (subfield substrate +
-descent algebra + curve extraction + transfer map + reduction all present and cross-checked) and
-**E.K-ready** (C-GHSDescent exposes what E.K's index calculus consumes — the descended `Jac(C)/GF(2^l)`,
-the transferred DLP instance `(D_g, D_h)`, the genus, the subfield), and that E.H stayed solver-free /
-Semaev-free / chapter-free. (4) **No Semaev polynomials and no index calculus** — E.J builds Semaev; E.K
-the index calculus; E.H the transfer. (5) **No MATHEMATICS chapter** — the GHS textbook content is T.E,
-paired with E.W at the *Track-E* ◆; E.H.5 writes at most a PEDAGOGY code-tour delta.
-
-**`@architect` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the E.H.5 ◆
-to confirm: (1) the GHS/Weil descent is complete and composes (subfield substrate → descent algebra →
-curve extraction → transfer map → reduction all present and cross-checked — the trace/norm identities,
-the homomorphism `D_{P+Q}=D_P+D_Q`, and logarithm preservation `D_h=k·D_g` all pass); (2) C-GHSDescent
-exposes what E.K descends into (the descended `Jac(C)/GF(2^l)`, the transferred DLP instance, the genus,
-the subfield infrastructure) so E.K can build the index-calculus solver without amending the descent
-surface — the substrate-readiness defense; (3) E.H stayed in scope — no Jacobian DLP solver / index
-calculus (E.K), no Semaev polynomials (E.J), no MATHEMATICS chapter (T.E), the descent is a transfer
-verified by logarithm-preservation, not a solve; (4) the principle-4 boundary (toy composite `m`, genus,
-field sizes; GHS is crypto-scale-correct over composite binary fields) is recorded, not silently
-presented as crypto-scale; (5) **the imaginary-model / `Uint<1>`-fixture / algebra-curve-seam
-resolutions** — confirm the descended curve stayed imaginary (no C-HyperCurve amend), the fixture stayed
-in `Uint<1>` (no C-BinaryCurve widening — or, if widened, that it was a surfaced discovery not a silent
-patch), and the E.H.2/E.H.3 split held (or was merged via surfaced additive-reshard). **Also: reconcile
-the outstanding static-frame ROADMAP debt** carried from the E.I ◆ — (a) the Progress table is stale by
-**three** completed sub-tracks (E.F, E.G, E.I; table still shows "Done ~13 (E.A–E.E)"); (b) the Remaining
-table lists the now-complete E.F/E.G/E.I and the now-complete-or-reordered rows; (c) **the E.I-before-E.H
-sequencing correction** (the Remaining table listed E.H before E.I — dependency-inverted; E.I shipped
-first and E.H now follows it) should be recorded; and (d) **strike E.H** from Remaining on completion.
-One-shot findings; does not implement. Held at **Opus** per the header (juncture-tier — descent-algebra
-cost-of-wrong on the hardest attack).
+**`@architect` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the
+E.J.3 ◆ to confirm: (1) the Semaev machinery is complete and composes (substrate → base cases →
+recursion all present and vanishing-verified — the `F_p[x]` resultant identities, the `S_2`/`S_3`/`S_4`
+vanishing relations, and the recursion-vs-direct agreement all pass); (2) C-Semaev exposes what E.K
+descends into (`semaev_poly(m)`, the partial-evaluation / one-variable-elimination operations the
+point-decomposition step uses) so E.K can build the index-calculus solver without amending the
+Semaev surface — the substrate-readiness defense; (3) E.J stayed in scope — no index-calculus solver
+(E.K), no GHS coupling, no MATHEMATICS chapter (T.E), the Semaev polynomials are a primitive verified
+by the vanishing relation, not a solve; (4) the principle-4 boundary (toy `F_p`, small `m`, the
+`Uint<4>` ceiling; Semaev is crypto-scale-correct) is recorded, not silently presented as
+crypto-scale; (5) **the representation / fixture / substrate-base-seam resolutions** — confirm the
+chosen multivariate-symmetric representation, the toy `F_p` fixture exhibited non-vacuous `S_3`/`S_4`
+vanishing, and the E.J.1/E.J.2 split held (or was merged via surfaced additive-reshard). **Also:
+reconcile the outstanding static-frame ROADMAP debt** carried + compounded from the E.I and E.H ◆ —
+(a) the Progress table is stale by **four** completed sub-tracks (E.F, E.G, E.H, E.I; table still
+shows "Done ~13 (E.A–E.E)"); (b) the Remaining table lists the now-complete E.F/E.G/E.H/E.I; (c) the
+**E.I-before-E.H sequencing correction** (the Remaining table listed E.H before E.I — dependency-
+inverted; E.I shipped first, E.H followed it, both now done) should be recorded; and (d) **strike
+E.J** from Remaining on completion. *(Per the E.H ◆ digest, this debt was owed but not yet written
+into the ROADMAP — E.H closed without reconciling it; the E.J ◆ inherits it.)* One-shot findings;
+does not implement. Held at **Opus** per the header (juncture-tier — the user's lever-3 override on
+the representation E.K consumes, despite the strong lever-5 self-checking signal).
 
 ---
 
 ## Cross-session contracts
 
-E.H **freezes five** contracts (C-Subfield at E.H.1, C-DescentAlgebra at E.H.2, C-GHSCurve at E.H.3,
-C-DescentMap at E.H.4, C-GHSDescent at E.H.5) and **amends no prior frozen contract** (C-Jacobian /
-C-HyperCurve / C-GF2mPoly / C-F2m / C-BinaryCurve / C-Koblitz / the p-adic / SSA / prime-field surfaces
-are all consumed-or-untouched). The only `shared/gf2m` change is the **additive `subfield` module** (a
-new public module, not a trait amendment).
+E.J **freezes three** contracts (C-SemaevPoly at E.J.1, C-SemaevBase at E.J.2, C-Semaev at E.J.3)
+and **amends no prior frozen contract** (C-Fp / `rho::curve::Curve` / `AffinePoint` / the `ℤ[x]` and
+`GF(2^m)` resultants / the GHS / hyperelliptic / binary-curve surfaces are all consumed-or-untouched).
+E.J adds the `F_p[x]` resultant + the multivariate-symmetric type + the `rho::semaev` module — all
+**additive**, no trait amendment.
 
-### C-Subfield — subfield substrate GF(2^l) ⊂ GF(2^m): embedding + relative trace/norm + Frobenius-by-subfield (compiler- + test-enforced) — *to be frozen at E.H.1*
+### C-SemaevPoly — the polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type (compiler- + test-enforced) — *to be frozen at E.J.1*
 
-**Defined in:** E.H.1 (`shared/gf2m/src/subfield.rs`). **Consumed by:** E.H.2 (the Weil restriction is
-relative to GF(2^l)), E.H.4 (the transfer map's conorm uses the relative trace/norm); **downstream:
-E.K** (index calculus over the subfield GF(2^l) — the relative trace/norm and subfield basis). Compiler-
-+ test-enforced. Exposes: `embed`/`restrict` (GF(2^l) ↔ GF(2^m), `l | m`); `relative_trace`
-(`Tr_{m/l}(a) = Σ_{i=0}^{m/l−1} a^(2^(il))`, lands in GF(2^l)); `relative_norm` (`N_{m/l}`,
-multiplicative, lands in GF(2^l)); `frobenius_subfield_orbit` (length `m/l`); `is_in_subfield(a, l)`
-(`a^(2^l) == a`); **over-specified** subfield basis (carried for E.K if confidence is reasonable). All
-threaded per-call (`poly: &Uint<L>`, the C-F2m idiom). **Char-2 invariants:** the relative trace/norm
-iterate the `l`-th Frobenius power (steps of `l`, NOT the absolute-trace steps of 1); the subfield is the
-Frobenius fixed field; `l | m` is mandatory. *Exact representation (whether the subfield basis ships now
-or defers to E.K) ratified at the E.H.5 ◆.*
+**Defined in:** E.J.1 (`rho/src/semaev/poly.rs` + `rho/src/semaev/mod.rs`). **Consumed by:** E.J.2
+(the base cases live in the multivariate type), E.J.3 (the recursion uses the `F_p[x]` resultant to
+eliminate a variable); **downstream: E.K** (the index-calculus point-decomposition step evaluates
+`S_m` at partial factor-base assignments and eliminates variables). Compiler- + test-enforced.
+Exposes: the `F_p[x]` univariate `resultant(f, g) → F_p` (zero iff `gcd ≠ 1`); the
+multivariate/symmetric-polynomial type `S_m` (evaluation, partial-assignment evaluation, one-variable
+resultant-elimination, symmetric-reduction — **over-specified** for E.K's point decomposition if
+confidence is reasonable); the `SemaevError` enum; the toy `F_p`/curve fixture. **Invariants:** the
+`F_p[x]` resultant is the *field* resultant (distinct from `shared-numfield`'s `ℤ[x]` Sylvester
+resultant and `gf2m`'s `GF(2^m)` resultant); `S_m` is symmetric in its arguments. *Exact symmetric
+representation (dense vs elementary-symmetric-basis) and whether the resultant + type ship in
+`rho::semaev` or a `shared` module ratified at the E.J.3 ◆.*
 
-### C-DescentAlgebra — Artin–Schreier / function-field Weil-restriction algebra (compiler- + test-enforced) — *to be frozen at E.H.2*
+### C-SemaevBase — the base summation polynomials `S_2`, `S_3` + the vanishing relation (compiler- + test-enforced) — *to be frozen at E.J.2*
 
-**Defined in:** E.H.2 (`rho/src/ghs/descent.rs` + `rho/src/ghs/mod.rs`). **Consumed by:** E.H.3 (the curve
-extraction reads the descent algebra). Compiler- + test-enforced. Exposes: the `GhsError` enum; the toy
-binary-curve fixture + precondition verifier (`l | m`); the Artin–Schreier extension (char-2 `y²+y=f`);
-the Weil restriction of scalars `Res_{GF(2^m)/GF(2^l)}` (consuming C-Subfield + C-GF2mPoly).
-**Char-2 invariants:** the separable degree-2 extension is Artin–Schreier (`y²+y=f`), NOT Kummer
-(`y²=f`, inseparable in char 2); the Weil restriction lowers the field and raises the dimension to `m/l`.
-*Exact algebra↔curve seam (whether E.H.2/E.H.3 stay split or merge — depends on whether the curve
-extraction is a thin wrapper) ratified at the E.H.5 ◆; the algebra surface E.H.3 consumes is frozen
-here.*
+**Defined in:** E.J.2 (`rho/src/semaev/base.rs`). **Consumed by:** E.J.3 (the recursion builds all
+higher `S_m` from `S_3`). Compiler- + test-enforced. Exposes: `S_2(X_1, X_2) = X_1 − X_2`; the
+symmetric `S_3(X_1, X_2, X_3)` (degree 2 in each variable, derived from the `Curve` group law); the
+vanishing predicate (`S_m(x_1, …, x_m) = 0 ⟺ Σ P_i = ∞`, checked against the frozen group law).
+**Invariants:** `S_3` is symmetric and derived from `y² = x³ + ax + b` + the group law (not
+transcribed for the wrong curve form); the vanishing relation is **exactly self-checking** (no
+oracle). *Exact `S_3` form (the explicit symmetric polynomial) frozen here; the recursion seed it
+provides is read by E.J.3.*
 
-### C-GHSCurve — the extracted GHS hyperelliptic curve `C/GF(2^l)` (compiler- + test-enforced) — *to be frozen at E.H.3*
+### C-Semaev — the Semaev summation polynomials `S_m` via the resultant recursion (compiler- + test-enforced) — *to be frozen at E.J.3 ◆*
 
-**Defined in:** E.H.3 (`rho/src/ghs/curve.rs`). **Consumed by:** E.H.4 (the transfer map lands on
-`Jac(C)`), E.H.5 (the reduction's DLP instance lives on `Jac(C)`); **downstream: E.K** (index calculus on
-`Jac(C)/GF(2^l)`). Compiler- + test-enforced. Exposes: the extracted `HyperellipticCurve<L>` over GF(2^l)
-(a frozen C-HyperCurve instance — populated `poly`/`h_coeffs`/`f_coeffs`); the genus↔extension-degree
-relation (`g` from `m/l`); imaginary-model validity. **Invariant:** the extracted curve satisfies the
-frozen C-HyperCurve contract (imaginary model, deg f = 2g+1, the `is_valid`/`is_on_curve` checks pass) —
-**E.H amends no C-HyperCurve.** **Toy composite `m`, toy genus** (principle-4 boundary). *Exact
-genus-vs-`m/l` formula ratified at the E.H.5 ◆.*
+**Defined in:** E.J.3 (`rho/src/semaev/recursion.rs`). **Consumed by:** **E.K** (the Gaudry–Diem–
+Joux–Vitse index-calculus point-decomposition / relation-collection step — the highest-stakes
+consumer, Opus-flagged E.K.1), **E.W** (the cross-attack benchmark table). Compiler- + test-enforced.
+Exposes: `semaev_poly(m) → S_m` via the recursion `S_m = Res_X(S_{m-1}, S_3)`. **The frozen
+invariant:** **the vanishing relation** — `S_m(x_1, …, x_m) = 0 ⟺ ∃ y_i: P_i = (x_i, y_i) ∈ E ∧
+Σ P_i = ∞`; the recursion agrees with the direct construction; `S_m` is symmetric. **E.J freezes the
+Semaev primitive; the index-calculus DLP solve consuming it is E.K** (the scope boundary). **The
+Semaev polynomials are a combinatorial primitive verified by the vanishing relation, NOT a solver.**
+*Exact recursion signature (the `m` range built, the partial-evaluation API E.K consumes) ratified
+at the ◆.*
 
-### C-DescentMap — the transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) (compiler- + test-enforced) — *to be frozen at E.H.4*
+### Frozen contracts read by E.J (consumed, not amended)
 
-**Defined in:** E.H.4 (`rho/src/ghs/transfer.rs`). **Consumed by:** E.H.5 (the reduction transfers the
-ECDLP instance via this map). Compiler- + test-enforced. Exposes: `transfer(P: BinaryAffinePoint) →
-MumfordDivisor` (the GHS conorm, consuming C-Subfield + the frozen `divisor_from_points`/`compose`); the
-homomorphism property. **Invariants:** the transfer is a **group homomorphism** (`D_{P+Q} = D_P + D_Q`
-via Cantor compose); the identity maps to the identity (`∞ ↦ [1,0]`); transferred divisors are valid
-reduced divisors. **The transfer consumes the frozen Cantor group law unchanged** (no group-law amend).
-*Exact map representation (conorm vs explicit divisor construction) ratified at the E.H.5 ◆.*
-
-### C-GHSDescent — the ECDLP → Jacobian-DLP reduction (compiler- + test-enforced) — *to be frozen at E.H.5 ◆*
-
-**Defined in:** E.H.5 (`rho/src/ghs/reduce.rs`). **Consumed by:** **E.K** (the index-calculus DLP solver
-consumes the relocated problem — the highest-stakes consumer), **E.W** (the cross-attack benchmark
-table). Compiler- + test-enforced. Exposes the reduction: `ghs_descend((E, g, h)) → (C, D_g, D_h)` such
-that `log_g h = log_{D_g} D_h`. **The frozen invariant:** **logarithm preservation** — for known `k`,
-`D_h = k·D_g` (via the frozen Cantor `scalar_mul`); the descended `#Jac` / genus relate to
-`#E(GF(2^m))` via the descent. **E.H freezes the transfer; the index-calculus DLP solve on `Jac(C)` is
-E.K** (the scope boundary). **The descent is a transfer verified by logarithm-preservation, NOT a solve.**
-*Exact reduction signature (error cases for non-descendable curves) ratified at the ◆.*
-
-### Frozen contracts read by E.H (consumed, not amended)
-
-- **C-Jacobian / C-HyperCurve / C-GF2mPoly (frozen E.I surface)** — `compose`/`reduce`/`add`/`negate`/
-  `scalar_mul`/identity (the Jacobian group law), `HyperellipticCurve`/`MumfordDivisor`/`divisor_from_points`/
-  `genus`/`is_valid` (the curve + divisor), `Poly<F,L>` ring + `resultant`/`mod_inverse` (the polynomial
-  ring). Consumed by the descent algebra (polynomial work), the curve extraction (the extracted curve is
-  a `HyperellipticCurve`), the transfer map (divisors via Cantor), and the reduction (`scalar_mul` for
-  log-preservation). **Unchanged — E.H amends no E.I contract.**
-- **C-BinaryCurve / C-Koblitz (frozen E.G surface)** — `BinaryCurve` + `BinaryAffinePoint` + point
-  addition (`add`/`scalar_mul`) — the ECDLP *source*. **Read for the transfer-map source point type; NOT
-  amended.** *(Open: `BinaryCurve` is hardcoded `Uint<1>`; E.H targets a composite `m` that fits — if no
-  in-`Uint<1>` fixture works, generalizing to `L>1` is a surfaced discovery at the ◆, never silent.)*
-- **C-F2m (frozen surface)** — `mul`/`square`/`frobenius`/`pow`/`trace` (the absolute trace, distinct
-  from C-Subfield's relative trace) consumed by the subfield substrate and the descent algebra, threaded
-  per-call. Read. **Unchanged.**
-- **`rho::ssa` reduction idiom** — the `SsaError` enum + fixture + verify→lift→reduce shape (the
-  reduction-attack template E.H mirrors). Read for the pattern; untouched.
+- **C-Fp (`shared-field::Fp<L>` surface)** — the prime-field arithmetic (`add`/`mul`/`neg`/`inv`/
+  `pow`, threaded `poly`/modulus per the field idiom) consumed by the `F_p[x]` resultant, the
+  multivariate type, and the vanishing relation. Read. **Unchanged — E.J amends no field contract.**
+- **`rho::curve::Curve` / `AffinePoint` (frozen surface)** — the short-Weierstrass curve
+  `y² = x³ + ax + b` over `F_p` (hardcoded `Uint<4>` — the C1 ceiling), point addition / doubling /
+  negation — the **geometry the vanishing relation checks against** (`S_m` vanishes iff `Σ P_i = ∞`,
+  computed via this group law). **Read; NOT amended.** *(Open: `Curve` is hardcoded `Uint<4>`; E.J's
+  toy `p` fits it; if E.K later needs a wider field, that is the C1-widening discovery, never E.J's
+  concern.)*
+- **`shared-numfield::resultant` / `subresultant_gcd`** — the `ℤ[x]` Sylvester-matrix resultant +
+  subresultant PRS (the G.A polynomial machinery) — **read for the resultant idiom to mirror over
+  `F_p`** (E.J's `F_p[x]` resultant is the *field* analogue, not this `ℤ[x]` one). Untouched.
+- **`gf2m::Poly::resultant`** — the `GF(2^m)` field resultant — **read for the field-resultant
+  idiom** the `F_p[x]` resultant ports. Untouched.
+- **`rho::ghs` / `rho::ssa` reduction idioms** — the `GhsError` / `SsaError` enum + fixture + module
+  shape (the attack-module template E.J's `semaev` module mirrors structurally). Read for the
+  pattern; untouched.
 
 ### Workspace edges (no new edge, no new crate)
 
-- **No new edge.** `rho` already depends on `gnfs`, `shared-gf2m`, `shared-field`, `shared-padic`,
-  `shared-numfield`, `shared-numth`, `shared-bigint`. The subfield substrate is an **additive module in
-  `shared/gf2m`** (`shared/gf2m/src/subfield.rs`); the descent is a new module in the existing `rho`
-  crate (`rho::ghs`). No `Cargo.toml` changes; `cargo check --workspace` stays green with no cycle risk.
-  *(Asymmetry confirmed by the survey: `gnfs` does NOT depend on `shared-gf2m`, so the Jacobian DLP solver
-  cannot live in `gnfs` and reuse NFS-DL — reinforcing the E.H/E.K scope boundary. If E.H found it must
-  change a frozen trait surface — it should not, it only adds the `subfield` module and a new `ghs`
-  module — that would be a discovery surfaced at the ◆, never a silent patch.)*
+- **No new edge.** `rho` already depends on `shared-field`, `shared-numfield`, `shared-gf2m`, `gnfs`,
+  `shared-bigint`, `shared-numth`, `shared-padic`. The Semaev machinery is a new module in the
+  existing `rho` crate (`rho::semaev`); the `F_p[x]` resultant + multivariate type live with it (or,
+  if field-substrate-shaped, in a `shared` module — no edge consequence either way, `rho` already
+  depends on the `shared` crates). No `Cargo.toml` changes; `cargo check --workspace` stays green
+  with no cycle risk. *(If E.J found it must change a frozen trait surface — it should not, it only
+  adds the `semaev` module and the resultant/type — that would be a discovery surfaced at the ◆,
+  never a silent patch.)*
 
 ---
 
 ## Progress ledger
 
-`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
-names contracts this session locked. The E.H.5 ◆ `@architect` confirmation is not a separate ledger row
-(a paged fork with no commit-shaped deliverable); its outcome is recorded in the Action-frame digest.
+`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
+"Froze" names contracts this session locked. The E.J.3 ◆ `@architect` confirmation is not a separate
+ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
+Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.H.1 | Subfield substrate GF(2^l) ⊂ GF(2^m) | done | d37e2e9 | C-Subfield (frozen) |
-| E.H.2 | Artin–Schreier / function-field Weil-restriction algebra | done | 7a4a72f | C-DescentAlgebra (frozen) |
-| E.H.3 | GHS hyperelliptic-curve extraction C/GF(2^l) | done | 2cc5205 | C-GHSCurve (frozen) |
-| E.H.4 | Transfer map E(GF(2^m)) → Jac(C)(GF(2^l)) | done | 95d9fac | C-DescentMap (frozen) |
-| E.H.5 ◆ | GHS/Weil descent: ECDLP → Jacobian-DLP reduction + close | done | 9edcb88 | C-GHSDescent (frozen) |
+| E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate type | pending | — | C-SemaevPoly (to freeze) |
+| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | pending | — | C-SemaevBase (to freeze) |
+| E.J.3 ◆ | Semaev resultant recursion `S_m` + sub-track close | pending | — | C-Semaev (to freeze) |
 
-Contracts frozen before this sub-track: the GF(2^m) field surface (C-F2m/C-F2mOpt — read by E.H,
-unchanged), the binary-curve surface (C-BinaryCurve/C-BinaryRho/C-Koblitz from E.G — read as the ECDLP
-source, unchanged), the hyperelliptic-Jacobian surface (C-GF2mPoly/C-HyperCurve/C-Jacobian from E.I —
-read as the descent target, unchanged), the p-adic surface (C-Padic/C-Hensel/C-PadicLog), the SSA surface
-(C-AnomalousLift/C-SSA — read as the reduction-attack idiom), the prime-field rho curve + ECDLP surface,
-`Fp<4>`. This sub-track **freezes five new contracts** (C-Subfield, C-DescentAlgebra, C-GHSCurve,
-C-DescentMap, C-GHSDescent), serving the downstream **E.K** (Gaudry–Diem–Joux–Vitse index calculus —
-solves the relocated DLP on C-GHSDescent's Jacobian, consuming E.J's Semaev polynomials), **E.W**
-(cross-attack benchmarks), and completing the **ECDLP-transfer** half of the small-characteristic
-index-calculus attack (E.H transfers; E.J+E.K solve).
+Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.J, unchanged), the
+prime-field curve + ECDLP surface (`rho::curve::Curve`/`AffinePoint` — read as the Semaev geometry,
+unchanged), the G.A polynomial machinery (`shared-numfield` resultant/subresultant — read as the
+resultant idiom), the GF(2^m) field + poly surface (C-F2m/C-GF2mPoly — `gf2m::Poly::resultant` read
+as the field-resultant idiom), and the full Track-E GF(2^m) chain (C-BinaryCurve/C-Koblitz from E.G,
+C-HyperCurve/C-Jacobian from E.I, C-Subfield/C-DescentAlgebra/C-GHSCurve/C-DescentMap/C-GHSDescent
+from E.H — none consumed by E.J, which targets the F_p setting). This sub-track **freezes three new
+contracts** (C-SemaevPoly, C-SemaevBase, C-Semaev), serving the downstream **E.K** (Gaudry–Diem–
+Joux–Vitse index calculus — consumes the Semaev polynomials for the point-decomposition / relation-
+collection step, plus G.B scoring + G.E linear algebra) and **E.W** (cross-attack benchmarks), and
+building the **combinatorial-primitive** half of the small-characteristic index-calculus attack (E.J
+builds the Semaev polynomials; E.K solves with them).
 
 ---
 
 ## Action-frame digest
 
-### E.H.5 ◆ — 2026-06-15
-Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); one named deviation: the toy fixture (m=6, l=2, n=3) yields genus 1 (not genus 2–4 as E.H.3's sketch anticipated) — the `weil_restrict_poly` algebra is built and unit-tested but bypassed on the extraction path (curve coefficients already in GF(2^2)); log-preservation is non-vacuous and green.
-Affected: C-GHSCurve (ratified frozen — genus-1 fixture is within PLAN's principle-4 toy-scale provisions); C-GHSDescent (ratified frozen — transfer-only, log-preservation verified).
-Deferred: yes — E.K.1 (Opus-flagged) should treat "first genus≥2 extraction through `weil_restrict_poly`" as an explicit risk item; the Weil-restriction algebra is exercised only on linearity/dimension unit tests, not on a full genus-raising extraction. ROADMAP Progress/Remaining table reconciliation also owed (E.F+E.G+E.I completions + E.H/E.I order inversion — housekeeping, not blocking).
-Texture: All five E.H sessions ran clean (no fix-loop iterations); the trace/norm identities, homomorphism D_{P+Q}=D_P+D_Q, and log-preservation D_h=k·D_g (k=1,2,3) KATs confirmed the GHS/Weil descent is transfer-correct. The genus-1 degeneracy is a principle-4 boundary (toy parameters; GHS is crypto-scale-correct over composite binary fields with genus≥2). CAPTURE-CANDIDATE: "A transfer attack's sub-track-close KAT is relationship-preservation (log-preservation), not an end-to-end break; the solve is delegated to the consumer sub-track."
+*(none yet)*
 
 ---
 
@@ -677,158 +556,146 @@ Texture: All five E.H sessions ran clean (no fix-loop iterations); the trace/nor
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.H builds the GHS/Weil descent on the frozen E.I Jacobian + a new subfield substrate —
-  internal-continue (confirmed by survey).** All greenfield; no existing GHS/descent/subfield/
-  Weil-restriction code. A discovery that the descent needs a Jacobian or polynomial operation the frozen
-  E.I surface lacks is an **additive amend** (C-Jacobian/C-GF2mPoly gains the operation) surfaced at the
-  ◆ — not a silent patch. A discovery that the descent needs a *field* primitive C-F2m lacks is an
-  additive C-F2m amend, surfaced at the ◆.
+- **E.J builds the Semaev polynomials on the frozen `rho::curve::Curve` F_p surface + a new
+  polynomial substrate — internal-continue (confirmed by survey).** All Semaev code greenfield (zero
+  `semaev`/`summation` hits). The `F_p[x]` resultant and the multivariate-symmetric type are
+  greenfield (no prime-field `Poly`, no multivariate type — only `ℤ[x]` and `GF(2^m)` resultants
+  exist). A discovery that the construction needs a curve / field operation the frozen surface lacks
+  is an **additive amend** surfaced at the ◆ — not a silent patch.
 
-- **The descent is a TRANSFER, not a solve — implementing the Jacobian DLP solver is a defocus failure
-  (the central scope boundary).** E.H produces the relocated problem `(C, D_g, D_h)` and verifies
-  `log_g h = log_{D_g} D_h`; the index-calculus *solve* (relation collection, the divisor factor base,
-  linear algebra over `Z/ℓZ`) is **E.K**, consuming **E.J**'s Semaev polynomials. A `@build` agent
-  implementing index calculus or Semaev polynomials in E.H is defocus. **Internal-continue → corrected**
-  (the logarithm-preservation KAT is the green-path terminus; the solve is delegated).
+- **The Semaev polynomials are a PRIMITIVE, not a solve — implementing the index-calculus solver is a
+  defocus failure (the central scope boundary).** E.J builds `S_m` and verifies the vanishing
+  relation; the index-calculus *solve* (point decomposition over a factor base, relation collection,
+  linear algebra over `Z/nZ`, the Gröbner/`msolve` step) is **E.K**, consuming E.J + G.B + G.E. A
+  `@build` agent implementing index calculus or relation collection in E.J is defocus.
+  **Internal-continue → corrected** (the vanishing KAT is the green-path terminus; the solve is
+  delegated).
 
-- **The relative trace/norm iterate the `l`-th Frobenius power, NOT the absolute trace — the subfield
-  trap.** `Tr_{m/l}(a) = Σ a^(2^(il))` (steps of `l`, lands in GF(2^l)), distinct from the absolute
-  `trace` (steps of 1, lands in GF(2)) already on C-F2m. A `@build` agent reusing the absolute trace
-  writes the wrong Weil restriction; the "trace lands in GF(2^l)" KAT is the loud signal.
-  **Internal-continue → corrected.**
+- **The `F_p[x]` resultant is distinct from the `ℤ[x]` and `GF(2^m)` resultants — the resultant-ring
+  trap.** `shared-numfield::resultant` is `ℤ[x]` (Sylvester-matrix, integer); `gf2m::Poly::resultant`
+  is `GF(2^m)`. E.J needs the *field* resultant over `F_p` (the `gf2m` field idiom ported to `F_p`).
+  A `@build` agent reaching for `shared-numfield::resultant` builds over the wrong ring; the
+  resultant-identity KATs are the loud signal. **Internal-continue → corrected.**
 
-- **The char-2 separable degree-2 extension is Artin–Schreier `y²+y=f`, NOT Kummer `y²=f` — the char-2
-  extension trap.** In char 2 `y²=f` is inseparable (no GHS curve); the descent's extension is
-  Artin–Schreier (`℘(y)=y²+y`). A `@build` agent porting an odd-char Kummer construction writes a
-  degenerate extension. The descent-algebra round-trip KAT is the guard. **Internal-continue →
-  corrected.**
+- **The Semaev polynomials are symmetric, and `S_3` is derived from the group law, not guessed — the
+  representation trap.** `S_m` is symmetric in its arguments and `S_3` encodes the curve's
+  addition/collinearity relation (derived from `y² = x³ + ax + b` + the group law). A `@build` agent
+  transcribing a formula for the wrong curve form, or choosing a non-symmetric representation, breaks
+  the recursion. The symmetry + vanishing KATs are the guard. **Internal-continue → corrected.**
 
-- **The transfer must be a group homomorphism — a non-homomorphic map breaks log-preservation (the
-  central correctness guard).** `D_{P+Q} = D_P + D_Q` (binary-curve addition ↦ Cantor compose) is the
-  property that makes the descent preserve discrete logs. A transfer that fails this relocates the
-  *points* but not the *problem*. The `D_{P+Q}=D_P+D_Q` and `D_h=k·D_g` KATs are the defense.
-  **Internal-continue → corrected.**
+- **The vanishing relation is the correctness signal and is exactly self-checking — no oracle on the
+  green path (lever-5 strength, principle-3).** `S_m(x_1,…,x_m) = 0 ⟺ Σ P_i = ∞`, computed via the
+  frozen `Curve` group law — a fast, decisive, oracle-free KAT (like E.I's group axioms, *unlike*
+  E.H's oracle-leaning log-preservation). An optional `msolve`/PARI cross-check is an `#[ignore]`
+  sidecar (the established `#[ignore = "PARI not installed; run manually when available"]` pattern).
+  E.J introduces no new live oracle. *(Lever-5 note: this strong, self-checking signal is what
+  licensed a `sonnet` juncture-tier; the user overrode to opus on lever 3 — the representation E.K
+  consumes — so the green-path strength stands but the boundary fork is held at Opus.)*
 
-- **The descended curve is the imaginary model when `m/l` is odd — resolves the E.I.3 ◆ conditional;
-  even `m/l` would need a C-HyperCurve amend.** The frozen C-HyperCurve handles only the imaginary/
-  ramified model (deg f = 2g+1). GHS with odd `m/l` lands the imaginary model (compatible — no amend).
-  The fixture (E.H.1) is chosen with odd `m/l`. If E.H ever needs even `m/l` (real/split model), that is
-  an **additive C-HyperCurve amend surfaced at the ◆** — not a silent patch. **Internal-continue (no
-  amend for the standard target).**
+- **Target is F_p / Weierstrass, NOT the binary-curve / descended-Jacobian setting — the
+  field-target rigidity guard.** E.J builds Semaev over `E/F_p` (the classical Gaudry–Diem setting,
+  predecessor G.A only); it does NOT couple to the E.H GHS descent or the binary curve. A `@build`
+  agent building the binary-curve Semaev, or coupling to the descended Jacobian, is rigidity (forcing
+  the wrong target). The coupling to the descended curve is **E.K's** job. **Internal-continue
+  (F_p target).**
 
-- **`BinaryCurve` is hardcoded `Uint<1>` — E.H targets a composite `m` that fits; widening is a surfaced
-  discovery, not silent growth.** GHS's interesting cases are over composite fields, but the toy
-  `BinaryCurve` is `L=1`. E.H chooses a toy composite `m ≤ 8` with odd `m/l` that fits `Uint<1>` (E.H.1's
-  fixture act). **If no in-`Uint<1>` fixture gives a non-degenerate descent, generalizing `BinaryCurve`
-  to `L>1` is a surfaced discovery at the ◆** (the established C1-widening discipline — a deliberate,
-  boundary-respecting amend, never spontaneous in-flight scope growth). **Internal-continue (target
-  in-`Uint<1>`); additive-reshard only if the fixture forces widening.**
+- **The substrate↔base seam (E.J.1↔E.J.2) may be artificial — surface a merge if the base cases are a
+  thin instantiation.** The 3-vs-2 sizing splits at the substrate↔base seam (buying an early
+  C-SemaevPoly freeze). **If E.J.1's substrate and E.J.2's `S_2`/`S_3` prove tightly coupled (the
+  base cases are a thin instantiation with no genuine reusable substrate seam), the split is
+  artificial and E.J.1/E.J.2 should merge** — surfaced as an additive-reshard at the ◆ (or by E.J.1
+  once the representation shape is concrete), never a silent merge. **Additive-reshard if the seam
+  proves false.**
 
-- **The algebra↔curve seam (E.H.2↔E.H.3) may be artificial — surface a merge if the extraction is a thin
-  wrapper.** The 5-vs-4 sizing splits the GHS construction at the algebra↔curve seam (buying an early
-  C-DescentAlgebra freeze). **If E.H.2's algebra and E.H.3's curve extraction prove tightly coupled (the
-  extraction is a thin wrapper, no genuine reusable function-field layer), the split is artificial and
-  E.H.2/E.H.3 should merge** — surfaced as an additive-reshard at the ◆ (or by E.H.2 once the algebra
-  shape is concrete), never a silent merge. **Additive-reshard if the seam proves false.**
+- **No index-calculus solver / relation collection / `msolve` in E.J (defocus / scope clarity).** The
+  DLP *attack* using the Semaev polynomials (point decomposition over a factor base, relation
+  collection, linear algebra over `Z/nZ`, the Gröbner/`msolve` step) is **E.K** (consuming E.J + G.B
+  scoring + G.E linear algebra). E.J exposes the primitive; the attack consumes it. A `@build` agent
+  implementing any of these in E.J is defocus.
 
-- **No Jacobian DLP solver / index calculus / Semaev polynomials in E.H (defocus / scope clarity).** The
-  DLP *attack* on the descended Jacobian (index calculus, relation collection, linear algebra over
-  `Z/ℓZ`) is **E.K**; the Semaev summation polynomials are **E.J**. E.H exposes the transfer; the attack
-  consumes it. A `@build` agent implementing any of these in E.H is defocus.
+- **No MATHEMATICS.md chapter in E.J (defocus / scope clarity).** The Semaev / summation-polynomial
+  textbook content is **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing),
+  not at the E.J sub-track ◆. E.J.3 writes at most a PEDAGOGY code-tour delta.
 
-- **No MATHEMATICS.md chapter in E.H (defocus / scope clarity).** The GHS / Weil-descent textbook content
-  is **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing), not at the E.H
-  sub-track ◆. E.H.5 writes at most a PEDAGOGY code-tour delta.
+- **Toy `F_p` + small `m` + the `Uint<4>` ceiling only (scope clarity).** E.J fixes a small prime
+  `p` (fitting the `Uint<4>` curve ceiling) and computes `S_m` for small `m` (`S_2…S_4`, possibly
+  `S_5`). The toy sizes are a principle-4 boundary — Semaev is crypto-scale-correct; only the
+  *parameters* are toy. Presenting any as crypto-scale is a documentation defect (internal-continue
+  → corrected). *(The `Uint<4>` ceiling is the C1 boundary the ROADMAP flags for E.K; if E.K needs a
+  wider field for its smoothness/decomposition step, that is the C1-widening discovery at E.K, not
+  E.J.)*
 
-- **No oracle dependency for correctness (principle-3 / E.D…E.I-consistent).** The descent's correctness
-  is checkable on the green path (the trace/norm identities, the transfer homomorphism, logarithm
-  preservation `D_h=k·D_g` via the frozen Cantor `scalar_mul`); a PARI `hyperellcharpoly` `#Jac`
-  cross-check is an **optional `#[ignore]` sidecar** (the established `#[ignore = "PARI not installed;
-  run manually when available"]` pattern). E.H introduces no new live oracle. *(Lever-5 note: this signal
-  is weaker than E.I's exactly-self-checking group axioms — log-preservation leans on a correct genus/
-  order relationship and, for the order cross-check, the PARI oracle — which is why juncture-tier stays
-  opus.)*
+- **The polynomial substrate's home is `rho::semaev` (module-placement call, ratified at the ◆).** The
+  Semaev construction is attack-shaped and lives in `rho::semaev`. The `F_p[x]` resultant +
+  multivariate type live with it unless judged field-substrate-shaped enough for a `shared` module —
+  a ◆ ratification decision, not a blocker (no edge consequence either way — `rho` already depends on
+  the `shared` crates).
 
-- **Toy composite `m` + field/genus sizes only (scope clarity).** E.H fixes a small composite `m ≤ 8`,
-  `l | m` (odd `m/l`), and the genus follows the extension degree. The toy sizes are a principle-4
-  boundary — GHS is crypto-scale-correct over composite binary fields; only the *parameters* are toy.
-  Presenting any as crypto-scale is a documentation defect (internal-continue → corrected).
-
-- **The subfield substrate's home is `shared/gf2m::subfield` (module-placement call, ratified at the ◆).**
-  The substrate is field-substrate-shaped and reusable (E.K may consume it), so `shared/gf2m` is the
-  principled home over `rho`. If a reviewer prefers `rho::ghs`, that is a ◆ ratification decision, not a
-  blocker (no edge consequence either way — `rho` already depends on `shared-gf2m`).
-
-- **Static-frame ROADMAP debt (reconcile at the E.H ◆, does NOT block E.H) — carried + compounded from
-  the E.I ◆.** The ROADMAP Progress subsection is stale by **three** completed sub-tracks (E.F, E.G, E.I;
-  table shows "Done ~13 (E.A–E.E)"); the Remaining table lists the now-complete E.F/E.G/E.I; and the
-  Remaining table listed **E.H before E.I** (dependency-inverted — E.I shipped first, E.H now follows).
-  The E.I ◆ digest recorded this as owed but did not write it into the ROADMAP. The E.H ◆ should: update
-  Progress (Track E Done → E.A–E.I, ~22), strike E.F/E.G/E.I from Remaining, record the E.I-before-E.H
-  correction, and strike E.H on completion. Not an implementation concern.
+- **Static-frame ROADMAP debt (reconcile at the E.J ◆, does NOT block E.J) — carried + compounded
+  from the E.I and E.H ◆.** The ROADMAP Progress subsection is stale by **four** completed sub-tracks
+  (E.F, E.G, E.H, E.I; table shows "Done ~13 (E.A–E.E)"); the Remaining table lists the now-complete
+  E.F/E.G/E.H/E.I; and the Remaining table listed **E.H before E.I** (dependency-inverted — E.I
+  shipped first, E.H followed). The E.I ◆ digest recorded this as owed; the E.H ◆ digest re-recorded
+  it as still owed (E.H closed without writing it into the ROADMAP). The E.J ◆ should: update
+  Progress (Track E Done → E.A–E.I, ~22), strike E.F/E.G/E.H/E.I from Remaining, record the
+  E.I-before-E.H correction, and strike E.J on completion. Not an implementation concern.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.H, "*GHS/Weil descent … Transfer ECDLP on a binary curve to DLP on
-  a hyperelliptic Jacobian over a subfield. First session is Opus-tier — the descent machinery is the
-  most mathematically intricate single attack in the project.*"; the design statement's principles 1 + 3
-  + 4; the "On scale" mathematical-dimension framing — the descended curve's subfield GF(2^l) and genus
-  are *mathematical-dimension scale*, orthogonal to operational scale) and this PLAN before any session.
-  **NOTE: the ROADMAP Progress / Remaining tables are stale (E.F, E.G, E.I done; E.F/E.G/E.I still listed)
-  AND listed E.H before E.I (dependency-inverted — E.I shipped first); reconcile at the E.H ◆.**
-- Read the **templates to mirror**: `rho/src/ssa/mod.rs` + `rho/src/ssa/reduce.rs` (the reduction-attack
-  idiom — `SsaError` enum + toy fixture + verify→lift→reduce shape — E.H's `ghs` module mirrors this);
-  `rho/src/hyperelliptic/{mod,cantor}.rs` (the **frozen E.I Jacobian** E.H descends onto — read for the
-  `HyperellipticCurve`/`MumfordDivisor`/`compose`/`scalar_mul`/`divisor_from_points` surface, NOT to
-  amend); `rho/src/binary_curve/mod.rs` (the **frozen E.G binary curve** — the ECDLP source point type
-  `BinaryAffinePoint` + point addition, read NOT amend); `shared/gf2m/src/convert.rs` (the
-  `frobenius_orbit` + per-call `poly` idiom the subfield substrate extends to *relative* orbits);
-  `shared/gf2m/src/poly.rs` (the frozen C-GF2mPoly ring the descent algebra consumes — `resultant`/
-  `mod_inverse` shipped); `rho/tests/{ssa_kat,hyperelliptic_kat,mov_kat}.rs` (the reduction-KAT + PARI
-  `#[ignore]` oracle idioms E.H.5 mirrors).
-- **Register:** E.H is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New module `shared/gf2m/src/subfield.rs` (the subfield substrate), new modules
-  `rho/src/ghs/{mod,descent,curve,transfer,reduce}.rs` (the descent), and new KATs in
-  `shared/gf2m/tests/gf2m_subfield_kat.rs` + `rho/tests/ghs_kat.rs`.
-- **Tier routing:** **E.H.1 is Opus `@build`** (the ROADMAP Opus-flagged substrate-design session —
-  C-Subfield has downstream consumption by E.H.2–5 and potentially E.K, and the subfield-tower design is
-  the foundation the whole descent stands on). **E.H.2–E.H.5 are Sonnet `@build`.** E.H.5 carries the **◆
-  `@architect` juncture** (page `@plan-juncture`) ratifying C-Subfield/C-DescentAlgebra/C-GHSCurve/
-  C-DescentMap/C-GHSDescent and confirming E.K-readiness before the sub-track closes. juncture-tier
-  (header) is **opus** — held by levers 2 (irreducible complexity of "the most mathematically intricate
-  single attack") + 3 (descent-algebra design-error cost, the most expensive retrofit in the project);
-  lever 5 is too weak to license `sonnet` (log-preservation is checkable but not exactly self-checking —
-  it leans on a correct genus/order relationship and the PARI `#Jac` oracle).
-- **Invariants to preserve:** **The descent is a TRANSFER, not a solve** (no Jacobian DLP solver / index
-  calculus / Semaev polynomials — those are E.K/E.J; the log-preservation KAT is the terminus).
-  **The transfer is a group homomorphism** (`D_{P+Q}=D_P+D_Q` via Cantor; the homomorphism + `D_h=k·D_g`
-  KATs are the guard). **The relative trace/norm iterate the `l`-th Frobenius power** (NOT the absolute
-  trace; the "lands in GF(2^l)" KAT is the guard). **The char-2 extension is Artin–Schreier `y²+y=f`**
-  (NOT Kummer `y²=f`). **The descended curve is the imaginary model** (odd `m/l`; consumes the frozen
-  C-HyperCurve unchanged — no amend for the standard target). **E.H consumes the frozen E.I Jacobian + E.G
-  binary curve + C-F2m unchanged** (the only `shared/gf2m` change is the additive `subfield` module).
-  **`BinaryCurve` stays `Uint<1>`** (target a composite `m` that fits; widening is a surfaced discovery).
-  **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy composite `m` + toy field/genus sizes only; no
-  new live oracle.
-- **PARI remains a dev-only `#[ignore]` oracle** — an optional `hyperellcharpoly` `#Jac` cross-check on
-  the descended curve follows the established `#[test] #[ignore = "PARI not installed; run manually when
-  available"]` pattern; never on the green path.
-- **No new edge, no new crate (load-bearing for E.H).** `rho` already depends on `gnfs`/`shared-gf2m`/
-  `shared-field`/`shared-padic`; the subfield substrate is an additive `shared/gf2m::subfield` module and
-  the descent is a new `rho::ghs` module. `cargo check --workspace` stays green with no cycle risk. If E.H
-  finds it must change a frozen trait surface (it should not — it only adds the `subfield` and `ghs`
-  modules), that is a discovery surfaced at the ◆.
+- Read `docs/ROADMAP.md` (Phase δ — E.J, "*Semaev summation polynomials … The combinatorial heart of
+  Gaudry–Diem index calculus; mathematically beautiful. Sonnet.*"; predecessor **G.A** polynomial
+  machinery; the design statement's principles 1 + 3 + 4; the C1 `Uint<4>`-ceiling note flagged for
+  E.K's Semaev-point smoothness) and this PLAN before any session. **NOTE: the ROADMAP Progress /
+  Remaining tables are stale (E.F, E.G, E.H, E.I done; all four still listed as remaining) AND listed
+  E.H before E.I (dependency-inverted — E.I shipped first); reconcile at the E.J ◆ (debt carried from
+  both the E.I and E.H ◆, unreconciled).**
+- Read the **templates to mirror**: `rho/src/ssa/mod.rs` + `rho/src/ghs/mod.rs` (the attack-module
+  idiom — `SsaError`/`GhsError` enum + toy fixture + module skeleton — E.J's `semaev` module mirrors
+  this); `rho/src/curve/mod.rs` (the **frozen** short-Weierstrass `Curve`/`AffinePoint` the vanishing
+  relation checks against — read for `add`/`double`/`negate`, NOT to amend); `shared/numfield/src/
+  resultant.rs` (the `ℤ[x]` Sylvester/subresultant resultant idiom to mirror over `F_p` — read for
+  the *shape*, not the ring); `shared/gf2m/src/poly.rs` (the `GF(2^m)` field `resultant` the `F_p[x]`
+  one ports — `poly.rs:425`); `rho/tests/{ssa_kat,ghs_kat,hyperelliptic_kat}.rs` (the attack-KAT +
+  `#[ignore]` oracle idioms E.J.3 mirrors).
+- **Register:** E.J is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New modules `rho/src/semaev/{mod,poly,base,recursion}.rs` (the Semaev
+  construction) and new KATs in `rho/tests/semaev_kat.rs`.
+- **Tier routing:** **all three sessions are Sonnet `@build`** (E.J has no Opus-flagged session per
+  the ROADMAP — it is marked Sonnet throughout). E.J.3 carries the **◆ `@architect` juncture** (page
+  `@plan-juncture`) ratifying C-SemaevPoly/C-SemaevBase/C-Semaev and confirming E.K-readiness before
+  the sub-track closes. juncture-tier (header) is **opus** — **a deliberate user override of the
+  lever-5 `sonnet` recommendation**, on lever 3 (the multivariate-symmetric representation E.J
+  freezes is consumed by the Opus-flagged E.K; the user judges the cost-of-wrong worth paying Opus at
+  the boundary to de-risk, mirroring the E.I precedent). The default tuning-law read was `sonnet`
+  (strong lever-5 self-checking vanishing KAT + moderate lever-4 correctness-criticality + no
+  Opus-flagged session); the override is recorded so the disagreement stays visible.
+- **Invariants to preserve:** **The Semaev polynomials are a PRIMITIVE, not a solve** (no
+  index-calculus solver / relation collection / linear algebra over `Z/nZ` / `msolve` — those are
+  E.K; the vanishing KAT is the terminus). **The vanishing relation is the correctness signal**
+  (`S_m(x_1,…,x_m) = 0 ⟺ Σ P_i = ∞` via the frozen `Curve` group law; exactly self-checking, no
+  oracle). **The `F_p[x]` resultant is the field resultant** (NOT the `ℤ[x]` Sylvester one in
+  `shared-numfield`, NOT the `GF(2^m)` one in `gf2m`). **`S_m` is symmetric and `S_3` is derived from
+  the group law** (not transcribed for the wrong curve form). **The target is F_p / Weierstrass** (NOT
+  the binary curve / descended Jacobian — that coupling is E.K's). **E.J consumes the frozen `Curve`
+  + `Fp` surfaces unchanged** (adds the `F_p[x]` resultant + multivariate type + the `rho::semaev`
+  module). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy `F_p` + small `m` + the `Uint<4>`
+  ceiling only; no new live oracle.
+- **No new edge, no new crate (load-bearing for E.J).** `rho` already depends on `shared-field`/
+  `shared-numfield`/`shared-gf2m`/`gnfs`; the Semaev machinery is a new `rho::semaev` module (the
+  `F_p[x]` resultant + multivariate type live with it or in a `shared` module — no edge consequence).
+  `cargo check --workspace` stays green with no cycle risk. If E.J finds it must change a frozen trait
+  surface (it should not — it only adds the `semaev` module and the resultant/type), that is a
+  discovery surfaced at the ◆.
 - Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the shard pattern (a
-  subfield-tower substrate + a function-field/Artin–Schreier descent algebra + a curve extraction + a
-  transfer map + a reduction) is **new to this project** (the prior reduction attacks — MOV, SSA — were
-  prime-field; the GHS function-field/Weil-restriction shape over a binary subfield tower has no in-repo
-  precedent, and it is "the most mathematically intricate single attack"). Per the unproven-shard-pattern
-  guidance, halt at each boundary for a human glance until the pattern proves out. *(Tradeoff vs
-  autonomous: `halt-at-boundaries` trades velocity for a per-boundary check on a novel, high-stakes
-  pattern — the subfield substrate (E.H.1, Opus) and the descent algebra (E.H.2) are the design-crux
-  freezes E.K consumes, and a wrong shape there is the most expensive retrofit in the project. If E.H.1
-  and E.H.2 land cleanly and their KATs confirm the substrate + algebra shape, fall back to autonomous
-  for E.H.3–E.H.5. The algebra↔curve seam uncertainty (E.H.2↔E.H.3) is itself a reason to halt at the
-  E.H.2 boundary — that is where a merge-back would be surfaced.)*
+  doubly-greenfield polynomial substrate — an `F_p[x]` resultant + a multivariate/symmetric type —
+  then base cases, then a resultant recursion) is **new to this project** (no prior multivariate /
+  symmetric-polynomial machinery exists, and the Semaev construction has no in-repo precedent). Per
+  the unproven-shard-pattern guidance, halt at each boundary for a human glance until the pattern
+  proves out. *(Tradeoff vs autonomous: `halt-at-boundaries` trades velocity for a per-boundary check
+  on a novel pattern — the polynomial substrate (E.J.1) is the design crux E.K consumes, and a wrong
+  symmetric-representation shape is a retrofit. If E.J.1 lands cleanly and its resultant + symmetry
+  KATs confirm the substrate shape, fall back to autonomous for E.J.2–E.J.3. The substrate↔base seam
+  uncertainty (E.J.1↔E.J.2) is itself a reason to halt at the E.J.1 boundary — that is where a
+  merge-back would be surfaced.)*
