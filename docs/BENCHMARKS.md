@@ -451,3 +451,75 @@ implementation). The pipeline-level verification is provided by the existing end
 | Test file | Tests | Scope |
 |-----------|-------|-------|
 | `tests/factor_end_to_end_kat.rs` | 6 (+1 ignored) | Full pipeline: N=35→5, congruence identity, trivial-GCD path, retry loop, all-trivial returns None; oracle KAT (ignored) |
+
+## E.W — Cross-attack ECDLP benchmark harness
+
+Track-E closes with a cross-attack synthesis: each algebraic ECDLP attack is benched on the
+toy fixture whose curve structure it exploits. The pedagogical point is *which structure unlocks
+which escape from the generic √n bound*, not a fixed-instance timing race — each attack applies
+only on the curve whose precondition it requires.
+
+The Pollard-rho baseline is already benched in `rho/benches/ecdlp.rs` on `secp_k1_toy` (63-bit,
+`k = 12_345_678_901`). That bench is the generic-√n reference column; it is cited here, not
+duplicated.
+
+The new bench file `rho/benches/attacks.rs` adds five Criterion bench functions, one per
+algebraic attack. Each bench body asserts the solver returns the known correct answer before
+timing — the bench doubles as a no-regression smoke test (C-EWBench invariant).
+
+### Structural-precondition-conditional table
+
+The table is precondition-conditional: each attack applies only on the curve whose structure it
+exploits. The "Applies?" column encodes the precondition; the "Escape structure" column names the
+algebraic property that breaks the generic √n barrier.
+
+| Attack | Curve precondition | Applies? | Toy-scale cost | Escape structure |
+|--------|--------------------|----------|----------------|------------------|
+| Pollard rho (baseline) | None — generic group | Always | ~N µs (Criterion median, `ecdlp.rs` bench on `secp_k1_toy`) | None — generic √n walk |
+| Pohlig–Hellman | `#E(F_p) = n` composite, `n = ∏ pᵢ^{eᵢ}` | `composite_toy` (n = 60 = 2²·3·5) | ~N µs (Criterion median) | Composite order: reduces to prime-order subgroup DLPs via CRT |
+| MOV/Frey–Rück | Embedding degree `k` small; `ℓ | p^k − 1`, `ℓ ∤ p^j − 1` for `j < k` | `pairing_toy` (ℓ = 3, k = 2, F_{47²}) | ~N µs (Criterion median) | Pairing bridge: transports ECDLP to F_{p^k}* DLP via bilinearity |
+| SSA | `#E(F_p) = p` (anomalous; trace of Frobenius = 1) | `anomalous_toy` (y² = x³ + 5 mod 7, #E = 7 = p) | ~N µs (Criterion median) | Anomalous order: p-adic lift + formal group log gives polynomial-time solve |
+| GHS (transfer only) | Binary curve `E/GF(2^m)`, `l | m`, `m/l` odd | `ghs_toy_curve` (GF(2^6), m = 6, l = 2) | ~N µs (Criterion median, transfer + log-preservation check) | Weil descent: transfers ECDLP to Jacobian-DLP on hyperelliptic curve over GF(2^l) |
+| Index calculus | `E(F_{p^n})` with `n > 1` (asymptotic win); demonstrated over `E(F_p)` at toy scale | `IndexCalcStrategy::toy` (ℓ = 5, \|FB\| = 6, m = 2) | ~N µs (Criterion median) | Factor-base decomposition: relation matrix over F_ℓ; asymptotic win needs extension-field setting |
+
+**GHS note.** The GHS bench measures the *descent reduction + log-preservation verification*,
+not an end-to-end solve. `rho::ghs` has no `ghs_dlp`; the downstream solve is index calculus
+(a deferred re-shard). Reporting GHS as an end-to-end solve time would misrepresent the
+attack's scope — the bench is annotated as a transfer.
+
+**Index-calculus counts.** The relation count and decomposition count are derived from the
+public re-exports `collect_relations(...).len()` and `decompose(...)` (C-IndexCalc unamended).
+`index_calculus_dlp` itself returns no counts.
+
+### Science↔engineering note (principle 4)
+
+The toy fixtures operate at `p = 47` or `p = 7` — far below the scale at which the asymptotic
+L-notation separations between attacks are observable. At toy scale:
+
+- **Pohlig–Hellman** is faster than rho only because `n = 60` is tiny; at crypto scale the
+  speedup is exponential (rho on the largest prime factor vs rho on the full group).
+- **MOV/Frey–Rück** at `k = 2` is not faster than rho at toy scale; the pairing + F_{p^k} DLP
+  overhead dominates. At crypto scale, a small embedding degree `k` makes the F_{p^k} DLP
+  subexponential (index calculus in F_{p^k}*), breaking the ECDLP.
+- **SSA** is polynomial-time at all scales (the p-adic lift is O(log p)), but the toy fixture
+  (p = 7) makes the constant factors invisible.
+- **GHS** is a transfer, not a solve; the asymptotic win comes from the downstream index
+  calculus on the Jacobian, which is subexponential for large genus.
+- **Index calculus** over `E(F_p)` is NOT faster than rho — the asymptotic win requires the
+  extension-field setting `E(F_{p^n})` (the genuine Gaudry–Diem setting, a deferred re-shard).
+
+The toy-scale costs in the table are Criterion medians from the `attacks.rs` bench. The
+asymptotic picture — L-notation complexity, the five-family escape taxonomy, and the design
+statement — is developed in the E.W.2 code-tour (`docs/PEDAGOGY.md`) and the T.E maths chapter
+(`docs/MATHEMATICS.md` ch. 10).
+
+### Bench coverage added (E.W.1)
+
+| Bench file | Bench functions | Scope |
+|------------|-----------------|-------|
+| `rho/benches/attacks.rs` | `attacks/pohlig_hellman` | Pohlig–Hellman on `composite_toy` (n = 60 = 2²·3·5); asserts k·G = Q before timing |
+| `rho/benches/attacks.rs` | `attacks/mov_frey_ruck` | MOV/Frey–Rück on `pairing_toy` (ℓ = 3, k = 2); asserts `mov_reduce` returns k = 2 before timing |
+| `rho/benches/attacks.rs` | `attacks/ssa` | SSA on `anomalous_toy` (p = 7, #E = 7); asserts `ssa_solve` returns k = 3 before timing |
+| `rho/benches/attacks.rs` | `attacks/ghs_transfer` | GHS transfer on `ghs_toy_curve` (GF(2^6)); asserts log-preservation holds for k = 1 before timing |
+| `rho/benches/attacks.rs` | `attacks/index_calculus` | Index calculus on `IndexCalcStrategy::toy` (ℓ = 5, \|FB\| = 6); asserts k·G_ℓ = Q_ℓ before timing |
+| `rho/benches/ecdlp.rs` | (existing) | Pollard-rho baseline on `secp_k1_toy` (63-bit); cited as the generic-√n reference column |

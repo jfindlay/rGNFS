@@ -47,3 +47,7 @@ harness = false
 [[bench]]
 name = "ecdlp"
 harness = false
+
+[[bench]]
+name = "attacks"
+harness = false
