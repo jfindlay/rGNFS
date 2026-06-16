@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2).
+//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2 + E.K.3).
 //!
 //! # Fixture
 //!
@@ -30,6 +30,14 @@
 //! 6. **decomposition-sum-check**: for any returned decomposition `[P_i, P_j]`, verify
 //!    `P_i + P_j = Q` using the group law (the primary correctness signal).
 //!
+//! # KAT coverage (E.K.3 — C-RelationCollect)
+//!
+//! 7. **relation-validity**: for every relation returned by `collect_relations`, verify
+//!    that `Σ e_i·P_i = a·G + b·Q` via the frozen group law. Guards the provenance
+//!    `(a, b)` and the exponent-vector encoding.
+//! 8. **over-determination**: the returned collection has at least `fb_size + 1` relations.
+//!    Guards the loop termination condition.
+//!
 //! # Principle-4 boundary
 //!
 //! The fixture is toy-scale (`p = 47`, `n = 60`). The algorithms are mechanism-correct;
@@ -39,7 +47,9 @@
 use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
 use rho::field::{Fp, FpNaive};
-use rho::index_calculus::{decompose, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE};
+use rho::index_calculus::{
+    collect_relations, decompose, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE,
+};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -464,5 +474,100 @@ fn decomposition_sum_check() {
         checked > 0,
         "no decomposable Q found among all factor-base pairs — \
          unexpected for the toy fixture (factor base should span some decomposable points)"
+    );
+}
+
+// ─── KAT 7: relation-validity (C-RelationCollect) ────────────────────────────
+
+/// For every relation returned by `collect_relations`, verify `Σ e_i·P_i = a·G + b·Q`.
+///
+/// Calls `collect_relations(G, Q, &strategy)` for the toy fixture. For each returned
+/// `Relation`, reconstructs `Σ e_i·P_i` from the exponent vector using the frozen group
+/// law, and verifies it equals `a·G + b·Q` (computed from the provenance fields).
+///
+/// Guards:
+/// - The provenance `(a, b)` is faithfully recorded.
+/// - The exponent vector correctly encodes the decomposition.
+/// - The `collect_relations` loop only records valid decompositions.
+#[test]
+fn relation_validity() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+    let p = &curve.p;
+
+    // Use G and Q = 7·G as the toy fixture points.
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    let relations = collect_relations(g.clone(), q.clone(), &strategy)
+        .expect("collect_relations should succeed for the toy fixture");
+
+    assert!(
+        !relations.is_empty(),
+        "collect_relations returned an empty relation set"
+    );
+
+    for (idx, relation) in relations.iter().enumerate() {
+        // Compute a·G + b·Q from the provenance fields.
+        let ag = scalar_mul_u64(curve, &g, relation.a);
+        let bq = scalar_mul_u64(curve, &q, relation.b);
+        let expected = if bq.is_infinity() {
+            ag.clone()
+        } else if ag.is_infinity() {
+            bq.clone()
+        } else {
+            add_points(curve, &ag, &bq)
+        };
+
+        // Reconstruct Σ e_i·P_i from the relation's exponent vector.
+        let mut reconstructed = JacobianPoint::<FpNaive>::infinity(p);
+        for (i, exp) in &relation.exponents {
+            let fb_point = &strategy.factor_base[*i].point;
+            let exp_u64 = exp.to_uint().as_words()[0];
+            if exp_u64 == 0 {
+                continue;
+            }
+            let contribution = scalar_mul_u64(curve, fb_point, exp_u64);
+            let contrib_jac = JacobianPoint::from_affine(&contribution, p);
+            reconstructed = curve.add_jacobian(&reconstructed, &contrib_jac);
+        }
+        let reconstructed_affine = reconstructed.to_affine(p);
+
+        assert_eq!(
+            reconstructed_affine, expected,
+            "relation {} (a={}, b={}): Σ e_i·P_i = {:?}, expected a·G + b·Q = {:?}",
+            idx, relation.a, relation.b, reconstructed_affine, expected
+        );
+    }
+}
+
+// ─── KAT 8: over-determination (C-RelationCollect) ───────────────────────────
+
+/// The returned collection has at least `fb_size + 1` relations.
+///
+/// Calls `collect_relations(G, Q, &strategy)` for the toy fixture and verifies that
+/// the returned `Vec<Relation>` has at least `strategy.fb_size() + 1` entries. This
+/// is the over-determination condition required for the index-calculus linear algebra
+/// (E.K.4) to have a non-trivial kernel.
+///
+/// Guards the loop termination condition in `collect_relations`.
+#[test]
+fn over_determination() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    let relations = collect_relations(g, q, &strategy)
+        .expect("collect_relations should succeed for the toy fixture");
+
+    let min_required = strategy.fb_size() + 1;
+    assert!(
+        relations.len() >= min_required,
+        "over-determination check failed: got {} relations, need at least {} (fb_size + 1 = {} + 1)",
+        relations.len(),
+        min_required,
+        strategy.fb_size()
     );
 }

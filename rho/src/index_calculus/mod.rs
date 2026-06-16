@@ -27,9 +27,11 @@
 //! a deferred re-shard). The toy `F_p`/`m`/`ℓ` are a principle-4 boundary: mechanism-
 //! correct, asymptotic win NOT observable.
 
+pub mod collect;
 pub mod decompose;
 pub mod strategy;
 
+pub use collect::collect_relations;
 pub use decompose::decompose;
 pub use strategy::{FbPoint, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE, TOY_M};
 
@@ -70,9 +72,18 @@ pub enum IndexCalcError {
     ///
     /// Wraps `SemaevError` for propagation from the point-decomposition step (E.K.2+).
     Semaev(crate::semaev::SemaevError),
-    // E.K.2+ extend additively:
-    //   DecompositionFailed — no factor-base decomposition found for a given point.
-    //   UnderdeterminedSystem — fewer relations than factor-base size + 1.
+    /// The collection loop exhausted all `(a, b)` pairs without finding enough relations.
+    ///
+    /// Raised by `collect_relations` when the factor base is too sparse relative to the
+    /// curve, or the search limit is too low. The `found` field gives the number of
+    /// relations collected before giving up; `needed` is `fb_size + 1`.
+    UnderdeterminedSystem {
+        /// The number of relations found before exhausting the search space.
+        found: usize,
+        /// The minimum number of relations required (`fb_size + 1`).
+        needed: usize,
+    },
+    // E.K.4+ extend additively:
     //   NoKernel — the Z/ℓℤ linear system has no non-trivial kernel.
     //   RecoveryFailed — DLP recovery from the kernel failed.
     //   CrossCheckMismatch — recovered log disagrees with rho::ecdlp (E.K.5).
@@ -91,6 +102,12 @@ impl std::fmt::Display for IndexCalcError {
                 )
             }
             IndexCalcError::Semaev(e) => write!(f, "Semaev error: {e}"),
+            IndexCalcError::UnderdeterminedSystem { found, needed } => {
+                write!(
+                    f,
+                    "underdetermined system: found {found} relations, need at least {needed}"
+                )
+            }
         }
     }
 }
@@ -99,7 +116,9 @@ impl std::error::Error for IndexCalcError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             IndexCalcError::Semaev(e) => Some(e),
-            _ => None,
+            IndexCalcError::InvalidSubgroup { .. }
+            | IndexCalcError::FactorBaseTooSmall { .. }
+            | IndexCalcError::UnderdeterminedSystem { .. } => None,
         }
     }
 }
