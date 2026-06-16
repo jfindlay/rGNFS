@@ -461,7 +461,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | S.A.1 | State-vector register + standard gate set | done | 396cf84 | C-StateVec |
-| S.A.2 ◆ | Sparse-state optimization + measurement + QFT | pending | — | — |
+| S.A.2 ◆ | Sparse-state optimization + measurement + QFT | done | 5ec563a | C-Sparse, C-QFT |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
 factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, E.A–E.W, closed at the E.W ◆), plus the
@@ -477,6 +477,58 @@ in Phase ε, then Phase ζ (umbrella) + the τ-bind close the project.**
 ## Action-frame digest
 
 *(S.A.1 was a clean trivial iteration — no discovery, no contract flex, no surprises. No digest entry.)*
+
+**S.A.2 ◆ juncture verdict — still-on-intent (2026-06-16, @plan-juncture/opus, commit 5ec563a).**
+All six ◆ checks confirmed by direct code + test reading (not driver summary):
+
+1. **Substrate complete.** `shor/src/statevec` + `shor/src/gates` + `shor/src/sparse` +
+   `shor/src/measure` + `shor/src/qft` all present and compose. KATs green: `shor/tests/statevec_kat.rs`
+   32 passed; `shor/tests/qft_kat.rs` 36 passed (QFT published Fourier amplitudes at n=3/n=4, QFT∘iQFT
+   identity, seeded Born-rule distribution, sparse-dense agreement including the fully-superposed
+   principle-4 case). Full `cargo test --workspace` green — no regression against existing rho/gnfs/shared
+   suites.
+2. **Interface right for two downstream tracks.** `gates` exposes `multi_controlled_x` AND
+   `multi_controlled_unitary` (the most general form; CNOT/Toffoli/MCX are special cases). `qft::qft` +
+   `qft::iqft` are public. `measure` exposes `measure_all`, `measure_qubit`, seeded variants, and
+   `sample_counts`. Neither S.B nor S.C must re-open S.A to add a primitive. Tradeoff accepted:
+   `multi_controlled_unitary` has no S.A KAT exercising the controlled-unitary path beyond the X special
+   case — carried per the Category-A rule (cost of a later frozen-interface addition exceeds the cost of
+   carrying it).
+3. **Conventions fixed + documented.** Little-endian (qubit 0 = LSB) frozen and documented in
+   `statevec/mod.rs` and `lib.rs`. QFT bit-reversal convention documented as load-bearing in `qft/mod.rs`
+   with an explicit silent-wrong-answer warning for S.B/S.C period extraction; implemented as a single
+   input bit-reversal so output is natural little-endian; `iqft` undoes it.
+4. **Principle-4 ceiling annotated.** The ~25-qubit `2^n` resource-scale wall is annotated in
+   `lib.rs`, `statevec/mod.rs`, `qft/mod.rs`, `sparse/mod.rs`, AND `docs/BENCHMARKS.md ## S.A`
+   (dense-vs-sparse table + qubit-scaling table + science↔engineering note). Sparse correctly framed as
+   state-dependent demonstration, not universal speedup.
+5. **C-StateVec + C-Sparse + C-QFT expose what S.B/S.C consume.** Frozen shapes match landed types;
+   the `rho::curve` cross-track edge correctly deferred to S.C.
+6. **In scope.** No Shor circuit, no modular exponentiation, no Proos–Zalka, no period/continued-fraction
+   post-processing. The only mod-exp/proos/zalka/period strings in the crate are documentation comments
+   naming S.B/S.C as FUTURE consumers.
+
+**Reconciled deviation (rode through as on-intent).** `shor/Cargo.toml` declares `rand = "0.8"` and
+`rand_chacha = "0.3"` in addition to `num-complex`. The PLAN headline named `num-complex` as "the
+sub-track's only new workspace dependency." This reconciles cleanly: `rand` and `rand_chacha` already
+exist workspace-wide in `rho/Cargo.toml` (lines 27–28), so they are workspace-PRESENT, not new — the
+"only new" claim referred to `num-complex` being the only workspace-ABSENT package, which still holds.
+The S.A.2 session detail explicitly specified "a deterministic seeded sampler (the `rand_chacha` idiom
+the workspace already uses)" — this is the contract being honored, not drift. Load-bearing assumption:
+`rand`/`rand_chacha` resolve to the same workspace versions already locked (Cargo.lock showed +2 entries
+at this commit, consistent with leaf addition to `shor`, no version conflict).
+
+**Flagged for user action (capture candidate — outside `@architect` PLAN-write scope).**
+`docs/ROADMAP.md` Progress/Remaining tables still show Phase δ (Track E) "in progress" and Phase ε
+(Track S) "not started" — but Track E closed at the E.W ◆ (Phase δ complete) and Track S has now landed
+its substrate sub-track (S.A complete, Phase ε in progress). Recommended ROADMAP edit: Track E Done →
+E.A–E.W; strike E from Remaining; mark Phase δ complete; add Track S in-progress. Does not block
+S.B/S.C dispatch.
+
+**Sub-track status: S.A ◆ ratified. C-StateVec + C-Sparse + C-QFT frozen. S.B (Shor-for-factoring)
+and S.C (Shor-for-ECDLP) may be sharded/dispatched against the frozen substrate without re-opening
+S.A. The soft-seam S.A.3 (QFT split) was NOT needed — sparse + measurement + QFT landed together in
+S.A.2 within band, as the chosen 2-session shard intended.**
 
 ---
 
