@@ -19,6 +19,8 @@
 //!   extension, Weil restriction of scalars, hyperelliptic curve extraction.
 //! - [`semaev`] — Semaev summation polynomials over a prime-field Weierstrass curve (E.J):
 //!   `F_p[x]` univariate resultant, multivariate/symmetric-polynomial type `S_m`.
+//! - [`index_calculus`] — Gaudry–Diem–Joux–Vitse index-calculus ECDLP solver over
+//!   `E(F_p)` (E.K): factor base, prime-order subgroup, relation/matrix contract.
 
 pub mod binary_curve;
 pub mod binary_ecdlp;
@@ -28,6 +30,7 @@ pub mod factor;
 pub mod field;
 pub mod ghs;
 pub mod hyperelliptic;
+pub mod index_calculus;
 pub mod pairing;
 pub mod semaev;
 pub mod ssa;
