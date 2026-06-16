@@ -460,7 +460,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| S.A.1 | State-vector register + standard gate set | pending | — | — |
+| S.A.1 | State-vector register + standard gate set | done | 396cf84 | C-StateVec |
 | S.A.2 ◆ | Sparse-state optimization + measurement + QFT | pending | — | — |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
@@ -476,7 +476,7 @@ in Phase ε, then Phase ζ (umbrella) + the τ-bind close the project.**
 
 ## Action-frame digest
 
-*(none yet)*
+*(S.A.1 was a clean trivial iteration — no discovery, no contract flex, no surprises. No digest entry.)*
 
 ---
 
