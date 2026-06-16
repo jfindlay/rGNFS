@@ -165,11 +165,11 @@ from PLANs, where one `docs/PLAN.md` bundles several sessions.*
 | α — Foundation | 3–5 | ~6 (α.1–α.5 + S0.W) | 0 | **complete** |
 | β — GNFS factoring (G) | 16–22 | ~28 (G.A → G.F + G.W) | 0 | **complete** |
 | γ — NFS-DL (D) | 8–10 | ~12 (D.A → D.W + D.E ext.) | 0 | **complete** |
-| δ — Algebraic ECDLP (E) | 25–32 | ~13 (E.A, E.B, E.C, E.D, E.E) | ~19–26 | in progress |
+| δ — Algebraic ECDLP (E) | 25–32 | ~32 (E.A–E.J) | ~7 (E.K, E.W) | in progress |
 | ε — Shor + PQ (S) | 7–9 | 0 | 7–10 | not started |
 | ζ — Umbrella | 2–4 | 0 | 3–4 | not started |
 | τ — Textbook (T) | 2–3 | ~3 (T.0, T.G, T.D) | 1–2 (T.E folds into E.W; T.Z net-new) | in progress |
-| **Total** | **~72–93** | **~62** | **~30–42** | done ~62 / remaining ~30–42 |
+| **Total** | **~72–93** | **~81** | **~11–23** | done ~81 / remaining ~11–23 |
 
 *Track-E `Done` reconciled at the E.F sharding boundary (2026-06-13): E.D (p-adic arithmetic, 3
 sessions, `0a98148`…`95d03b7`) and E.E (Smart–Satoh–Araki, 2 sessions, `4dc5eaf`/`8a217f4`) both
@@ -200,18 +200,16 @@ the upper end of the design-time bands. The forward projection below is re-basel
 
 *Inferred from completed-track actuals; ceiling-biased. Grand total projected: ~92–104. E.D and E.E
 struck (completed since the E.C-◆ projection — see the reconciliation note in the Progress
-subsection above).*
+subsection above). E.F/E.G/E.H/E.I/E.J struck at the E.K shard (2026-06-16): all five completed since
+the E.C-◆ projection. Sequencing correction recorded: this table previously listed E.H before E.I,
+but E.I (hyperelliptic Jacobian) shipped first and E.H (GHS descent) consumed it — the E.H
+predecessor line ("Predecessor: E.G, E.I") is the correct dependency order.*
 
 | Remaining sub-track | Sessions | Opus-flagged |
 |---------------------|--------:|:------------:|
-| E.F — GF(2^m) field arithmetic | 4 | ✓ E.F.1 |
-| E.G — Binary curves + Koblitz automorphism | 3 | |
-| E.H — GHS/Weil descent | 5 | ✓ E.H.1 |
-| E.I — GF(2^m) hyperelliptic Jacobian | 4 | |
-| E.J — Semaev summation polynomials | 3 | |
 | E.K — Gaudry–Diem–Joux–Vitse index calculus | 5 | ✓ E.K.1 |
 | E.W — Cross-attack benchmarks + writeup (+ T.E) | 2 | ✓ |
-| **E subtotal** | **~19–26** | |
+| **E subtotal** | **~7** | |
 | S.A–S.D — Shor + post-quantum context | 7–10 | |
 | Z.1 — Umbrella narrative | 3–4 | ✓ all |
 | T.Z — Textbook bind | 1–2 | ✓ |
@@ -604,6 +602,37 @@ sessions but are triggered by discoveries that need static-frame updates.
 ## Discoveries log
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
+
+### 2026-06-16 — E.K shard: the index-calculus field-target resolution (F_p mechanism; F_{p^n} / GHS deferred)
+
+The E.K sub-track (Gaudry–Diem–Joux–Vitse index calculus) was sharded at this boundary. Sharding
+surfaced a latent tension in this ROADMAP: **Contract C1 (line 498) names "smoothness of points over
+F_{p^n} via Semaev (E.K)"** — the extension-field setting where index calculus *beats* Pollard-rho
+asymptotically — **while the E.J sub-track froze C-Semaev over E/F_p only** (the adjudicated F_p /
+Weierstrass target), labelling the descended-curve coupling "E.K's job." Within E.K's 4–5-session,
+single-Opus-session budget these cannot all be E.K, and the frozen C-Semaev (F_p only) makes the
+prime-field target the only one E.K can build without first flexing a frozen contract.
+
+- **Resolution (user-adjudicated at the E.K shard): E.K = the index-calculus *mechanism* over E(F_p).**
+  The full pipeline — factor base → Semaev point decomposition → relation collection → Z/ℓℤ linear
+  algebra → discrete-log recovery — cross-checked against the frozen `rho::ecdlp` Pollard-rho solver.
+  **E.K is mechanism-correct at toy scale, with the asymptotic index-calculus win NOT observable**
+  (over E(F_p), index calculus is not faster than rho — the speed-up needs the extension-field
+  structure of E(F_{p^n})). This is the same principle-4 posture G.E and the NFS end-to-end KAT took
+  (BENCHMARKS.md: "the pipeline is correct but the asymptotic win is not observable").
+
+- **The F_{p^n} asymptotic-win case and the GHS-coupled binary-curve end-to-end are deferred to later,
+  separately-sharded sub-tracks** — each opening by flexing C-Semaev (the F_{p^n} multivariate lift),
+  not folded into E.K. **These are re-shards, not exclusions.** The decoupling is bought for the same
+  reason E.J bought it (NOTES.md, 2026-06-15): keeping two independently-delicate designs — the
+  extension-field Semaev lift and the index-calculus solver — from entangling in one shard.
+
+- **Arc framing (durable).** The project optimises for a *natural, accessible, coherent* treatment of
+  discrete-logarithm solutions and factorization strategies over a *strained total covering* (the
+  latter usually futile; the former more natural and accessible). Whether the deferred F_{p^n}
+  asymptotic-win re-shard is worth adding is a question for the post-ROADMAP cohesion/coverage rereads,
+  not a gap that blocks the E.K mechanism from shipping. E.K completes the "solve" leg of the
+  transfer/structure/solve triad (E.H transfers, E.J builds the structure, E.K solves).
 
 ### 2026-06-10 — E.D ◆ boundary: p-adic substrate complete + C-Padic durable cross-track note
 

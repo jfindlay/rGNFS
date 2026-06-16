@@ -2,219 +2,265 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E (E.J — Semaev summation polynomials: "the combinatorial heart of Gaudry–Diem index calculus; mathematically beautiful")
+# rGNFS — Current Plan: Track-E (E.K — Gaudry–Diem–Joux–Vitse index calculus: the elliptic-curve DLP *solver* that consumes the Semaev primitive)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **set by lever-3 (cost of design error), a deliberate
-user override of the lever-5 `sonnet` recommendation.** The default tuning-law read pointed to
-`sonnet`: lever 5 is **strong** (the Semaev vanishing relation `S_m(x_1,…,x_m)=0 ⟺ ∃ y_i: Σ P_i = ∞`
-is **exactly self-checking** — a fast, decisive, oracle-free KAT, like E.I's group axioms and
-*unlike* E.H's oracle-leaning log-preservation that held E.H at opus), and correctness-criticality
-(lever 4) is moderate (the ROADMAP marks E.J Sonnet throughout with **no Opus-flagged session**).
-That coincidence — strong lever 5 + moderate lever 4 — is the textbook lever-5 opt-down license.
-**The user held the ◆ juncture at opus on lever 3:** the multivariate/symmetric-polynomial
-representation E.J freezes (C-SemaevPoly) is consumed by the **Opus-flagged E.K** (Gaudry–Diem–
-Joux–Vitse index calculus), and the user judges the cost-of-wrong on that substrate worth paying
-Opus at the boundary to de-risk — mirroring the E.I precedent (where lever 5 was strong and the
-user likewise overrode on lever 3). *(This is the inverse situation to E.H, where levers 2+3 held
-the juncture up directly; here lever 5 would license the opt-down and the override is a deliberate
-lever-3 call, recorded so the disagreement stays visible. The ◆ fork pages `@plan-juncture` at
-opus; per-row session tiers are all Sonnet — E.J has no Opus-flagged session.)*
+`juncture-tier: opus` (header above) — **set by the ROADMAP's Opus flag on E.K.1 (index-calculus
+strategy) and lever-3 (cost of design error).** Unlike E.J — where the tuning law pointed to `sonnet`
+and the user overrode to `opus` on lever 3 — E.K carries a *native* Opus session (E.K.1, the
+strategy/factor-base/relation-contract design the ROADMAP marks `✓ E.K.1`), so the boundary juncture
+sits at `opus` by the same judgment register the session itself demands. The cost-of-wrong is high
+on two fronts: (a) **the relation/matrix contract (C-EKRelation)** is consumed by three downstream
+sessions (decomposition, collection, linear algebra) and is the index-calculus analogue of NFS's
+C-Relation — getting its shape wrong is a retrofit across the whole pipeline; (b) **the factor-base
++ prime-order-subgroup strategy** determines whether the linear algebra is over a field `Z/ℓℤ` at
+all. Lever 5 is **strong** (the green-path correctness signal is **agreement with the frozen
+`rho::ecdlp` Pollard-rho solver** on the same toy ECDLP instance — a fast, decisive, oracle-free KAT,
+like E.I's group axioms and E.J's vanishing relation, *unlike* E.H's oracle-leaning
+log-preservation), but lever 5 only licenses opting the juncture *down*; here the native Opus flag
+(E.K.1) and lever 3 hold it *up*. *(The ◆ forks page `@plan-juncture` at opus; E.K.1's per-row tier
+is **Opus** per the ROADMAP — E.K is the one Track-E sub-track since E.H with a native Opus session;
+E.K.2–E.K.5 are Sonnet.)*
 
-**Scope boundary — load-bearing, surfaced and adjudicated at shard time.** E.J is the **Semaev
-summation-polynomial machinery**, NOT the index-calculus solver that consumes it. The ROADMAP
-separates **E.J** (Semaev polynomials — the combinatorial primitive) from **E.K** (Gaudry–Diem–
-Joux–Vitse index calculus — the DLP *solver* that uses the Semaev polynomials for the
-point-decomposition / relation-collection step, consuming E.J + G.B scoring + G.E linear algebra).
-**The user adjudicated E.J = Semaev-only**, verified structurally by the **vanishing relation**
-(`S_m` vanishes on the x-coordinates of `m` points summing to the identity). E.J builds and verifies
-the summation polynomials; it does **not** run index calculus (relation collection over a factor
-base, linear algebra over `Z/nZ`) — that is E.K. *(Tradeoff named: no end-to-end "DLP solved via
-index calculus" signal in E.J; bought to keep the delicate Semaev construction decoupled from the
-equally-delicate index-calculus design — the same transfer/structure/solve decoupling NOTES.md
-records from the E.H shard, and the coupling the inflection-juncture discipline warns against.)*
+**Field-target — adjudicated E.K = index calculus over `E(F_p)` (the prime-field mechanism),
+user-adjudicated at shard time.** The Semaev polynomials have three classical index-calculus homes:
+(1) the prime field `E(F_p)`; (2) the extension field `E(F_{p^n})` — the genuine Gaudry–Diem setting
+where index calculus *beats* Pollard-rho asymptotically; (3) the binary-curve / GHS-descended
+Jacobian coupled to the frozen E.H chain. **The ROADMAP itself carried a tension here** (C1, line
+498, names "*smoothness of points over `F_{p^n}` via Semaev (E.K)*" — leaning toward (2) — while the
+E.J PLAN froze C-Semaev over `E/F_p` *only* and labelled the descended-curve coupling "E.K's job" —
+(3)). Within the ROADMAP's 4–5-session, single-Opus-session budget these cannot all be E.K; and the
+**frozen substrate (C-Semaev over `E/F_p`) makes (1) the only target E.K can build without first
+flexing a frozen contract.** **The user adjudicated (1):** E.K is the **complete, self-contained
+index-calculus *mechanism* over `E(F_p)`** — factor base → point decomposition (via the frozen F_p
+Semaev `semaev_poly`) → relation collection → `Z/ℓℤ` linear algebra → discrete-log recovery —
+cross-checked against the frozen `rho::ecdlp` Pollard-rho solver. *(Tradeoff named, load-bearing:
+**E.K-over-F_p does NOT exhibit the asymptotic index-calculus win.** Over `E(F_p)` with points as the
+factor base, index calculus is **not** faster than rho — the speed-up needs the extension-field
+structure of (2). E.K is **mechanism-correct at toy scale, with the asymptotic win NOT observable** —
+the same principle-4 posture G.E and the NFS end-to-end KAT already took (BENCHMARKS.md: "the
+pipeline is correct but the asymptotic win is not observable"). The asymptotic-win `F_{p^n}` case (2)
+and the GHS-coupled end-to-end (3) are **deferred to later, separately-sharded sub-tracks, each
+opening by flexing C-Semaev (the `F_{p^n}` lift) — re-shards, not exclusions.** This is recorded as a
+ROADMAP capture candidate. The decoupling is bought for the same reason E.J bought it: keeping two
+independently-delicate designs — extension-field Semaev and the index-calculus solver — from
+entangling in one shard, the coupling NOTES.md and the inflection-juncture discipline warn against.)*
 
-**Target field — adjudicated F_p / Weierstrass (the classical Gaudry–Diem setting).** Semaev
-polynomials have two classical homes: the prime/Weierstrass curve `E/F_p` (or `F_{p^n}`) and the
-binary-curve / descended-Jacobian setting coupled to the E.H GHS chain. **The user adjudicated the
-prime/Weierstrass target:** E.J builds `S_m` over the short-Weierstrass curve `E/F_p` using the
-existing `rho::curve::Curve` (`y² = x³ + ax + b`) + `shared-field` `Fp` surface — the standalone
-"combinatorial heart" the ROADMAP names (predecessor **G.A polynomial machinery only**, *not* the
-GF(2^m) chain). This keeps E.J independent of E.H/E.I and defers the binary-field coupling to E.K.
-*(Tradeoff named: the F_p Semaev polynomials are not the binary-curve ones E.K's GHS-descended
-attack will ultimately need; the F_p construction is the textbook primitive — E.K adapts the
-representation to its field. Bought because the ROADMAP's G.A-predecessor framing implies the F_p
-setting and it keeps the two delicate designs decoupled.)*
+**Scope boundary — E.K is the "solve" in the transfer/structure/solve triad (NOTES.md, 2026-06-15).**
+E.K is the long-anticipated index-calculus *solver* the project's transfer-attack framing names:
+E.H *transfers* (GHS descent, frozen), E.J builds the *structure* (Semaev polynomials, frozen), **E.K
+*solves*** (index calculus over the factor base). E.K consumes the **frozen** C-Semaev surface (the
+F_p `semaev_poly(m)`, the `MultiPoly` partial-evaluation / one-variable-elimination operations
+E.J.1 *over-specified* for exactly this consumer), the frozen `rho::curve::Curve` (factor-base point
+enumeration + the group law), the frozen C1 `shared::numth::trial_smooth` (the smoothness witness),
+and the **frozen `gnfs::dl::linalg` block-Lanczos/Wiedemann engine** (the `Fp<L>`-generic
+`FlSparseMatrix` solver — reused, with an E.K-specific *adapter*; see the load-bearing linalg finding
+below). It builds **no new field substrate, no Semaev extension, no GHS coupling** — those are the
+deferred re-shards.
 
-The substrate survey (forked `@explore`, 2026-06-15) established the shape and confirmed the
-planning assumptions:
+The substrate survey (forked `@explore`, 2026-06-16) established the shape and surfaced three
+load-bearing findings:
 
-1. **E.J's polynomial substrate is doubly greenfield** (the load-bearing finding). The survey
-   confirmed: (a) **no univariate `Poly` over a prime field exists** — the only resultant surfaces
-   are `shared-numfield::resultant` (over `ℤ[x]`, Sylvester-matrix, with `subresultant_gcd`) and
-   `gf2m::Poly::resultant` (over `GF(2^m)`); **neither is an `F_p[x]` resultant**. (b) **No
-   multivariate polynomial type exists anywhere** — and Semaev's `S_m(X_1,…,X_m)` is genuinely
-   multivariate and *symmetric* in its `m` arguments. **E.J.1 builds both** — the `F_p[x]`
-   resultant and the multivariate/symmetric-polynomial representation — the substrate the whole
-   construction stands on. This is the design crux (the symmetric representation — dense vs
-   elementary-symmetric-basis vs Lagrange — is a genuine, downstream-consumed decision), which is
-   why the user held the ◆ juncture at opus despite the strong lever-5 signal.
+1. **The Semaev surface E.J.1 over-specified is exactly what E.K's point-decomposition step
+   consumes (confirmed).** `rho::semaev` exposes `semaev_poly(m, a, b, p) → MultiPoly` and the
+   `MultiPoly` operations `partial_eval(assignment)`, `elim_var_resultant(other, var)`, `eval`,
+   `is_symmetric` — the partial-assignment evaluation and one-variable resultant-elimination E.J.1
+   carried "for E.K's point decomposition" land exactly where intended. **E.K amends no Semaev
+   contract** — it reads C-Semaev as the decomposition oracle. *(Confirmed the over-specification
+   discipline paid off: the substrate-rule bet at E.J.1 — "carry the operations E.K needs" — is
+   collected here with no retrofit.)*
 
-2. **The source curve is `rho::curve::Curve` over `F_p`, hardcoded `Uint<4>`** (the C1 ceiling the
-   ROADMAP flags for E.K). The survey verified the public API: `Curve` (`y² = x³ + ax + b`),
-   `AffinePoint<F>` (`Infinity` / `Finite { x, y }`, generic over `Fp<4>`), point addition /
-   doubling. E.J **amends no curve contract** — it reads `Curve`/`AffinePoint` as the geometry the
-   summation relation is checked against (the `S_m` vanishing KAT computes `Σ P_i` via the frozen
-   group law and asserts `S_m` vanishes on the x-coordinates). The toy `F_p` scale and the
-   `Uint<4>` ceiling are a **principle-4 boundary** (Semaev is crypto-scale-correct; only the
-   parameters are toy), recorded not silently presented as crypto-scale.
+2. **The `Z/ℓℤ` linear algebra is *partial* reuse, not greenfield and not full reuse (the
+   load-bearing finding — corrects the ROADMAP's "predecessor: G.E linear algebra" to a partial
+   truth).** The survey found two G.E linalg surfaces: `gnfs::linalg` (block-Lanczos/Wiedemann over
+   **GF(2)**, NFS-square-root-specific — *not* reusable) and `gnfs::dl::linalg` (block-Lanczos/
+   Wiedemann **generic over `Fp<L>`** — `block_lanczos_fl`, `block_wiedemann_fl`, `FlSparseMatrix`,
+   `FlMatrixOperator`). The **solver engine is reusable** (it is `Fp<L>`-generic and the prime-order
+   subgroup makes `Z/ℓℤ = F_ℓ`, so the engine fits exactly); but the **matrix *construction*** is
+   bound to NFS (`build_fl_matrix(dl_matrix: &DLMatrix, …)`). **E.K.4 reuses the engine and writes
+   only an E.K-relation → `FlSparseMatrix` adapter** (analogous to `build_fl_matrix` but from
+   C-EKRelation). *(Tradeoff named: this creates a read-coupling from `rho`'s E.K into `gnfs::dl`
+   internals — the F_ℓ solver was designed for NFS-DL. Bought because duplicating a tested,
+   `Fp<L>`-generic block-Lanczos/Wiedemann implementation is the worse option, and the prime-order
+   subgroup makes the engine a genuine fit. If the NFS coupling proves ill-fit for the
+   prime-order-subgroup case at E.K.4, the adapter session grows — surfaced as a discovery.)*
 
-3. **The Semaev construction is fully greenfield** — the survey found zero `semaev` /
-   `summation_poly` / `summation_polynomial` hits anywhere. E.J builds `S_2`, `S_3`, and the
-   resultant recursion `S_m = Res_X(S_{m-1}(X_1,…,X_{m-2},X), S_3(X_{m-1},X_m,X))` from scratch in
-   a new `rho::semaev` module.
+3. **Factor-base point enumeration is greenfield; the prime-order-subgroup is the linear-algebra
+   precondition.** No `points_on_curve()` iterator exists; E.K.1 builds factor-base enumeration
+   (`{x : x³+ax+b is a QR mod p}`, lift `y`) from scratch. The toy fixture's group order `n = 60 =
+   2²·3·5` is composite — **the index-calculus linear algebra must run in a prime-order subgroup
+   `Z/ℓℤ`** (a large prime `ℓ | n`) for the matrix to be over a field. E.K.1's strategy decision
+   fixes `ℓ` and the factor base relative to it. *(This is the index-calculus analogue of NFS's
+   "work mod ℓ" — the C-EKRelation exponents live in `Z/ℓℤ`, mirroring NFS-DL's C-DLRelation.)*
 
-4. **`rho` already depends on every needed crate; no new edge, no new crate.** `rho → shared-field`,
-   `rho → shared-numfield`, `rho → shared-gf2m`, `rho → gnfs` all exist. The Semaev machinery lives
-   entirely in `rho` (new `rho::semaev`); the `F_p[x]` resultant + multivariate-symmetric type live
-   with it (or, if judged field-substrate-shaped at E.J.1, in a `shared` module — a placement call
-   ratified at the ◆). No `Cargo.toml` edge changes; `cargo check --workspace` stays green.
+The work splits at **five pipeline/contract-sharp seams**, **5 sessions** (the ROADMAP ceiling for
+E.K, consistent with the project's documented ceiling-bias — G/D both landed at or above their upper
+bands), at the boundaries between strategy/substrate, point decomposition, relation collection,
+linear algebra, and the DLP recovery + close:
 
-The work splits at **three representation/contract-sharp seams**, **3 sessions** (top of the
-ROADMAP's 2–3-session band, consistent with the project's documented ceiling-bias — G/D both landed
-at or above their upper bands), at the boundaries between the polynomial substrate, the low-order
-base cases, and the resultant recursion:
+1. **E.K.1 ◆-start `@architect` — Index-calculus strategy + factor base + relation/matrix contract
+   (Opus, Cat A).** The strategy session the ROADMAP flags Opus: fix the prime-order subgroup `ℓ`,
+   the factor-base shape (the point enumeration + the decomposition arity `m`), and **freeze
+   C-EKRelation** (the relation/matrix contract the whole pipeline consumes — the index-calculus
+   analogue of NFS's C-Relation) + **C-IndexCalcStrategy** (the factor base + subgroup + `m`). The
+   design crux: the relation representation (exponent vector over `Z/ℓℤ` indexed by factor-base
+   points) consumed by decomposition, collection, and linear algebra. *(The substrate-design
+   session; Opus per the ROADMAP. Carries the `@architect` juncture as a ◆-start fork — the inflection
+   point the ROADMAP pre-schedules.)*
 
-1. **E.J.1 — Polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type
-   (Sonnet, Cat A).** The `F_p[x]` univariate resultant (greenfield — distinct from the `ℤ[x]` and
-   `GF(2^m)` resultants) and the multivariate/symmetric-polynomial representation `S_m` lives in.
-   **Freezes C-SemaevPoly** — the substrate the whole construction (and E.K) stands on. Confirms-
-   and-records the F_p toy fixture and the symmetric-representation choice. *(The substrate-design
-   session; the ◆ juncture is held at opus for the cost-of-wrong on this representation, but the
-   per-row tier is Sonnet per the ROADMAP — E.J has no Opus-flagged session.)*
+2. **E.K.2 — Point decomposition via Semaev (Sonnet, Cat B).** Given a point `Q`, decompose it into a
+   sum of `m` factor-base points by finding roots of `semaev_poly(m+1)` (specialised at `Q`'s
+   x-coordinate) with all coordinates in the factor base — native root-finding / resultant-
+   elimination over the factor base on the green path (the frozen `MultiPoly::partial_eval` +
+   `elim_var_resultant`), with an optional `#[ignore]` msolve cross-check. **Consumes C-Semaev,
+   C-IndexCalcStrategy. Freezes C-PointDecomp.**
 
-2. **E.J.2 — Base cases `S_2`, `S_3` + the vanishing relation (Sonnet, Cat B).** The explicit
-   low-order summation polynomials: `S_2(X_1,X_2) = X_1 − X_2` and the symmetric `S_3(X_1,X_2,X_3)`
-   that vanishes when three points sum to `∞`; the **vanishing KAT** (`S_m` vanishes on the
-   x-coordinates of points summing to the identity, checked against the frozen `Curve` group law).
-   **Consumes C-SemaevPoly. Freezes C-SemaevBase.**
+3. **E.K.3 — Relation collection (Sonnet, Cat B).** The loop that gathers ≥ (factor-base size + 1)
+   relations by decomposing random multiples `a·G + b·Q` over the factor base, recording each as a
+   C-EKRelation row. **Consumes C-PointDecomp, C-EKRelation. Freezes C-RelationCollect.**
 
-3. **E.J.3 ◆ — Resultant recursion `S_m` + sub-track close (Sonnet, Cat B, `@architect`).** The
-   elimination ladder `S_m = Res_X(S_{m-1}(X_1,…,X_{m-2},X), S_3(X_{m-1},X_m,X))` building the
-   higher summation polynomials; the recursion-correctness + vanishing KATs at `S_4` (and `S_5` if
-   cheap); the sub-track close. **Consumes C-SemaevBase, C-SemaevPoly. Freezes C-Semaev** — the
-   surface E.K's index calculus (point decomposition / relation collection) consumes. Crosses the
-   **E.J ◆ boundary** — the Semaev machinery ships, vanishing-verified, ready for E.K.
+4. **E.K.4 — `Z/ℓℤ` linear algebra: relation→`FlSparseMatrix` adapter + solve (Sonnet, Cat B).** The
+   E.K-relation → `FlSparseMatrix` adapter + the block-Lanczos/Wiedemann solve over `Z/ℓℤ` (reusing
+   the frozen `gnfs::dl::linalg` engine). **Consumes C-RelationCollect, C-EKRelation, the frozen
+   `gnfs::dl::linalg` engine. Freezes C-EKLinAlg.**
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing the index-calculus *solver*
-— relation collection, the factor base, linear algebra over `Z/nZ`, the Gröbner/`msolve` step —
-that is **E.K**; or building the GHS descent — that is E.H, frozen; or writing the Semaev *textbook
-chapter* in MATHEMATICS.md — that is **T.E**, paired with E.W at the Track-E ◆; E.J.3 writes at most
-a PEDAGOGY code-tour delta) and **rigidity** (forcing the binary-curve / descended-Jacobian Semaev
-when the adjudicated F_p/Weierstrass target uses the frozen `rho::curve::Curve`; or re-deriving the
-`ℤ[x]` resultant `shared-numfield` already ships when E.J needs an `F_p[x]` one; or coupling the
-Semaev construction to the E.H GHS chain in-flight — that coupling is E.K's job, not E.J's).
+5. **E.K.5 ◆ `@architect` — Discrete-log recovery + `rho::ecdlp` cross-check + sub-track close
+   (Sonnet, Cat I).** Assemble the pipeline: recover `log_G(Q)` from the relation-matrix kernel,
+   **cross-check against the frozen `rho::ecdlp` Pollard-rho solver** on the same toy instance (the
+   green-path correctness signal), the principle-4 annotation (mechanism-correct, asymptotic win not
+   observable), the sub-track close. **Consumes C-EKLinAlg + all prior. Freezes C-IndexCalc** — the
+   surface E.W's cross-attack benchmark consumes. Crosses the **E.K ◆ boundary** — the index-calculus
+   solver ships, rho-cross-checked, the Track-E "solve" complete.
 
-**Scoping discipline.** E.J builds the Semaev summation polynomials at **demonstration fidelity**
-(principle 1 — algorithmic content complete: the `F_p[x]` resultant, the multivariate-symmetric
-representation, the `S_2`/`S_3` base cases, and the resultant recursion `S_m` all implemented
-head-on) and **toy field sizes** (small `F_p`, `Uint<4>` ceiling; the polynomials computed for small
-`m` — `S_2…S_4`, possibly `S_5`). It **amends no frozen contract** (`rho::curve::Curve` /
-`AffinePoint` / the `Fp` field surface / the `ℤ[x]` and `GF(2^m)` resultants are all
-consumed-or-untouched; E.J adds the `F_p[x]` resultant + the multivariate-symmetric type + the
-`rho::semaev` module). It introduces **no index-calculus solver** (Semaev-only, verified
-structurally by the vanishing relation — the solve is E.K). The correctness signal is the
-**vanishing relation** (`S_m` vanishes on the x-coordinates of `m` points summing to `∞`, via the
-frozen `Curve` group law) — **exactly self-checking, oracle-free** (no PARI/`msolve` dependency on
-the green path; the lever-5 strength the header records). The **engineering-vs-mathematics
-disconnect** (ROADMAP principle 4) is explicit: the toy `F_p`/`m` are a principle-4 boundary (Semaev
-is crypto-scale-correct; only the *parameters* are toy), annotated, never presented as crypto-scale.
+Re-read this intent at the ◆ boundaries to catch **defocus** (lifting Semaev to `F_{p^n}` or coupling
+to the GHS-descended Jacobian — those are the **deferred re-shards**, not E.K; or re-implementing a
+block-Lanczos solver `gnfs::dl::linalg` already ships; or writing the index-calculus *textbook
+chapter* in MATHEMATICS.md — that is **T.E**, paired with E.W at the Track-E ◆; E.K.5 writes at most
+a PEDAGOGY code-tour delta) and **rigidity** (forcing the `F_{p^n}` asymptotic-win setting when the
+adjudicated target is `E(F_p)` mechanism-only; or re-deriving the Semaev `MultiPoly` operations E.J.1
+already froze when E.K needs partial-evaluation + one-variable elimination; or amending the frozen
+`Curve`/`Fp` surfaces when E.K only reads them).
+
+**Scoping discipline.** E.K builds the index-calculus solver at **demonstration fidelity**
+(principle 1 — algorithmic content complete: factor-base enumeration, Semaev point decomposition,
+relation collection, the `Z/ℓℤ` linear algebra, and discrete-log recovery all implemented head-on)
+and **toy field sizes** (the `semaev_toy()` fixture `F_47`, `n = 60`, a prime-order subgroup `ℓ | n`;
+small decomposition arity `m`). It **amends no frozen contract** (`rho::semaev` C-Semaev, `rho::curve`
+`Curve`/`AffinePoint`, C1 `trial_smooth`, the `gnfs::dl::linalg` engine are all consumed-or-untouched;
+E.K adds the `rho::index_calculus` module + the relation→matrix adapter). It builds **no Semaev
+extension** (the `F_{p^n}` lift is a deferred re-shard) and **no GHS coupling** (a deferred re-shard).
+The correctness signal is **agreement with the frozen `rho::ecdlp` Pollard-rho solver** (E.K's
+recovered `log_G(Q)` matches `rho::ecdlp::solve_*` on the same instance) — **exactly self-checking,
+oracle-free** (no msolve/PARI on the green path; the lever-5 strength). The **engineering-vs-
+mathematics disconnect** (ROADMAP principle 4) is explicit and load-bearing: E.K is the index-calculus
+*mechanism* over `E(F_p)`, **mechanism-correct but with the asymptotic win NOT observable** (the win
+needs the deferred `F_{p^n}` setting); the toy `F_p`/`m`/`ℓ` are a principle-4 boundary, annotated,
+never presented as crypto-scale *or* as the asymptotic-win demonstration.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.J): "*E.J — Semaev summation polynomials. 2-3 sessions. Predecessor: G.A
-(polynomial machinery). The combinatorial heart of Gaudry–Diem index calculus; mathematically
-beautiful. Sonnet.*" E.J builds the **Semaev summation polynomials** `S_m(X_1,…,X_m)` — the symmetric
-multivariate polynomials whose vanishing characterises `m`-tuples of points on an elliptic curve
-that sum to the group identity. `S_m(x_1,…,x_m) = 0` precisely when there exist `y_i` such that
-`P_i = (x_i, y_i)` are points on `E` with `P_1 + ⋯ + P_m = ∞`. This is the combinatorial primitive
-at the heart of the Gaudry–Diem–Joux–Vitse index calculus (E.K): it turns "does this point
-decompose over the factor base?" into "does this Semaev polynomial have a root with all coordinates
-in the factor base?", the step that makes index calculus on elliptic/hyperelliptic curves work.
+Per ROADMAP (Phase δ, E.K): "*E.K — Gaudry–Diem–Joux–Vitse index calculus. 4-5 sessions.
+Predecessors: E.J, G.B (scoring methodology), G.E (linear algebra). First session is Opus-tier. The
+Gröbner-basis step delegates to `msolve` as a dev-only oracle (parallel to CADO-NFS's role).*" E.K
+builds the **index-calculus discrete-logarithm solver** over `E(F_p)`: the algorithm that solves
+ECDLP not by generic √n search (Pollard-rho, E.A's baseline) but by **finding exploitable structure**
+— a smoothness/decomposition phenomenon. The pipeline: (1) a **factor base** of points on the curve;
+(2) **relation collection** — decompose random multiples `a·G + b·Q` into sums of factor-base points,
+each decomposition a linear relation among discrete logs; (3) **linear algebra** over `Z/ℓℤ` to
+solve the relation system and recover `log_G(Q)`. The **point-decomposition step is where the Semaev
+polynomials enter** (E.J's primitive): "does this point decompose over the factor base?" becomes
+"does `semaev_poly(m+1)` have a root with all coordinates in the factor base?" — the step E.J built
+the Semaev machinery to feed.
 
-E.J's structural predecessor is **G.A** (the polynomial machinery — number-field / resultant
-substrate, frozen, read) — *not* the GF(2^m) / hyperelliptic chain (E.F/E.G/E.H/E.I). The
-adjudicated target is the **prime/Weierstrass curve `E/F_p`** (the classical Gaudry–Diem setting),
-built on the frozen `rho::curve::Curve` + `shared-field` `Fp` surface. The central design tension is
-that **E.J builds the primitive, not the solver**: the Semaev polynomials are *combinatorial input*
-to index calculus (E.K); E.J's job is to construct them correctly and prove they vanish on the right
-configurations, and the index-calculus speed-up is realised only when E.K runs relation collection
-using them.
+E.K is the **"solve" in the project's transfer/structure/solve triad** (NOTES.md, 2026-06-15): E.H
+*transfers* (GHS/Weil descent, frozen), E.J builds the *structure* (Semaev summation polynomials,
+frozen), **E.K *solves*** (index calculus). It is the consumer the over-specified C-Semaev surface
+was built for — E.J.1 carried `partial_eval` + `elim_var_resultant` on `MultiPoly` "for E.K's point
+decomposition", and E.K collects that bet here.
 
-The sub-track decomposes into three conceptual units, each a session:
+The adjudicated target is **`E(F_p)`** (the prime-field index-calculus *mechanism*), built on the
+frozen `rho::curve::Curve` + `rho::semaev` + C1 `trial_smooth` surfaces. The central design tension,
+recorded load-bearing: **E.K demonstrates the index-calculus *mechanism* but NOT its asymptotic
+win.** Over `E(F_p)` index calculus is not faster than Pollard-rho — the asymptotic speed-up needs
+the **extension-field** structure of `E(F_{p^n})` (the genuine Gaudry–Diem setting). E.K is
+mechanism-correct at toy scale with the win not observable (the principle-4 posture G.E and the NFS
+end-to-end KAT already took). The `F_{p^n}` asymptotic-win case and the GHS-coupled end-to-end attack
+are **deferred to later, separately-sharded sub-tracks**, each opening by flexing C-Semaev — re-shards
+the post-ROADMAP cohesion/coverage rereads will weigh (per the project's preference for a natural,
+accessible, coherent treatment over a strained total covering), not exclusions.
 
-1. **The polynomial substrate (E.J.1).** The `F_p[x]` univariate resultant (greenfield — distinct
-   from the `ℤ[x]` resultant `shared-numfield` ships and the `GF(2^m)` resultant `gf2m` ships) and
-   the multivariate/symmetric-polynomial representation `S_m` lives in (also greenfield — no
-   multivariate type exists). The substrate the construction stands on; reusable (E.K consumes).
-   **Freezes C-SemaevPoly. (E.J.1.)**
+The sub-track decomposes into five conceptual units, each a session:
 
-2. **The base cases `S_2`, `S_3` (E.J.2).** The explicit low-order summation polynomials — `S_2 =
-   X_1 − X_2` and the symmetric `S_3(X_1,X_2,X_3)` — and the vanishing relation verified against the
-   frozen `Curve` group law. **Freezes C-SemaevBase. (E.J.2.)**
+1. **Strategy + factor base + relation contract (E.K.1 ◆-start, Opus).** Fix the prime-order subgroup
+   `ℓ`, the factor base, the decomposition arity `m`; freeze the relation/matrix contract the whole
+   pipeline consumes. The substrate the solver stands on; the ROADMAP's Opus session.
+   **Freezes C-IndexCalcStrategy, C-EKRelation. (E.K.1.)**
 
-3. **The resultant recursion `S_m` + close (E.J.3 ◆).** The elimination ladder `S_m =
-   Res_X(S_{m-1}, S_3)` building the higher summation polynomials; the recursion-correctness +
-   vanishing KATs; the sub-track close. **Freezes C-Semaev. (E.J.3 ◆.)**
+2. **Point decomposition via Semaev (E.K.2).** Decompose a point into factor-base points by finding
+   Semaev-polynomial roots with all coordinates in the factor base — the step the Semaev primitive
+   feeds. **Freezes C-PointDecomp. (E.K.2.)**
 
-E.J is **solver-free** (the index-calculus DLP solver is E.K — E.J builds the Semaev primitive the
-solver consumes, not the solver), **GHS-free** (it does not couple to the E.H descent — that
-coupling is E.K's), and **chapter-free** (the Semaev textbook content is T.E, paired with E.W at the
-Track-E ◆). Re-read this intent at the ◆ boundary to catch defocus (the index-calculus solver /
-relation collection / linear algebra / `msolve`, the MATHEMATICS chapter) and rigidity (the
-binary-curve Semaev when the adjudicated target is F_p; re-deriving the `ℤ[x]` resultant; coupling
-to the GHS chain in-flight).
+3. **Relation collection (E.K.3).** The loop gathering enough relations to over-determine the system.
+   **Freezes C-RelationCollect. (E.K.3.)**
+
+4. **`Z/ℓℤ` linear algebra (E.K.4).** The relation→`FlSparseMatrix` adapter + block-Lanczos/Wiedemann
+   solve over the prime-order subgroup (reusing the frozen G.E `gnfs::dl::linalg` engine).
+   **Freezes C-EKLinAlg. (E.K.4.)**
+
+5. **DLP recovery + cross-check + close (E.K.5 ◆).** Recover `log_G(Q)`, cross-check against the frozen
+   `rho::ecdlp` solver, the principle-4 annotation, the close. **Freezes C-IndexCalc. (E.K.5 ◆.)**
+
+E.K is **Semaev-extension-free** (the `F_{p^n}` lift is a deferred re-shard), **GHS-free** (the
+descended-Jacobian coupling is a deferred re-shard), and **chapter-free** (the index-calculus textbook
+content is T.E, paired with E.W at the Track-E ◆). Re-read this intent at the ◆ boundaries to catch
+defocus (the `F_{p^n}` Semaev lift, the GHS coupling, a duplicate linalg solver, the MATHEMATICS
+chapter) and rigidity (forcing the `F_{p^n}` asymptotic-win setting; re-deriving the frozen Semaev
+`MultiPoly` operations; amending the frozen `Curve`/`Fp` surfaces).
 
 ---
 
 ## Verify gate
 
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
-assumed: no Makefile / justfile / xtask wrapper (survey re-confirmed zero hits, 2026-06-15); raw
-`cargo` is the only CI surface (unchanged from E.D…E.H). Oracle KATs are `#[ignore]`-gated only —
-the exact form is `#[ignore = "PARI not installed; run manually when available"]`, used identically
-in `rho/tests/ssa_kat.rs`, `rho/tests/mov_kat.rs`, `rho/tests/hyperelliptic_kat.rs`,
-`rho/tests/ghs_kat.rs`, and `shared/padic/tests/log_kat.rs`. `/run-plan` re-discovers at preflight.
-E.J **adds no new workspace edge and no new crate** (`rho` already depends on
-`shared-field`/`shared-numfield`/`shared-gf2m`/`gnfs`; the Semaev machinery is a new `rho` module,
-the `F_p[x]` resultant + multivariate type live with it or in `shared`), so the gate is a
-**correctness + no-regression gate**:
+assumed: no Makefile / justfile / xtask wrapper (survey re-confirmed zero hits, 2026-06-16); raw
+`cargo` is the only CI surface (unchanged from E.D…E.J). Oracle KATs are `#[ignore]`-gated only —
+the exact form is `#[ignore = "PARI not installed; run manually when available"]` (and the
+msolve analogue `#[ignore = "msolve not installed; run manually when available"]`), used identically
+in `rho/tests/ssa_kat.rs`, `rho/tests/semaev_kat.rs` (KAT 21, `s4_pari_cross_check`),
+`rho/tests/mov_kat.rs`, `rho/tests/ghs_kat.rs`, and `shared/padic/tests/log_kat.rs`. `/run-plan`
+re-discovers at preflight. E.K **adds no new workspace edge and no new crate** (`rho` already depends
+on `gnfs` — where the `gnfs::dl::linalg` engine lives — and `shared-numth` — where C1 lives; the
+index-calculus solver is a new `rho::index_calculus` module), so the gate is a **correctness +
+no-regression gate**:
 
 - Each session's KATs are the primary correctness signal — fast, decisive, and **oracle-free**
-  (lever 5): for E.J.1, the `F_p[x]` resultant identities (`Res(f,g) = 0 ⟺ gcd(f,g) ≠ 1`, symmetry
-  up to sign, the multivariate-symmetric round-trip) for C-SemaevPoly; for E.J.2, the
-  **vanishing relation** at `S_2`/`S_3` (`S_m(x_1,…,x_m) = 0` for points summing to `∞`, computed
-  via the frozen `Curve` group law) for C-SemaevBase; for E.J.3, the **recursion correctness**
-  (`S_m` built by `Res_X(S_{m-1}, S_3)` agrees with the direct construction at `S_4`) + the
-  vanishing relation at `S_4` for C-Semaev. The vanishing relation is the decisive
-  Semaev-correctness signal (the polynomial is right iff it vanishes on exactly the configurations
-  summing to the identity) and it is **exactly self-checking** — no PARI / `msolve` on the green
-  path.
-- `cargo check --workspace` must stay green — **no edge change**, so no cycle risk. The `F_p[x]`
-  resultant + multivariate type + `rho::semaev` are leaf additions.
-- **The existing rho / gnfs / shared KATs must stay green** after the Semaev code lands — E.J adds
-  new modules and changes no existing field / curve / resultant path, so the no-regression invariant
-  is structurally easy to hold; `cargo test --workspace` is the guard.
-- **No live oracle:** the green-path Semaev-correctness signal is the self-checking vanishing
-  relation. An optional `msolve` / PARI cross-check (e.g. cross-checking `S_m`'s factorisation or a
-  decomposition root) would follow the established `#[ignore = "PARI not installed; run manually when
-  available"]` pattern; never on the green path. E.J introduces **no new live oracle** (principle 3).
+  (lever 5): for E.K.1, the factor-base enumeration identities (every enumerated point is on the
+  curve via the frozen `is_on_curve`; the subgroup `ℓ` divides `n`; the C-EKRelation round-trip) for
+  C-EKRelation/C-IndexCalcStrategy; for E.K.2, **decomposition correctness** (a decomposition the
+  Semaev step returns actually sums to `Q` via the frozen `Curve` group law — checked directly, not
+  via an oracle) for C-PointDecomp; for E.K.3, **relation validity** (every collected relation's
+  factor-base points sum as recorded, and the system is over-determined) for C-RelationCollect; for
+  E.K.4, **kernel correctness** (the recovered kernel vector satisfies the relation matrix over
+  `Z/ℓℤ`) for C-EKLinAlg; for E.K.5, **the decisive signal — agreement with `rho::ecdlp`**
+  (`log_G(Q)` from index calculus equals the Pollard-rho answer on the same toy instance). This is
+  **exactly self-checking** — no msolve / PARI on the green path.
+- `cargo check --workspace` must stay green — **no edge change** (the `gnfs::dl::linalg` engine and
+  C1 are already `rho` dependencies), so no cycle risk. The `rho::index_calculus` module + the
+  relation→matrix adapter are leaf additions.
+- **The existing rho / gnfs / shared KATs must stay green** after the index-calculus code lands — E.K
+  adds new modules and changes no existing field / curve / Semaev / linalg path, so the no-regression
+  invariant is structurally easy to hold; `cargo test --workspace` is the guard.
+- **No live oracle:** the green-path correctness signal is the self-checking `rho::ecdlp` agreement.
+  An optional `msolve` cross-check on the point-decomposition Gröbner step (E.K.2) follows the
+  established `#[ignore]` pattern; never on the green path. E.K introduces **no new live oracle**
+  (principle 3) — the ROADMAP's "msolve as a dev-only oracle, parallel to CADO-NFS" is realised as
+  an `#[ignore]`-gated sidecar, exactly as PARI is.
 
 ---
 
@@ -227,331 +273,434 @@ dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type | A | Sonnet | C-Fp (frozen — `shared-field::Fp<L>` read; no amend); `shared-numfield::resultant`/`subresultant_gcd` (read — the `ℤ[x]` Sylvester-resultant idiom to mirror over `F_p`); `gf2m::Poly::resultant` (read — the field-resultant idiom) | `rho/src/semaev/mod.rs` (new: module skeleton + the toy `F_p`/curve fixture + `SemaevError`), `rho/src/semaev/poly.rs` (new: `F_p[x]` univariate resultant + the multivariate/symmetric-polynomial type `S_m` lives in), `rho/src/lib.rs` (add `pub mod semaev;`), `rho/tests/semaev_kat.rs` (new: `F_p[x]` resultant identities, multivariate-symmetric round-trip KATs) |
-| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | B | Sonnet | C-SemaevPoly (frozen E.J.1); `rho::curve::Curve`/`AffinePoint` (frozen, read — the group law the vanishing relation checks against); C-Fp (read) | `rho/src/semaev/base.rs` (new: `S_2 = X_1 − X_2`, the symmetric `S_3(X_1,X_2,X_3)`, the vanishing predicate), `rho/src/semaev/mod.rs` (add `pub mod base;`), `rho/tests/semaev_kat.rs` (extend: `S_2`/`S_3` vanish on points summing to `∞` via the frozen group law) |
-| E.J.3 ◆ `@architect` | Semaev resultant recursion `S_m = Res_X(S_{m-1}, S_3)` + sub-track close | B | Sonnet | C-SemaevBase (frozen E.J.2); C-SemaevPoly (frozen E.J.1, read — the resultant + multivariate type); `rho::curve::Curve` (read — vanishing at `S_4`) | `rho/src/semaev/recursion.rs` (new: `semaev_poly(m) → S_m` via the resultant ladder + `pub use`), `rho/src/semaev/mod.rs` (add `pub mod recursion;` + `pub use`), `rho/tests/semaev_kat.rs` (extend: recursion agrees with direct `S_4`, `S_4` vanishing, sub-track-close suite; optional `#[ignore]` `msolve`/PARI sidecar) |
+| E.K.1 ◆-start `@architect` | Index-calculus strategy + factor base + relation/matrix contract | A | **Opus** | C-Semaev (frozen E.J — `rho::semaev`, read); `rho::curve::Curve`/`AffinePoint` (frozen, read — `is_on_curve`/`scalar_mul`/`n`/generator); C-Fp (read); C1 `shared::numth::trial_smooth`/`SmoothWitness` (frozen, read) | `rho/src/index_calculus/mod.rs` (new: module skeleton + `IndexCalcError` enum + the toy fixture wiring `semaev_toy()` + the prime-order-subgroup `ℓ` choice), `rho/src/index_calculus/strategy.rs` (new: factor-base point enumeration + `m` + the `Relation` type C-EKRelation), `rho/src/lib.rs` (add `pub mod index_calculus;`), `rho/tests/index_calculus_kat.rs` (new: factor-base-on-curve, `ℓ | n`, C-EKRelation round-trip KATs) |
+| E.K.2 | Index-calculus point decomposition via Semaev | B | Sonnet | C-IndexCalcStrategy (frozen E.K.1); C-Semaev (frozen E.J — `semaev_poly`/`MultiPoly::partial_eval`/`elim_var_resultant`); `rho::curve::Curve` (read — sum-to-`Q` check) | `rho/src/index_calculus/decompose.rs` (new: `decompose(Q) → Option<Vec<FbPoint>>` via Semaev root-finding over the factor base), `rho/src/index_calculus/mod.rs` (add `pub mod decompose;`), `rho/tests/index_calculus_kat.rs` (extend: a returned decomposition sums to `Q` via the frozen group law; optional `#[ignore]` msolve cross-check) |
+| E.K.3 | Index-calculus relation collection | B | Sonnet | C-PointDecomp (frozen E.K.2); C-EKRelation (frozen E.K.1); `rho::curve::Curve`/`scalar_mul` (read — random `a·G + b·Q`) | `rho/src/index_calculus/collect.rs` (new: `collect_relations(g, q) → Vec<Relation>` loop), `rho/src/index_calculus/mod.rs` (add `pub mod collect;`), `rho/tests/index_calculus_kat.rs` (extend: every relation's points sum as recorded; the system is over-determined) |
+| E.K.4 | Index-calculus `Z/ℓℤ` linear algebra: relation→`FlSparseMatrix` adapter + solve | B | Sonnet | C-RelationCollect (frozen E.K.3); C-EKRelation (frozen E.K.1); `gnfs::dl::linalg::{FlSparseMatrix, block_lanczos_fl, block_wiedemann_fl, FlMatrixOperator}` (frozen G.E engine, read — reused over `Z/ℓℤ = F_ℓ`) | `rho/src/index_calculus/linalg.rs` (new: `build_ek_matrix(&[Relation]) → FlSparseMatrix` adapter + the `Z/ℓℤ` solve wrapper), `rho/src/index_calculus/mod.rs` (add `pub mod linalg;`), `rho/tests/index_calculus_kat.rs` (extend: the recovered kernel satisfies the relation matrix over `Z/ℓℤ`) |
+| E.K.5 ◆ `@architect` | Index-calculus DLP recovery + `rho::ecdlp` cross-check + sub-track close | I | Sonnet | C-EKLinAlg (frozen E.K.4); all prior C-EK contracts; `rho::ecdlp::solve_*` (frozen, read — the cross-check oracle); `rho::curve::Curve` (read) | `rho/src/index_calculus/solve.rs` (new: `index_calculus_dlp(g, q) → Option<log>` assembling the pipeline + `pub use`), `rho/src/index_calculus/mod.rs` (add `pub mod solve;` + `pub use`), `rho/tests/index_calculus_kat.rs` (extend: `log_G(Q)` agrees with `rho::ecdlp` on the toy instance; principle-4 annotation; sub-track-close suite; optional `#[ignore]` msolve sidecar) |
 
-**Sequencing notes.** Strictly serial: **E.J.1 → E.J.2 → E.J.3.** E.J.1 lands the polynomial
-substrate the construction stands on (the `F_p[x]` resultant + the multivariate-symmetric type);
-E.J.2 the `S_2`/`S_3` base cases + the vanishing relation; E.J.3 the resultant recursion and close.
-**One `@architect` marker** sits on the **E.J.3 ◆** (the boundary juncture ratifying the three frozen
-contracts and confirming the Semaev machinery is vanishing-verified and E.K-ready before the
-sub-track closes). *(Tradeoff named: E.J freezes two contracts before the ◆ — C-SemaevPoly (E.J.1),
-C-SemaevBase (E.J.2) — but pages NO inline juncture there, mirroring the E.G/E.H/E.I calls. The
-in-crate orthogonality (each later session consumes the earlier freeze immediately, where a wrong
-shape fails the next session's vanishing KAT loudly) plus the single primary downstream consumer
-(E.K, with its own Opus-flagged E.K.1) makes the early-catch insurance less valuable than a separate
-inline fork would cost. The ◆ juncture is held at Opus (juncture-tier — the user's lever-3 override
-on the representation E.K consumes), but separate inline forks are not bought.)*
+**Sequencing notes.** Strictly serial: **E.K.1 → E.K.2 → E.K.3 → E.K.4 → E.K.5.** E.K.1 lands the
+strategy + factor base + the relation contract the whole pipeline consumes; E.K.2 the Semaev point
+decomposition; E.K.3 the relation-collection loop; E.K.4 the `Z/ℓℤ` linear algebra; E.K.5 the DLP
+recovery + cross-check + close. **Two `@architect` markers:** the **E.K.1 ◆-start** (the ROADMAP's
+pre-scheduled Opus inflection — the strategy/relation-contract design, paged *before* dispatch as a
+juncture fork to ratify the C-EKRelation shape the three downstream sessions consume) and the **E.K.5
+◆** (the boundary juncture ratifying the five frozen contracts and confirming the index-calculus
+solver is rho-cross-checked and E.W-ready before the sub-track closes). *(Tradeoff named: E.K pages a
+juncture at BOTH the opening (E.K.1, unusual — most sub-tracks fork only at the ◆-close) and the close
+(E.K.5). The opening fork is bought because C-EKRelation is the index-calculus analogue of NFS's
+C-Relation — a wrong relation/matrix shape is a retrofit across decomposition, collection, AND linear
+algebra, and the ROADMAP's native Opus flag on E.K.1 signals exactly this cost-of-wrong. This mirrors
+the G.A.1 / D.A.1 / E.H.1 substrate-session Opus pattern, where the first session's contract is the
+expensive one.)*
 
-**Why 3 sessions (the top of the ROADMAP's 2–3-session band, confirmed by ceiling-bias).** The split
-is taken at three representation/contract-sharp seams:
-- **One-line-commit-title corollary.** "Semaev polynomial substrate (`F_p[x]` resultant +
-  multivariate type)", "Semaev base cases `S_2`/`S_3` + vanishing", and "Semaev resultant recursion
-  `S_m` + close" are **three distinct commit titles** across two categories (A substrate ×1, B
-  algorithm ×2).
-- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: the polynomial
-  substrate, the base cases, the recursion. The **substrate↔base seam** (E.J.1↔E.J.2) is the
-  deliberated split (see the shard-time decision below): the `F_p[x]` resultant + multivariate-
-  symmetric representation (the substrate) is contract-distinct from the `S_2`/`S_3` base cases that
-  populate it — freezing C-SemaevPoly at E.J.1 buys an early contract on the doubly-greenfield
-  polynomial machinery E.K consumes.
-- **Contract-sharp boundary.** E.J.1 **freezes** C-SemaevPoly; E.J.2 consumes it and **freezes**
-  C-SemaevBase; E.J.3 consumes both and **freezes** C-Semaev. Each later session is meaningless
-  without the earlier freeze — which is what licenses and bounds the 3-way split.
+**Why 5 sessions (the ROADMAP ceiling, confirmed by ceiling-bias).** The split is taken at five
+pipeline/contract-sharp seams:
+- **One-line-commit-title corollary.** "Index-calculus strategy + factor base + relation contract",
+  "point decomposition via Semaev", "relation collection", "`Z/ℓℤ` linear algebra adapter + solve",
+  and "DLP recovery + cross-check + close" are **five distinct commit titles** across three categories
+  (A substrate ×1, B algorithm ×3, I integrative ×1).
+- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit of the index-calculus
+  pipeline. None is fractured below its floor: the strategy/contract design is one unit (Opus); the
+  decomposition is one unit (the Semaev consumption); collection wraps decomposition in a loop; linear
+  algebra is the adapter+solve; recovery+cross-check is the assembly.
+- **Contract-sharp boundary.** E.K.1 **freezes** C-IndexCalcStrategy + C-EKRelation; E.K.2 consumes
+  the strategy and **freezes** C-PointDecomp; E.K.3 consumes both and **freezes** C-RelationCollect;
+  E.K.4 consumes collection + the relation contract and **freezes** C-EKLinAlg; E.K.5 consumes the
+  linalg and **freezes** C-IndexCalc. Each later session is meaningless without the earlier freeze.
 
-**The deliberated substrate↔base split (shard-time decision, user-adjudicated).** The substrate and
-the `S_2`/`S_3` base cases *could* be one session (set up the polynomial machinery and the low-order
-cases together, giving 2 sessions). The user chose **3: split at the substrate↔base seam**, matching
-the ROADMAP's upper estimate and the project's documented ceiling-bias (G/D both landed at or above
-their upper bands). The split buys an early contract freeze (C-SemaevPoly) on the doubly-greenfield
-polynomial machinery (the `F_p[x]` resultant AND the multivariate-symmetric type — the
-representation crux E.K depends on). **If E.J.1's substrate and E.J.2's base cases prove tightly
-coupled** (the base cases are a thin instantiation of the substrate with no clean seam), the split is
-artificial and **E.J.1/E.J.2 should re-merge** — a judgment E.J.1 can surface once the
-representation shape is concrete (an additive-reshard discovery, not a silent merge). This is the one
-place the 3-vs-2 sizing is genuinely uncertain until the substrate lands.
+**The softest seam — decomposition↔collection (E.K.2↔E.K.3), the one place the 5-vs-4 sizing is
+genuinely uncertain (shard-time decision, user-adjudicated).** Relation collection (E.K.3) is largely
+a *loop around* point decomposition (E.K.2): generate a random `a·G + b·Q`, decompose it, record the
+relation, repeat. The two *could* be one "relation generation" session (giving 4 sessions). The user
+chose **5: split at the decomposition↔collection seam**, matching the ROADMAP's ceiling and the
+project's documented ceiling-bias (G/D both landed at or above their upper bands). The split buys an
+early C-PointDecomp freeze (the Semaev-consumption interface) and keeps the relation-generation
+session under the LOC band. **If E.K.2's decomposition and E.K.3's collection prove tightly coupled**
+(collection is a thin loop with no genuine reusable decomposition seam), the split is artificial and
+**E.K.2/E.K.3 should re-merge** — a judgment E.K.2 can surface once the decomposition interface is
+concrete (an additive-reshard discovery, not a silent merge). This is the one place the 5-vs-4 sizing
+is genuinely uncertain until decomposition lands.
 
 ---
 
 ## Session detail
 
-E.J.1 and E.J.2 are specified at near-full fidelity (the polynomial substrate and the base cases are
-the design crux the whole construction — and downstream E.K — stand on). E.J.3 is a lower-fidelity
-sketch, correct per the substrate-first discipline: it is crisply specified only after C-SemaevPoly
-and C-SemaevBase freeze.
+E.K.1 and E.K.2 are specified at near-full fidelity (the strategy/relation-contract and the Semaev
+decomposition are the design crux the whole pipeline — and downstream E.W — stand on). E.K.3–E.K.5
+are lower-fidelity sketches, correct per the substrate-first discipline: they are crisply specified
+only after C-EKRelation and C-PointDecomp freeze.
 
-### E.J.1 — Semaev polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type (Sonnet, Cat A)
+### E.K.1 ◆-start — Index-calculus strategy + factor base + relation/matrix contract (Opus, Cat A)
 
-**Deliverable:** the polynomial substrate the Semaev construction stands on — **doubly greenfield**
-(the survey confirmed: no `F_p[x]` univariate resultant exists — only `ℤ[x]` in `shared-numfield`
-and `GF(2^m)` in `gf2m`; and no multivariate polynomial type exists anywhere). The pieces:
-- **The `F_p[x]` univariate resultant** (`rho/src/semaev/poly.rs`): `Res(f, g) ∈ F_p` for `f, g ∈
-  F_p[x]`, via the Euclidean/subresultant remainder sequence (mirroring the `gf2m::Poly::resultant`
-  field-resultant idiom and the `shared-numfield` `ℤ[x]` Sylvester idiom). Zero iff `gcd(f,g) ≠ 1`.
-- **The multivariate/symmetric-polynomial type** (`rho/src/semaev/poly.rs`): the representation `S_m`
-  lives in — a multivariate polynomial over `F_p`, *symmetric* in its arguments (Semaev polynomials
-  are symmetric). **The representation choice is the design crux** (dense multivariate vs
-  elementary-symmetric-basis vs a hybrid). Over-specify (substrate rule): carry the operations E.K's
-  point-decomposition step will need (evaluation at a partial assignment, the resultant-elimination
-  one variable at a time, symmetric-reduction) if confidence is reasonable — adding them later is
-  costlier.
-- **The module skeleton + fixture** (`rho/src/semaev/mod.rs`): a `SemaevError` enum (the established
-  reduction-attack idiom — cf. `rho::ssa::SsaError`, `rho::ghs::GhsError`), the toy `F_p` + Weierstrass
-  curve fixture (a small prime `p`, a curve `y² = x³ + ax + b` with known small-order points).
-- **Confirm-and-record (the load-bearing E.J.1 acts):** (a) **the symmetric representation** — record
-  the chosen multivariate-symmetric representation and why (the property the vanishing relation and
-  the resultant recursion exploit); (b) **the F_p fixture** — choose a toy `p` and curve with enough
-  small points to exhibit `S_3`/`S_4` vanishing non-vacuously (`Uint<4>` ceiling — a principle-4
-  boundary, annotated); (c) **the module home** — `rho::semaev` for the construction; the `F_p[x]`
-  resultant + multivariate type live with it unless judged field-substrate-shaped enough for a
-  `shared` module (a placement call ratified at the ◆, no edge consequence either way).
+**Deliverable:** the strategy substrate the index-calculus solver stands on — the ROADMAP's Opus
+session. The pieces:
+- **The prime-order subgroup `ℓ`** (`rho/src/index_calculus/mod.rs`): the toy fixture's group order
+  `n = 60 = 2²·3·5` is composite; the linear algebra runs over `Z/ℓℤ` for a prime `ℓ | n` (so the
+  matrix is over a field `F_ℓ`). Fix `ℓ` (the largest convenient prime factor, e.g. `ℓ = 5`) and the
+  generator's `ℓ`-order subgroup. *(This is the index-calculus analogue of NFS-DL working mod `ℓ`.)*
+- **Factor-base point enumeration** (`rho/src/index_calculus/strategy.rs`): greenfield (no
+  `points_on_curve()` exists). Enumerate `{(x, y) : y² = x³ + ax + b, x ∈ small set}` — for each `x`,
+  test whether `x³ + ax + b` is a QR mod `p` and lift `y`; the factor base is a chosen subset (the
+  small-x-coordinate points). Each point gets a factor-base index.
+- **The relation/matrix contract C-EKRelation** (`rho/src/index_calculus/strategy.rs`): the `Relation`
+  type — an exponent vector over `Z/ℓℤ` indexed by factor-base points, plus the `(a, b)` recording
+  the multiple `a·G + b·Q` it came from. **The design crux** (the index-calculus analogue of NFS's
+  C-Relation): the representation consumed by decomposition (which produces relations), collection
+  (which accumulates them), and linear algebra (which builds the matrix from them). **Over-specify
+  (substrate rule):** carry the fields E.K.4's `FlSparseMatrix` adapter and E.K.5's recovery need
+  (the factor-base index map, the `(a, b)` provenance, the `Z/ℓℤ` exponents) if confidence is
+  reasonable — adding them later is costlier.
+- **The module skeleton + fixture** (`rho/src/index_calculus/mod.rs`): an `IndexCalcError` enum (the
+  established attack-module idiom — cf. `rho::ssa::SsaError`, `rho::ghs::GhsError`,
+  `rho::semaev::SemaevError`), the toy fixture wiring `semaev_toy()` (`F_47`, `n = 60`, `G = (10, 3)`)
+  + the chosen `ℓ` + factor base.
+- **Confirm-and-record (the load-bearing E.K.1 acts):** (a) **the prime-order subgroup `ℓ`** — record
+  the chosen `ℓ | n` and why (the matrix-over-a-field precondition); (b) **the factor base + arity
+  `m`** — record the factor-base shape and the decomposition arity (how many factor-base points a
+  decomposition targets); (c) **the C-EKRelation representation** — record the relation type and why
+  (the property decomposition/collection/linalg exploit); (d) **the `gnfs::dl::linalg` reuse decision**
+  — record that E.K.4 reuses the `Fp<L>`-generic engine with an E.K adapter (the survey finding),
+  ratified here so E.K.4 is not surprised.
 
-Consumes C-Fp (frozen — `shared-field::Fp<L>` read; **no amend**), `shared-numfield::resultant` /
-`subresultant_gcd` (read — the `ℤ[x]` idiom to mirror over `F_p`), `gf2m::Poly::resultant` (read —
-the field-resultant idiom). **Freezes C-SemaevPoly.**
+Consumes C-Semaev (frozen E.J — `rho::semaev`, read), `rho::curve::Curve`/`AffinePoint` (frozen, read
+— `is_on_curve`/`scalar_mul`/`n`/generator), C-Fp (read), C1 `shared::numth::trial_smooth`/
+`SmoothWitness` (frozen, read — though E.K's "smoothness" is *decomposes-over-the-factor-base*, not
+integer smoothness; whether C1 is genuinely consumed or merely structurally analogous is an E.K.1
+finding). **Freezes C-IndexCalcStrategy, C-EKRelation.**
 
-**KAT** (`rho/tests/semaev_kat.rs` + inline unit tests): over the toy `F_p` fixture: **resultant
-zero-iff-common-factor** (`Res(f,g) = 0 ⟺ gcd(f,g) ≠ 1`); **resultant symmetry** (`Res(f,g) =
-±Res(g,f)`); **resultant of coprime quadratics is nonzero**; **multivariate-symmetric round-trip**
-(a symmetric polynomial round-trips through the representation; evaluation at a permutation of its
-arguments is invariant). **Verify gate:** `cargo test --workspace` green; `cargo check --workspace`
-green (leaf additions, no edge change); existing rho/gnfs/shared KATs unchanged.
+**KAT** (`rho/tests/index_calculus_kat.rs` + inline unit tests): over the toy fixture: **factor-base
+on-curve** (every enumerated factor-base point satisfies `is_on_curve` via the frozen `Curve`);
+**subgroup validity** (`ℓ | n`; the generator's `ℓ`-multiple is the identity); **C-EKRelation
+round-trip** (a relation's exponent vector reconstructs the recorded factor-base-point sum). **Verify
+gate:** `cargo test --workspace` green; `cargo check --workspace` green (leaf additions, no edge
+change); existing rho/gnfs/shared KATs unchanged.
 
-**Subtlety (load-bearing):** (1) **The `F_p[x]` resultant is distinct from the `ℤ[x]` and `GF(2^m)`
-ones** — a `@build` agent reaching for `shared-numfield::resultant` gets a `ℤ[x]` Sylvester-matrix
-resultant (wrong ring); the construction needs the *field* resultant over `F_p` (the
-`gf2m::Poly::resultant` field idiom, ported to `F_p`). (2) **The symmetric representation is the
-crux** — `S_m` is symmetric, and the resultant recursion (E.J.3) eliminates one variable at a time;
-a representation that does not make symmetric-reduction and partial-evaluation cheap fights the
-recursion. (3) **Over-specify the substrate** — carry the partial-evaluation and one-variable-
-elimination operations E.K needs (the point-decomposition step assigns factor-base x-coordinates and
-asks for roots). (4) **Module placement** — `rho::semaev` for the construction; the resultant +
-multivariate type live with it unless field-substrate-shaped (the principled home, ratified at the
-◆). (5) **`Uint<4>` ceiling** — the source curve is hardcoded `Uint<4>` (the C1 ceiling the ROADMAP
-flags for E.K); E.J's toy `p` fits it; if E.K later needs a wider field, that is the C1-widening
-discovery, not E.J's concern.
+**Subtlety (load-bearing):** (1) **The prime-order subgroup is the linear-algebra precondition** — a
+`@build` agent that builds the relation system over `Z/nℤ` (composite `n`) gets a matrix over a ring,
+not a field, and the block-Lanczos engine fails; the subgroup `ℓ` is non-negotiable. (2) **C-EKRelation
+is the expensive contract** — wrong shape retrofits decomposition + collection + linalg; over-specify
+(carry the factor-base index map + `(a, b)` provenance + `Z/ℓℤ` exponents). (3) **The `gnfs::dl::linalg`
+reuse is partial** — the engine (`FlSparseMatrix`, `block_lanczos_fl`) is reusable; the construction
+(`build_fl_matrix` from `DLMatrix`) is not; E.K.4 writes its own adapter. Record this here so E.K.4
+plans for the adapter, not a duplicate solver. (4) **"Smoothness" is decomposes-over-the-factor-base,
+not integer smoothness** — C1 `trial_smooth` is the *structural analogue* (the ROADMAP's "semantically
+different but structurally similar"); whether E.K literally calls `trial_smooth` or just mirrors the
+`SmoothWitness`-shaped relation idiom is an E.K.1 call. (5) **Mechanism, not asymptotic win** — record
+the principle-4 boundary up front: E.K-over-`F_p` is the index-calculus *mechanism*; the asymptotic
+win needs the deferred `F_{p^n}` re-shard.
 
-**Deferred:** the base cases (E.J.2); the recursion (E.J.3); the index-calculus solver (E.K); the
-MATHEMATICS chapter (T.E at the Track-E ◆).
+**Deferred:** the decomposition (E.K.2); collection (E.K.3); linear algebra (E.K.4); recovery (E.K.5);
+the `F_{p^n}` Semaev lift + GHS coupling (deferred re-shards); the MATHEMATICS chapter (T.E at the
+Track-E ◆).
 
-### E.J.2 — Semaev base cases `S_2`, `S_3` + the vanishing relation (Sonnet, Cat B)
+**`@architect` ◆-start fork (pre-dispatch, Opus, one-shot).** Page a `@plan-juncture` fork *before*
+E.K.1 is dispatched (the ROADMAP's pre-scheduled Opus inflection) to ratify: (1) the C-EKRelation
+shape (the exponent-vector-over-`Z/ℓℤ` representation) is the right interface for the three downstream
+consumers; (2) the factor base + `ℓ` + arity `m` strategy is sound for the toy fixture (the factor
+base is large enough to over-determine, small enough to decompose); (3) the `gnfs::dl::linalg` reuse
+plan (engine reused, adapter written) is confirmed so E.K.4 is not surprised; (4) the principle-4
+boundary (mechanism, not asymptotic win) is recorded. One-shot findings; does not implement. Held at
+**Opus** per the header.
 
-**Deliverable:** the explicit low-order summation polynomials and the vanishing relation that makes
-them correct. Near-full fidelity (the base cases anchor the recursion). The pieces:
-- **`S_2`** (`rho/src/semaev/base.rs`): `S_2(X_1, X_2) = X_1 − X_2` — two points `P_1, P_2` sum to
-  `∞` iff `P_2 = −P_1`, which for the x-coordinates means `x_1 = x_2` (the negation `−(x,y) = (x,−y)`
-  fixes `x`). The degenerate but foundational base case.
-- **`S_3`** (`rho/src/semaev/base.rs`): the symmetric `S_3(X_1, X_2, X_3)` that vanishes when three
-  points `P_1 + P_2 + P_3 = ∞`. This is the genuine first summation polynomial — derived from the
-  curve's group law (the collinearity / addition relation), symmetric in `X_1, X_2, X_3`, of degree
-  2 in each. The seed the resultant recursion (E.J.3) builds all higher `S_m` from.
-- **The vanishing predicate** (`rho/src/semaev/base.rs`): given `m` points on the frozen `Curve`,
-  compute `Σ P_i` via the group law and assert `S_m(x_1, …, x_m) = 0 ⟺ Σ P_i = ∞`.
+### E.K.2 — Index-calculus point decomposition via Semaev (Sonnet, Cat B)
 
-Consumes C-SemaevPoly (frozen E.J.1), `rho::curve::Curve` / `AffinePoint` (frozen, read — the group
-law the vanishing relation checks against), C-Fp (read). **Freezes C-SemaevBase.**
+**Deliverable:** the point-decomposition step — the heart of index calculus and the consumer the
+Semaev primitive was built for. Near-full fidelity. The pieces:
+- **`decompose(Q)`** (`rho/src/index_calculus/decompose.rs`): given a point `Q`, find a sum of `m`
+  factor-base points equal to `Q` (equivalently, `Q − P_{i_1} − ⋯ − P_{i_m} = ∞`) by finding roots of
+  the Semaev polynomial. Specialise `semaev_poly(m+1)` at `Q`'s x-coordinate (partial-evaluate one
+  argument), then find roots with all remaining coordinates in the factor base via the frozen
+  `MultiPoly::partial_eval` + `elim_var_resultant` (native root-finding / resultant-elimination over
+  the factor-base x-coordinates — no live oracle on the green path). Returns `Option<Vec<FbPoint>>`
+  (the decomposition, or `None` if `Q` does not decompose).
+- **The green-path engine is native, the msolve sidecar is `#[ignore]`** — at toy scale (small `m`,
+  small factor base) the decomposition is found by enumerating factor-base x-coordinate assignments
+  and checking the Semaev vanishing via the frozen `elim_var_resultant`; an optional msolve cross-check
+  (`#[ignore = "msolve not installed; run manually when available"]`) realises the ROADMAP's
+  "Gröbner-basis step delegates to msolve as a dev-only oracle" without a green-path dependency.
 
-**KAT** (`rho/tests/semaev_kat.rs`, extended): over the toy `F_p` curve fixture: **`S_2` vanishing**
-(`S_2(x_1, x_2) = 0 ⟺ P_2 = −P_1`); **`S_3` vanishing** (`S_3(x_1, x_2, x_3) = 0` for triples with
-`P_1 + P_2 + P_3 = ∞`, computed via the frozen group law; nonzero for triples that do not sum to
-`∞`); **`S_3` symmetry** (invariant under permuting its three arguments); **`S_3` degree** (degree 2
-in each variable). **Verify gate:** `cargo test --workspace` green.
+Consumes C-IndexCalcStrategy (frozen E.K.1), C-Semaev (frozen E.J — `semaev_poly`/`partial_eval`/
+`elim_var_resultant`), `rho::curve::Curve` (read — the sum-to-`Q` check). **Freezes C-PointDecomp.**
 
-**Subtlety (load-bearing):** (1) **The vanishing relation is the correctness signal** — `S_m` is
-correct iff it vanishes on *exactly* the x-coordinate tuples of points summing to `∞`; the vanishing
-KAT (checked against the frozen `Curve` group law) is the decisive guard and it is **exactly
-self-checking** (no oracle — the lever-5 strength). (2) **`S_3` is derived from the group law, not
-guessed** — the symmetric `S_3` encodes the curve's addition/collinearity relation; a `@build` agent
-must derive it from `y² = x³ + ax + b` and the group law, not transcribe a formula for the wrong
-curve form. (3) **Symmetry is load-bearing** — `S_3` (and all `S_m`) are symmetric; a non-symmetric
-construction breaks the recursion. (4) **The substrate↔base seam check** — if the base cases are a
-thin instantiation of the C-SemaevPoly substrate (no genuine seam), this is the loud signal to
-surface the E.J.1/E.J.2 merge.
+**KAT** (`rho/tests/index_calculus_kat.rs`, extended): over the toy fixture: **decomposition
+correctness** (a decomposition `decompose(Q)` returns actually sums to `Q` via the frozen `Curve`
+group law — checked directly); **decomposition completeness** (a point known to decompose is found;
+a point with no factor-base decomposition returns `None`); optional **msolve cross-check** (the
+Gröbner root set agrees, `#[ignore]`-gated). **Verify gate:** `cargo test --workspace` green.
 
-**Deferred:** the recursion (E.J.3); the index-calculus solver (E.K); the MATHEMATICS chapter (T.E).
+**Subtlety (load-bearing):** (1) **This is the Semaev-consumption step** — the frozen `MultiPoly`
+operations (`partial_eval` to specialise at `Q`'s x-coordinate, `elim_var_resultant` to eliminate
+variables one at a time) are exactly what E.J.1 over-specified for this consumer; a `@build` agent
+re-deriving Semaev evaluation instead of consuming the frozen surface is rigidity. (2) **The
+correctness signal is sum-to-`Q` via the group law** — a returned decomposition is correct iff its
+factor-base points sum to `Q` (the frozen group law) — exactly self-checking, no oracle. (3) **Native
+green path, msolve sidecar** — the green path must not depend on msolve (principle 3); native
+enumeration is the toy-scale engine (the principle-4 boundary: native enumeration does not scale past
+toy `m`, annotated). (4) **The decomposition↔collection seam check** — if collection (E.K.3) is a
+thin loop with no genuine reusable decomposition interface, this is the loud signal to surface the
+E.K.2/E.K.3 merge.
 
-### E.J.3 ◆ — Semaev resultant recursion `S_m = Res_X(S_{m-1}, S_3)` + sub-track close (Sonnet, Cat B, `@architect`)
+**Deferred:** collection (E.K.3); linear algebra (E.K.4); recovery (E.K.5); the deferred re-shards;
+the MATHEMATICS chapter (T.E).
 
-**Deliverable:** the resultant recursion that builds the higher summation polynomials, and the
-sub-track close. Lower-fidelity sketch (crisp after C-SemaevBase freezes):
-- **The recursion** (`rho/src/semaev/recursion.rs`): `semaev_poly(m) → S_m` via the elimination
-  ladder `S_m(X_1, …, X_m) = Res_X(S_{m-1}(X_1, …, X_{m-2}, X), S_3(X_{m-1}, X_m, X))` — eliminate a
-  shared variable `X` between `S_{m-1}` and `S_3` using the frozen C-SemaevPoly `F_p[x]` resultant.
-  Builds `S_4` (and `S_5` if cheap) from `S_3`.
-- **Recursion correctness** (`rho/src/semaev/recursion.rs` + KAT): `S_4` built by the recursion
-  agrees with the direct construction (the vanishing relation holds for `S_4`); the recursion
-  preserves symmetry and the expected degree growth.
-- **Sub-track-close KAT suite** (`rho/tests/semaev_kat.rs`, extended): `S_4` vanishing, recursion-vs-
-  direct agreement, and (optional) an `msolve`/PARI cross-check on a Semaev-root decomposition,
-  `#[ignore]`-gated.
+### E.K.3 — Index-calculus relation collection (Sonnet, Cat B)
 
-Consumes C-SemaevBase (frozen E.J.2), C-SemaevPoly (frozen E.J.1, read — the `F_p[x]` resultant +
-multivariate type), `rho::curve::Curve` (read — vanishing at `S_4`). **Freezes C-Semaev.**
+**Deliverable:** the relation-collection loop. Lower-fidelity sketch (crisp after C-PointDecomp
+freezes):
+- **`collect_relations(g, q)`** (`rho/src/index_calculus/collect.rs`): repeatedly generate a random
+  multiple `R = a·G + b·Q` (via the frozen `Curve::scalar_mul`), call `decompose(R)`, and on success
+  record a C-EKRelation row (the `(a, b)` provenance + the factor-base exponent vector). Loop until
+  the system is over-determined (≥ factor-base-size + 1 relations).
+- **Over-determination + de-duplication** — collect slightly more relations than factor-base points
+  so the kernel is found; drop duplicate/dependent relations if cheap.
 
-**KAT (primary correctness signal):** over the toy `F_p` curve fixture: **recursion correctness**
-(`S_4 = Res_X(S_3, S_3)` agrees with the direct construction); **`S_4` vanishing**
-(`S_4(x_1, …, x_4) = 0 ⟺ P_1 + P_2 + P_3 + P_4 = ∞`, via the frozen group law — the decisive Semaev-
-correctness signal); **symmetry preservation** (`S_4` is symmetric); **degree growth** (`S_4` has
-the expected degree from `m`). Optional `msolve`/PARI cross-check (`#[ignore = "PARI not installed;
-run manually when available"]`). **Verify gate:** `cargo test --workspace` green; existing
-rho/gnfs/shared KATs unchanged.
+Consumes C-PointDecomp (frozen E.K.2), C-EKRelation (frozen E.K.1), `rho::curve::Curve`/`scalar_mul`
+(read). **Freezes C-RelationCollect.**
 
-**Subtlety (load-bearing):** (1) **Semaev-only — NO index-calculus solver here** — E.J builds `S_m`
-and verifies the vanishing relation; it does NOT run relation collection / a factor base / linear
-algebra over `Z/nZ` / the Gröbner/`msolve` step (that is E.K, the central scope boundary). A
-`@build` agent implementing point decomposition over a factor base is defocus. (2) **The vanishing
-relation is the correctness signal** — `S_m` is correct iff it vanishes on exactly the configurations
-summing to `∞`; the vanishing KAT (known points, computed sum) is the green-path guard, the
-`msolve`/PARI cross-check the optional sidecar. (3) **This is the E.J ◆ boundary** — re-read the
-Purpose intent and verify the Semaev machinery is complete (substrate + base cases + recursion all
-present and vanishing-verified) and **E.K-ready** (C-Semaev exposes what E.K's index calculus
-consumes — `semaev_poly(m)`, partial evaluation / one-variable elimination for the point-
-decomposition step), and that E.J stayed solver-free / GHS-free / chapter-free. (4) **No index
-calculus and no GHS coupling** — E.K runs the index calculus and couples to the descended curve; E.J
-builds the F_p Semaev primitive. (5) **No MATHEMATICS chapter** — the Semaev textbook content is
-T.E, paired with E.W at the *Track-E* ◆; E.J.3 writes at most a PEDAGOGY code-tour delta.
+**KAT** (`rho/tests/index_calculus_kat.rs`, extended): over the toy fixture: **relation validity**
+(every collected relation's factor-base points sum to `a·G + b·Q` via the frozen group law);
+**over-determination** (the collected system has more relations than factor-base points). **Verify
+gate:** `cargo test --workspace` green.
+
+**Subtlety (load-bearing):** (1) **The seam check** — if collection is a thin loop around
+`decompose`, surface the E.K.2/E.K.3 merge (additive-reshard). (2) **Over-determination is required**
+— too few relations and the kernel is trivial / the log is not recoverable; the loop must collect
+enough. (3) **The provenance `(a, b)` is load-bearing** — the recovered log depends on the `a·G + b·Q`
+each relation records; a relation missing its provenance is useless for recovery.
+
+**Deferred:** linear algebra (E.K.4); recovery (E.K.5); the deferred re-shards; the chapter (T.E).
+
+### E.K.4 — Index-calculus `Z/ℓℤ` linear algebra: relation→`FlSparseMatrix` adapter + solve (Sonnet, Cat B)
+
+**Deliverable:** the linear-algebra step — the **partial-reuse** of the frozen G.E engine (the
+load-bearing survey finding). Lower-fidelity sketch (crisp after C-RelationCollect freezes):
+- **The adapter** (`rho/src/index_calculus/linalg.rs`): `build_ek_matrix(&[Relation]) → FlSparseMatrix`
+  — the E.K analogue of `gnfs::dl::linalg::build_fl_matrix`, but from C-EKRelation rows (not
+  `DLMatrix`). Each relation becomes a sparse row; the matrix is over `Z/ℓℤ = F_ℓ`.
+- **The solve** (`rho/src/index_calculus/linalg.rs`): call the frozen `block_lanczos_fl` (or
+  `block_wiedemann_fl`) on the `FlMatrixOperator` view of the adapter's matrix to find the kernel /
+  the virtual logs over `Z/ℓℤ`. **Reuses the frozen engine; writes no new solver.**
+
+Consumes C-RelationCollect (frozen E.K.3), C-EKRelation (frozen E.K.1), `gnfs::dl::linalg::
+{FlSparseMatrix, block_lanczos_fl, block_wiedemann_fl, FlMatrixOperator}` (frozen G.E engine, read).
+**Freezes C-EKLinAlg.**
+
+**KAT** (`rho/tests/index_calculus_kat.rs`, extended): over the toy fixture: **kernel correctness**
+(the recovered kernel vector satisfies `M·v = 0` over `Z/ℓℤ` for the relation matrix `M`); **adapter
+fidelity** (`build_ek_matrix` produces a matrix whose row `i` matches relation `i`'s exponent vector).
+**Verify gate:** `cargo test --workspace` green.
+
+**Subtlety (load-bearing):** (1) **Reuse the engine, write the adapter** — `block_lanczos_fl` is
+`Fp<L>`-generic and reusable; only the `DLMatrix`-bound construction is not. A `@build` agent writing
+a fresh block-Lanczos solver is defocus (the engine exists). (2) **`Z/ℓℤ = F_ℓ` makes the engine fit**
+— the prime-order subgroup is what licenses reusing the `F_ℓ` solver; if E.K.1 chose `ℓ` composite by
+mistake, this session fails loudly. (3) **The read-coupling into `gnfs::dl`** — E.K reads `gnfs::dl::
+linalg` internals (the F_ℓ solver designed for NFS-DL); if the surface proves ill-fit for the
+prime-order-subgroup case, this session grows — surfaced as a discovery, not silently absorbed.
+
+**Deferred:** recovery (E.K.5); the deferred re-shards; the chapter (T.E).
+
+### E.K.5 ◆ — Index-calculus DLP recovery + `rho::ecdlp` cross-check + sub-track close (Sonnet, Cat I)
+
+**Deliverable:** the pipeline assembly + the decisive cross-check + the sub-track close.
+Lower-fidelity sketch (crisp after C-EKLinAlg freezes):
+- **`index_calculus_dlp(g, q)`** (`rho/src/index_calculus/solve.rs`): assemble the pipeline —
+  enumerate the factor base (E.K.1), collect relations (E.K.3 via E.K.2), solve the `Z/ℓℤ` system
+  (E.K.4), and recover `log_G(Q)` from the kernel + the relation provenance (the standard
+  index-calculus recovery: a kernel relation `Σ e_i·log(P_i) ≡ 0` combined with a relation involving
+  `Q` yields `log_G(Q)` mod `ℓ`). Returns `Option<log>`.
+- **The decisive cross-check + close KAT** (`rho/tests/index_calculus_kat.rs`, extended):
+  `index_calculus_dlp(G, Q)` agrees with `rho::ecdlp::solve_*` on the same toy instance — the
+  green-path correctness signal; the principle-4 annotation (mechanism-correct, asymptotic win not
+  observable); the sub-track-close suite; an optional `#[ignore]` msolve sidecar.
+
+Consumes C-EKLinAlg (frozen E.K.4), all prior C-EK contracts, `rho::ecdlp::solve_*` (frozen, read —
+the cross-check oracle), `rho::curve::Curve` (read). **Freezes C-IndexCalc.**
+
+**KAT (primary correctness signal):** over the toy fixture: **`rho::ecdlp` agreement** (the index-
+calculus `log_G(Q)` equals the Pollard-rho answer — the decisive signal, exactly self-checking);
+**recovery soundness** (`log_G(Q)·G = Q` via the frozen `scalar_mul`); **end-to-end** (the full
+pipeline solves a non-trivial toy ECDLP). Optional msolve cross-check (`#[ignore]`). **Verify gate:**
+`cargo test --workspace` green; existing rho/gnfs/shared KATs unchanged.
+
+**Subtlety (load-bearing):** (1) **`rho::ecdlp` agreement is the correctness signal** — the recovered
+log is correct iff it matches the independent Pollard-rho solver on the same instance; this is the
+green-path guard (exactly self-checking, no oracle — the lever-5 strength). (2) **This is the E.K ◆
+boundary** — re-read the Purpose intent and verify the solver is complete (factor base → decomposition
+→ collection → linalg → recovery all present and rho-cross-checked) and **E.W-ready** (C-IndexCalc
+exposes what the cross-attack benchmark consumes — `index_calculus_dlp` + the relation/decomposition
+counts for the benchmark table), and that E.K stayed Semaev-extension-free / GHS-free / chapter-free.
+(3) **Mechanism, not asymptotic win** — the principle-4 annotation must record that E.K-over-`F_p` is
+the index-calculus *mechanism* (the asymptotic win needs the deferred `F_{p^n}` re-shard), never
+presented as faster-than-rho. (4) **No Semaev extension, no GHS coupling** — the `F_{p^n}` lift and
+the descended-Jacobian coupling are deferred re-shards, not E.K. (5) **No MATHEMATICS chapter** — the
+index-calculus textbook content is T.E, paired with E.W at the *Track-E* ◆; E.K.5 writes at most a
+PEDAGOGY code-tour delta.
 
 **`@architect` confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the
-E.J.3 ◆ to confirm: (1) the Semaev machinery is complete and composes (substrate → base cases →
-recursion all present and vanishing-verified — the `F_p[x]` resultant identities, the `S_2`/`S_3`/`S_4`
-vanishing relations, and the recursion-vs-direct agreement all pass); (2) C-Semaev exposes what E.K
-descends into (`semaev_poly(m)`, the partial-evaluation / one-variable-elimination operations the
-point-decomposition step uses) so E.K can build the index-calculus solver without amending the
-Semaev surface — the substrate-readiness defense; (3) E.J stayed in scope — no index-calculus solver
-(E.K), no GHS coupling, no MATHEMATICS chapter (T.E), the Semaev polynomials are a primitive verified
-by the vanishing relation, not a solve; (4) the principle-4 boundary (toy `F_p`, small `m`, the
-`Uint<4>` ceiling; Semaev is crypto-scale-correct) is recorded, not silently presented as
-crypto-scale; (5) **the representation / fixture / substrate-base-seam resolutions** — confirm the
-chosen multivariate-symmetric representation, the toy `F_p` fixture exhibited non-vacuous `S_3`/`S_4`
-vanishing, and the E.J.1/E.J.2 split held (or was merged via surfaced additive-reshard). **Also:
-reconcile the outstanding static-frame ROADMAP debt** carried + compounded from the E.I and E.H ◆ —
-(a) the Progress table is stale by **four** completed sub-tracks (E.F, E.G, E.H, E.I; table still
-shows "Done ~13 (E.A–E.E)"); (b) the Remaining table lists the now-complete E.F/E.G/E.H/E.I; (c) the
-**E.I-before-E.H sequencing correction** (the Remaining table listed E.H before E.I — dependency-
-inverted; E.I shipped first, E.H followed it, both now done) should be recorded; and (d) **strike
-E.J** from Remaining on completion. *(Per the E.H ◆ digest, this debt was owed but not yet written
-into the ROADMAP — E.H closed without reconciling it; the E.J ◆ inherits it.)* One-shot findings;
-does not implement. Held at **Opus** per the header (juncture-tier — the user's lever-3 override on
-the representation E.K consumes, despite the strong lever-5 self-checking signal).
+E.K.5 ◆ to confirm: (1) the index-calculus solver is complete and composes (factor base →
+decomposition → collection → linalg → recovery all present and rho-cross-checked — the factor-base
+on-curve, decomposition sum-to-`Q`, relation validity, kernel correctness, and `rho::ecdlp` agreement
+all pass); (2) C-IndexCalc exposes what E.W's cross-attack benchmark consumes (`index_calculus_dlp` +
+the per-run decomposition/relation counts for the "which attack wins on which curve" table) so E.W can
+build the benchmark without amending the solver surface; (3) E.K stayed in scope — no `F_{p^n}` Semaev
+lift, no GHS coupling, no MATHEMATICS chapter (T.E), the index calculus is a mechanism cross-checked
+against rho, not an asymptotic-win demonstration; (4) the principle-4 boundary (mechanism-correct,
+asymptotic win NOT observable, toy `F_p`/`m`/`ℓ`) is recorded, not silently presented as the
+index-calculus speed-up; (5) **the strategy / factor-base / `gnfs::dl::linalg`-reuse resolutions** —
+confirm the chosen `ℓ`, factor base, arity `m`, the C-EKRelation shape held across all four consumers,
+and the linalg-engine reuse worked (or the adapter grew, surfaced). **Also: surface the outstanding
+static-frame ROADMAP debt** carried + compounded from the E.I, E.H, and E.J ◆ (see the Discoveries &
+risks entry) — though the ROADMAP write itself is out of `@architect` PLAN-write scope (a capture
+candidate, not a PLAN edit). One-shot findings; does not implement. Held at **Opus** per the header.
 
 ---
 
 ## Cross-session contracts
 
-E.J **freezes three** contracts (C-SemaevPoly at E.J.1, C-SemaevBase at E.J.2, C-Semaev at E.J.3)
-and **amends no prior frozen contract** (C-Fp / `rho::curve::Curve` / `AffinePoint` / the `ℤ[x]` and
-`GF(2^m)` resultants / the GHS / hyperelliptic / binary-curve surfaces are all consumed-or-untouched).
-E.J adds the `F_p[x]` resultant + the multivariate-symmetric type + the `rho::semaev` module — all
-**additive**, no trait amendment.
+E.K **freezes six** contracts (C-IndexCalcStrategy + C-EKRelation at E.K.1, C-PointDecomp at E.K.2,
+C-RelationCollect at E.K.3, C-EKLinAlg at E.K.4, C-IndexCalc at E.K.5) and **amends no prior frozen
+contract** (C-Semaev / `rho::curve::Curve` / `AffinePoint` / C-Fp / C1 `trial_smooth` / the
+`gnfs::dl::linalg` engine are all consumed-or-untouched). E.K adds the `rho::index_calculus` module +
+the relation→matrix adapter — all **additive**, no trait amendment.
 
-### C-SemaevPoly — the polynomial substrate: `F_p[x]` resultant + multivariate/symmetric-polynomial type (compiler- + test-enforced) — *to be frozen at E.J.1*
+### C-EKRelation — the index-calculus relation/matrix contract (compiler- + test-enforced) — *to be frozen at E.K.1*
 
-**Defined in:** E.J.1 (`rho/src/semaev/poly.rs` + `rho/src/semaev/mod.rs`). **Consumed by:** E.J.2
-(the base cases live in the multivariate type), E.J.3 (the recursion uses the `F_p[x]` resultant to
-eliminate a variable); **downstream: E.K** (the index-calculus point-decomposition step evaluates
-`S_m` at partial factor-base assignments and eliminates variables). Compiler- + test-enforced.
-Exposes: the `F_p[x]` univariate `resultant(f, g) → F_p` (zero iff `gcd ≠ 1`); the
-multivariate/symmetric-polynomial type `S_m` (evaluation, partial-assignment evaluation, one-variable
-resultant-elimination, symmetric-reduction — **over-specified** for E.K's point decomposition if
-confidence is reasonable); the `SemaevError` enum; the toy `F_p`/curve fixture. **Invariants:** the
-`F_p[x]` resultant is the *field* resultant (distinct from `shared-numfield`'s `ℤ[x]` Sylvester
-resultant and `gf2m`'s `GF(2^m)` resultant); `S_m` is symmetric in its arguments. *Exact symmetric
-representation (dense vs elementary-symmetric-basis) and whether the resultant + type ship in
-`rho::semaev` or a `shared` module ratified at the E.J.3 ◆.*
+**Defined in:** E.K.1 (`rho/src/index_calculus/strategy.rs`). **Consumed by:** E.K.2 (decomposition
+*produces* relations), E.K.3 (collection *accumulates* them), E.K.4 (the adapter *builds the matrix*
+from them), E.K.5 (recovery *reads the provenance*); **downstream: E.W** (the per-run relation counts
+for the benchmark table). Compiler- + test-enforced. Exposes: the `Relation` type — an exponent vector
+over `Z/ℓℤ` indexed by factor-base points + the `(a, b)` provenance of the `a·G + b·Q` multiple it
+came from; the factor-base index map. **Invariants:** exponents live in `Z/ℓℤ` (the prime-order
+subgroup — the matrix-over-a-field precondition); a relation's exponent vector reconstructs its
+recorded factor-base-point sum. **Over-specified** (substrate rule) for E.K.4's adapter + E.K.5's
+recovery. *(The index-calculus analogue of NFS's C-Relation — the expensive contract the Opus E.K.1
+freezes. Exact representation ratified at the E.K.1 ◆-start fork.)*
 
-### C-SemaevBase — the base summation polynomials `S_2`, `S_3` + the vanishing relation (compiler- + test-enforced) — *to be frozen at E.J.2*
+### C-IndexCalcStrategy — the factor base + prime-order subgroup + decomposition arity (compiler- + test-enforced) — *to be frozen at E.K.1*
 
-**Defined in:** E.J.2 (`rho/src/semaev/base.rs`). **Consumed by:** E.J.3 (the recursion builds all
-higher `S_m` from `S_3`). Compiler- + test-enforced. Exposes: `S_2(X_1, X_2) = X_1 − X_2`; the
-symmetric `S_3(X_1, X_2, X_3)` (degree 2 in each variable, derived from the `Curve` group law); the
-vanishing predicate (`S_m(x_1, …, x_m) = 0 ⟺ Σ P_i = ∞`, checked against the frozen group law).
-**Invariants:** `S_3` is symmetric and derived from `y² = x³ + ax + b` + the group law (not
-transcribed for the wrong curve form); the vanishing relation is **exactly self-checking** (no
-oracle). *Exact `S_3` form (the explicit symmetric polynomial) frozen here; the recursion seed it
-provides is read by E.J.3.*
+**Defined in:** E.K.1 (`rho/src/index_calculus/strategy.rs` + `mod.rs`). **Consumed by:** E.K.2
+(decomposes over the factor base at arity `m`), E.K.3 (collects relative to the factor base), E.K.4
+(the matrix is over `Z/ℓℤ`), E.K.5 (recovery works mod `ℓ`). Compiler- + test-enforced. Exposes: the
+factor-base point enumeration (`{(x, y) on E : x ∈ chosen set}`); the prime-order subgroup `ℓ | n`;
+the decomposition arity `m`; the `IndexCalcError` enum; the toy fixture (`semaev_toy()` + `ℓ` + factor
+base). **Invariants:** every factor-base point is on the curve (frozen `is_on_curve`); `ℓ` is prime
+and divides `n` (the matrix-over-a-field precondition); the factor base is large enough to
+over-determine. *Exact `ℓ`, factor-base shape, and arity `m` ratified at the E.K.1 ◆-start fork.*
 
-### C-Semaev — the Semaev summation polynomials `S_m` via the resultant recursion (compiler- + test-enforced) — *to be frozen at E.J.3 ◆*
+### C-PointDecomp — the Semaev point-decomposition step (compiler- + test-enforced) — *to be frozen at E.K.2*
 
-**Defined in:** E.J.3 (`rho/src/semaev/recursion.rs`). **Consumed by:** **E.K** (the Gaudry–Diem–
-Joux–Vitse index-calculus point-decomposition / relation-collection step — the highest-stakes
-consumer, Opus-flagged E.K.1), **E.W** (the cross-attack benchmark table). Compiler- + test-enforced.
-Exposes: `semaev_poly(m) → S_m` via the recursion `S_m = Res_X(S_{m-1}, S_3)`. **The frozen
-invariant:** **the vanishing relation** — `S_m(x_1, …, x_m) = 0 ⟺ ∃ y_i: P_i = (x_i, y_i) ∈ E ∧
-Σ P_i = ∞`; the recursion agrees with the direct construction; `S_m` is symmetric. **E.J freezes the
-Semaev primitive; the index-calculus DLP solve consuming it is E.K** (the scope boundary). **The
-Semaev polynomials are a combinatorial primitive verified by the vanishing relation, NOT a solver.**
-*Exact recursion signature (the `m` range built, the partial-evaluation API E.K consumes) ratified
-at the ◆.*
+**Defined in:** E.K.2 (`rho/src/index_calculus/decompose.rs`). **Consumed by:** E.K.3 (the collection
+loop calls it). Compiler- + test-enforced. Exposes: `decompose(Q) → Option<Vec<FbPoint>>` — the
+factor-base decomposition of `Q` via Semaev root-finding (the frozen `semaev_poly` + `partial_eval` +
+`elim_var_resultant`). **Invariants:** a returned decomposition sums to `Q` via the frozen `Curve`
+group law (the correctness signal — exactly self-checking); the green path is native (no live msolve);
+the msolve cross-check is `#[ignore]`-gated. *Exact decomposition signature + the `m`-vs-`m+1` Semaev
+specialisation ratified at the E.K.5 ◆.*
 
-### Frozen contracts read by E.J (consumed, not amended)
+### C-RelationCollect — the relation-collection loop (test-enforced) — *to be frozen at E.K.3*
 
-- **C-Fp (`shared-field::Fp<L>` surface)** — the prime-field arithmetic (`add`/`mul`/`neg`/`inv`/
-  `pow`, threaded `poly`/modulus per the field idiom) consumed by the `F_p[x]` resultant, the
-  multivariate type, and the vanishing relation. Read. **Unchanged — E.J amends no field contract.**
-- **`rho::curve::Curve` / `AffinePoint` (frozen surface)** — the short-Weierstrass curve
-  `y² = x³ + ax + b` over `F_p` (hardcoded `Uint<4>` — the C1 ceiling), point addition / doubling /
-  negation — the **geometry the vanishing relation checks against** (`S_m` vanishes iff `Σ P_i = ∞`,
-  computed via this group law). **Read; NOT amended.** *(Open: `Curve` is hardcoded `Uint<4>`; E.J's
-  toy `p` fits it; if E.K later needs a wider field, that is the C1-widening discovery, never E.J's
-  concern.)*
-- **`shared-numfield::resultant` / `subresultant_gcd`** — the `ℤ[x]` Sylvester-matrix resultant +
-  subresultant PRS (the G.A polynomial machinery) — **read for the resultant idiom to mirror over
-  `F_p`** (E.J's `F_p[x]` resultant is the *field* analogue, not this `ℤ[x]` one). Untouched.
-- **`gf2m::Poly::resultant`** — the `GF(2^m)` field resultant — **read for the field-resultant
-  idiom** the `F_p[x]` resultant ports. Untouched.
-- **`rho::ghs` / `rho::ssa` reduction idioms** — the `GhsError` / `SsaError` enum + fixture + module
-  shape (the attack-module template E.J's `semaev` module mirrors structurally). Read for the
-  pattern; untouched.
+**Defined in:** E.K.3 (`rho/src/index_calculus/collect.rs`). **Consumed by:** E.K.4 (builds the matrix
+from the collected relations). Test-enforced. Exposes: `collect_relations(g, q) → Vec<Relation>` — the
+loop gathering an over-determined relation system. **Invariants:** every collected relation is valid
+(its points sum to `a·G + b·Q` via the frozen group law); the system is over-determined (≥ factor-base
+size + 1). *Exact over-determination margin + de-duplication policy ratified at the E.K.5 ◆.*
+
+### C-EKLinAlg — the `Z/ℓℤ` linear-algebra adapter + solve (compiler- + test-enforced) — *to be frozen at E.K.4*
+
+**Defined in:** E.K.4 (`rho/src/index_calculus/linalg.rs`). **Consumed by:** E.K.5 (recovery reads the
+kernel / virtual logs). Compiler- + test-enforced. Exposes: `build_ek_matrix(&[Relation]) →
+FlSparseMatrix` (the adapter) + the `Z/ℓℤ` solve wrapper around the frozen `block_lanczos_fl` /
+`block_wiedemann_fl`. **Invariants:** the matrix is over `Z/ℓℤ = F_ℓ` (reuses the frozen
+`Fp<L>`-generic engine — no new solver); the recovered kernel satisfies `M·v = 0`. *Exact reuse
+boundary (which `gnfs::dl::linalg` items E.K reads) ratified at the E.K.5 ◆.*
+
+### C-IndexCalc — the index-calculus ECDLP solver (compiler- + test-enforced) — *to be frozen at E.K.5 ◆*
+
+**Defined in:** E.K.5 (`rho/src/index_calculus/solve.rs`). **Consumed by:** **E.W** (the
+cross-attack benchmark table — the highest-stakes consumer). Compiler- + test-enforced. Exposes:
+`index_calculus_dlp(g, q) → Option<log>` — the full pipeline (factor base → decomposition → collection
+→ linalg → recovery). **The frozen invariant:** **agreement with `rho::ecdlp`** — `index_calculus_dlp`
+returns `log_G(Q)` matching the frozen Pollard-rho solver on the same toy instance; `log·G = Q`.
+**E.K is the index-calculus *mechanism* over `E(F_p)`; the asymptotic win (the `F_{p^n}` setting) is a
+deferred re-shard.** **The index calculus is a structure-based DLP solver verified by agreement with
+the generic-search baseline, NOT an asymptotic-win demonstration at this scale.** *Exact solver
+signature + the benchmark counts E.W consumes ratified at the ◆.*
+
+### Frozen contracts read by E.K (consumed, not amended)
+
+- **C-Semaev (`rho::semaev` surface)** — `semaev_poly(m) → MultiPoly`, the `MultiPoly` operations
+  `partial_eval` / `elim_var_resultant` / `eval` / `is_symmetric`, the `FpPoly`/`resultant`, the
+  `semaev_toy()` fixture. The **point-decomposition oracle** (E.K.2 specialises `semaev_poly` at `Q`
+  and finds factor-base roots). Read. **Unchanged — E.K amends no Semaev contract** (and collects the
+  over-specification E.J.1 carried for exactly this consumer).
+- **`rho::curve::Curve` / `AffinePoint` (frozen surface)** — `is_on_curve` (factor-base enumeration),
+  `scalar_mul` (random multiples `a·G + b·Q`), `add_jacobian`/`negate` (the group law the
+  decomposition + relation-validity checks use), `n` / generator. **Read; NOT amended.** *(Open:
+  `Curve` is hardcoded `Uint<4>` — the C1 ceiling; E.K's toy `p = 47` fits it trivially.)*
+- **`rho::ecdlp::solve_*` (frozen surface)** — the Pollard-rho solver (`solve_brent` / `solve_dp` /
+  `solve_dp_negmap` / …). The **cross-check oracle** (E.K.5 verifies `index_calculus_dlp` agrees with
+  it). Read; untouched.
+- **C1 `shared::numth::trial_smooth` / `SmoothWitness`** — the integer-smoothness predicate + witness.
+  The **structural analogue** of E.K's "decomposes-over-the-factor-base" (the ROADMAP's "semantically
+  different but structurally similar"); whether E.K literally calls `trial_smooth` or mirrors the
+  `SmoothWitness`-shaped relation idiom is an E.K.1 finding. Read for the pattern; untouched.
+- **`gnfs::dl::linalg` engine** — `FlSparseMatrix`, `FlMatrixOperator`, `block_lanczos_fl`,
+  `block_wiedemann_fl` (the `Fp<L>`-generic block-Lanczos/Wiedemann solver over `F_ℓ`). **Reused** by
+  E.K.4 (the engine, not the `DLMatrix`-bound `build_fl_matrix` construction — E.K writes its own
+  adapter). Read; untouched.
+- **The attack-module idiom** — `rho::ssa` / `rho::ghs` / `rho::semaev` (the `*Error` enum + toy
+  fixture + module skeleton + the `rho/tests/*_kat.rs` + `#[ignore]` oracle-gating template E.K's
+  `index_calculus` module mirrors structurally). Read for the pattern; untouched.
 
 ### Workspace edges (no new edge, no new crate)
 
-- **No new edge.** `rho` already depends on `shared-field`, `shared-numfield`, `shared-gf2m`, `gnfs`,
-  `shared-bigint`, `shared-numth`, `shared-padic`. The Semaev machinery is a new module in the
-  existing `rho` crate (`rho::semaev`); the `F_p[x]` resultant + multivariate type live with it (or,
-  if field-substrate-shaped, in a `shared` module — no edge consequence either way, `rho` already
-  depends on the `shared` crates). No `Cargo.toml` changes; `cargo check --workspace` stays green
-  with no cycle risk. *(If E.J found it must change a frozen trait surface — it should not, it only
-  adds the `semaev` module and the resultant/type — that would be a discovery surfaced at the ◆,
-  never a silent patch.)*
+- **No new edge.** `rho` already depends on `gnfs` (where the `gnfs::dl::linalg` engine lives) and
+  `shared-numth` (where C1 lives), plus `shared-field`, `shared-numfield`, `shared-gf2m`,
+  `shared-bigint`, `shared-padic`. The index-calculus solver is a new module in the existing `rho`
+  crate (`rho::index_calculus`); the relation→matrix adapter lives with it. No `Cargo.toml` changes;
+  `cargo check --workspace` stays green with no cycle risk. *(If E.K found it must change a frozen
+  trait surface — it should not, it only adds the `index_calculus` module + the adapter — that would
+  be a discovery surfaced at the ◆, never a silent patch. The one genuine coupling-risk is E.K.4
+  reading `gnfs::dl::linalg` internals; if that surface is ill-fit, the adapter grows — a discovery,
+  not an edge change.)*
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The E.J.3 ◆ `@architect` confirmation is not a separate
-ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
-Action-frame digest.
+"Froze" names contracts this session locked. The E.K.1 ◆-start and E.K.5 ◆ `@architect` confirmations
+are not separate ledger rows (paged forks with no commit-shaped deliverable); their outcomes are
+recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate type | done | 937cf82 | C-SemaevPoly (frozen) |
-| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | done | 9208ffb | C-SemaevBase (frozen) |
-| E.J.3 ◆ | Semaev resultant recursion `S_m` + sub-track close | done | 33be345 | C-Semaev (frozen) |
+| E.K.1 ◆-start | Index-calculus strategy + factor base + relation/matrix contract | pending | | C-IndexCalcStrategy, C-EKRelation |
+| E.K.2 | Index-calculus point decomposition via Semaev | pending | | C-PointDecomp |
+| E.K.3 | Index-calculus relation collection | pending | | C-RelationCollect |
+| E.K.4 | Index-calculus `Z/ℓℤ` linear algebra adapter + solve | pending | | C-EKLinAlg |
+| E.K.5 ◆ | Index-calculus DLP recovery + `rho::ecdlp` cross-check + close | pending | | C-IndexCalc |
 
-Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.J, unchanged), the
-prime-field curve + ECDLP surface (`rho::curve::Curve`/`AffinePoint` — read as the Semaev geometry,
-unchanged), the G.A polynomial machinery (`shared-numfield` resultant/subresultant — read as the
-resultant idiom), the GF(2^m) field + poly surface (C-F2m/C-GF2mPoly — `gf2m::Poly::resultant` read
-as the field-resultant idiom), and the full Track-E GF(2^m) chain (C-BinaryCurve/C-Koblitz from E.G,
-C-HyperCurve/C-Jacobian from E.I, C-Subfield/C-DescentAlgebra/C-GHSCurve/C-DescentMap/C-GHSDescent
-from E.H — none consumed by E.J, which targets the F_p setting). This sub-track **freezes three new
-contracts** (C-SemaevPoly, C-SemaevBase, C-Semaev), serving the downstream **E.K** (Gaudry–Diem–
-Joux–Vitse index calculus — consumes the Semaev polynomials for the point-decomposition / relation-
-collection step, plus G.B scoring + G.E linear algebra) and **E.W** (cross-attack benchmarks), and
-building the **combinatorial-primitive** half of the small-characteristic index-calculus attack (E.J
-builds the Semaev polynomials; E.K solves with them).
+Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.K, unchanged), the
+prime-field curve + ECDLP surface (`rho::curve::Curve`/`AffinePoint` + `rho::ecdlp` — read as the
+factor-base geometry, the group law, and the cross-check oracle), the **Semaev primitive**
+(C-SemaevPoly/C-SemaevBase/C-Semaev from E.J — `rho::semaev`, read as the point-decomposition oracle —
+the consumer the over-specified surface was built for), the C1 smoothness contract
+(`shared::numth::trial_smooth` — read as the structural relation analogue), and the **G.E linear
+algebra engine** (`gnfs::dl::linalg` block-Lanczos/Wiedemann over `F_ℓ` — *reused* by E.K.4 with an
+E.K adapter). This sub-track **freezes six new contracts** (C-IndexCalcStrategy, C-EKRelation,
+C-PointDecomp, C-RelationCollect, C-EKLinAlg, C-IndexCalc), serving the downstream **E.W** (cross-
+attack benchmarks — the "which attack wins on which curve" table), and completing the **"solve" leg of
+the transfer/structure/solve triad** (E.H transfers, E.J builds the structure, **E.K solves**) — the
+Track-E index-calculus attack the project's NOTES.md framing anticipated.
 
 ---
 
 ## Action-frame digest
 
-### E.J.3 ◆ — 2026-06-16
-Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); all three E.J sessions ran clean with no discoveries or contract flexes. Two non-blocking flagged items: (1) ROADMAP static-frame debt (E.F/E.G/E.H/E.I still listed as remaining, Progress stale at ~13, E.I-before-E.H inversion) — owed from E.I and E.H ◆, now compounded; (2) fixture docstring discrepancy in `semaev/mod.rs` (documents different G-multiples than base.rs/recursion.rs — cosmetic, tests pass against the frozen group law).
-Affected: none (no contract flexed; C-SemaevPoly/C-SemaevBase/C-Semaev all frozen as designed).
-Deferred: yes — ROADMAP reconciliation (Progress + Remaining table updates, E.I-before-E.H correction, strike E.J) should be actioned before E.K to prevent further compounding. Fixture docstring fix can ride with E.K or a trivial doc-fix commit.
-Texture: The E.J.1/E.J.2 split held (base.rs is a genuine derivation layer — the S_3 Vieta/collinearity derivation — not a thin instantiation). Dense-multivariate HashMap representation chosen over elementary-symmetric-basis (cheaper eval/partial-eval/elimination at m≤5; principle-4 toy-scale annotations present). Vanishing-relation agreement is the S_4 correctness oracle (no independent S_4 exists — the recursion defines it); degree-growth + symmetry + multi-case vanishing/non-vanishing KATs constrain the shape tightly.
+*(none yet)*
 
 ---
 
@@ -560,146 +709,160 @@ Texture: The E.J.1/E.J.2 split held (base.rs is a genuine derivation layer — t
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.J builds the Semaev polynomials on the frozen `rho::curve::Curve` F_p surface + a new
-  polynomial substrate — internal-continue (confirmed by survey).** All Semaev code greenfield (zero
-  `semaev`/`summation` hits). The `F_p[x]` resultant and the multivariate-symmetric type are
-  greenfield (no prime-field `Poly`, no multivariate type — only `ℤ[x]` and `GF(2^m)` resultants
-  exist). A discovery that the construction needs a curve / field operation the frozen surface lacks
-  is an **additive amend** surfaced at the ◆ — not a silent patch.
+- **E.K builds the index-calculus solver on the frozen `rho::semaev` + `rho::curve` + `gnfs::dl::linalg`
+  surfaces — internal-continue (confirmed by survey).** The Semaev surface E.J.1 over-specified
+  (`partial_eval` + `elim_var_resultant`) is exactly the point-decomposition oracle; the `gnfs::dl::
+  linalg` engine is `Fp<L>`-generic and reusable. All index-calculus code is greenfield (the
+  `rho::index_calculus` module). A discovery that the construction needs a curve / Semaev / linalg
+  operation the frozen surfaces lack is an **additive amend** surfaced at the ◆ — not a silent patch.
 
-- **The Semaev polynomials are a PRIMITIVE, not a solve — implementing the index-calculus solver is a
-  defocus failure (the central scope boundary).** E.J builds `S_m` and verifies the vanishing
-  relation; the index-calculus *solve* (point decomposition over a factor base, relation collection,
-  linear algebra over `Z/nZ`, the Gröbner/`msolve` step) is **E.K**, consuming E.J + G.B + G.E. A
-  `@build` agent implementing index calculus or relation collection in E.J is defocus.
-  **Internal-continue → corrected** (the vanishing KAT is the green-path terminus; the solve is
-  delegated).
+- **E.K-over-`F_p` is the index-calculus MECHANISM, NOT the asymptotic win — the load-bearing scope
+  decision (user-adjudicated).** Over `E(F_p)` index calculus is not faster than Pollard-rho; the
+  asymptotic speed-up needs the extension-field structure of `E(F_{p^n})` (the genuine Gaudry–Diem
+  setting). E.K is mechanism-correct at toy scale with the win NOT observable (the principle-4 posture
+  G.E + the NFS end-to-end KAT took). **The `F_{p^n}` asymptotic-win case and the GHS-coupled
+  end-to-end attack are deferred to later, separately-sharded sub-tracks, each flexing C-Semaev — NOT
+  exclusions.** *(ROADMAP capture candidate — the ROADMAP's C1 named `F_{p^n}` for E.K while E.J froze
+  F_p only; the resolution is E.K = F_p mechanism, the asymptotic-win + GHS cases deferred to the
+  post-ROADMAP cohesion/coverage rereads. Internal-continue → recorded.)*
 
-- **The `F_p[x]` resultant is distinct from the `ℤ[x]` and `GF(2^m)` resultants — the resultant-ring
-  trap.** `shared-numfield::resultant` is `ℤ[x]` (Sylvester-matrix, integer); `gf2m::Poly::resultant`
-  is `GF(2^m)`. E.J needs the *field* resultant over `F_p` (the `gf2m` field idiom ported to `F_p`).
-  A `@build` agent reaching for `shared-numfield::resultant` builds over the wrong ring; the
-  resultant-identity KATs are the loud signal. **Internal-continue → corrected.**
+- **The `Z/ℓℤ` linear algebra is PARTIAL reuse of G.E — corrects the ROADMAP's "predecessor: G.E
+  linear algebra" to a partial truth.** The `gnfs::dl::linalg` engine (`block_lanczos_fl`,
+  `FlSparseMatrix`, `Fp<L>`-generic) is reusable; the construction (`build_fl_matrix` from `DLMatrix`)
+  is NFS-bound. E.K.4 reuses the engine and writes its own E.K-relation → `FlSparseMatrix` adapter. A
+  `@build` agent writing a fresh block-Lanczos solver is defocus (the engine exists); a `@build` agent
+  expecting `build_fl_matrix` to accept E.K relations gets a `DLMatrix` mismatch. **Internal-continue
+  → corrected** (reuse engine, write adapter). *(Risk: the read-coupling into `gnfs::dl` internals; if
+  the F_ℓ surface is ill-fit for the prime-order-subgroup case, E.K.4 grows — surfaced as a discovery,
+  not absorbed.)*
 
-- **The Semaev polynomials are symmetric, and `S_3` is derived from the group law, not guessed — the
-  representation trap.** `S_m` is symmetric in its arguments and `S_3` encodes the curve's
-  addition/collinearity relation (derived from `y² = x³ + ax + b` + the group law). A `@build` agent
-  transcribing a formula for the wrong curve form, or choosing a non-symmetric representation, breaks
-  the recursion. The symmetry + vanishing KATs are the guard. **Internal-continue → corrected.**
+- **The prime-order subgroup `ℓ` is the linear-algebra precondition (the matrix-over-a-field trap).**
+  The toy fixture's group order `n = 60` is composite; the relation system must run over `Z/ℓℤ` for a
+  prime `ℓ | n` (so the matrix is over a field and the block-Lanczos engine applies). A `@build` agent
+  building the system over `Z/nℤ` (composite) gets a matrix over a ring and the solver fails. E.K.1
+  fixes `ℓ`; the subgroup-validity KAT is the guard. **Internal-continue → corrected.**
 
-- **The vanishing relation is the correctness signal and is exactly self-checking — no oracle on the
-  green path (lever-5 strength, principle-3).** `S_m(x_1,…,x_m) = 0 ⟺ Σ P_i = ∞`, computed via the
-  frozen `Curve` group law — a fast, decisive, oracle-free KAT (like E.I's group axioms, *unlike*
-  E.H's oracle-leaning log-preservation). An optional `msolve`/PARI cross-check is an `#[ignore]`
-  sidecar (the established `#[ignore = "PARI not installed; run manually when available"]` pattern).
-  E.J introduces no new live oracle. *(Lever-5 note: this strong, self-checking signal is what
-  licensed a `sonnet` juncture-tier; the user overrode to opus on lever 3 — the representation E.K
-  consumes — so the green-path strength stands but the boundary fork is held at Opus.)*
+- **The point-decomposition green path is native, msolve is an `#[ignore]` sidecar — no new live oracle
+  (principle-3, lever-5 strength).** At toy scale the decomposition is found by native root-finding /
+  resultant-elimination over the factor base (the frozen `MultiPoly` operations); the ROADMAP's
+  "Gröbner-basis step delegates to msolve as a dev-only oracle" is realised as an `#[ignore = "msolve
+  not installed; run manually when available"]` cross-check, mirroring the established PARI pattern. A
+  `@build` agent shelling out to msolve on the green path introduces a new live oracle (principle-3
+  violation). **Internal-continue → corrected (native green path).**
 
-- **Target is F_p / Weierstrass, NOT the binary-curve / descended-Jacobian setting — the
-  field-target rigidity guard.** E.J builds Semaev over `E/F_p` (the classical Gaudry–Diem setting,
-  predecessor G.A only); it does NOT couple to the E.H GHS descent or the binary curve. A `@build`
-  agent building the binary-curve Semaev, or coupling to the descended Jacobian, is rigidity (forcing
-  the wrong target). The coupling to the descended curve is **E.K's** job. **Internal-continue
-  (F_p target).**
+- **The correctness signal is agreement with `rho::ecdlp` — exactly self-checking (lever-5
+  strength).** E.K's recovered `log_G(Q)` is correct iff it matches the frozen Pollard-rho solver on
+  the same toy instance — a fast, decisive, oracle-free KAT (like E.I's group axioms and E.J's
+  vanishing relation). E.K introduces no new live oracle. *(Lever-5 note: this strong self-checking
+  signal would license a `sonnet` juncture-tier, but the ROADMAP's native Opus flag on E.K.1 +
+  lever-3 (the C-EKRelation cost-of-wrong) hold the juncture at opus — the inverse of E.J, where
+  lever 5 was strong and only a user lever-3 override held it up; here the Opus flag is native.)*
 
-- **The substrate↔base seam (E.J.1↔E.J.2) may be artificial — surface a merge if the base cases are a
-  thin instantiation.** The 3-vs-2 sizing splits at the substrate↔base seam (buying an early
-  C-SemaevPoly freeze). **If E.J.1's substrate and E.J.2's `S_2`/`S_3` prove tightly coupled (the
-  base cases are a thin instantiation with no genuine reusable substrate seam), the split is
-  artificial and E.J.1/E.J.2 should merge** — surfaced as an additive-reshard at the ◆ (or by E.J.1
-  once the representation shape is concrete), never a silent merge. **Additive-reshard if the seam
-  proves false.**
+- **E.K is the "solve" in the transfer/structure/solve triad (NOTES.md) — not a transfer, not a
+  structure-build.** E.H transferred (GHS, frozen), E.J built the structure (Semaev, frozen), E.K
+  solves (index calculus). A `@build` agent re-deriving the Semaev polynomials, or coupling to the
+  GHS descent, is rigidity/defocus. **Internal-continue (E.K = solve).**
 
-- **No index-calculus solver / relation collection / `msolve` in E.J (defocus / scope clarity).** The
-  DLP *attack* using the Semaev polynomials (point decomposition over a factor base, relation
-  collection, linear algebra over `Z/nZ`, the Gröbner/`msolve` step) is **E.K** (consuming E.J + G.B
-  scoring + G.E linear algebra). E.J exposes the primitive; the attack consumes it. A `@build` agent
-  implementing any of these in E.J is defocus.
+- **The decomposition↔collection seam (E.K.2↔E.K.3) may be artificial — surface a merge if collection
+  is a thin loop.** The 5-vs-4 sizing splits at the decomposition↔collection seam (buying an early
+  C-PointDecomp freeze). **If E.K.2's `decompose` and E.K.3's `collect_relations` prove tightly coupled
+  (collection is a thin loop with no genuine reusable decomposition seam), the split is artificial and
+  E.K.2/E.K.3 should merge** — surfaced as an additive-reshard at the ◆ (or by E.K.2 once the
+  decomposition interface is concrete), never a silent merge. **Additive-reshard if the seam proves
+  false.**
 
-- **No MATHEMATICS.md chapter in E.J (defocus / scope clarity).** The Semaev / summation-polynomial
+- **No `F_{p^n}` Semaev lift / no GHS coupling in E.K (defocus / scope clarity — the deferred
+  re-shards).** The extension-field Semaev (the asymptotic-win setting) and the descended-Jacobian
+  coupling (the binary-curve end-to-end) are **later, separately-sharded sub-tracks**, each flexing
+  C-Semaev. A `@build` agent lifting Semaev to `F_{p^n}` or wiring the GHS descent in E.K is defocus.
+
+- **No MATHEMATICS.md chapter in E.K (defocus / scope clarity).** The index-calculus / Gaudry–Diem
   textbook content is **T.E, paired with E.W at the Track-E ◆** (ROADMAP per-track-chapter pairing),
-  not at the E.J sub-track ◆. E.J.3 writes at most a PEDAGOGY code-tour delta.
+  not at the E.K sub-track ◆. E.K.5 writes at most a PEDAGOGY code-tour delta.
 
-- **Toy `F_p` + small `m` + the `Uint<4>` ceiling only (scope clarity).** E.J fixes a small prime
-  `p` (fitting the `Uint<4>` curve ceiling) and computes `S_m` for small `m` (`S_2…S_4`, possibly
-  `S_5`). The toy sizes are a principle-4 boundary — Semaev is crypto-scale-correct; only the
-  *parameters* are toy. Presenting any as crypto-scale is a documentation defect (internal-continue
-  → corrected). *(The `Uint<4>` ceiling is the C1 boundary the ROADMAP flags for E.K; if E.K needs a
-  wider field for its smoothness/decomposition step, that is the C1-widening discovery at E.K, not
-  E.J.)*
+- **Toy `F_p` (`p = 47`, `n = 60`) + small `m` + prime-order subgroup `ℓ` only (scope clarity).** E.K
+  uses the `semaev_toy()` fixture and computes index calculus for small arity `m`. The toy sizes are a
+  principle-4 boundary — index calculus is mechanism-correct; the *asymptotic win* is a separate
+  matter (needs `F_{p^n}`, deferred). Presenting the toy run as the asymptotic speed-up is a
+  documentation defect (internal-continue → corrected).
 
-- **The polynomial substrate's home is `rho::semaev` (module-placement call, ratified at the ◆).** The
-  Semaev construction is attack-shaped and lives in `rho::semaev`. The `F_p[x]` resultant +
-  multivariate type live with it unless judged field-substrate-shaped enough for a `shared` module —
-  a ◆ ratification decision, not a blocker (no edge consequence either way — `rho` already depends on
-  the `shared` crates).
-
-- **Static-frame ROADMAP debt (reconcile at the E.J ◆, does NOT block E.J) — carried + compounded
-  from the E.I and E.H ◆.** The ROADMAP Progress subsection is stale by **four** completed sub-tracks
-  (E.F, E.G, E.H, E.I; table shows "Done ~13 (E.A–E.E)"); the Remaining table lists the now-complete
-  E.F/E.G/E.H/E.I; and the Remaining table listed **E.H before E.I** (dependency-inverted — E.I
-  shipped first, E.H followed). The E.I ◆ digest recorded this as owed; the E.H ◆ digest re-recorded
-  it as still owed (E.H closed without writing it into the ROADMAP). The E.J ◆ should: update
-  Progress (Track E Done → E.A–E.I, ~22), strike E.F/E.G/E.H/E.I from Remaining, record the
-  E.I-before-E.H correction, and strike E.J on completion. Not an implementation concern.
+- **Static-frame ROADMAP debt (surface at the E.K ◆ — out of `@architect` PLAN-write scope; a capture
+  candidate) — carried + compounded from the E.I, E.H, and E.J ◆.** The ROADMAP Progress subsection is
+  stale by **five** completed sub-tracks (E.F, E.G, E.H, E.I, E.J; table shows "Done ~13 (E.A–E.E)");
+  the Remaining table lists the now-complete E.F/E.G/E.H/E.I/E.J; and the Remaining table listed
+  **E.H before E.I** (dependency-inverted — E.I shipped first, E.H followed). The E.I ◆ digest
+  recorded this as owed, the E.H ◆ re-recorded it, the E.J ◆ digest flagged it again (E.J closed
+  without writing it into the ROADMAP). The reconciliation owed: update Progress (Track E Done →
+  E.A–E.J, ~25), strike E.F/E.G/E.H/E.I/E.J from Remaining, record the E.I-before-E.H correction, and
+  strike E.K on completion. **This is a ROADMAP write — outside the `@architect` PLAN-only write scope;
+  surfaced here as a capture candidate for the user to action (via `/note` or a ROADMAP edit), not a
+  PLAN edit.** Not an implementation concern; does not block E.K.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.J, "*Semaev summation polynomials … The combinatorial heart of
-  Gaudry–Diem index calculus; mathematically beautiful. Sonnet.*"; predecessor **G.A** polynomial
-  machinery; the design statement's principles 1 + 3 + 4; the C1 `Uint<4>`-ceiling note flagged for
-  E.K's Semaev-point smoothness) and this PLAN before any session. **NOTE: the ROADMAP Progress /
-  Remaining tables are stale (E.F, E.G, E.H, E.I done; all four still listed as remaining) AND listed
-  E.H before E.I (dependency-inverted — E.I shipped first); reconcile at the E.J ◆ (debt carried from
-  both the E.I and E.H ◆, unreconciled).**
-- Read the **templates to mirror**: `rho/src/ssa/mod.rs` + `rho/src/ghs/mod.rs` (the attack-module
-  idiom — `SsaError`/`GhsError` enum + toy fixture + module skeleton — E.J's `semaev` module mirrors
-  this); `rho/src/curve/mod.rs` (the **frozen** short-Weierstrass `Curve`/`AffinePoint` the vanishing
-  relation checks against — read for `add`/`double`/`negate`, NOT to amend); `shared/numfield/src/
-  resultant.rs` (the `ℤ[x]` Sylvester/subresultant resultant idiom to mirror over `F_p` — read for
-  the *shape*, not the ring); `shared/gf2m/src/poly.rs` (the `GF(2^m)` field `resultant` the `F_p[x]`
-  one ports — `poly.rs:425`); `rho/tests/{ssa_kat,ghs_kat,hyperelliptic_kat}.rs` (the attack-KAT +
-  `#[ignore]` oracle idioms E.J.3 mirrors).
-- **Register:** E.J is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
-  thin-by-default). New modules `rho/src/semaev/{mod,poly,base,recursion}.rs` (the Semaev
-  construction) and new KATs in `rho/tests/semaev_kat.rs`.
-- **Tier routing:** **all three sessions are Sonnet `@build`** (E.J has no Opus-flagged session per
-  the ROADMAP — it is marked Sonnet throughout). E.J.3 carries the **◆ `@architect` juncture** (page
-  `@plan-juncture`) ratifying C-SemaevPoly/C-SemaevBase/C-Semaev and confirming E.K-readiness before
-  the sub-track closes. juncture-tier (header) is **opus** — **a deliberate user override of the
-  lever-5 `sonnet` recommendation**, on lever 3 (the multivariate-symmetric representation E.J
-  freezes is consumed by the Opus-flagged E.K; the user judges the cost-of-wrong worth paying Opus at
-  the boundary to de-risk, mirroring the E.I precedent). The default tuning-law read was `sonnet`
-  (strong lever-5 self-checking vanishing KAT + moderate lever-4 correctness-criticality + no
-  Opus-flagged session); the override is recorded so the disagreement stays visible.
-- **Invariants to preserve:** **The Semaev polynomials are a PRIMITIVE, not a solve** (no
-  index-calculus solver / relation collection / linear algebra over `Z/nZ` / `msolve` — those are
-  E.K; the vanishing KAT is the terminus). **The vanishing relation is the correctness signal**
-  (`S_m(x_1,…,x_m) = 0 ⟺ Σ P_i = ∞` via the frozen `Curve` group law; exactly self-checking, no
-  oracle). **The `F_p[x]` resultant is the field resultant** (NOT the `ℤ[x]` Sylvester one in
-  `shared-numfield`, NOT the `GF(2^m)` one in `gf2m`). **`S_m` is symmetric and `S_3` is derived from
-  the group law** (not transcribed for the wrong curve form). **The target is F_p / Weierstrass** (NOT
-  the binary curve / descended Jacobian — that coupling is E.K's). **E.J consumes the frozen `Curve`
-  + `Fp` surfaces unchanged** (adds the `F_p[x]` resultant + multivariate type + the `rho::semaev`
-  module). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy `F_p` + small `m` + the `Uint<4>`
-  ceiling only; no new live oracle.
-- **No new edge, no new crate (load-bearing for E.J).** `rho` already depends on `shared-field`/
-  `shared-numfield`/`shared-gf2m`/`gnfs`; the Semaev machinery is a new `rho::semaev` module (the
-  `F_p[x]` resultant + multivariate type live with it or in a `shared` module — no edge consequence).
-  `cargo check --workspace` stays green with no cycle risk. If E.J finds it must change a frozen trait
-  surface (it should not — it only adds the `semaev` module and the resultant/type), that is a
-  discovery surfaced at the ◆.
-- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the shard pattern (a
-  doubly-greenfield polynomial substrate — an `F_p[x]` resultant + a multivariate/symmetric type —
-  then base cases, then a resultant recursion) is **new to this project** (no prior multivariate /
-  symmetric-polynomial machinery exists, and the Semaev construction has no in-repo precedent). Per
-  the unproven-shard-pattern guidance, halt at each boundary for a human glance until the pattern
-  proves out. *(Tradeoff vs autonomous: `halt-at-boundaries` trades velocity for a per-boundary check
-  on a novel pattern — the polynomial substrate (E.J.1) is the design crux E.K consumes, and a wrong
-  symmetric-representation shape is a retrofit. If E.J.1 lands cleanly and its resultant + symmetry
-  KATs confirm the substrate shape, fall back to autonomous for E.J.2–E.J.3. The substrate↔base seam
-  uncertainty (E.J.1↔E.J.2) is itself a reason to halt at the E.J.1 boundary — that is where a
-  merge-back would be surfaced.)*
+- Read `docs/ROADMAP.md` (Phase δ — E.K, "*Gaudry–Diem–Joux–Vitse index calculus. 4-5 sessions.
+  Predecessors: E.J, G.B, G.E. First session is Opus-tier. The Gröbner-basis step delegates to msolve
+  as a dev-only oracle.*"; the C1 contract — `is_smooth` consumed by E.K for "smoothness of points via
+  Semaev"; the C3 note — G.B scoring "potentially E.K for factor-base balancing"; the Opus-flagged-
+  sessions table — `E.K.1 | Index-calculus strategy`) and this PLAN before any session. **NOTE: the
+  ROADMAP Progress / Remaining tables are stale (E.F, E.G, E.H, E.I, E.J done; all five still listed
+  as remaining) AND listed E.H before E.I (dependency-inverted); this is a ROADMAP write owed since
+  the E.I ◆ — surface it at the E.K ◆, but it is outside `@architect` PLAN-write scope (a capture
+  candidate for the user).**
+- Read the **templates to mirror**: `rho/src/ssa/mod.rs` + `rho/src/ghs/mod.rs` + `rho/src/semaev/
+  mod.rs` (the attack-module idiom — `*Error` enum + toy fixture + module skeleton — E.K's
+  `index_calculus` module mirrors this); `rho/src/semaev/{poly,recursion}.rs` (the **frozen** Semaev
+  surface — `semaev_poly`, `MultiPoly::partial_eval`/`elim_var_resultant` — read for the
+  point-decomposition oracle, NOT to amend); `rho/src/curve/mod.rs` (the **frozen** `Curve`/
+  `AffinePoint` — `is_on_curve`/`scalar_mul`/`add_jacobian`/`n`/generator — read for factor-base
+  geometry + the group law, NOT to amend); `rho/src/ecdlp/mod.rs` (the **frozen** Pollard-rho
+  `solve_*` — read as the E.K.5 cross-check oracle); `gnfs/src/dl/linalg/{mod,blockvec_fl,lanczos_fl,
+  wiedemann_fl}.rs` (the **frozen, reused** F_ℓ block-Lanczos/Wiedemann engine — `FlSparseMatrix`,
+  `block_lanczos_fl`, `build_fl_matrix` as the *adapter template* E.K.4 mirrors from C-EKRelation, NOT
+  from `DLMatrix`); `rho/tests/{ssa_kat,ghs_kat,semaev_kat}.rs` (the attack-KAT + `#[ignore]` oracle
+  idioms E.K.2/E.K.5 mirror).
+- **Register:** E.K is **Rust code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; 100-char wrap, rustdoc
+  thin-by-default). New modules `rho/src/index_calculus/{mod,strategy,decompose,collect,linalg,solve}.rs`
+  (the index-calculus solver) and new KATs in `rho/tests/index_calculus_kat.rs`.
+- **Tier routing:** **E.K.1 is Opus `@architect`** (the ROADMAP's native Opus flag — index-calculus
+  strategy + the C-EKRelation contract design; paged as a ◆-start `@plan-juncture` fork *before*
+  dispatch to ratify the relation/matrix shape the three downstream sessions consume). **E.K.2–E.K.5
+  are Sonnet `@build`.** E.K.5 carries the **◆ `@architect` juncture** (page `@plan-juncture`)
+  ratifying the six frozen contracts and confirming E.W-readiness before the sub-track closes.
+  juncture-tier (header) is **opus** — set by the native Opus flag on E.K.1 + lever 3 (the
+  C-EKRelation cost-of-wrong). The tuning-law read agrees with opus here (unlike E.J, where it pointed
+  to sonnet and was overridden): the native Opus session and the expensive relation contract both hold
+  the juncture up directly.
+- **Invariants to preserve:** **E.K is the index-calculus MECHANISM over `E(F_p)`, NOT the asymptotic
+  win** (the win needs the deferred `F_{p^n}` re-shard; the principle-4 annotation records this). **The
+  correctness signal is agreement with `rho::ecdlp`** (`log_G(Q)` matches the Pollard-rho solver;
+  exactly self-checking, no oracle). **The prime-order subgroup `ℓ` is the linalg precondition** (the
+  matrix is over `Z/ℓℤ = F_ℓ`, not the composite `Z/nℤ`). **Reuse the `gnfs::dl::linalg` engine, write
+  the E.K adapter** (no duplicate block-Lanczos solver). **The point-decomposition green path is
+  native** (the frozen Semaev `MultiPoly` operations; msolve is an `#[ignore]` sidecar — no new live
+  oracle). **E.K consumes the frozen `Curve` + `Semaev` + C1 + `gnfs::dl::linalg` surfaces unchanged**
+  (adds the `rho::index_calculus` module + the relation→matrix adapter). **No Semaev `F_{p^n}` lift, no
+  GHS coupling** (deferred re-shards). **No MATHEMATICS chapter** (T.E at the Track-E ◆). Toy `F_p` +
+  small `m` + prime-order `ℓ` only.
+- **No new edge, no new crate (load-bearing for E.K).** `rho` already depends on `gnfs` (the
+  `gnfs::dl::linalg` engine) and `shared-numth` (C1); the index-calculus solver is a new
+  `rho::index_calculus` module (the relation→matrix adapter lives with it). `cargo check --workspace`
+  stays green with no cycle risk. The one genuine coupling-risk is E.K.4 reading `gnfs::dl::linalg`
+  internals; if that surface is ill-fit for the prime-order-subgroup case, the adapter grows — a
+  discovery surfaced at the ◆, never a silent patch.
+- Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the shard pattern (an
+  index-calculus pipeline — strategy/factor-base/relation-contract, then Semaev decomposition, then
+  collection, then `Z/ℓℤ` linear algebra reusing the NFS-DL engine, then DLP recovery) is **new to this
+  project** (no prior index-calculus / factor-base / relation-collection-over-a-curve machinery exists,
+  and E.K.1 is a native Opus session). Per the unproven-shard-pattern guidance, halt at each boundary
+  for a human glance until the pattern proves out. The **E.K.1 ◆-start fork is itself a halt** (the
+  ROADMAP's pre-scheduled Opus inflection — the C-EKRelation contract is the expensive one). *(Tradeoff
+  vs autonomous: `halt-at-boundaries` trades velocity for a per-boundary check on a novel pattern — the
+  strategy/relation contract (E.K.1) is the design crux all four downstream sessions consume, and a
+  wrong C-EKRelation shape is a pipeline-wide retrofit. If E.K.1 lands cleanly and its factor-base +
+  relation-round-trip KATs confirm the contract shape, and E.K.2's decomposition confirms the Semaev
+  consumption, fall back to autonomous for E.K.3–E.K.4. The decomposition↔collection seam
+  (E.K.2↔E.K.3) is itself a reason to halt at the E.K.2 boundary — that is where a merge-back would be
+  surfaced.)*
