@@ -527,7 +527,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate type | done | 937cf82 | C-SemaevPoly (frozen) |
-| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | pending | — | C-SemaevBase (to freeze) |
+| E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | done | 9208ffb | C-SemaevBase (frozen) |
 | E.J.3 ◆ | Semaev resultant recursion `S_m` + sub-track close | pending | — | C-Semaev (to freeze) |
 
 Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.J, unchanged), the
