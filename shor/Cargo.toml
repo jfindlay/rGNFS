@@ -1,0 +1,19 @@
+[package]
+name = "shor"
+version = "0.1.0"
+edition = "2024"
+description = "Classical state-vector quantum-circuit simulator: Shor's algorithm substrate"
+
+[dependencies]
+num-complex = "0.4"
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
