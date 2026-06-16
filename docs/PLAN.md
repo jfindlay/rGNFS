@@ -2,184 +2,144 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-E close (E.W — cross-attack benchmarks + the Track-E writeup, paired with T.E, the algebraic-ECDLP textbook chapter)
+# rGNFS — Current Plan: Track-S open (S.A — state-vector quantum simulator, the Shor substrate)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
 `docs/ROADMAP.md`. For the planning philosophy, see
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
-`juncture-tier: opus` (header above) — **set by the ROADMAP's native Opus flag on E.W ("high
-integrative judgment load") + the T.E MOV-payoff Opus designation + lever 4 (the Track-E ◆ closeout
-adjudicates the whole E.A–E.K arc).** E.W is the Track-E *integrative* close: it does not add an
-attack, it *synthesises* the eight attacks the track shipped (Pollard rho, Pohlig–Hellman, MOV,
-Smart–Satoh–Araki, GHS descent, Semaev, index calculus) into one comparative picture and verifies the
-project's three scoping principles against the realised Track-E implementation. Lever 5 is **weak
-here** (unlike every prior E sub-track): the deliverable is a benchmark table + prose synthesis +
-a maths chapter, and prose has no fast self-checking oracle — the benchmark KATs are deterministic
-(they confirm each attack still solves its instance) but they do not adjudicate whether the *synthesis*
-is right. So lever 5 grants **no license to opt the juncture down**; levers 3/4 (the closeout's
-cross-arc judgment + the MOV-payoff proof being a designated pedagogical climax) hold it at `opus`.
-*(The ◆ fork pages `@plan-juncture` at opus; E.W.2's per-row tier is **Opus** per the ROADMAP —
-E.W.1, the benchmark harness, is mechanical Sonnet bench-wiring over frozen solver APIs with no design
-crux.)*
+`juncture-tier: opus` (header above) — **set by lever 3 (cost of design error), held against the
+lever-5 opt-down.** S.A is **Category-A substrate**: the `StateVec` register + gate-set interface
+(C-StateVec) is consumed by S.B (Shor-for-factoring) and S.C (Shor-for-ECDLP), so a wrong substrate
+interface propagates through two downstream sub-tracks — the high-cost-of-design-error case lever 3
+holds the adjudicator at the strongest tier even though no S.A session is itself Opus-flagged.
+**Lever 5 is strong here** (quantum circuits have exceptionally good KATs — deterministic published
+amplitudes, unitarity checks, Bell/GHZ/QFT known vectors — and S.A is a toy-scale pedagogical
+simulator, ≤25 qubits, moderate correctness-criticality), which *would* license opting the juncture
+down to `sonnet`; that opt-down was **considered and declined** (user-adjudicated at shard time,
+2026-06-16) in favour of lever 3, because the substrate-interface-binds-two-tracks risk is judged to
+outweigh the strong-inner-loop economy. The differential is single-digit dollars and the
+`destructive-HALT` invariant caps the downside either way. *(The ◆ fork pages `@plan-juncture` at
+opus; both per-row tiers are **Sonnet** — S.A carries no Opus-flagged session per the ROADMAP
+Opus-flagged table.)*
 
-**Scope boundary — E.W is documentation + benchmarking, NOT a new attack (user-adjudicated at shard
-time, 2026-06-16).** E.W is the **Track-E closeout**: the cross-attack benchmark table ("which attack
-wins on which curve"), the Track-E code-tour in `docs/PEDAGOGY.md`, and **T.E** — the maths-first
-algebraic-ECDLP chapter in `docs/MATHEMATICS.md` (ch. 10), paired with the E.W writeup per the Track-τ
-contract (C-Textbook). It **amends no algorithm contract** — it reads the frozen solver surfaces
-(`rho::ecdlp`, `rho::ecdlp::pohlig`, `rho::pairing::mov`, `rho::ssa`, `rho::ghs`, `rho::index_calculus`)
-and writes benchmarks + prose. The only code change is **additive Criterion benches** under
-`rho/benches/` + their `[[bench]]` manifest entries (criterion is already a `rho` dev-dependency — no
-new dependency, no new workspace edge). *(Tradeoff named, load-bearing: the "which attack wins on which
-curve" table is NOT a uniform timing race — the attacks are **structural-precondition-conditional**,
-each applicable only on the curve whose structure it exploits. The table's pedagogical point is exactly
-that conditionality — see the load-bearing finding below. A `@build` agent that tries to race all eight
-attacks on one common curve produces a wrong table.)*
+**Scope boundary — S.A is the simulator substrate ONLY, NOT Shor itself (the next-sub-track guard).**
+S.A builds the **classical state-vector quantum-circuit simulator** — the register, the standard
+gate set, the sparse-state optimization, measurement, and the QFT subroutine — and **nothing that
+calls it to break a cryptosystem**. Shor-for-factoring (S.B) and Shor-for-ECDLP (S.C) are the
+*consumers* of this substrate, separately sharded. A `@build` agent that implements modular
+exponentiation as a quantum circuit, the Proos–Zalka ECDLP circuit, or the order-finding /
+period-extraction classical post-processing in S.A has reached into S.B/S.C — that is defocus.
+S.A's deliverable is the simulator and its primitives, validated against **published small-circuit
+results** (the ROADMAP KAT), not an end-to-end factorization.
 
-The substrate survey (forked `@explore`, 2026-06-16) established the attack-surface map and surfaced
-four load-bearing findings:
+The substrate survey (forked `@explore`, 2026-06-16) established four grounding facts:
 
-1. **The benchmark is structural-precondition-conditional, not a uniform race (the load-bearing
-   finding).** The eight Track-E attacks do not all apply to one curve — each exploits a *specific*
-   structure: Pohlig–Hellman needs composite group order; MOV needs small embedding degree; SSA needs
-   an *anomalous* curve (trace = 1, `#E = p`); GHS needs a binary `GF(2^m)` curve; index calculus
-   (over `E(F_p)`) needs the Semaev-decomposable toy. The shared anchor `y² = x³ + x + 33 mod 47`
-   (`n = 60`) carries **four** attacks (Pohlig–Hellman, MOV, Semaev, index calculus); SSA runs only on
-   `y² = x³ + 5 mod 7`; GHS only on `GF(2^6)`; the rho timing baseline runs on `secp_k1_toy` (63-bit).
-   **The table's columns are (attack, curve-precondition, applies?, cost-when-applicable)** — the
-   pedagogical content is *which structure unlocks which escape*, not "which is fastest on a fixed
-   instance." *(This is the E.W realisation of MATHEMATICS.md §"Escape from Search" — the five-family
-   structure taxonomy the through-line already names; T.E develops it per-attack.)*
+1. **`num-complex` is absent workspace-wide — S.A adds the first complex-number dependency (the one
+   new edge).** Every existing crate uses real/integer arithmetic (`crypto-bigint`, `num-bigint`,
+   `num-integer`, `num-traits`); no `Complex<·>` anywhere. A state-vector simulator needs complex
+   amplitudes, so `shor/Cargo.toml` adds `num-complex = "0.4"` (which provides `Complex<f64>`;
+   `num-traits` is already universal for the `Float` bounds). This is **the sub-track's only new
+   workspace dependency** and it is leaf-confined to the new `shor` crate.
 
-2. **GHS is a *transfer*, not an end-to-end solve — represent it honestly (confirmed).** `rho::ghs`
-   exposes `ghs_descend` / `verify_log_preservation` / `transfer_point` — the descent *reduction* to a
-   hyperelliptic-Jacobian DLP — but **no `ghs_dlp` solver** (the transfer/structure/solve framing,
-   NOTES.md 2026-06-15: E.H transfers, it does not solve). The benchmark column for GHS measures the
-   *reduction* (descent + log-preservation verification), annotated as a transfer whose downstream
-   solve is index calculus — NOT a timing winner against the direct solvers. A `@build` agent that
-   forces GHS into an end-to-end "solve time" column misrepresents the attack.
+2. **The new crate is `shor/`, a top-level track crate (peer to `gnfs`/`rho`), per the track-as-crate
+   convention (user-adjudicated at shard time).** The survey confirmed the workspace idiom: track
+   crates live top-level (`gnfs`, `rho`), `shared/*` holds cross-track-reusable substrate. Track S
+   ships as one cohesive crate (simulator + Shor-factoring + Shor-ECDLP + the PQ writeup); the
+   simulator is Shor-specific, not general substrate, so `shor/` (not `shared/statevec/`) is the
+   home. The crate skeleton mirrors the established pattern: `edition = "2024"`, a `[lints]` block
+   (`unsafe_code = "forbid"`, `missing_docs = "warn"`, `clippy::all = "deny"`,
+   `clippy::pedantic = "warn"`), `src/lib.rs` + shallow module dirs, `tests/*_kat.rs`, and the
+   workspace `Cargo.toml` members list gains `"shor"`.
 
-3. **The index-calculus benchmark counts come from the public re-exports — no contract amend
-   (resolved at shard time, the E.K.5-flagged decision).** `index_calculus_dlp(g, q, strategy) →
-   Result<Option<u64>, IndexCalcError>` returns only the log, **no decomposition/relation counts**.
-   The E.K.5 ◆ digest flagged this as "best decided before E.W shards." **Resolved: E.W derives the
-   counts by calling the already-public `collect_relations(...).len()` and `decompose(...)` directly**
-   (both are `pub` re-exports from `rho::index_calculus`), alongside `index_calculus_dlp` for the
-   answer. **C-IndexCalc is NOT amended** — it stays exactly as frozen at E.K.5. *(Tradeoff named: the
-   benchmark re-runs collection to count it, a little redundant — but it is a benchmark, not a hot
-   path, and amending a frozen contract at a closeout sub-track is the worse option. If a `@build`
-   agent finds the counts genuinely cannot be derived from the public surface, that is an additive-
-   amend discovery surfaced at the ◆, not a silent C-IndexCalc patch.)*
+3. **No paired `*.W` math chapter at S.A — T.S pairs with S.D, the track closeout (confirmed).** The
+   `docs/MATHEMATICS.md` ToC already stubs **ch. 11 "Shor's Algorithm and Post-Quantum Context"
+   (T.S — to be appended)**, and the Track-τ pairing rule binds the per-track math chapter to the
+   track's `*.W` writeup session — which for Track S is **S.D** (the post-quantum writeup), not S.A.
+   S.A is a mid-track substrate sub-track: it ships code + KATs + benchmark numbers, no integrative
+   prose chapter. *(This is the substrate-session pacing the planning manual names: front-loaded
+   design surface, no integrative writeup — the writeup is owed at the track ◆, which is S.D.)*
 
-4. **The writeup extends an existing synthesis scaffold; it does not originate one (confirmed).**
-   `docs/MATHEMATICS.md` already carries the §"Escape from Search: The Through-Line" (the five-family
-   structure taxonomy + the L-notation hierarchy table) and a ~20-line "why no index calculus for
-   generic EC" passage. The MOV reduction is *named* in the through-line but **has no full chapter**;
-   there is **no index-calculus / Semaev chapter** and **no ECDLP-attack comparison table**. T.E (ch.
-   10, the stub already in the ToC) develops the five attacks the through-line names — with the MOV
-   reduction as the designated payoff proof — and adds the per-attack L-notation comparison. The
-   E.W code-tour appends to `docs/PEDAGOGY.md` (the rho-crate code-tour home, currently ~493 lines,
-   holding the existing Phase 0–8 rho content). *(Confirms the writeup is a delta on a frozen
-   register — C-Textbook, frozen at T.0 — not a new artifact; the rigidity guard is "extend the
-   through-line, do not re-derive it.")*
+4. **The KAT corpus for a simulator is exceptionally strong (the lever-5 fact) — published small-
+   circuit results + unitarity + known state vectors (confirmed).** Quantum-circuit simulators have
+   deterministic, fast, published-value KATs: Bell/GHZ state amplitudes, gate unitarity
+   (`U U† = I`), the QFT on a known input matching published Fourier amplitudes, single-qubit
+   rotation identities. This is why lever 5 is strong (and why the opt-down was *available* even
+   though lever 3 declined it). The KATs follow the established `rho/tests/*_kat.rs` idiom: a
+   per-fixture-class helper, many `#[test]` one-liners, semantic verification, Python/published
+   reference values noted in comments, no oracle gating (the published values are self-contained).
 
-The work splits at **one benchmark↔writeup contract-sharp seam**, **2 sessions** (the ROADMAP ceiling
-for E.W, consistent with the project's documented ceiling-bias — G/D both landed at or above their
-upper bands):
+The work splits at **one dense↔sparse contract-sharp seam**, **2 sessions** (the ROADMAP low end of
+the 2–3 band; the soft seam for an additive S.A.3 is named below):
 
-1. **E.W.1 — Cross-attack benchmark harness + table (Sonnet, Cat C).** New Criterion benches for the
-   non-rho attacks (Pohlig–Hellman, MOV, SSA, GHS-reduction, index calculus; rho is already benched in
-   `rho/benches/ecdlp.rs`) + the `## E.W` section in `docs/BENCHMARKS.md` — the structural-
-   precondition-conditional "which attack wins on which curve" table + the principle-4 science↔
-   engineering note. **Freezes C-EWBench** (the benchmark data + the table shape the writeup cites).
-   Mechanical bench-wiring over frozen solver APIs; Sonnet.
+1. **S.A.1 — State-vector register + standard gate set (Sonnet, Cat A).** The `StateVec` dense
+   register (`Vec<Complex<f64>>` over n qubits, little-endian basis indexing) + the standard gate
+   set (X, Y, Z, H, S, T, phase, CNOT, controlled-phase, Toffoli / multi-controlled) applied by
+   index arithmetic + the unitarity/Bell/GHZ KATs. **Freezes C-StateVec** (the register + gate-
+   application interface S.A.2, S.B, S.C consume). **Over-specified substrate** (Category-A rule):
+   carries the controlled-/multi-controlled-gate surface S.B's modular-exponentiation circuit and
+   S.C's Proos–Zalka circuit will need, even though S.A itself does not exercise them.
 
-2. **E.W.2 ◆ `@architect` — Track-E code-tour + T.E maths chapter + Track-E close (Opus, Cat I).** The
-   paired writeup: the Track-E code-tour (`docs/PEDAGOGY.md`) + **T.E** (`docs/MATHEMATICS.md` ch. 10
-   — the algebraic-ECDLP chapter, with the **MOV-reduction payoff proof**) + the design-statement
-   verification (principles 1/3/4 against the realised Track-E) + the Track-E ◆ close. **Consumes
-   C-EWBench + all frozen Track-E contracts. Freezes C-TrackE** — the Track-E synthesis surface Z.1
-   (umbrella) and T.Z (textbook bind) consume. Crosses the **Track-E ◆ boundary** — the entire
-   algebraic-ECDLP arc (E.A → E.K) ships, synthesised and verified.
+2. **S.A.2 ◆ — Sparse-state optimization + measurement + QFT (Sonnet, Cat A→B).** The sparse-state
+   representation (a hashmap of nonzero basis-amplitudes, for circuits whose state stays sparse) +
+   measurement/sampling (Born-rule collapse + a deterministic-seed sampler) + the **QFT** (the
+   Shor period-finding workhorse) over the frozen register. **Consumes C-StateVec. Freezes
+   C-Sparse + C-QFT.** Crosses the **S.A ◆ boundary** — the simulator substrate is complete and the
+   gate/QFT/measurement interface the Shor sub-tracks consume is frozen.
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing a *new* attack or extending
-index calculus to `F_{p^n}` — those are the **deferred re-shards** the E.K close named, not E.W; or
-racing all attacks on one curve as if the table were a uniform timing contest; or re-deriving the
-§"Escape from Search" through-line T.0 already froze) and **rigidity** (forcing GHS into an end-to-end
-solve column when it is a transfer; or breaking the C-Textbook register — audience floor, proof-sketch
-depth, MathJax markup — for one chapter; or amending C-IndexCalc to surface benchmark counts when the
-public re-exports already supply them).
+Re-read this intent at the ◆ boundary to catch **defocus** (implementing Shor's modular
+exponentiation, the Proos–Zalka ECDLP circuit, or the order-finding/continued-fraction post-
+processing — those are S.B/S.C, the deferred consumers; or adding a gate the gate set does not need;
+or scaling past the ~25-qubit demonstration ceiling) and **rigidity** (forcing the sparse
+representation where the dense register is the honest demonstration vehicle; or skipping the QFT KAT
+because "Shor will test it"; or over-engineering the simulator for performance it does not need at
+toy scale — principle 3).
 
-**Scoping discipline.** E.W builds the cross-attack synthesis at **demonstration fidelity** (the
-benchmark exercises each frozen solver on its toy instance; the table reports the structural
-precondition + the toy-scale cost) and **writes the Track-E chapter at the C-Textbook register** (the
-frozen audience/depth/markup). It **amends no algorithm contract** (every Track-E solver surface is
-read, not touched; the only code is additive Criterion benches + their manifest entries). It builds
-**no new attack**, **no index-calculus `F_{p^n}` lift** (the deferred re-shard), **no GHS Jacobian
-solver** (the transfer's downstream is index calculus, already shipped). The **engineering-vs-
-mathematics disconnect** (ROADMAP principle 4) is explicit and load-bearing here in two directions:
-(a) *under-exposed* — the asymptotic L-notation separations between the attacks (rho's `L[1, 1/2]` vs
-index calculus's subexponential-in-the-`F_{p^n}`-setting vs MOV's reduction-to-`L[1/3]`) are **not
-observable at toy scale**; the table reports toy-scale costs and the chapter explains why the
-asymptotic picture differs; (b) the design-statement verification (E.W.2) must record that Track-E met
-principles 1/3/4 (algorithmic content complete; no engineering optimisation crept in; scale-only
-phenomena at demonstration fidelity), the G.W §59 / D.W §69 analogue for Track E.
+**Scoping discipline.** S.A builds the simulator at **demonstration fidelity** (≤25 qubits, dense
+register with a sparse-state *option*; the gate set is mathematically complete, not engineering-
+optimized — no SIMD, no GPU, no tensor-network contraction; principle 3). The **principle-4
+science↔engineering gap is load-bearing and explicit:** a state-vector simulator is *exponential* in
+qubit count — the ~25-qubit ceiling is a **resource-scale** wall, not a mathematical one (the
+mathematics is the same at 25 or 250 qubits; only the `2^n`-amplitude array makes 250 unreachable on
+a laptop). The BENCHMARKS.md `## S.A` section records this: the simulator demonstrates Shor's
+*mathematics* correctly at toy scale, and the qubit ceiling is exactly the engineering-scale boundary
+principle 4 says to annotate, not paper over. *(This is the S-track analogue of the index-calculus
+"asymptotic win not observable at toy scale" posture — the simulator exhibits the algorithm's logic,
+not its quantum speedup, which requires real quantum hardware out of scope by construction.)*
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase δ, E.W): "*E.W — Cross-attack benchmarks + Track E writeup. 1-2 sessions.
-Predecessor: most of E. The 'which attack wins on which curve' table; the pedagogical synthesis of
-structure-based escape from search. Opus-tier — high integrative judgment load.*" And per the Track-τ
-contract: **T.E folds into E.W** — the maths-first algebraic-ECDLP chapter (`docs/MATHEMATICS.md` ch.
-10) is written *paired with* the E.W code-tour, "at the track's ◆ boundary," with the **MOV reduction
-as the designated Opus payoff proof**.
+Per ROADMAP (Phase ε, S.A): "*S.A — State-vector simulator. 2-3 sessions. No structural predecessor.
+Up to ~25 qubits. Standard gate set; sparse-state optimization. KAT: published small-circuit results.
+Sonnet.*" And per the design statement (item 6): "*Shor's algorithm via a classical state-vector
+simulator, for both factoring and ECDLP.*"
 
-E.W is the **Track-E integrative close**: it does not add an attack, it *synthesises* the eight
-attacks Track E shipped — Pollard rho (the generic √n baseline, E.A-era), Pohlig–Hellman (CRT to
-prime-order subgroups, E.A), the MOV/Frey–Rück pairing reduction (E.C, the cross-track bridge to
-NFS-DL — the project's pedagogical climax), Smart–Satoh–Araki (the polynomial-time anomalous-curve
-attack, E.E), GHS/Weil descent (the binary-curve transfer, E.H), the Semaev primitive (E.J), and
-Gaudry–Diem–Joux–Vitse index calculus (E.K, the "solve") — into one comparative picture organised by
-the project's through-line: **structure-based escape from search**. Each attack is a story about
-finding the exploitable structure (a homomorphism, a pairing, an endomorphism, a smoothness/
-decomposition phenomenon) that escapes the generic √n bound; E.W is where that story is told *across*
-the attacks, not within one.
+S.A is the **substrate for Track S** — the classical quantum-circuit simulator on which Shor's
+algorithm (S.B factoring, S.C ECDLP) is built. It is the project's first quantum-model component:
+where every prior track escapes the generic √n / L-notation search bound by finding *classical*
+exploitable structure (a homomorphism, a pairing, a smoothness phenomenon), Track S dissolves the
+bound *entirely* in the quantum model via period-finding — and S.A is the machine that makes that
+demonstration runnable on classical hardware at toy scale.
 
-The deliverable is three-fold:
+The deliverable is two-fold (the two conceptual units, each a session):
 
-1. **The cross-attack benchmark table (E.W.1).** New Criterion benches for the non-rho attacks + a
-   `docs/BENCHMARKS.md` section. **The table is structural-precondition-conditional**: its columns are
-   (attack, curve-precondition, applies on this curve?, cost when applicable), NOT a uniform race —
-   because the attacks apply only on the curves whose structure they exploit. This conditionality *is*
-   the pedagogical content (which structure unlocks which escape).
+1. **The state-vector register + standard gate set (S.A.1).** The dense `StateVec` amplitude register
+   + the universal gate set + gate application by index arithmetic. The substrate every quantum
+   circuit in Track S is assembled from. **Freezes C-StateVec.**
 
-2. **The Track-E code-tour (E.W.2, `docs/PEDAGOGY.md`).** The code-tour chapter, in the genre of G.W /
-   D.W: the Track-E attacks at a glance, the per-attack code-tour, the cross-phase contract view, the
-   design-statement verification (principles 1/3/4), the KAT summary.
+2. **The sparse-state optimization + measurement + QFT (S.A.2 ◆).** The sparse representation (for
+   sparse-state circuits), Born-rule measurement, and the Quantum Fourier Transform — the period-
+   finding subroutine Shor's algorithm is built around. **Freezes C-Sparse + C-QFT.**
 
-3. **T.E — the algebraic-ECDLP maths chapter (E.W.2, `docs/MATHEMATICS.md` ch. 10).** The maths-first
-   chapter the through-line scaffolds: Pohlig–Hellman, the **MOV/Frey–Rück reduction (the payoff
-   proof)**, Smart–Satoh–Araki, GHS/Weil descent, and index calculus — each developed at proof-sketch
-   depth, with the per-attack L-notation comparison the through-line's hierarchy table anticipates.
-
-The sub-track decomposes into two conceptual units, each a session:
-
-1. **Cross-attack benchmark harness + table (E.W.1).** The empirical layer — the numbers the writeup
-   cites. **Freezes C-EWBench. (E.W.1.)**
-
-2. **Track-E code-tour + T.E maths chapter + close (E.W.2 ◆).** The synthesis layer — the prose
-   picture + the design-statement verification + the close. **Freezes C-TrackE. (E.W.2 ◆.)**
-
-E.W is **attack-free** (it adds no new ECDLP attack — the index-calculus `F_{p^n}` lift and the
-GHS-coupled end-to-end are the deferred re-shards E.K named), **contract-amend-free** (every Track-E
-solver surface is read, not touched; the only code is additive benches), and **register-stable** (T.E
-obeys the frozen C-Textbook). Re-read this intent at the ◆ boundary to catch defocus (a new attack,
-the `F_{p^n}` lift, a uniform-race table, re-deriving the through-line) and rigidity (forcing GHS into
-a solve column, breaking the C-Textbook register, amending C-IndexCalc for counts).
+S.A is **Shor-free** (it builds no cryptanalytic circuit — S.B/S.C are the consumers), **substrate-
+over-specified** (the controlled-gate surface is carried for S.B/S.C up front, the Category-A rule),
+and **principle-4-honest** (the exponential qubit ceiling is annotated as a resource-scale wall, not
+hidden). Re-read this intent at the ◆ boundary to catch defocus (a Shor circuit, the Proos–Zalka
+construction, period post-processing) and rigidity (forcing sparsity, skipping the QFT KAT, perf
+over-engineering).
 
 ---
 
@@ -188,28 +148,26 @@ a solve column, breaking the C-Textbook register, amending C-IndexCalc for count
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper (survey re-confirmed zero hits, 2026-06-16; the
 workspace `Cargo.toml` carries only `[workspace]` members + a `[profile.bench]`); raw `cargo` is the
-only CI surface (unchanged from E.D…E.K). The benchmark layer adds a third discovered command:
-`VERIFY_BENCH = cargo bench --no-run` (compile-only — confirms the new benches build without running
-the full timing pass; the actual `cargo bench` timings are hand-transcribed into BENCHMARKS.md, the
-established pattern). Oracle KATs are `#[ignore]`-gated only (`#[ignore = "PARI not installed; run
-manually when available"]` / the msolve analogue), used identically across `rho/tests/*_kat.rs`.
-`/run-plan` re-discovers at preflight. E.W **adds no new workspace edge and no new crate** (criterion
-is already a `rho` dev-dependency; the new benches are additive `[[bench]]` entries in
-`rho/Cargo.toml`; the docs are pure-prose additions), so the gate is a **no-regression + build gate**:
+only CI surface (unchanged from the Track-E sub-tracks). S.A.2 may add a benchmark, so the third
+discovered command applies if so: `VERIFY_BENCH = cargo bench --no-run` (compile-only — the actual
+`cargo bench` timings are hand-transcribed into BENCHMARKS.md, the established pattern). `/run-plan`
+re-discovers at preflight. S.A **adds one new workspace member (`shor`) and one new dependency
+(`num-complex`)** — both leaf-confined to the new crate — so the gate is a **new-crate-builds +
+new-crate-tests-green gate**, with the no-regression invariant trivially held for every existing
+crate (S.A touches no existing code):
 
-- **The existing rho / gnfs / shared KATs must stay green** — E.W changes no solver path; it reads the
-  frozen surfaces and adds benches + docs. `cargo test --workspace` is the no-regression guard.
-- **`cargo check --workspace` must stay green** — no edge change, no new dependency. The doc edits do
-  not touch code; the bench additions are leaf additions to the `rho` crate.
-- **`cargo bench --no-run` must compile the new benches** — the benchmark harness (E.W.1) is the only
-  new code; it must build against the frozen solver APIs. (Running the full `cargo bench` to harvest
-  timings is a manual step; the numbers are transcribed into BENCHMARKS.md, matching the hand-written
-  G.W timing section.)
-- **No live oracle on the green path** — E.W introduces none (principle 3); the benches call the
-  frozen `rho` solvers (no PARI/msolve/CADO). Any oracle cross-check stays `#[ignore]`-gated.
-- **Documentation has no compiler/test gate** — the code-tour (`PEDAGOGY.md`) and T.E
-  (`MATHEMATICS.md`) are prose; their "verify" is the E.W.2 ◆ juncture review (register conformance to
-  C-Textbook, cross-reference correctness, the design-statement verdict), not `cargo`.
+- **The existing rho / gnfs / shared KATs must stay green** — S.A adds a new crate; it changes no
+  existing solver path. `cargo test --workspace` is the no-regression guard *and* the new-crate KAT
+  gate (the `shor` KATs join the workspace test run).
+- **`cargo check --workspace` must stay green with the new `shor` member + the `num-complex` edge** —
+  the new dependency is leaf (only `shor` depends on it); no existing crate's edge changes; no cycle
+  risk.
+- **`cargo bench --no-run` compiles any S.A.2 bench** — if S.A.2 adds a `shor/benches/` qubit-scaling
+  bench, it must build; the timings are hand-transcribed (matching the G.W / E.W pattern).
+- **KATs are published-value, self-contained — no oracle on the green path** — the simulator's KATs
+  are published small-circuit amplitudes + unitarity + QFT known vectors; no external quantum
+  simulator is called. (No PARI/msolve/CADO analogue exists for Track S; there is no live quantum
+  oracle. Cross-checks against a reference simulator, if any are written, are `#[ignore]`-gated.)
 
 ---
 
@@ -222,435 +180,303 @@ dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| E.W.1 | Cross-attack ECDLP benchmark harness + "which attack wins on which curve" table | C | Sonnet | C-Pollard/`rho::ecdlp::solve_*` (frozen, read); C-Pohlig/`rho::ecdlp::pohlig::solve_ecdlp_composite` (frozen, read); C-Mov/`rho::pairing::mov::mov_reduce` (frozen, read); C-Ssa/`rho::ssa::ssa_solve` (frozen, read); C-GHSDescent/`rho::ghs::{ghs_descend, verify_log_preservation}` (frozen, read — transfer, not solve); C-IndexCalc/`rho::index_calculus::{index_calculus_dlp, collect_relations, decompose}` (frozen, read — counts via the re-exports); the per-attack toy fixtures (read) | `rho/benches/attacks.rs` (new: Criterion benches for Pohlig–Hellman, MOV, SSA, GHS-reduction, index calculus on their respective toy fixtures), `rho/Cargo.toml` (add `[[bench]] name = "attacks", harness = false`), `docs/BENCHMARKS.md` (add `## E.W` section: the structural-precondition-conditional table + the principle-4 note) |
-| E.W.2 ◆ `@architect` | Track-E code-tour + T.E algebraic-ECDLP chapter (MOV payoff) + Track-E close | I | **Opus** | C-EWBench (frozen E.W.1 — the table the writeup cites); all frozen Track-E contracts (C-Pollard, C-Pohlig, C-Mov, C-Ssa, C-GHSDescent, C-Semaev, C-IndexCalc — read for the code-tour + chapter); C-Textbook (frozen T.0 — the register T.E obeys); the §"Escape from Search" through-line (frozen T.0 — extended, not re-derived) | `docs/PEDAGOGY.md` (append: Track-E code-tour — attacks at a glance, per-attack tour, cross-phase contracts, design-statement verification, KAT summary), `docs/MATHEMATICS.md` (append/fill ch. 10 "Algebraic ECDLP Attacks" — T.E: Pohlig–Hellman, MOV payoff proof, SSA, GHS, index calculus + the per-attack L-notation comparison) |
+| S.A.1 | State-vector register + standard gate set | A | Sonnet | (none — no structural predecessor; new `shor` crate); the workspace crate-skeleton convention (read: `shared/gf2m`, `rho` for the `[lints]` + `edition` + `tests/*_kat.rs` idiom) | `Cargo.toml` (add `"shor"` to `[workspace] members`), `shor/Cargo.toml` (new: `num-complex = "0.4"` + `[lints]` + `criterion` dev-dep if benched), `shor/src/lib.rs` (new: crate docstring + module decls), `shor/src/statevec/mod.rs` + `shor/src/gates/mod.rs` (new: `StateVec` register + gate set), `shor/tests/statevec_kat.rs` (new: unitarity / Bell / GHZ KATs) |
+| S.A.2 ◆ | Sparse-state optimization + measurement + QFT | A | Sonnet | C-StateVec (frozen S.A.1 — the dense register + gate interface) | `shor/src/sparse/mod.rs` (new: sparse-state representation), `shor/src/measure/mod.rs` (new: Born-rule measurement + seeded sampler), `shor/src/qft/mod.rs` (new: QFT over the register), `shor/tests/qft_kat.rs` (new: QFT published-amplitude + measurement-distribution KATs), `docs/BENCHMARKS.md` (add `## S.A` section: dense-vs-sparse + qubit-scaling table + the principle-4 resource-scale note) |
 
-**Sequencing notes.** Strictly serial: **E.W.1 → E.W.2.** E.W.1 lands the benchmark harness + the
-table data; E.W.2 writes the code-tour + T.E that *cite* that table and closes the track. **One
-`@architect` marker:** the **E.W.2 ◆** (the Track-E boundary juncture — ratifying the cross-attack
-synthesis, the design-statement verdict on principles 1/3/4, the C-Textbook register conformance of
-T.E, and confirming the Track-E arc E.A–E.K is coherent and closed before the ◆). *(Tradeoff named:
-E.W pages a juncture only at the ◆-close, NOT at the open — unlike E.K, whose E.K.1 substrate-contract
-design forced an opening fork. E.W.1 is mechanical bench-wiring over already-frozen solver APIs with no
-contract-design crux, so no opening fork is warranted; the integrative judgment is concentrated at the
-close, where the synthesis + the design-statement verification + the ◆ all land. This matches the G.W
-/ D.W closeout pattern, where the writeup session is the single Opus juncture.)*
+**Sequencing notes.** Strictly serial: **S.A.1 → S.A.2.** S.A.1 lands the dense register + gate set
+and freezes the interface; S.A.2 consumes it (sparse variant, measurement, QFT all build on the
+frozen register/gate surface) and closes the sub-track. **One `@architect` marker:** the **S.A.2 ◆**
+(the sub-track-boundary juncture — ratifying the frozen simulator substrate before S.B/S.C consume
+it). *(Tradeoff named: S.A pages a juncture only at the ◆-close, NOT at the open — unlike the
+Opus-substrate opens E.B.1/E.F.1/G.A.1, whose substrate-design crux forced an opening fork. S.A.1's
+gate-set design is well-understood (the universal gate set is canonical), so no opening fork is
+warranted; the integrative judgment — is the substrate interface right for two downstream tracks? —
+concentrates at the ◆ freeze. The juncture-tier is `opus` regardless, per lever 3.)*
 
-**Why 2 sessions (the ROADMAP ceiling, confirmed by ceiling-bias).** The split is taken at the single
-benchmark↔writeup contract-sharp seam:
-- **One-line-commit-title corollary.** "Cross-attack benchmark harness + table" and "Track-E code-tour
-  + T.E chapter + close" are **two distinct commit titles** across two categories (C optimization/
-  empirical ×1, I integrative ×1). Bundling them into one session fails the corollary — "add benches
-  AND write the code-tour AND write the maths chapter AND verify the design statement AND close the
-  track" is not one commit-title-shaped sentence.
-- **Irreducible units kept whole (lever 2).** Each session is one conceptual unit: E.W.1 is the
-  empirical layer (the numbers); E.W.2 is the synthesis layer (the prose + the verdict + the close).
-  Neither is fractured below its floor.
-- **Contract-sharp boundary.** E.W.1 **freezes** C-EWBench (the benchmark data + table shape); E.W.2
-  **consumes** it (the writeup cites the table) and **freezes** C-TrackE (the synthesis surface Z.1 +
-  T.Z consume). The writeup is meaningless without the benchmark freeze — it quotes the numbers.
+**Why 2 sessions (the ROADMAP low end of 2–3).** The split is taken at the single dense↔sparse
+contract-sharp seam:
+- **One-line-commit-title corollary.** "State-vector register + standard gate set" and "Sparse-state
+  optimization + measurement + QFT" are **two distinct commit titles**. Bundling them — "build the
+  register AND the gate set AND the sparse representation AND measurement AND the QFT" — fails the
+  corollary.
+- **Irreducible units kept whole (lever 2).** S.A.1 is the dense substrate (register + gates as one
+  conceptual unit); S.A.2 is the optimized/derived layer (sparse + measure + QFT). Neither fractures
+  below its floor — the gate set is one unit (splitting "X/Y/Z gates" from "controlled gates" would
+  fracture the universal set), and sparse+measure+QFT cohere as the layer that makes the register
+  *usable* by a circuit.
+- **Contract-sharp boundary.** S.A.1 **freezes** C-StateVec (the register + gate interface); S.A.2
+  **consumes** it (sparse/measure/QFT all build on the frozen surface) and **freezes** C-Sparse +
+  C-QFT. The sparse representation and QFT are meaningless without the register freeze — they operate
+  on it.
+- **Strong lever 5 licenses the small dense commits.** The simulator's KATs are deterministic and
+  published (unitarity, Bell/GHZ, QFT vectors), so the inner loop catches drift behaviourally — the
+  exact condition that makes small commits safe.
 
-**The softest seam — could T.E split off as a third session (E.W.3)?** The Track-τ contract explicitly
-allows the maths chapter to "split into a dedicated follow-on if it overruns — decided at the
-boundary." The chosen shard keeps the **code-tour and T.E together in E.W.2** (the G.W / D.W
-precedent), because the τ rationale for pairing them is that mathematics and code-mapping stay
-consistent while both are fresh — there is **no contract seam between the code-tour and its paired
-chapter** (they reference the same frozen attacks), so splitting them up front would fracture the
-writeup unit below its floor without buying an early freeze. **If T.E overruns at E.W.2** (the
-MOV-payoff proof + the five-attack development + the L-notation comparison push past the session band),
-the τ contract's escape applies: split T.E into a dedicated E.W.3 follow-on — an additive-reshard
-surfaced at the ◆, not a silent overrun. This is the one place the 2-vs-3 sizing is genuinely
-uncertain until the code-tour lands and the chapter's true size is concrete.
+**The softest seam — could the QFT split off as a third session (S.A.3)?** The ROADMAP 2–3 band
+allows it, and the ceiling-bias note (G and D both landed at/above their bands) argues the real count
+may be 3. The chosen shard keeps **sparse + measurement + QFT together in S.A.2**, because they are
+the cohesive "make the register usable" layer over the *same* frozen interface — there is **no
+contract seam between them** (sparse-state, measurement, and the QFT all consume C-StateVec and freeze
+sibling contracts), so splitting them up front would over-shard without buying an early freeze.
+**If S.A.2 overruns** (the sparse representation + the QFT + the measurement sampler + their KATs push
+past the session band — plausible, since the QFT is the load-bearing Shor subroutine and deserves a
+full KAT), the escape applies: **split the QFT into a dedicated S.A.3 ◆** (sparse + measurement in
+S.A.2, freezing C-Sparse; QFT in S.A.3, freezing C-QFT and carrying the ◆) — an additive-reshard
+surfaced at the S.A.1 ◆ readout or by S.A.2 once the layer's true size is concrete, never a silent
+overrun. This is the one place the 2-vs-3 sizing is genuinely uncertain until the dense substrate
+freezes and S.A.2's true size is visible.
 
 ---
 
 ## Session detail
 
-E.W.1 is specified at near-full fidelity (the benchmark surface is entirely frozen — the solver APIs
-are known, the fixtures are known, the only design choice is the table shape). E.W.2 is specified at
-the structural level (the code-tour + chapter outline) with the per-section content sketched — correct
-per the substrate-first discipline: the chapter's exact size and the design-statement verdict are
-crisp only after the benchmark data freezes and the writeup is underway.
+S.A.1 is specified at near-full fidelity (the gate set is canonical — the universal standard gate set
+is known; the register representation is the standard dense amplitude array; the only design choices
+are the basis-indexing convention and the controlled-gate surface breadth, both resolved below).
+S.A.2 is specified at the structural level (the sparse/measure/QFT outline) with the per-piece content
+sketched — correct per the substrate-first discipline: the sparse representation's exact shape and the
+QFT's true KAT size are crisp only after the register interface freezes.
 
-### E.W.1 — Cross-attack ECDLP benchmark harness + table (Sonnet, Cat C)
+### S.A.1 — State-vector register + standard gate set (Sonnet, Cat A)
 
-**Deliverable:** the empirical layer — new Criterion benches for the non-rho attacks + the
-`docs/BENCHMARKS.md` `## E.W` section. The pieces:
-- **The benches** (`rho/benches/attacks.rs`, new): a Criterion bench group with one benchmark per
-  attack that *applies on its fixture*, calling the frozen solver and measuring wall-clock cost:
-  - **Pohlig–Hellman** — `solve_ecdlp_composite` on `composite_toy()` (`y² = x³ + x + 33 mod 47`,
-    `n = 60 = 2²·3·5`).
-  - **MOV/Frey–Rück** — `mov_reduce` on `pairing_toy()` (the same base curve, `ℓ = 3`, `k = 2`,
-    `F_{47²}`); note the bench measures the *reduction + the F_{p^k} DLP* the bridge calls.
-  - **SSA** — `ssa_solve` on `anomalous_toy()` (`y² = x³ + 5 mod 7`, `#E = 7 = p`).
-  - **GHS-reduction** — `ghs_descend` + `verify_log_preservation` on `ghs_toy_curve()` (`GF(2^6)`,
-    `m = 6`, `l = 2`); **the transfer, NOT an end-to-end solve** (see subtlety 1).
-  - **Index calculus** — `index_calculus_dlp` on `IndexCalcStrategy::toy()` (same base curve, `ℓ = 5`,
-    `|FB| = 6`, `m = 2`), with the relation/decomposition counts derived from
-    `collect_relations(...).len()` + `decompose(...)` (the public re-exports — no contract amend).
-  - *(Pollard rho is already benched in `rho/benches/ecdlp.rs` on `secp_k1_toy` (63-bit) — read and
-    cite that bench as the generic-√n baseline column; do not duplicate it.)*
-- **The manifest entry** (`rho/Cargo.toml`): add `[[bench]] name = "attacks" harness = false` (the
-  established `harness = false` Criterion pattern, matching the three existing `[[bench]]` entries).
-- **The `## E.W` BENCHMARKS.md section** (`docs/BENCHMARKS.md`, append): the
-  **structural-precondition-conditional table** — columns (attack, curve-precondition, applies?,
-  toy-scale cost, escape structure) — + the principle-4 science↔engineering note (the asymptotic
-  L-notation separations are NOT observable at toy scale; the table reports toy costs, the chapter
-  explains the asymptotic picture). Matches the existing per-sub-track BENCHMARKS.md genre (prose
-  setup + table + science↔engineering note, the G.W section as template).
+**Deliverable:** the dense quantum-circuit substrate — the `StateVec` register + the universal gate
+set + the new `shor` crate skeleton. The pieces:
+- **The crate skeleton** (`shor/Cargo.toml` + `Cargo.toml` workspace edit): a new top-level track
+  crate `shor`, `edition = "2024"`, the established `[lints]` block (`unsafe_code = "forbid"`,
+  `missing_docs = "warn"`, `clippy::all = "deny"`, `clippy::pedantic = "warn"`),
+  `num-complex = "0.4"` as the sole new dependency, `proptest = "1"` dev-dep (the established
+  property-test idiom), and `criterion` dev-dep + a `[[bench]]` entry *iff* S.A.1 lands a bench
+  (else deferred to S.A.2). The workspace `Cargo.toml` `members` list gains `"shor"`.
+- **The `StateVec` register** (`shor/src/statevec/mod.rs`, new): a dense `Vec<Complex<f64>>` of
+  `2^n` amplitudes over `n` qubits, little-endian basis indexing (qubit 0 is the least-significant
+  bit), with constructors (`|0…0⟩`, a basis state, an arbitrary normalized vector), a normalization
+  invariant (`Σ|aᵢ|² = 1`, checked in debug + a KAT), and the ~25-qubit ceiling documented (the
+  `2^25` amplitude array is the resource wall).
+- **The standard gate set** (`shor/src/gates/mod.rs`, new): the universal set applied by index
+  arithmetic over the register — single-qubit X, Y, Z, H, S, T, phase(θ), arbitrary single-qubit
+  unitary; two-qubit CNOT, controlled-phase, SWAP; multi-qubit Toffoli / **multi-controlled gates**
+  (the over-specified surface S.B's modular exponentiation + S.C's Proos–Zalka circuit consume).
+  Each gate is applied in-place by iterating the amplitude pairs the gate couples (the standard
+  `O(2^n)`-per-gate state-vector update), not by materializing a `2^n × 2^n` matrix.
 
-Consumes the frozen solver surfaces (read): `rho::ecdlp::solve_*`, `rho::ecdlp::pohlig::
-solve_ecdlp_composite`, `rho::pairing::mov::mov_reduce`, `rho::ssa::ssa_solve`, `rho::ghs::
-{ghs_descend, verify_log_preservation}`, `rho::index_calculus::{index_calculus_dlp, collect_relations,
-decompose}`, and the per-attack toy fixtures. **Freezes C-EWBench.**
+Consumes nothing (no structural predecessor; new crate). Reads the workspace crate-skeleton
+convention (`shared/gf2m/Cargo.toml`, `rho/Cargo.toml` for the `[lints]`/`edition`/`tests` idiom).
+**Freezes C-StateVec.**
 
-**KAT** (the benches double as the no-regression signal; plus an optional inline correctness assert):
-over each toy fixture: **each benched attack still solves its instance** (the bench body asserts the
-solver returns the known answer before timing — so the bench is also a smoke test that no frozen path
-regressed). **Verify gate:** `cargo test --workspace` green (no regression); `cargo check --workspace`
-green (leaf bench additions, no edge change); `cargo bench --no-run` compiles the new bench.
+**KAT:** over published small-circuit results + algebraic invariants: (1) **unitarity** — each gate
+`U` satisfies `U U† = I` (applied to basis states, the output amplitudes match); (2) **Bell state** —
+`H` on qubit 0 then `CNOT(0→1)` on `|00⟩` gives `(|00⟩ + |11⟩)/√2` (the published amplitudes);
+(3) **GHZ state** — the `n`-qubit GHZ amplitudes; (4) **normalization** — `Σ|aᵢ|² = 1` preserved
+across any gate sequence; (5) **gate identities** — `HH = I`, `XX = I`, `S² = Z`, `T² = S` (published
+single-qubit relations). The KATs follow the `rho/tests/*_kat.rs` idiom: a per-fixture helper, many
+`#[test]` one-liners, semantic amplitude comparison (within an `f64` tolerance), published values
+noted in comments. **Verify gate:** `cargo test --workspace` green (the new `shor` KATs pass + no
+regression); `cargo check --workspace` green (new member + `num-complex` edge, no cycle); `cargo bench
+--no-run` iff a bench lands.
 
-**Subtlety (load-bearing):** (1) **GHS is a transfer, not a solve** — `rho::ghs` has no `ghs_dlp`; the
-bench measures the descent reduction + log-preservation verification, annotated as a transfer whose
-downstream solve is index calculus. Forcing GHS into an end-to-end "solve time" column is a
-misrepresentation. (2) **The table is precondition-conditional, not a uniform race** — each attack
-applies only on the curve whose structure it exploits; the table's columns encode the precondition
-("applies?"), and the pedagogical point is *which structure unlocks which escape*, not a fixed-instance
-timing winner. (3) **Index-calculus counts come from the public re-exports** — `index_calculus_dlp`
-returns no counts; derive them from `collect_relations(...).len()` + `decompose(...)` (both `pub`);
-**do NOT amend C-IndexCalc**. (4) **Toy-scale costs only** — the asymptotic L-notation separations are
-not observable at `p = 47` / `secp_k1_toy`; the principle-4 note records this (the asymptotic picture
-is T.E's job). (5) **Criterion is already a dev-dep** — the bench is a leaf addition; no new
-dependency, no new edge.
+**Subtlety (load-bearing):** (1) **Over-specify the controlled-gate surface (Category-A rule)** —
+S.A itself only needs single + two-qubit gates for its KATs, but S.B's modular exponentiation and
+S.C's Proos–Zalka circuit need multi-controlled gates; carry them now (the cost of adding a frozen-
+interface method later is higher than carrying an unused one). (2) **Basis-indexing convention is a
+freeze** — little-endian (qubit 0 = LSB) must be fixed at S.A.1 and documented; S.B/S.C and the QFT
+all index into the register and a silent convention flip is a wrong-answer bug. (3) **`f64`
+amplitudes, not exact** — the simulator uses floating-point complex amplitudes; KATs compare within
+tolerance, and the normalization/unitarity checks carry an explicit ε. (4) **No matrix
+materialization** — gates apply by amplitude-pair iteration (`O(2^n)` per gate), never a `2^n × 2^n`
+matrix (`O(4^n)` memory) — the standard state-vector method, and a principle-3 honesty point (no
+engineering accel, but also no naive blowup). (5) **The ~25-qubit ceiling is principle-4** — the
+`2^n` array is the resource wall; document it, do not engineer around it.
 
-**Deferred:** the code-tour (E.W.2); T.E (E.W.2); the design-statement verdict (E.W.2); the Track-E
-close (E.W.2 ◆); any new attack / the `F_{p^n}` index-calculus lift / the GHS Jacobian solve (deferred
-re-shards, not E.W).
+**Deferred:** the sparse-state optimization (S.A.2); measurement (S.A.2); the QFT (S.A.2); the
+BENCHMARKS.md `## S.A` section (S.A.2 — needs the sparse-vs-dense numbers); any Shor circuit (S.B/S.C
+— the deferred consumers).
 
-### E.W.2 ◆ — Track-E code-tour + T.E algebraic-ECDLP chapter + Track-E close (Opus, Cat I)
+### S.A.2 ◆ — Sparse-state optimization + measurement + QFT (Sonnet, Cat A→B)
 
-**Deliverable:** the synthesis layer — the paired writeup (code-tour + T.E) + the design-statement
-verification + the Track-E ◆ close. Structural-fidelity sketch (the per-section content is crisp once
-the benchmark data freezes and the chapter outline is set). The pieces:
-- **The Track-E code-tour** (`docs/PEDAGOGY.md`, append — the rho-crate code-tour home, after the
-  existing Phase 0–8 rho content): in the G.W / D.W genre — Track-E attacks at a glance; the per-attack
-  code-tour (Pohlig–Hellman, MOV, SSA, GHS, Semaev, index calculus — each: what it exploits, the
-  module surface, the toy KAT); the cross-phase contract view (the frozen Track-E contracts unified);
-  the **design-statement verification** (principles 1/3/4 against the realised Track-E — the G.W §59 /
-  D.W §69 analogue: algorithmic content complete; no engineering optimisation crept in; scale-only
-  phenomena at demonstration fidelity, with the toy-scale L-notation non-observability annotated); the
-  KAT summary; cross-references to T.E.
-- **T.E — the algebraic-ECDLP maths chapter** (`docs/MATHEMATICS.md` ch. 10 — fill the existing stub):
-  the maths-first chapter the §"Escape from Search" through-line scaffolds, at the C-Textbook register
-  (proof-sketch depth, MathJax markup, the undergraduate-maths audience floor). Develops the five
-  attacks the through-line names — Pohlig–Hellman (CRT to prime-order subgroups), **the MOV/Frey–Rück
-  reduction (the DESIGNATED PAYOFF PROOF — why the pairing maps ECDLP to `F_{p^k}^*` DLP, where index
-  calculus applies; the cross-track climax)**, Smart–Satoh–Araki (the polynomial-time anomalous-curve
-  attack), GHS/Weil descent (the binary-curve transfer to a hyperelliptic Jacobian), and index calculus
-  (Semaev decomposition over the factor base) — each at proof-sketch depth, with the **per-attack
-  L-notation comparison** the through-line's hierarchy table anticipates (rho `L[1, 1/2]`; index
-  calculus subexponential in the `F_{p^n}` setting; MOV reducing to `L[1/3]` via NFS-DL; SSA
-  polynomial; GHS conditional). Extends the through-line; does NOT re-derive it.
-- **The Track-E ◆ close**: re-read the Purpose intent; verify the Track-E arc (E.A → E.K) is coherent
-  and complete; record the design-statement verdict; confirm C-TrackE exposes what Z.1 (umbrella) +
-  T.Z (textbook bind) consume.
+**Deliverable:** the layer that makes the register usable by a circuit — the sparse representation,
+Born-rule measurement, and the QFT — + the BENCHMARKS.md section + the sub-track ◆ close. Structural-
+fidelity sketch (the per-piece content is crisp once the register interface freezes). The pieces:
+- **The sparse-state representation** (`shor/src/sparse/mod.rs`, new): a hashmap (or sorted vector)
+  of `(basis_index, Complex<f64>)` nonzero amplitudes, for circuits whose state stays sparse (the
+  ROADMAP's "sparse-state optimization"). Same gate-application semantics as the dense register
+  (consumes C-StateVec's gate interface), but iterating only nonzero entries. A conversion to/from
+  the dense register. The honest scope: sparse helps *only* while the state is sparse — a Hadamard
+  on every qubit makes it dense, so this is a demonstration of the technique, not a universal speedup
+  (a principle-4 annotation).
+- **Measurement** (`shor/src/measure/mod.rs`, new): Born-rule measurement — sample a basis state with
+  probability `|aᵢ|²`, collapse the register, with a deterministic seeded sampler (the
+  `rand_chacha` idiom the workspace already uses) so KATs are reproducible. Single-qubit and
+  full-register measurement.
+- **The QFT** (`shor/src/qft/mod.rs`, new): the Quantum Fourier Transform over the register — the
+  Hadamard + controlled-phase ladder (`O(n²)` gates), the period-finding workhorse Shor's algorithm
+  is built around. Built from the frozen S.A.1 gate set (H + controlled-phase), with the bit-reversal
+  convention documented (it interacts with the little-endian basis indexing).
+- **The `## S.A` BENCHMARKS.md section** (`docs/BENCHMARKS.md`, append): the dense-vs-sparse
+  comparison + a qubit-scaling table (wall-clock vs n, showing the `2^n` wall) + the **principle-4
+  resource-scale note** (the simulator demonstrates Shor's *mathematics* correctly; the ~25-qubit
+  ceiling is the engineering/resource wall, not a mathematical one — the same posture as the index-
+  calculus "asymptotic win not observable at toy scale"). Matches the per-sub-track BENCHMARKS.md
+  genre (prose setup + table + science↔engineering note).
+- **The S.A ◆ close**: re-read the Purpose intent; verify the simulator substrate is complete and the
+  interface S.B/S.C consume (register + gates + measurement + QFT) is coherent and frozen; confirm
+  the principle-4 ceiling is annotated.
 
-Consumes C-EWBench (frozen E.W.1), all frozen Track-E contracts (read), C-Textbook (frozen T.0 — the
-register), the §"Escape from Search" through-line (frozen T.0 — extended). **Freezes C-TrackE.**
+Consumes C-StateVec (frozen S.A.1). **Freezes C-Sparse + C-QFT.**
 
-**KAT (review-enforced, not compiler-enforced):** documentation has no `cargo` gate — the E.W.2 ◆
-juncture review is the verification: T.E conforms to the C-Textbook register (audience floor, proof-
-sketch depth, MathJax markup); the MOV payoff proof is complete and correct (the designated climax);
-the code-tour cross-references resolve; the design-statement verdict (principles 1/3/4) is recorded;
-the cross-attack table (C-EWBench) is cited accurately. **Verify gate:** `cargo test --workspace` /
-`cargo check --workspace` green (no code change beyond E.W.1's benches — the no-regression invariant
-holds trivially); the prose verification is the ◆ fork.
+**KAT:** (1) **QFT published amplitudes** — the QFT on `|0…0⟩` gives the uniform superposition; the
+QFT on a basis state gives the published Fourier amplitudes (`(1/√N) Σ ω^{jk} |k⟩`); QFT then
+inverse-QFT is the identity. (2) **Measurement distribution** — a seeded measurement of a known
+superposition recovers the Born-rule frequencies within tolerance over many samples (a deterministic-
+seed statistical KAT). (3) **Sparse-dense agreement** — a gate sequence on the sparse representation
+yields the same amplitudes as on the dense register (the sparse path is a no-regression mirror of the
+dense path). **Verify gate:** `cargo test --workspace` green (the new KATs + no regression);
+`cargo check --workspace` green; `cargo bench --no-run` compiles any qubit-scaling bench.
 
-**Subtlety (load-bearing):** (1) **The MOV payoff proof is the designated Opus climax** — the
-through-line names MOV as "the cross-track bridge of this project"; T.E must develop *why* the pairing
-reduction works (the bilinear `e: E[n] × E[n] → μ_n` mapping ECDLP to `F_{p^k}^*` DLP), at the
-proof-depth C-Textbook reserves for designated payoffs. A `@build`/writer treating MOV as one
-bullet among five mis-weights the chapter. (2) **Extend the through-line, do not re-derive it** —
-the five-family structure taxonomy + the L-notation hierarchy are frozen at T.0; T.E develops each
-attack *under* that scaffold, citing it, not restating it (rigidity guard). (3) **GHS is a transfer**
-— the chapter must represent GHS as the binary-curve *reduction* (transfer/structure/solve, NOTES.md),
-whose downstream solve is index calculus; not as a standalone end-to-end break. (4) **C-Textbook
-register is frozen** — the audience floor (undergraduate maths), proof-sketch depth (complete +
-clinical, not exhaustive, not inscrutable; full proofs only at payoffs), and MathJax markup are frozen
-at T.0; breaking the register for one chapter is a discovery that must flex C-Textbook at the ◆, not a
-silent level-raise. (5) **The design-statement verification is load-bearing** — E.W.2 is "where the
-design statement is verified against the actual Track-E implementation" (the G.W / D.W analogue); the
-verdict on principles 1/3/4 is recorded in the action-frame digest. (6) **No new attack, no `F_{p^n}`
-lift, no GHS Jacobian solver** — these are the deferred re-shards E.K named; E.W is the close, not an
-extension.
+**Subtlety (load-bearing):** (1) **The QFT is the load-bearing Shor subroutine** — it is the piece
+S.B/S.C's period-finding depends on; its KAT (published Fourier amplitudes + QFT/iQFT identity) must
+be complete, not a smoke test. If the QFT + its KAT + the sparse layer overruns the band, **split the
+QFT into S.A.3** (the named soft seam). (2) **Bit-reversal × little-endian interaction** — the QFT
+conventionally outputs bit-reversed; combined with S.A.1's little-endian indexing, the convention
+must be fixed and documented, else S.B/S.C read the period out of the wrong qubit order (a silent
+wrong-answer bug). (3) **Sparse is a demonstration, not a universal win (principle 4)** — sparsity
+helps only while the state is sparse; annotate that a fully-superposed state is dense and the sparse
+path then matches the dense cost. (4) **Seeded measurement for reproducible KATs** — the sampler is
+deterministic-by-seed (`rand_chacha`), so the measurement-distribution KAT is reproducible. (5) **The
+~25-qubit ceiling is principle-4 (resource scale)** — the BENCHMARKS.md note records the exponential
+wall as engineering scale, not mathematical omission.
 
-**Deferred:** Z.1 (the umbrella narrative — Phase ζ); T.Z (the textbook bind — Phase τ); the deferred
-Track-E re-shards (the `F_{p^n}` index-calculus asymptotic-win lift; the GHS-coupled binary-curve
-end-to-end); Track S (Shor + post-quantum) — all post-Track-E.
+**Deferred:** Shor-for-factoring (S.B — the modular-exponentiation circuit + order-finding post-
+processing); Shor-for-ECDLP (S.C — the Proos–Zalka circuit); the post-quantum writeup (S.D) + T.S
+(the ch. 11 math chapter, paired with S.D); all of Track ζ (umbrella) + τ-bind. **S.A is the
+substrate; the Shor attacks are its consumers.**
 
 **`@architect` ◆ confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the
-E.W.2 ◆ to confirm: (1) the cross-attack synthesis is coherent — the eight Track-E attacks are
-organised under the structure-based-escape through-line, the table (C-EWBench) is cited accurately,
-and the conditionality (which structure unlocks which escape) is the chapter's spine; (2) the **MOV
-payoff proof** is complete and correct at the designated proof-depth (the cross-track climax); (3) T.E
-conforms to the frozen C-Textbook register (audience, depth, MathJax) — no silent level-break; (4) the
-**design-statement verdict** is recorded — Track E met principles 1/3/4 (algorithmic content complete;
-no engineering optimisation crept in; scale-only phenomena at demonstration fidelity, toy-scale
-L-notation non-observability annotated); (5) C-TrackE exposes what Z.1 (umbrella) + T.Z (textbook bind)
-consume so the downstream integrative sessions build without re-opening Track E; (6) E.W stayed in
-scope — no new attack, no `F_{p^n}` index-calculus lift, no GHS Jacobian solver, GHS represented
-honestly as a transfer. **Also: surface the outstanding static-frame ROADMAP debt** carried +
-compounded from the E.I, E.H, E.J, and E.K ◆ (the Progress / Remaining tables stale by six completed
-sub-tracks E.F–E.K + the E.H-before-E.I inversion; see the Discoveries & risks entry) — **and note
-that the Track-E ◆ close is the natural reconciliation point** (Track E is now complete end-to-end), so
-the ROADMAP write is *owed at this boundary* — though the ROADMAP write itself is out of `@architect`
-PLAN-write scope (a capture candidate, not a PLAN edit). One-shot findings; does not implement. Held at
-**Opus** per the header.
+S.A.2 ◆ to confirm: (1) the simulator substrate is complete — the register + universal gate set +
+sparse option + measurement + QFT compose correctly and the published-value KATs pass; (2) **the
+interface is right for two downstream tracks** — the gate surface (including multi-controlled gates),
+the QFT, and measurement expose what S.B's modular-exponentiation circuit + S.C's Proos–Zalka circuit
+will consume, so neither has to re-open S.A to add a primitive (the lever-3 reason the juncture is
+held at opus); (3) the basis-indexing + bit-reversal conventions are fixed and documented (the silent-
+wrong-answer guard); (4) the principle-4 resource-scale ceiling is annotated (the `2^n` wall is
+engineering, not mathematical); (5) C-StateVec + C-Sparse + C-QFT expose what S.B/S.C consume so the
+Shor sub-tracks build without re-opening S.A; (6) S.A stayed in scope — no Shor circuit, no period
+post-processing, no perf over-engineering. **Also: surface the outstanding static-frame ROADMAP debt**
+(the Track-E Progress/Remaining reconciliation owed since the E.W ◆ — the Progress table still shows
+E in progress and S not started; the Track-E ◆ close was the named reconciliation point but the
+ROADMAP write was out of `@architect` PLAN-write scope, and now Track S has opened) — **note that the
+S.A open is a natural second reconciliation prompt** (Phase δ is closed, Phase ε has started), though
+the ROADMAP write itself is out of `@architect` PLAN-write scope (a capture candidate, not a PLAN
+edit). One-shot findings; does not implement. Held at **opus** per the header (lever 3).
 
 ---
 
 ## Cross-session contracts
 
-E.W **freezes two** contracts (C-EWBench at E.W.1, C-TrackE at E.W.2 ◆) and **amends no prior frozen
-contract** — every Track-E solver surface (C-Pollard, C-Pohlig, C-Mov, C-Ssa, C-GHSDescent, C-Semaev,
-C-IndexCalc) is **read, not touched**; C-Textbook (frozen T.0) is the register T.E obeys, not amended.
-E.W adds `rho/benches/attacks.rs` + a `[[bench]]` manifest entry + prose appends to `docs/PEDAGOGY.md`
-and `docs/MATHEMATICS.md` — all **additive**, no trait amendment, no new edge.
+S.A **freezes three** contracts (C-StateVec at S.A.1; C-Sparse + C-QFT at S.A.2 ◆) and **amends no
+prior frozen contract** — it is a new crate with no structural predecessor; every existing contract
+is untouched. S.A adds the `shor` crate + the `num-complex` edge — both leaf-confined; no existing
+crate's edge changes.
 
-### C-EWBench — the cross-attack benchmark data + table contract (test-/prose-enforced) — *to be frozen at E.W.1*
+### C-StateVec — the dense register + gate-application interface (compiler-/test-enforced) — *to be frozen at S.A.1*
 
-**Defined in:** E.W.1 (`rho/benches/attacks.rs` + the `## E.W` section of `docs/BENCHMARKS.md`).
-**Consumed by:** E.W.2 (the code-tour + T.E cite the table — the benchmark numbers the synthesis
-quotes); **downstream: Z.1** (the umbrella's cross-attack comparison). Test-/prose-enforced (the
-benches double as no-regression smoke tests; the table is prose).
+**Defined in:** S.A.1 (`shor/src/statevec/mod.rs` + `shor/src/gates/mod.rs`).
+**Consumed by:** S.A.2 (sparse/measure/QFT build on the register + gate interface); **downstream:
+S.B** (the modular-exponentiation circuit), **S.C** (the Proos–Zalka ECDLP circuit). Compiler-enforced
+(the `StateVec` type + gate function signatures) + test-enforced (the unitarity/Bell/GHZ KATs).
 
-**Ratified shape (to be confirmed at the E.W.2 ◆ — the benchmark contract is the structural-
-precondition-conditional table, not a uniform timing race).** The table's columns are:
-- **Attack** — the named attack (Pollard rho, Pohlig–Hellman, MOV, SSA, GHS-reduction, index calculus).
-- **Curve-precondition** — the structure the attack requires (generic / composite order / small
-  embedding degree / anomalous (trace = 1) / binary `GF(2^m)` / Semaev-decomposable).
-- **Applies?** — whether the attack is applicable on each benchmarked curve (the conditionality that is
-  the table's pedagogical content).
-- **Toy-scale cost** — the Criterion wall-clock median on the attack's toy fixture (the empirical
-  datum; a transfer like GHS reports reduction cost, annotated).
-- **Escape structure** — the structure-based-escape family (per the §"Escape from Search" taxonomy).
+**Ratified shape (to be confirmed at the S.A ◆).** The register is a dense `Vec<Complex<f64>>` of
+`2^n` amplitudes over `n` qubits, **little-endian basis indexing (qubit 0 = LSB)** — the convention
+the QFT and every Shor circuit index into. The gate interface applies a gate in-place by amplitude-
+pair iteration: single-qubit (X, Y, Z, H, S, T, phase(θ), arbitrary unitary), two-qubit (CNOT,
+controlled-phase, SWAP), multi-qubit (Toffoli, **multi-controlled** — over-specified for S.B/S.C).
+**Invariants:** normalization (`Σ|aᵢ|² = 1`) preserved across any gate; each gate is unitary
+(`U U† = I`, a KAT); the little-endian convention is fixed (a silent flip is a wrong-answer bug);
+`f64` amplitudes compared within ε; gates apply by pair-iteration (`O(2^n)`), never matrix
+materialization (`O(4^n)`). *(The Category-A over-specification: the multi-controlled-gate surface is
+carried for S.B/S.C even though S.A's own KATs do not exercise it.)*
 
-**Invariants:** every benched attack still solves (or, for GHS, transfers) its toy instance (the bench
-body asserts correctness before timing — the no-regression smoke test); GHS is reported as a *transfer*
-(reduction cost), never as an end-to-end solve; the index-calculus counts are derived from the public
-`collect_relations` / `decompose` re-exports (C-IndexCalc unamended); the toy-scale-cost column carries
-the principle-4 caveat (asymptotic L-notation separations not observable at toy scale). *(The table is
-the empirical substrate the Track-E synthesis stands on — the closeout analogue of a per-stage
-BENCHMARKS.md section, e.g. the G.W timing table.)*
+### C-Sparse — the sparse-state representation (compiler-/test-enforced) — *to be frozen at S.A.2 ◆*
 
-### C-TrackE — the Track-E cross-attack synthesis + design-statement verdict (prose-enforced) — *frozen at E.W.2 ◆ (commit 10c9d54)*
+**Defined in:** S.A.2 (`shor/src/sparse/mod.rs`). **Consumed by:** S.B/S.C *optionally* (circuits
+whose state stays sparse may use it). Compiler-enforced (the sparse type + conversion signatures) +
+test-enforced (the sparse-dense agreement KAT).
 
-**Defined in:** E.W.2 (`docs/PEDAGOGY.md` Track-E code-tour + `docs/MATHEMATICS.md` ch. 10 / T.E).
-**Consumed by:** **Z.1** (the umbrella narrative — the cross-track L-notation synthesis + the
-structure-based-escape master chapter) and **T.Z** (the textbook bind — the final consistency pass
-across all chapters). Prose-enforced (the ◆ juncture review is the gate). Exposes: the algebraic-ECDLP
-chapter (the five-attack development + the MOV payoff proof + the per-attack L-notation comparison), the
-Track-E code-tour, and the **design-statement verdict** (Track E met principles 1/3/4). **The frozen
-invariant:** the Track-E arc (E.A → E.K) is coherent, complete, and verified against the design
-statement; the synthesis obeys the C-Textbook register; the MOV payoff proof is the designated climax.
-**Track E is the algebraic-ECDLP attack survey complete — the structure-based-escape-from-search
-through-line realised across eight attacks, NOT a new attack.** *Exact chapter scope + the verdict
-recorded at the ◆.*
+**Ratified shape (to be confirmed at the S.A ◆).** A map of `(basis_index, Complex<f64>)` nonzero
+amplitudes with the same gate semantics as the dense register (consumes C-StateVec's gate interface,
+iterating only nonzero entries) + a dense↔sparse conversion. **Invariants:** a gate sequence on the
+sparse path yields the same amplitudes as the dense path (the sparse-dense agreement KAT — the
+no-regression mirror); sparsity helps only while the state is sparse (a fully-superposed state is
+dense — the principle-4 annotation, not a universal-speedup claim).
 
-#### Resolved interface (E.W.2 ◆ inflection design — `@plan-juncture`, Opus, 2026-06-16)
+### C-QFT — the Quantum Fourier Transform subroutine (compiler-/test-enforced) — *to be frozen at S.A.2 ◆*
 
-The substrate survey confirmed every artifact the writeup mirrors: the C-EWBench table (frozen at
-E.W.1, commit 1916c65) is the five-column structural-precondition-conditional table the PLAN
-ratified (Attack / Curve-precondition / Applies? / Toy-scale cost / Escape structure); the eight
-frozen solver surfaces exist as named (`solve_ecdlp_composite`, `mov_reduce`, `ssa_solve`,
-`ghs_descend`/`verify_log_preservation`/`transfer_point`, `index_calculus_dlp` +
-`collect_relations`/`decompose` public re-exports, `semaev_poly`); the G.W/D.W code-tour genre
-(`gnfs/docs/PEDAGOGY.md` §52–§71) and the C-Textbook register + §"Escape from Search" through-line
-(`docs/MATHEMATICS.md`) are the templates. The resolved interface fixes the per-section structure.
+**Defined in:** S.A.2 (`shor/src/qft/mod.rs`). **Consumed by:** **S.B/S.C** (period-finding — the
+load-bearing Shor subroutine). Compiler-enforced (the `qft`/`iqft` signatures) + test-enforced (the
+published-Fourier-amplitude + QFT/iQFT-identity KATs).
 
-**(A) T.E — `docs/MATHEMATICS.md` ch. 10 "Algebraic ECDLP Attacks" (fill the existing stub).** The
-maths-first chapter at the C-Textbook register (undergraduate-maths audience floor, proof-sketch
-depth, MathJax markup), maths-first sibling to the Track-E code-tour. Section outline:
+**Ratified shape (to be confirmed at the S.A ◆).** The QFT over the register, built from the frozen
+S.A.1 gate set (H + controlled-phase ladder, `O(n²)` gates), with the **bit-reversal convention
+documented** (it interacts with the little-endian basis indexing — a silent mismatch reads the period
+out of the wrong qubit order). **Invariants:** QFT on `|0…0⟩` = uniform superposition; QFT on a basis
+state = the published Fourier amplitudes `(1/√N) Σ ω^{jk} |k⟩`; QFT∘iQFT = identity (the KAT); the
+bit-reversal × little-endian convention is fixed and documented (the silent-wrong-answer guard for
+S.B/S.C's period extraction). *(The QFT is the soft-seam candidate: if S.A.2 overruns, this contract
+moves to a dedicated S.A.3 ◆.)*
 
-- **§10.0 The through-line for this chapter.** One paragraph re-stating (citing, not re-deriving)
-  the §"Escape from Search" frame: each Track-E attack finds a curve structure that escapes the
-  generic $\sqrt n$ bound the Pollard-rho chapter (ch. 6) established. Names the five structures and
-  forward-points to the per-attack sections. *(Rigidity guard: extend, do not re-derive the frozen
-  taxonomy.)*
-- **§10.1 Pohlig–Hellman (composite order, CRT).** The order-reduction warm-up: $\#E$ composite
-  $\Rightarrow$ ECDLP factors over prime-order subgroups via CRT (cite §Prerequisites CRT). Cost
-  $O(\sum e_i(\log n + \sqrt{p_i}))$. Proof-sketch depth.
-- **§10.2 Smart–Satoh–Araki (anomalous, polynomial-time).** $\#E(\mathbb F_p)=p$ $\Rightarrow$
-  $p$-adic lift + formal-group logarithm gives a polynomial-time solve. Proof-sketch depth (the
-  $p$-adic elliptic logarithm is named + cited, not fully derived).
-- **§10.3 GHS / Weil descent (the binary-curve TRANSFER).** $E/\mathbb F_{2^m}$ with a subfield
-  tower $\Rightarrow$ Weil restriction transfers ECDLP to a hyperelliptic-Jacobian DLP over
-  $\mathbb F_{2^l}$. **Represented as a transfer/structure/solve, NOT an end-to-end break** — the
-  downstream solve is index calculus (deferred re-shard). Proof-sketch depth.
-- **§10.4 Index calculus over $E(\mathbb F_{p^n})$ (Gaudry–Diem–Joux–Vitse).** The factor-base /
-  Semaev-decomposition engine: summation polynomials (cite C-Semaev) build a relation matrix over
-  $\mathbb F_\ell$; the asymptotic win is the extension-field setting $E(\mathbb F_{p^n})$, $n>1$
-  (the toy is over $E(\mathbb F_p)$ — annotate the principle-4 gap). Proof-sketch depth.
-- **§10.5 The MOV / Frey–Rück reduction — THE PAYOFF PROOF (full, not sketch).** The designated
-  Opus climax + the one full proof in this chapter (the C-Textbook payoff carve-out, alongside
-  T.G's $L$-notation derivation). Develops *why* the bilinear pairing $e:E[n]\times E[n]\to\mu_n$
-  is non-degenerate and Galois-equivariant, hence maps ECDLP on $E$ to DLP in $\mathbb F_{p^k}^*$
-  (where $k$ is the embedding degree and index calculus applies subexponentially) — the cross-track
-  bridge to NFS-DL. Cites the frozen `rho::pairing` realisation (`mov_reduce`, the Tate/Weil
-  pairing). Proof given in full.
-- **§10.6 The per-attack $L$-notation comparison.** Extends (cites) the frozen §"Escape from
-  Search" $L$-notation hierarchy table with a per-attack row: rho $L_n[1,1/2]$; Pohlig–Hellman
-  $\sqrt{p_{\max}}$ (largest prime factor); SSA polynomial; GHS conditional (transfer cost +
-  downstream Jacobian index calculus); MOV reducing to $\mathbb F_{p^k}^*$ DLP, subexponential
-  ($L[1/2]$ direct, $L[1/3]$ via NFS-DL). The principle-4 boundary stated: these asymptotic
-  separations are NOT observable at the C-EWBench toy scale.
-- **§10.7 Cross-reference** to the Track-E code-tour (the code realisation) + ch. 6 (the rho
-  baseline this chapter's bound-breaking extends) + the §"Escape from Search" through-line.
-- **§10.8 Further reading** (Menezes–Okamoto–Vanstone; Frey–Rück; Smart; Satoh–Araki; Semaev;
-  Gaudry; Diem; GHS), matching the per-chapter Further-Reading genre.
+### Frozen contracts read by S.A (consumed, not amended)
 
-*Section ordering — flagged recommendation (writer holds fiduciary latitude).* The PLAN's
-through-line text lists MOV second (immediately after the pairing family). The resolved outline
-places MOV **last (§10.5) as the climax**, so the chapter builds Pohlig–Hellman → SSA → GHS →
-index-calculus *engine* → and lands MOV as the bridge that connects ECDLP to that engine — which
-the PLAN's "MOV is the designated payoff/climax" framing favours. *Tradeoff: this departs from the
-ch.-6 "When the bound breaks" bullet order (MOV-first), so a reader cross-walking the two chapters
-sees a re-ordering; the code-tour's per-attack tour should follow the same order for consistency.*
-Either order is PLAN-consistent; surfaced for the human glance, not halted.
+- **None.** S.A has no structural predecessor (the ROADMAP names "No structural predecessor"). It is
+  a new crate that reads only the workspace crate-skeleton *convention* (the `[lints]` block, the
+  `edition = "2024"`, the `tests/*_kat.rs` idiom — a style template, not a code contract). No frozen
+  algorithm or substrate contract is consumed.
 
-**(B) The Track-E code-tour — `docs/PEDAGOGY.md` (append after the existing Phase 0–8 rho content).**
-In the G.W/D.W integrative genre, adapted for an **attack survey (not a linear pipeline)** — the
-"at a glance" is a taxonomy table, not a data-flow diagram (the load-bearing precondition-
-conditional finding). Section outline (continuing the existing `## N.` numbering):
+### Downstream contracts S.A produces for later sub-tracks (named, not frozen here)
 
-- **§N. The Track-E attacks at a glance.** A taxonomy table (Attack | Curve structure exploited |
-  Module surface | Toy fixture | C-contract), the survey analogue of the G.W §52 pipeline diagram.
-  Six rows: Pollard rho (baseline, `rho::ecdlp`), Pohlig–Hellman, MOV, SSA, GHS (transfer), Semaev
-  / index calculus. Opens with the through-line: which structure unlocks which escape.
-- **§N+1…N+6. The per-attack code-tour** (one section each: Pohlig–Hellman, MOV, SSA, GHS, Semaev,
-  index calculus). Each in the G.W per-stage shape: *what it exploits* (the structure), *the module
-  surface* (the frozen public API — `solve_ecdlp_composite`, `mov_reduce`, `ssa_solve`,
-  `ghs_descend`/`verify_log_preservation`, `semaev_poly`, `index_calculus_dlp` +
-  `collect_relations`/`decompose`), *the toy KAT/fixture*, *cross-ref to the matching T.E section*.
-  GHS section states it is a **transfer** (no `ghs_dlp`; downstream solve is index calculus).
-- **§N+7. The cross-phase contract view.** The G.W §58 analogue: a unified table of the frozen
-  Track-E contracts (C-Pollard, C-Pohlig, C-Mov, C-Ssa, C-GHSDescent, C-Semaev, C-IndexCalc — with
-  frozen-at session + what each exposes), naming them in one place. All read, none amended by E.W.
-- **§N+8. Design-statement verification (principles 1/3/4).** The G.W §59 / D.W §69 analogue — the
-  load-bearing section. Walks each principle against the realised Track-E (E.A→E.K):
-  - **Principle 1 (algorithmic content complete):** all eight attacks implemented head-on, not
-    stubbed — verdict + per-attack one-liner.
-  - **Principle 3 (no engineering optimisation crept in):** PARI/msolve oracles stay `#[ignore]`-
-    gated dev-only; no production solver acceleration — verdict.
-  - **Principle 4 (scale-only at demonstration fidelity):** a toy-scale annotations table (the
-    asymptotic $L$-notation separations non-observable at $p=47$/$p=7$; GHS-as-transfer; index
-    calculus's extension-field asymptotic win not exhibited at toy scale) — verdict.
-  - **Summary verdict** (pass/pass/pass expected, but recorded against the actual realisation — a
-    divergence here is a discovery surfaced at the ◆, not pre-judged).
-- **§N+9. KAT summary (E.W — integrative).** The G.W §62 / D.W §70 analogue: a table of the
-  existing Track-E KATs + the `attacks.rs` bench pre-check asserts (each benched attack still solves
-  / transfers its toy instance — the C-EWBench no-regression smoke test). No new KATs (code-tour,
-  not new implementation).
-- **§N+10. Cross-references** (to T.E ch. 10, the C-EWBench table in `docs/BENCHMARKS.md` ## E.W,
-  the per-attack contract definitions) + **Further reading**.
+- **C-CurveSubstrate (`rho::curve` — read by S.C, NOT by S.A).** S.C (Shor-for-ECDLP) will consume
+  *both* C-StateVec/C-QFT (this sub-track) *and* the frozen `rho::curve` surface (the
+  `AffinePoint`/`Curve` types + `scalar_mul`, for the Proos–Zalka circuit's group arithmetic and the
+  rho cross-check the ROADMAP names). **S.A does not touch `rho::curve`** — it is named here only so
+  the S.C shard (later) knows the cross-track edge exists. The survey confirmed the `rho::curve`
+  surface (`AffinePoint`, `Curve`, `scalar_mul`, `secp_k1_toy`) is frozen and public.
 
-**(C) The C-TrackE frozen invariant — what Z.1 (umbrella) + T.Z (textbook bind) consume.** At the
-◆, C-TrackE freezes and exposes, for the downstream integrative sessions to build on without
-re-opening Track E:
-1. **T.E ch. 10** — the algebraic-ECDLP chapter (five-attack development + the full MOV payoff
-   proof + the per-attack $L$-notation comparison row extending the frozen hierarchy table), at the
-   C-Textbook register. *Z.1's cross-track $L$-notation synthesis + structure-based-escape master
-   chapter consume this; T.Z's consistency pass binds it.*
-2. **The Track-E code-tour** in `docs/PEDAGOGY.md` — the attacks-at-a-glance taxonomy + per-attack
-   tour + unified contract view. *Z.1 consumes the cross-attack comparison; T.Z binds the
-   code-tour↔chapter pairing.*
-3. **The design-statement verdict** — Track E met principles 1/3/4 (recorded in the action-frame
-   digest at the ◆). *The umbrella's "the project met its scoping principles" claim rests on this.*
-**Frozen invariant:** the Track-E arc E.A→E.K is coherent, complete, and verified against the
-design statement; the synthesis obeys the C-Textbook register; the MOV payoff proof is the
-designated climax given in full; GHS is represented honestly as a transfer; the §"Escape from
-Search" through-line is extended (not re-derived); no Track-E solver contract is amended.
+### Workspace edges (one new crate, one new dependency, both leaf-confined)
 
-### Frozen contracts read by E.W (consumed, not amended)
-
-- **C-Pollard (`rho::ecdlp` surface)** — `solve_brent` / `solve_dp` / `solve_dp_negmap` /
-  `solve_dp_batch` / `solve_dp_glv` (the generic-√n baseline). Already benched (`rho/benches/ecdlp.rs`
-  on `secp_k1_toy`); E.W.1 cites that bench, does not duplicate it. Read; untouched.
-- **C-Pohlig (`rho::ecdlp::pohlig` surface)** — `solve_ecdlp_composite` (CRT to prime-order subgroups)
-  on `composite_toy()`. Read; benched. Untouched.
-- **C-Mov (`rho::pairing::mov` surface)** — `mov_reduce` (the pairing reduction to `F_{p^k}^*` DLP, the
-  cross-track bridge) on `pairing_toy()`. Read; benched; the T.E payoff-proof subject. Untouched.
-- **C-Ssa (`rho::ssa` surface)** — `ssa_solve` (the anomalous-curve polynomial-time attack) on
-  `anomalous_toy()`. Read; benched. Untouched.
-- **C-GHSDescent (`rho::ghs` surface)** — `ghs_descend` / `verify_log_preservation` / `transfer_point`
-  (the binary-curve transfer — NOT a solver) on `ghs_toy_curve()` (`GF(2^6)`). Read; benched as a
-  *transfer*. Untouched.
-- **C-Semaev (`rho::semaev` surface)** — `semaev_poly` + the `MultiPoly` operations (the index-calculus
-  primitive). Read for the code-tour + chapter. Untouched.
-- **C-IndexCalc (`rho::index_calculus` surface)** — `index_calculus_dlp` + the public `collect_relations`
-  / `decompose` re-exports (the latter two supply the benchmark counts — no amend). Read; benched.
-  **Untouched** (the E.K.5-flagged counts question resolved by deriving from the re-exports).
-- **C-Textbook (frozen T.0)** — the documentation-register contract (audience, proof-sketch depth,
-  through-line, MathJax markup, artifact location `docs/MATHEMATICS.md`). The register T.E obeys. Read;
-  **not amended** (a register break would be a discovery flexing C-Textbook at the ◆, not a silent
-  level-raise).
-- **The §"Escape from Search" through-line (frozen T.0)** — the five-family structure taxonomy + the
-  L-notation hierarchy table. The synthesis scaffold T.E extends per-attack. Read; extended, not
-  re-derived.
-
-### Workspace edges (no new edge, no new crate, no new dependency)
-
-- **No new edge / dependency.** `criterion` is already a `rho` dev-dependency (three `[[bench]]`
-  entries exist). E.W.1 adds a fourth bench (`attacks.rs`) + its manifest entry — a leaf addition to
-  the `rho` crate. The docs (`docs/PEDAGOGY.md`, `docs/MATHEMATICS.md`) are pure-prose appends. No
-  `Cargo.toml` dependency change; `cargo check --workspace` stays green with no cycle risk. *(E.W
-  touches no algorithm code — if a `@build` agent finds it must change a frozen solver surface to bench
-  it, that is a discovery surfaced at the ◆, never a silent patch. The benches read the frozen public
-  APIs only.)*
+- **One new member: `shor`.** Added to the workspace `Cargo.toml` `members` list. A new top-level
+  track crate, peer to `gnfs`/`rho`.
+- **One new dependency: `num-complex = "0.4"`.** Absent workspace-wide before S.A; added only to
+  `shor/Cargo.toml` (leaf — no existing crate depends on it). Provides `Complex<f64>` for the
+  amplitudes. `num-traits` (already universal) supplies the `Float` bounds. No cycle risk;
+  `cargo check --workspace` stays green. *(S.A depends on no workspace crate in S.A.1/S.A.2 — the
+  simulator is self-contained. The `rho::curve` edge appears only at S.C, a later sub-track.)*
 
 ---
 
 ## Progress ledger
 
 `/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked. The E.W.2 ◆ `@architect` confirmation is not a separate
+"Froze" names contracts this session locked. The S.A.2 ◆ `@architect` confirmation is not a separate
 ledger row (a paged fork with no commit-shaped deliverable); its outcome is recorded in the
 Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.W.1 | Cross-attack ECDLP benchmark harness + table | done | 1916c65 | C-EWBench |
-| E.W.2 ◆ | Track-E code-tour + T.E chapter (MOV payoff) + Track-E close | done | 10c9d54 | C-TrackE |
+| S.A.1 | State-vector register + standard gate set | pending | — | — |
+| S.A.2 ◆ | Sparse-state optimization + measurement + QFT | pending | — | — |
 
-Contracts frozen before this sub-track: the complete Track-E attack surface — C-Pollard (`rho::ecdlp`,
-the generic-√n baseline), C-CompositeCurve / C-FactorOrder / C-Pohlig (`rho::ecdlp::pohlig`,
-Pohlig–Hellman), C-FpExt / C-PairingCurve / C-Pairing / C-Mov (`rho::pairing`, pairings + the MOV
-bridge), C-Padic / C-Hensel / C-PadicLog / C-Ssa (`rho::ssa`, Smart–Satoh–Araki), the GF(2^m) +
-hyperelliptic + GHS surfaces (C-GHSDescent etc.), C-Semaev (`rho::semaev`), and the six index-calculus
-contracts (C-IndexCalcStrategy, C-EKRelation, C-PointDecomp, C-RelationCollect, C-EKLinAlg,
-C-IndexCalc) — **all read by E.W, none amended**; plus C-Textbook (frozen T.0, the register) and the
-§"Escape from Search" through-line. This sub-track **freezes two new contracts** (C-EWBench, C-TrackE),
-serving the downstream **Z.1** (umbrella narrative) and **T.Z** (textbook bind), and **closes Track E
-end-to-end** — the algebraic-ECDLP attack survey (E.A → E.K), synthesised under the structure-based-
-escape-from-search through-line and verified against the project's three scoping principles. **With the
-Track-E ◆, Phase δ is complete; only Phase ε (Shor + post-quantum) and Phase ζ (umbrella) remain in the
-forward arc.**
+Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
+factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, E.A–E.W, closed at the E.W ◆), plus the
+shared substrate (C1 smoothness, the field/bigint/numfield/padic/gf2m crates) and the Track-τ
+register (C-Textbook, frozen T.0). **S.A consumes none of them** — it is the first Track-S sub-track
+and a self-contained new crate. This sub-track **freezes three new contracts** (C-StateVec, C-Sparse,
+C-QFT), serving the downstream **S.B** (Shor factoring) and **S.C** (Shor ECDLP). **With the S.A ◆,
+the Track-S substrate is complete; S.B/S.C (the Shor attacks) and S.D (the PQ writeup + T.S) remain
+in Phase ε, then Phase ζ (umbrella) + the τ-bind close the project.**
 
 ---
 
 ## Action-frame digest
 
-### E.W.2 inflection — 2026-06-16
-Discovery/flex: Inflection fork returned design-confident; C-TrackE resolved interface written into PLAN. MOV placed last as climax (§10.5) rather than first — departs from ch. 6 bullet order but matches PLAN's "MOV is the designated payoff" framing; code-tour per-attack order follows suit.
-Affected: C-TrackE (interface resolved, not yet frozen — frozen at E.W.2 ◆ commit)
-Deferred: no — design-confident, self-continued. One fiduciary-latitude flag: section ordering (MOV last as climax vs. ch. 6 first-bullet order) surfaced for human awareness, not a halt.
-Texture: Design-statement verdict assumed pass/pass/pass but recorded against actual realisation — a divergence at write-time is a discovery for the ◆, not pre-judged.
-
-### E.W.2 ◆ close — 2026-06-16
-Discovery/flex: Boundary-transform juncture returned still-on-intent. The committed E.W.2 deliverables (docs-only diff: docs/MATHEMATICS.md ch.10 T.E + docs/PEDAGOGY.md §8–§18 Track-E code-tour; 1212 insertions, zero code) track the Purpose intent on all seven verification points. MOV placed last as the climax (§10.5, full payoff proof given in full — Weil pairing bilinearity/non-degeneracy/Galois-equivariance + the 5-step reduction to F_{p^k}* DLP) per the resolved interface; the design-statement verdict is pass/pass/pass (principles 1/3/4), recorded against the actual realisation with no divergence found. C-EWBench cited accurately; GHS represented honestly as a transfer (no ghs_dlp); index-calculus F_{p^n} lift correctly deferred. C-TrackE freezes.
-Affected: C-TrackE (frozen at this ◆, commit 10c9d54). Track E closed end-to-end (E.A→E.K synthesised + verified). Phase δ complete.
-Deferred: no halt. One capture candidate surfaced (not a PLAN edit, out of @architect PLAN-write scope): the static-frame ROADMAP Progress/Remaining debt — stale by six sub-tracks (E.F–E.K) + the E.H-before-E.I dependency inversion — is owed at this natural reconciliation point (Track E now complete). User to action via /note or a ROADMAP edit.
-Texture: No-regression gate green (cargo test --workspace: all completed crates 0 failed; the run's only timeout was a slow rho timing test, not a failure — consistent with the docs-only diff making the no-regression invariant hold trivially). The boundary-transform verification was the gate; documentation has no cargo gate.
+*(none yet)*
 
 ---
 
@@ -659,158 +485,123 @@ Texture: No-regression gate green (cargo test --workspace: all completed crates 
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **E.W is documentation + benchmarking on the frozen Track-E surfaces — internal-continue (confirmed
-  by survey).** Every attack solver is frozen and public; the benches read them, the writeup describes
-  them. All E.W code is additive (the `attacks.rs` bench + its manifest entry); all E.W prose is
-  appended to existing docs. A discovery that benching an attack needs a solver operation the frozen
-  surface lacks is an **additive amend** surfaced at the ◆ — not a silent patch.
+- **S.A is a self-contained new crate on no structural predecessor — internal-continue (confirmed by
+  survey).** The `shor` crate consumes no frozen algorithm contract; it reads only the workspace
+  crate-skeleton convention. All S.A code is in the new crate + two leaf edits (the workspace
+  `members` list + the `num-complex` dependency). A discovery that the simulator needs a primitive
+  from an existing crate is an **additive edge** surfaced at the ◆ — not a silent cross-crate reach.
 
-- **The benchmark table is structural-precondition-conditional, NOT a uniform timing race — the
-  load-bearing scope finding.** The Track-E attacks apply only on the curves whose structure they
-  exploit (Pohlig–Hellman: composite order; MOV: small embedding degree; SSA: anomalous; GHS: binary;
-  index calculus: Semaev-decomposable). The table's pedagogical content is *which structure unlocks
-  which escape*, encoded in an "applies?" column — not a fixed-instance race. A `@build` agent racing
-  all attacks on one curve produces a wrong table. **Internal-continue → the conditional-table shape
-  ratified at C-EWBench.**
+- **`num-complex` is the one new dependency — leaf-confined (confirmed).** No `Complex<·>` exists
+  workspace-wide; `shor` adds `num-complex = "0.4"`. It touches only `shor/Cargo.toml`; no existing
+  crate's edge changes. A `@build` agent adding it to a `shared/*` crate (speculative "general
+  complex substrate") is defocus — it belongs in `shor` until a second consumer exists.
 
-- **GHS is a transfer, not an end-to-end solve — represent it honestly (confirmed).** `rho::ghs`
-  exposes the descent reduction + log-preservation verification, **no `ghs_dlp`** (the transfer/
-  structure/solve framing, NOTES.md). The GHS benchmark measures the *reduction*; the table + chapter
-  annotate it as a transfer whose downstream solve is index calculus. A `@build` agent forcing GHS into
-  an end-to-end "solve time" column misrepresents it. **Internal-continue → GHS benched/written as a
-  transfer.**
+- **Over-specify the controlled-gate surface (Category-A substrate rule — the load-bearing design
+  call).** S.A's own KATs need only single/two-qubit gates, but S.B's modular exponentiation and
+  S.C's Proos–Zalka circuit need multi-controlled gates. Carry them at S.A.1 (the cost of adding a
+  frozen-interface method later exceeds the cost of carrying an unused one). A shard that ships only
+  the gates S.A's KATs exercise under-specifies the substrate and forces S.B/S.C to re-open S.A.
+  **Internal-continue → over-specify the gate surface.**
 
-- **The index-calculus benchmark counts come from the public re-exports — C-IndexCalc NOT amended (the
-  E.K.5-flagged decision, resolved at shard time).** `index_calculus_dlp` returns `Result<Option<u64>>`
-  with no counts; `collect_relations` (`.len()`) and `decompose` are public re-exports that supply the
-  relation/decomposition counts. E.W derives the counts from them. **C-IndexCalc stays as frozen at
-  E.K.5.** *(Risk: if a `@build` agent finds the counts genuinely cannot be derived from the public
-  surface, that is an additive-amend discovery at the ◆ — a small first-class stats return on
-  C-IndexCalc — not a silent patch. The E.K.5 digest's preference was to decide before E.W shards;
-  decided: derive, do not amend.)*
+- **The basis-indexing + bit-reversal conventions are silent-wrong-answer guards (confirmed).**
+  Little-endian basis indexing (S.A.1) and the QFT's bit-reversal (S.A.2) must be fixed and
+  documented; S.B/S.C and the QFT all index into the register, and a silent convention flip reads the
+  period out of the wrong qubit order with no error. **Internal-continue → conventions frozen +
+  documented at the ◆.**
 
-- **T.E extends the §"Escape from Search" through-line; it does not originate one (confirmed).** The
-  five-family structure taxonomy + the L-notation hierarchy are frozen at T.0; the MOV reduction is
-  *named* but unproven, there is no index-calculus chapter, no ECDLP-attack comparison table. T.E
-  develops the five attacks under the frozen scaffold (the MOV proof being the designated payoff). A
-  writer re-deriving the through-line instead of extending it is rigidity. **Internal-continue →
-  extend, do not re-derive.**
+- **The ~25-qubit ceiling is principle-4 (resource scale, not mathematical) — annotate, do not
+  engineer around it.** A state-vector simulator is `O(2^n)` in memory; ≤25 qubits is the laptop
+  resource wall, and the mathematics is identical at 25 or 250 qubits. The BENCHMARKS.md `## S.A`
+  note records this as the engineering-scale boundary (the index-calculus "asymptotic win not
+  observable" analogue), not a mathematical omission. A shard that hides the ceiling or over-engineers
+  to push it (SIMD, tensor networks — principle 3) is wrong. **Internal-continue → ceiling annotated.**
 
-- **The MOV payoff proof is the designated Opus climax (the through-line names it "the cross-track
-  bridge of this project").** T.E must develop *why* the pairing reduction works at proof-sketch depth
-  (the C-Textbook payoff-depth carve-out). Treating MOV as one bullet among five mis-weights the
-  chapter — the cross-track bridge to NFS-DL is the pedagogical climax of the whole project. **The
-  per-row Opus tier + the juncture-tier opus are set by this + the integrative load.**
+- **The QFT may overrun — surface an S.A.3 split if it does (additive-reshard).** The 2-vs-3 sizing
+  keeps sparse + measurement + QFT together in S.A.2. **If the QFT + its full KAT + the sparse layer
+  push past the band** (plausible — the QFT is the load-bearing Shor subroutine and deserves a
+  complete KAT), split the QFT into a dedicated S.A.3 ◆ (sparse + measurement freeze C-Sparse in
+  S.A.2; QFT freezes C-QFT in S.A.3) — surfaced at the S.A.1 ◆ readout or by S.A.2 once the layer's
+  size is concrete, never a silent overrun. **Additive-reshard if S.A.2 overruns.**
 
-- **The C-Textbook register is frozen (T.0) — no per-chapter level-break (rigidity guard).** The
-  audience floor (undergraduate maths), proof-sketch depth (complete, clinical, not exhaustive, not
-  inscrutable), through-line (structure-based escape), and MathJax markup are frozen. A chapter that
-  needs to break the register (a topic needing graduate background) must surface that as a discovery
-  flexing C-Textbook at the ◆ — not a silent raise. **Internal-continue (T.E obeys the register).**
+- **No Shor circuit / no period post-processing / no Proos–Zalka in S.A (defocus / scope clarity —
+  the deferred consumers).** Shor-for-factoring (S.B), Shor-for-ECDLP (S.C), and the order-finding /
+  continued-fraction period extraction are **later, separately-sharded sub-tracks**. A `@build` agent
+  that builds a modular-exponentiation circuit or extracts a period in S.A has reached into S.B/S.C —
+  S.A is the *substrate*, not the attack.
 
-- **The design-statement verification is load-bearing — E.W.2 is "where the design statement is
-  verified against the realised Track-E."** The G.W §59 / D.W §69 analogue: the verdict on principles
-  1 (algorithmic content complete — all eight attacks implemented head-on), 3 (no engineering
-  optimisation crept in), 4 (scale-only phenomena at demonstration fidelity; toy-scale L-notation
-  non-observability annotated) is recorded in the action-frame digest. **Internal-continue → verdict
-  recorded at the ◆.**
+- **Sparse-state is a demonstration, not a universal win (principle 4).** Sparsity helps only while
+  the state is sparse; a Hadamard on every qubit makes it dense, after which the sparse path matches
+  the dense cost. The sparse-dense agreement KAT confirms correctness; the BENCHMARKS.md note records
+  that the speedup is state-dependent, not universal. Presenting sparse as an unconditional speedup is
+  a documentation defect. **Internal-continue → sparse benched + annotated honestly.**
 
-- **The code-tour↔T.E pairing may overrun — surface an E.W.3 split if T.E is too large.** The 2-vs-3
-  sizing keeps the code-tour + T.E together in E.W.2 (the G.W / D.W precedent; the τ pairing rationale).
-  **If T.E overruns** (the MOV payoff + five-attack development + L-notation comparison push past the
-  band), the Track-τ contract's escape applies: split T.E into a dedicated E.W.3 — surfaced as an
-  additive-reshard at the ◆ (or by E.W.2 once the chapter's size is concrete), never a silent overrun.
-  **Additive-reshard if the chapter overruns.**
-
-- **No new attack / no `F_{p^n}` index-calculus lift / no GHS Jacobian solver in E.W (defocus / scope
-  clarity — the deferred re-shards).** The extension-field index-calculus asymptotic-win lift and the
-  GHS-coupled binary-curve end-to-end are **later, separately-sharded sub-tracks** (named at the E.K
-  close), each flexing C-Semaev. A `@build` agent adding an attack or lifting Semaev in E.W is defocus —
-  E.W is the *close*, not an extension.
-
-- **Toy-scale costs only — the asymptotic L-notation separations are NOT observable (principle-4
-  boundary, both directions).** The benchmark reports toy-scale wall-clock; the asymptotic separations
-  between the attacks (rho `L[1, 1/2]` vs index calculus subexponential vs MOV reducing to `L[1/3]` vs
-  SSA polynomial) are not visible at `p = 47` / `secp_k1_toy`. The principle-4 note (BENCHMARKS.md) +
-  the L-notation comparison (T.E) carry the asymptotic picture. Presenting the toy timings as the
-  asymptotic ranking is a documentation defect. **Internal-continue → corrected (toy costs + asymptotic
-  chapter).**
-
-- **Static-frame ROADMAP debt (surface at the E.W ◆ — out of `@architect` PLAN-write scope; a capture
-  candidate) — carried + compounded from the E.I, E.H, E.J, and E.K ◆, and now AT THE NATURAL
-  RECONCILIATION POINT.** The ROADMAP Progress subsection is stale by **six** completed sub-tracks
-  (E.F, E.G, E.H, E.I, E.J, E.K; the table shows "Done ~32 (E.A–E.J)" and lists E.K + E.W as remaining);
-  the Remaining table lists the now-complete E.K; and the Remaining table historically listed **E.H
-  before E.I** (dependency-inverted — E.I shipped first, E.H consumed it; the E.K shard already recorded
-  the correction). The E.I ◆ digest recorded this as owed, the E.H ◆ re-recorded it, the E.J ◆ + E.K ◆
-  flagged it again. **The Track-E ◆ close (E.W.2) is the natural reconciliation point** — Track E is now
-  complete end-to-end, so the full Track-E Progress/Remaining reconciliation (Track E Done → E.A–E.W,
-  ~34; strike all E rows from Remaining; record the E.I-before-E.H correction; mark Phase δ complete) is
-  owed at this boundary. **This is a ROADMAP write — outside the `@architect` PLAN-only write scope;
-  surfaced here as a capture candidate for the user to action (via `/note` or a ROADMAP edit), not a
-  PLAN edit.** Not an implementation concern; does not block E.W.
+- **Static-frame ROADMAP debt (surface at the S.A ◆ — out of `@architect` PLAN-write scope; a capture
+  candidate) — carried from the E.W ◆, now compounded by the Phase-ε open.** The ROADMAP Progress
+  table still shows "δ — Algebraic ECDLP (E) … in progress" and "ε — Shor + PQ (S) … not started" —
+  but Track E closed end-to-end at the E.W ◆ (Phase δ complete) and Track S has now *opened* with this
+  S.A shard. The E.W ◆ digest named the Track-E ◆ close as the natural reconciliation point; the write
+  was deferred (out of `@architect` PLAN-write scope). **The S.A open is a second natural prompt** —
+  Phase δ should read complete and Phase ε in-progress. The full reconciliation (Track E Done →
+  E.A–E.W; strike E from Remaining; mark Phase δ complete; add Track S in-progress) is owed.
+  **This is a ROADMAP write — outside the `@architect` PLAN-only write scope; surfaced here as a
+  capture candidate for the user to action (via `/note` or a ROADMAP edit), not a PLAN edit.** Not an
+  implementation concern; does not block S.A.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase δ — E.W, "*Cross-attack benchmarks + Track E writeup. 1-2 sessions.
-  Predecessor: most of E. The 'which attack wins on which curve' table; the pedagogical synthesis of
-  structure-based escape from search. Opus-tier — high integrative judgment load.*"; the Track-τ scope
-  contract — T.E folds into E.W, the MOV reduction is the Opus payoff; the Opus-flagged-sessions table —
-  `E.W | Cross-attack synthesis` + `T.E (MOV reduction)`) and this PLAN before any session. **NOTE: the
-  ROADMAP Progress / Remaining tables are stale (E.F–E.K done; E.K + the completed E rows still listed
-  as remaining) AND historically listed E.H before E.I (dependency-inverted); the Track-E ◆ close
-  (E.W.2) is the natural reconciliation point — surface it at the ◆, but it is outside `@architect`
-  PLAN-write scope (a capture candidate for the user).**
-- Read the **templates to mirror**: `docs/BENCHMARKS.md` (the per-sub-track section genre — prose setup
-  + table + "science↔engineering note (principle 4)"; the `## G.W` section, lines 408–453, is the
-  closeout template); `rho/benches/ecdlp.rs` (the Criterion `harness = false` bench idiom E.W.1's
-  `attacks.rs` mirrors — and the existing rho timing baseline to cite, not duplicate); `gnfs/docs/
-  PEDAGOGY.md` §52–§62 (G.W) + §63–§71 (D.W) (the `*.W` code-tour genre — pipeline/attacks at a glance,
-  per-stage tour, cross-phase contracts, design-statement verification §59/§69, KAT summary — E.W's
-  code-tour mirrors this in `docs/PEDAGOGY.md`); `docs/MATHEMATICS.md` §"Escape from Search" (the frozen
-  through-line T.E extends) + the existing chapters 3–7 (the maths-chapter genre + the C-Textbook
-  register); `docs/PEDAGOGY.md` Phases 0–8 (the existing rho code-tour the Track-E tour appends after).
-- **Register:** E.W.1 is **Rust benchmark code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; Criterion
-  idiom; the new file `rho/benches/attacks.rs` + the `[[bench]]` manifest entry) **plus prose** (the
-  BENCHMARKS.md section). E.W.2 is **pure documentation** (`STYLE-DOC.md`; the code-tour in
-  `docs/PEDAGOGY.md` + T.E in `docs/MATHEMATICS.md`, both at the frozen C-Textbook register: MathJax
-  markup, proof-sketch depth, undergraduate-maths audience floor).
-- **Tier routing:** **E.W.1 is Sonnet `@build`** (mechanical Criterion bench-wiring over frozen solver
-  APIs + the BENCHMARKS.md table — no design crux; the only judgment is the table shape, which the
-  C-EWBench ratification fixes). **E.W.2 is Opus `@architect`** (the ROADMAP's native Opus flag — the
-  cross-attack synthesis + the MOV payoff proof + the design-statement verification + the ◆ close;
-  carries the **◆ `@architect` juncture**, page `@plan-juncture`). juncture-tier (header) is **opus** —
-  set by the native Opus flag on E.W + the T.E MOV-payoff designation + lever 4 (the Track-E ◆
-  adjudicates the whole E.A–E.K arc). Lever 5 is weak (prose has no fast self-checking oracle; the
-  benchmark KATs are deterministic but do not adjudicate the synthesis), so it grants no license to opt
-  the juncture down — the inverse of a strong-lever-5 sub-track.
-- **Invariants to preserve:** **E.W adds NO new attack** (it is the Track-E close — the `F_{p^n}`
-  index-calculus lift + the GHS Jacobian solve are deferred re-shards). **E.W amends NO algorithm
-  contract** (every Track-E solver surface is read; the only code is additive Criterion benches + their
-  manifest entry; the docs are prose appends). **The benchmark table is structural-precondition-
-  conditional, NOT a uniform race** (the "applies?" column is the pedagogical spine). **GHS is a
-  transfer, not an end-to-end solve** (benched/written as a reduction; downstream solve is index
-  calculus). **Index-calculus counts come from the public `collect_relations`/`decompose` re-exports**
-  (C-IndexCalc unamended — the E.K.5-flagged decision). **T.E extends the frozen §"Escape from Search"
-  through-line + obeys the frozen C-Textbook register** (no re-derivation, no per-chapter level-break;
-  MathJax markup). **The MOV payoff proof is the designated Opus climax.** **The design-statement
-  verdict (principles 1/3/4) is recorded** (the G.W §59 / D.W §69 analogue). Toy-scale costs only;
-  asymptotic L-notation separations annotated as non-observable (principle 4).
-- **No new edge, no new crate, no new dependency (load-bearing for E.W).** `criterion` is already a
-  `rho` dev-dep; the new bench is a leaf addition + a `[[bench]]` manifest entry. The docs are
-  pure-prose appends to existing files. `cargo check --workspace` stays green with no cycle risk; the
-  no-regression invariant (existing KATs green) holds trivially since no solver path changes.
+- Read `docs/ROADMAP.md` (Phase ε — S.A, "*State-vector simulator. 2-3 sessions. No structural
+  predecessor. Up to ~25 qubits. Standard gate set; sparse-state optimization. KAT: published
+  small-circuit results. Sonnet.*"; the design statement item 6 — "*Shor's algorithm via a classical
+  state-vector simulator, for both factoring and ECDLP*"; the Track-τ pairing — T.S/ch. 11 pairs with
+  **S.D**, not S.A) and this PLAN before any session. **NOTE: the ROADMAP Progress / Remaining tables
+  are stale (Track E still shown in progress though it closed at the E.W ◆; Track S shown not started
+  though this shard opens it); the S.A open is a natural reconciliation prompt — surface it at the ◆,
+  but it is outside `@architect` PLAN-write scope (a capture candidate for the user).**
+- Read the **templates to mirror**: `shared/gf2m/Cargo.toml` + `rho/Cargo.toml` (the crate-skeleton
+  idiom — `edition = "2024"`, the `[lints]` block, the `[[bench]]` `harness = false` pattern);
+  `rho/src/lib.rs` + `rho/src/ecdlp/` (the module-decomposition idiom — a crate as `lib.rs` + shallow
+  module dirs each with a `mod.rs`); `rho/tests/ecdlp_kat.rs` (the `*_kat.rs` idiom — a per-fixture
+  helper, many `#[test]` one-liners, semantic comparison, published values in comments);
+  `docs/BENCHMARKS.md` (the per-sub-track section genre — prose setup + table + "science↔engineering
+  note (principle 4)"; the `## G.W` / `## E.W` sections as the closeout template, here adapted to a
+  dense-vs-sparse + qubit-scaling table).
+- **Register:** S.A is **Rust library + benchmark code** (`STYLE-CODE.md` → `STYLE-CODE-RUST.md`; the
+  new `shor` crate + its KATs + an optional Criterion bench) **plus prose** (the BENCHMARKS.md `## S.A`
+  section). **No PEDAGOGY.md or MATHEMATICS.md chapter at S.A** — the Track-S math chapter (T.S,
+  ch. 11) pairs with S.D (the track closeout), not this substrate sub-track.
+- **Tier routing:** **both S.A.1 and S.A.2 are Sonnet `@build`** (S.A carries no Opus-flagged session
+  per the ROADMAP Opus-flagged table — the gate set is canonical, the register is standard, the QFT
+  is a known construction; the only design judgment is the interface breadth, which the C-StateVec
+  over-specification rule + the ◆ juncture handle). **juncture-tier (header) is `opus`** — set by
+  lever 3 (the Category-A substrate interface binds S.B + S.C; a wrong interface propagates through
+  two downstream sub-tracks), holding the default *against* the available lever-5 opt-down (strong
+  quantum KATs + moderate criticality would license `sonnet`, but the two-track-binding risk was
+  judged to outweigh it — user-adjudicated at shard time). The ◆ fork pages `@plan-juncture` at opus.
+- **Invariants to preserve:** **S.A builds NO Shor circuit** (it is the substrate — S.B/S.C are the
+  consumers; no modular exponentiation, no Proos–Zalka, no period post-processing). **S.A amends NO
+  existing contract** (new self-contained crate; the only edits to existing files are the workspace
+  `members` list + the new `num-complex` dependency). **The gate surface is over-specified**
+  (multi-controlled gates carried for S.B/S.C — the Category-A rule). **The basis-indexing
+  (little-endian) + bit-reversal conventions are fixed and documented** (the silent-wrong-answer
+  guard for S.B/S.C period extraction). **Gates apply by amplitude-pair iteration** (`O(2^n)`), never
+  matrix materialization (`O(4^n)`). **The ~25-qubit ceiling is annotated as a resource-scale wall**
+  (principle 4 — engineering, not mathematical). **Measurement is seeded** (reproducible KATs).
+  **Sparse-state is a state-dependent demonstration, not a universal speedup** (principle-4 honesty).
+- **One new crate, one new dependency, both leaf-confined (load-bearing for S.A).** `shor` is a new
+  top-level member; `num-complex = "0.4"` is added only to `shor/Cargo.toml`. No existing crate's edge
+  changes; `cargo check --workspace` stays green with no cycle risk; the no-regression invariant
+  (existing KATs green) holds trivially since no existing code changes.
 - Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the shard pattern (a
-  benchmark-harness session + a paired code-tour/maths-chapter closeout session) is **established for
-  this project** (G.W and D.W both ran the closeout-writeup pattern; the only novelty is the
-  benchmark-harness front-half, which is mechanical Criterion wiring). The closeout writeup (E.W.2) is
-  the high-judgment ◆ — the cross-attack synthesis + the MOV payoff + the design-statement verdict +
-  the Track-E close all land there, so halt at the E.W.2 boundary for the human glance. E.W.1 (the
-  benches) is mechanical and could run autonomously, but `halt-at-boundaries` is the conservative
-  default for the first invocation; the E.W.2 ◆ fork is itself a halt. *(Tradeoff vs autonomous:
-  `halt-at-boundaries` trades a little velocity on the mechanical E.W.1 for a guaranteed human check at
-  the Track-E ◆ — the right trade for a track-closing synthesis with the project's pedagogical climax
-  (the MOV proof) in it. If E.W.1 lands cleanly and its benches confirm every attack still solves, the
-  E.W.2 ◆ is where the judgment concentrates.)*
+  substrate-register session + a derived-layer/optimization session closing at the ◆) is **new for
+  this project as a Track-S opener** (the first quantum-model component), and the simulator is the
+  substrate two downstream sub-tracks bind to, so the conservative default is to halt at the S.A.2 ◆
+  for the human glance + the opus juncture fork. Both sessions are Sonnet and mechanical-ish (canonical
+  gate set, standard register, known QFT), so S.A.1 could run autonomously, but the unproven-opener +
+  two-track-binding-substrate argues for `halt-at-boundaries` on the first invocation; the S.A.2 ◆
+  fork is itself a halt. *(Tradeoff vs autonomous: `halt-at-boundaries` trades a little velocity on the
+  mechanical S.A.1 for a guaranteed human check at the substrate freeze — the right trade for a
+  Category-A interface that binds S.B and S.C. If S.A.1 lands clean and its unitarity/Bell/GHZ KATs
+  pass, the S.A.2 ◆ is where the judgment — is the interface right for two downstream tracks? —
+  concentrates.)*

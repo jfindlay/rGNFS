@@ -165,11 +165,11 @@ from PLANs, where one `docs/PLAN.md` bundles several sessions.*
 | α — Foundation | 3–5 | ~6 (α.1–α.5 + S0.W) | 0 | **complete** |
 | β — GNFS factoring (G) | 16–22 | ~28 (G.A → G.F + G.W) | 0 | **complete** |
 | γ — NFS-DL (D) | 8–10 | ~12 (D.A → D.W + D.E ext.) | 0 | **complete** |
-| δ — Algebraic ECDLP (E) | 25–32 | ~32 (E.A–E.J) | ~7 (E.K, E.W) | in progress |
-| ε — Shor + PQ (S) | 7–9 | 0 | 7–10 | not started |
+| δ — Algebraic ECDLP (E) | 25–32 | ~34 (E.A → E.W, closed at E.W ◆) | 0 | **complete** |
+| ε — Shor + PQ (S) | 7–9 | 0 (S.A sharded, not yet executed) | 7–10 | in progress |
 | ζ — Umbrella | 2–4 | 0 | 3–4 | not started |
-| τ — Textbook (T) | 2–3 | ~3 (T.0, T.G, T.D) | 1–2 (T.E folds into E.W; T.Z net-new) | in progress |
-| **Total** | **~72–93** | **~81** | **~11–23** | done ~81 / remaining ~11–23 |
+| τ — Textbook (T) | 2–3 | ~4 (T.0, T.G, T.D, T.E) | 1 (T.Z net-new; T.S folds into S.D) | in progress |
+| **Total** | **~72–93** | **~83** | **~9–21** | done ~83 / remaining ~9–21 |
 
 *Track-E `Done` reconciled at the E.F sharding boundary (2026-06-13): E.D (p-adic arithmetic, 3
 sessions, `0a98148`…`95d03b7`) and E.E (Smart–Satoh–Araki, 2 sessions, `4dc5eaf`/`8a217f4`) both
@@ -183,10 +183,12 @@ G.A (`bdba6f5`…`967e394`), G.B (`2f43f99`…`7fa9ab9`), G.C (`c1dc0b6`…`23a5
 (`a0e854b`…`c9f18b9`), G.E (`416f6db`…`f8ca3f8`), G.F (`2af8116`…`e870c82`); Track-G-closeout /
 Track-τ-open — T.0 (`5c9b783`), G.W (`76f3633`), T.G (`a896198`). Track D end-to-end — D.A
 (`f2dbf0a`…`651c17e`), D.B (`652cfa6`…`a569049`), D.C (`1651993`…`9d07c51`), D.W
-(`8c92260`…`541be29`), D.E ext. (`0d02b77`…`a804a7b`). Track E through E.C ◆ — E.A
-(`054df65`…`51fd477`), E.B (`74b2ff3`…`6c082bb`), E.C (`840608c`…`2e1edf8`), E.D
-(`0a98148`…`95d03b7`), E.E (`4dc5eaf`/`8a217f4`). Next up per the sequencing order: **Track E
-continued**, opening with E.F (GF(2^m) field arithmetic).
+(`8c92260`…`541be29`), D.E ext. (`0d02b77`…`a804a7b`). Track E end-to-end (closed at the E.W ◆,
+Phase δ complete) — E.A (`054df65`…`51fd477`), E.B (`74b2ff3`…`6c082bb`), E.C (`840608c`…`2e1edf8`),
+E.D (`0a98148`…`95d03b7`), E.E (`4dc5eaf`/`8a217f4`), E.F–E.K (GF(2^m) field arithmetic through
+Gaudry–Diem–Joux–Vitse index calculus), E.W (cross-attack benchmarks + Track-E writeup + T.E,
+`1916c65`/`10c9d54`). Next up per the sequencing order: **Track S (Phase ε)**, opening with S.A
+(state-vector quantum simulator) — sharded 2026-06-16, not yet executed.
 
 **Estimation-bias note (re-baselined from two completed tracks):** G landed at ~28 feature-commit
 sessions; the 16–22 design-time estimate rounded sub-letter sessions away — each `G.x.N` is a real
@@ -196,28 +198,21 @@ an additive 3-session D.E extension (k>1 F_{p^k} solver, formalised as a γ sub-
 folded into E.C). Both tracks confirm the **ceiling-bias**: realistic session counts run at or above
 the upper end of the design-time bands. The forward projection below is re-baselined accordingly.
 
-### Remaining projected sessions (from E.C ◆, 2026-06-10; Track-E rows reconciled at the E.F sharding boundary, 2026-06-13)
+### Remaining projected sessions (Track-E rows struck at the S.A sharding boundary, 2026-06-16)
 
-*Inferred from completed-track actuals; ceiling-biased. Grand total projected: ~92–104. E.D and E.E
-struck (completed since the E.C-◆ projection — see the reconciliation note in the Progress
-subsection above). E.F/E.G/E.H/E.I/E.J struck at the E.K shard (2026-06-16): all five completed since
-the E.C-◆ projection. Sequencing correction recorded: this table previously listed E.H before E.I,
-but E.I (hyperelliptic Jacobian) shipped first and E.H (GHS descent) consumed it — the E.H
-predecessor line ("Predecessor: E.G, E.I") is the correct dependency order.*
+*Inferred from completed-track actuals; ceiling-biased. E.K and E.W struck at the S.A shard
+(2026-06-16): Track E closed end-to-end at the E.W ◆ (Phase δ complete). S.A is now sharded (the
+state-vector simulator substrate) but not yet executed.*
 
 | Remaining sub-track | Sessions | Opus-flagged |
 |---------------------|--------:|:------------:|
-| E.K — Gaudry–Diem–Joux–Vitse index calculus | 5 | ✓ E.K.1 |
-| E.W — Cross-attack benchmarks + writeup (+ T.E) | 2 | ✓ |
-| **E subtotal** | **~7** | |
-| S.A–S.D — Shor + post-quantum context | 7–10 | |
+| S.A — State-vector simulator (sharded; juncture-tier opus) | 2–3 | (none — substrate) |
+| S.B–S.D — Shor factoring / Shor ECDLP / post-quantum context | 5–7 | |
 | Z.1 — Umbrella narrative | 3–4 | ✓ all |
 | T.Z — Textbook bind | 1–2 | ✓ |
-| **Total remaining** | **~30–42** | |
+| **Total remaining** | **~11–16** | |
 
-The E subtotal's low end (19) is the frozen-band-ceiling minus done (32 − 13); the high end (26) is
-the un-compressed sum of the remaining E.F–E.W sub-track ceiling estimates. S is orthogonal and can
-be slotted anywhere after α.
+S (Track Shor) is orthogonal and can be slotted anywhere after α; it is now the active track.
 
 ---
 
@@ -602,6 +597,28 @@ sessions but are triggered by discoveries that need static-frame updates.
 ## Discoveries log
 
 Entries added at sub-track boundaries when action-frame work reveals roadmap-frame updates.
+
+### 2026-06-16 — S.A shard: Track-E close reconciled + Phase ε opened
+
+The S.A sub-track (state-vector quantum simulator, the Shor substrate) was sharded at this boundary,
+opening Phase ε / Track S. The reconciliation owed since the E.W ◆ (carried as a capture candidate
+through the E.W close) is taken here, as the first Track-S boundary:
+
+- **Track E closed end-to-end (Phase δ complete).** The algebraic-ECDLP arc E.A → E.W shipped,
+  synthesised and verified at the E.W ◆ (C-TrackE frozen, `10c9d54`). The Progress table now reads
+  δ complete (~34 sessions, E.A–E.W) and strikes all E rows from Remaining. The earlier
+  E.H-before-E.I dependency inversion was corrected at the E.K shard; no further sequencing fix is
+  owed.
+
+- **Phase ε opened with S.A.** Track S is now the active track; the Progress table marks ε
+  in-progress (S.A sharded 2026-06-16, not yet executed). The S.A shard is in `docs/PLAN.md`
+  (2 Sonnet sessions, juncture-tier opus per lever 3 — the simulator substrate interface binds S.B
+  and S.C). One new crate (`shor`, top-level) + one new dependency (`num-complex`), both
+  leaf-confined.
+
+- **T.E recorded complete.** T.E (the algebraic-ECDLP math chapter, ch. 10) folded into E.W.2 as
+  the Track-τ pairing planned (`10c9d54`); the Textbook Progress row now reads ~4 done (T.0, T.G,
+  T.D, T.E). T.S remains, folding into S.D (the Track-S closeout) per the same pairing rule.
 
 ### 2026-06-16 — E.K shard: the index-calculus field-target resolution (F_p mechanism; F_{p^n} / GHS deferred)
 
