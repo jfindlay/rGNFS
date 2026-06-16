@@ -17,6 +17,8 @@
 //! - [`ssa`] — Smart–Satoh–Araki p-adic attack on anomalous curves (E.E).
 //! - [`ghs`] — GHS Weil-descent attack on binary elliptic curves (E.H): Artin–Schreier
 //!   extension, Weil restriction of scalars, hyperelliptic curve extraction.
+//! - [`semaev`] — Semaev summation polynomials over a prime-field Weierstrass curve (E.J):
+//!   `F_p[x]` univariate resultant, multivariate/symmetric-polynomial type `S_m`.
 
 pub mod binary_curve;
 pub mod binary_ecdlp;
@@ -27,5 +29,6 @@ pub mod field;
 pub mod ghs;
 pub mod hyperelliptic;
 pub mod pairing;
+pub mod semaev;
 pub mod ssa;
 pub mod util;
