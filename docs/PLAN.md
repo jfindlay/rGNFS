@@ -505,7 +505,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.W.1 | Cross-attack ECDLP benchmark harness + table | pending | — | C-EWBench |
+| E.W.1 | Cross-attack ECDLP benchmark harness + table | done | 1916c65 | C-EWBench |
 | E.W.2 ◆ | Track-E code-tour + T.E chapter (MOV payoff) + Track-E close | pending | — | C-TrackE |
 
 Contracts frozen before this sub-track: the complete Track-E attack surface — C-Pollard (`rho::ecdlp`,
