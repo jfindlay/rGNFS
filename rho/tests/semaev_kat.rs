@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the Semaev module (E.J.1 — polynomial substrate).
+//! Known-answer tests (KATs) for the Semaev module (E.J.1 + E.J.2).
 //!
 //! # Fixture
 //!
@@ -9,6 +9,13 @@
 //!
 //! The `F_p[x]` resultant KATs use `F_47` arithmetic (the same prime as the toy fixture).
 //! The multivariate polynomial KATs use `F_47` arithmetic.
+//!
+//! Known multiples of `G` (computed from the group law):
+//! - `G  = (10, 3)`,  `−G  = (10, 44)`
+//! - `2G = (7, 30)`,  `−2G = (7, 17)`
+//! - `3G = (17, 13)`, `−3G = (17, 34)`
+//! - `4G = (23, 12)`, `−4G = (23, 35)`
+//! - `5G = (32, 36)`, `−5G = (32, 11)`
 //!
 //! # KAT coverage (E.J.1 — `F_p[x]` resultant)
 //!
@@ -36,6 +43,19 @@
 //! 9. **`is_symmetric` correctly identifies symmetric polynomials**.
 //! 10. **`symmetrize` produces a symmetric polynomial**.
 //!
+//! # KAT coverage (E.J.2 — `S_2`, `S_3` base cases + vanishing relation)
+//!
+//! 11. **`S_2` vanishing**: `S_2(x_1, x_2) = 0 ⟺ P_2 = −P_1`.
+//!     - `S_2(10, 10) = 0` and `G + (−G) = ∞` ✓.
+//!     - `S_2(10, 7) ≠ 0` and `G + 2G ≠ ∞` ✓.
+//! 12. **`S_3` vanishing**: `S_3(x_1, x_2, x_3) = 0` for triples with `P_1+P_2+P_3 = ∞`.
+//!     - `S_3(10, 7, 17) = 0`: x-coords of `G, 2G, −3G` (sum `∞`).
+//!     - `S_3(10, 7, 23) ≠ 0`: x-coords of `G, 2G, 4G` — no y-values make sum `∞`.
+//!     - `S_3(10, 10, 10) ≠ 0`: no y-values for x=10 make sum `∞`.
+//!     - `S_3(10, 7, 32) ≠ 0`: x-coords of `G, 2G, 5G` — no y-values make sum `∞`.
+//! 13. **`S_3` symmetry**: `S_3` is invariant under all permutations of its arguments.
+//! 14. **`S_3` degree**: degree ≤ 2 in each variable.
+//!
 //! # Principle-4 boundary
 //!
 //! The fixture is toy-scale (`p = 47`, group order `n = 60`). The algorithms are
@@ -44,6 +64,7 @@
 use crypto_bigint::Uint;
 use rho::field::{Fp, FpNaive};
 use rho::semaev::poly::{FpPoly, MultiPoly, resultant};
+use rho::semaev::base::{s3, vanishes_s2, vanishes_s3};
 use rho::semaev::{SEMAEV_TOY_P, SemaevError, semaev_toy};
 use rho::curve::AffinePoint;
 
@@ -499,4 +520,234 @@ fn univariate_in_var_extraction() {
     // coeffs[0] at x_1 = 3: 3^2 + 5 = 14
     let v0 = coeffs[0].eval(&[3]).unwrap();
     assert_eq!(v0, 14, "constant term at x_1=3: 3^2+5=14");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// E.J.2 — Base cases S_2, S_3 + the vanishing relation (C-SemaevBase)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Known multiples of G on the toy curve y² = x³ + x + 33 over F_47:
+//   G  = (10, 3),  −G  = (10, 44)
+//   2G = (7, 30),  −2G = (7, 17)
+//   3G = (17, 13), −3G = (17, 34)
+//   4G = (23, 12), −4G = (23, 35)
+//   5G = (32, 36), −5G = (32, 11)
+//
+// Verified: each point satisfies y² = x³ + x + 33 mod 47.
+
+// ─── helpers (E.J.2) ─────────────────────────────────────────────────────────
+
+/// Construct a finite affine point over `F_47`.
+fn pt(x: u64, y: u64) -> AffinePoint<FpNaive> {
+    let p_val = Uint::<4>::from(P);
+    AffinePoint::Finite {
+        x: FpNaive::from_u64(x, &p_val),
+        y: FpNaive::from_u64(y, &p_val),
+    }
+}
+
+// ─── KAT 11: S_2 vanishing ───────────────────────────────────────────────────
+
+/// `S_2(x_1, x_2) = 0 ⟺ x_1 = x_2` (i.e. `P_2 = −P_1`).
+///
+/// `S_2(10, 10) = 0` and `G + (−G) = ∞` ✓.
+#[test]
+fn s2_vanishes_for_negation() {
+    let c = semaev_toy();
+    let g = pt(10, 3);
+    let neg_g = pt(10, 44);
+    assert!(
+        vanishes_s2(&c, &g, &neg_g),
+        "S_2 should vanish for G and −G (same x-coordinate)"
+    );
+}
+
+/// `S_2(10, 7) ≠ 0` and `G + 2G = 3G ≠ ∞`.
+#[test]
+fn s2_nonzero_for_distinct_x() {
+    let c = semaev_toy();
+    let g = pt(10, 3);
+    let two_g = pt(7, 30);
+    assert!(
+        !vanishes_s2(&c, &g, &two_g),
+        "S_2 should not vanish for G and 2G (distinct x-coordinates)"
+    );
+}
+
+/// `S_2` vanishes for any point and its negation (multiple spot-checks).
+#[test]
+fn s2_vanishes_for_multiple_negation_pairs() {
+    let c = semaev_toy();
+    // (2G, −2G): x=7
+    assert!(vanishes_s2(&c, &pt(7, 30), &pt(7, 17)), "S_2 should vanish for 2G and −2G");
+    // (3G, −3G): x=17
+    assert!(vanishes_s2(&c, &pt(17, 13), &pt(17, 34)), "S_2 should vanish for 3G and −3G");
+    // (4G, −4G): x=23
+    assert!(vanishes_s2(&c, &pt(23, 12), &pt(23, 35)), "S_2 should vanish for 4G and −4G");
+}
+
+// ─── KAT 12: S_3 vanishing ───────────────────────────────────────────────────
+
+/// `S_3(10, 7, 17) = 0`: x-coordinates of `G, 2G, −3G` — there exist y-values making
+/// the sum `∞` (specifically `G + 2G + (−3G) = ∞`).
+#[test]
+fn s3_vanishes_for_g_2g_neg3g_xcoords() {
+    let c = semaev_toy();
+    assert!(
+        vanishes_s3::<FpNaive>(&c, 10, 7, 17),
+        "S_3 should vanish for x-coords of G, 2G, −3G"
+    );
+}
+
+/// `S_3(10, 7, 23) ≠ 0`: x-coordinates of `G, 2G, 4G` — no y-values make sum `∞`.
+///
+/// All 8 combinations of y-values for x=10,7,23 are checked:
+/// - `G+2G+4G = 7G ≠ ∞`, `G+2G+(−4G) = −G ≠ ∞`, `G+(−2G)+4G = 3G ≠ ∞`,
+/// - `G+(−2G)+(−4G) = −5G ≠ ∞`, `(−G)+2G+4G = 5G ≠ ∞`, `(−G)+2G+(−4G) = −3G ≠ ∞`,
+/// - `(−G)+(−2G)+4G = G ≠ ∞`, `(−G)+(−2G)+(−4G) = −7G ≠ ∞`.
+#[test]
+fn s3_nonzero_for_g_2g_4g_xcoords() {
+    let c = semaev_toy();
+    assert!(
+        !vanishes_s3::<FpNaive>(&c, 10, 7, 23),
+        "S_3 should not vanish for x-coords of G, 2G, 4G (no y-values make sum ∞)"
+    );
+}
+
+/// `S_3(10, 17, 32) = 0`: x-coordinates of `G, 3G, −5G` — `G + 3G + (−5G) = ∞`.
+///
+/// `G + 3G = 4G = (23, 12)`. `−5G = (32, 11)`. `4G + (−5G) = −G = (10, 44)`.
+/// Wait — that gives `G + 3G + (−5G) = 4G + (−5G) = −G ≠ ∞`.
+/// Let's try `G + (−3G) + 2G = ∞`: x-coords 10, 17, 7 — same as KAT 12a.
+/// Try `2G + 3G + (−5G) = 5G + (−5G) = ∞`: x-coords 7, 17, 32.
+#[test]
+fn s3_vanishes_for_2g_3g_neg5g_xcoords() {
+    let c = semaev_toy();
+    // 2G=(7,30), 3G=(17,13), −5G=(32,11): 2G+3G+(−5G) = 5G+(−5G) = ∞
+    assert!(
+        vanishes_s3::<FpNaive>(&c, 7, 17, 32),
+        "S_3 should vanish for x-coords of 2G, 3G, −5G"
+    );
+}
+
+/// `S_3(10, 10, 10) ≠ 0`: no choice of y-values for x=10 makes three points sum to `∞`.
+///
+/// The y-values for x=10 are `{3, 44}` (i.e. `G` and `−G`). All 8 combinations of
+/// `(G or −G) + (G or −G) + (G or −G)` give `±G, ±3G` — none is `∞`.
+#[test]
+fn s3_nonzero_for_all_same_x() {
+    let c = semaev_toy();
+    assert!(
+        !vanishes_s3::<FpNaive>(&c, 10, 10, 10),
+        "S_3 should not vanish for x-coords (10,10,10)"
+    );
+}
+
+/// `S_3(10, 7, 32) ≠ 0`: x-coords of `G, 2G, 5G` — no y-values make sum `∞`.
+///
+/// `G + 2G + 5G = 8G ≠ ∞`. `G + 2G + (−5G) = 3G + (−5G) = −2G ≠ ∞`.
+/// `G + (−2G) + 5G = 4G ≠ ∞`. `G + (−2G) + (−5G) = −6G ≠ ∞`.
+/// `(−G) + 2G + 5G = 6G ≠ ∞`. `(−G) + 2G + (−5G) = −4G ≠ ∞`.
+/// `(−G) + (−2G) + 5G = 2G ≠ ∞`. `(−G) + (−2G) + (−5G) = −8G ≠ ∞`.
+#[test]
+fn s3_nonzero_for_g_2g_5g_xcoords() {
+    let c = semaev_toy();
+    assert!(
+        !vanishes_s3::<FpNaive>(&c, 10, 7, 32),
+        "S_3 should not vanish for x-coords of G, 2G, 5G"
+    );
+}
+
+// ─── KAT 13: S_3 symmetry ────────────────────────────────────────────────────
+
+/// `S_3` is symmetric: invariant under all permutations of its three arguments.
+///
+/// Verified by evaluating at all 6 permutations of `(10, 7, 17)` and checking
+/// that all give the same value.
+#[test]
+fn s3_symmetric_eval_at_all_permutations() {
+    let poly = s3(1, 33, P);
+    assert!(poly.is_symmetric(), "S_3 should be symmetric");
+
+    // All 6 permutations of (10, 7, 17)
+    let perms = [
+        [10u64, 7, 17],
+        [10, 17, 7],
+        [7, 10, 17],
+        [7, 17, 10],
+        [17, 10, 7],
+        [17, 7, 10],
+    ];
+    let base_val = poly.eval(&perms[0]).unwrap();
+    for perm in &perms[1..] {
+        let v = poly.eval(perm).unwrap();
+        assert_eq!(
+            v, base_val,
+            "S_3 should be symmetric: eval at {:?} = eval at {:?}",
+            perm, perms[0]
+        );
+    }
+}
+
+/// `S_3` symmetry on a non-vanishing triple: all permutations of `(10, 10, 10)` agree.
+#[test]
+fn s3_symmetric_eval_nonzero_triple() {
+    let poly = s3(1, 33, P);
+    // All permutations of (10, 10, 10) are the same — trivially symmetric.
+    let v = poly.eval(&[10, 10, 10]).unwrap();
+    assert_ne!(v, 0, "S_3(10,10,10) should be nonzero");
+
+    // Verify with a non-trivial permutation: (7, 17, 32) — all distinct.
+    // (This triple has S_3 ≠ 0 since no y-values make G+3G+5G or similar = ∞.)
+    let perms = [
+        [7u64, 17, 32],
+        [7, 32, 17],
+        [17, 7, 32],
+        [17, 32, 7],
+        [32, 7, 17],
+        [32, 17, 7],
+    ];
+    let base_val = poly.eval(&perms[0]).unwrap();
+    for perm in &perms[1..] {
+        let v = poly.eval(perm).unwrap();
+        assert_eq!(
+            v, base_val,
+            "S_3 should be symmetric: eval at {:?} = eval at {:?}",
+            perm, perms[0]
+        );
+    }
+}
+
+// ─── KAT 14: S_3 degree ──────────────────────────────────────────────────────
+
+/// `S_3` has degree ≤ 2 in each variable.
+///
+/// Verified by checking that no exponent in any monomial exceeds 2 for any variable.
+#[test]
+fn s3_degree_at_most_2_in_each_var() {
+    let poly = s3(1, 33, P);
+    for (exp, _coeff) in &poly.terms {
+        for (i, &e) in exp.iter().enumerate() {
+            assert!(
+                e <= 2,
+                "S_3 has degree > 2 in variable {i}: exponent vector {:?}",
+                exp
+            );
+        }
+    }
+}
+
+/// `S_3` achieves degree exactly 2 in each variable (not just ≤ 2).
+///
+/// Verified by checking that there exists a monomial with degree 2 in each variable.
+#[test]
+fn s3_degree_exactly_2_in_each_var() {
+    let poly = s3(1, 33, P);
+    for var in 0..3 {
+        let max_deg = poly.terms.keys().map(|exp| exp[var]).max().unwrap_or(0);
+        assert_eq!(
+            max_deg, 2,
+            "S_3 should have degree exactly 2 in variable {var}, got {max_deg}"
+        );
+    }
 }

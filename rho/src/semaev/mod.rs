@@ -26,6 +26,7 @@
 //! for E.K; if E.K needs a wider field, that is the C1-widening discovery at E.K, not E.J's
 //! concern.
 
+pub mod base;
 pub mod poly;
 
 use crypto_bigint::Uint;
