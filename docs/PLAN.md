@@ -528,7 +528,7 @@ Action-frame digest.
 |---|---------|--------|--------|-------|
 | E.J.1 | Semaev polynomial substrate: `F_p[x]` resultant + multivariate type | done | 937cf82 | C-SemaevPoly (frozen) |
 | E.J.2 | Semaev base cases `S_2`, `S_3` + the vanishing relation | done | 9208ffb | C-SemaevBase (frozen) |
-| E.J.3 ◆ | Semaev resultant recursion `S_m` + sub-track close | pending | — | C-Semaev (to freeze) |
+| E.J.3 ◆ | Semaev resultant recursion `S_m` + sub-track close | done | 33be345 | C-Semaev (frozen) |
 
 Contracts frozen before this sub-track: the prime-field surface (C-Fp — read by E.J, unchanged), the
 prime-field curve + ECDLP surface (`rho::curve::Curve`/`AffinePoint` — read as the Semaev geometry,
@@ -547,7 +547,11 @@ builds the Semaev polynomials; E.K solves with them).
 
 ## Action-frame digest
 
-*(none yet)*
+### E.J.3 ◆ — 2026-06-16
+Discovery/flex: Boundary-transform juncture paged (`still-on-intent`); all three E.J sessions ran clean with no discoveries or contract flexes. Two non-blocking flagged items: (1) ROADMAP static-frame debt (E.F/E.G/E.H/E.I still listed as remaining, Progress stale at ~13, E.I-before-E.H inversion) — owed from E.I and E.H ◆, now compounded; (2) fixture docstring discrepancy in `semaev/mod.rs` (documents different G-multiples than base.rs/recursion.rs — cosmetic, tests pass against the frozen group law).
+Affected: none (no contract flexed; C-SemaevPoly/C-SemaevBase/C-Semaev all frozen as designed).
+Deferred: yes — ROADMAP reconciliation (Progress + Remaining table updates, E.I-before-E.H correction, strike E.J) should be actioned before E.K to prevent further compounding. Fixture docstring fix can ride with E.K or a trivial doc-fix commit.
+Texture: The E.J.1/E.J.2 split held (base.rs is a genuine derivation layer — the S_3 Vieta/collinearity derivation — not a thin instantiation). Dense-multivariate HashMap representation chosen over elementary-symmetric-basis (cheaper eval/partial-eval/elimination at m≤5; principle-4 toy-scale annotations present). Vanishing-relation agreement is the S_4 correctness oracle (no independent S_4 exists — the recursion defines it); degree-growth + symmetry + multi-case vanishing/non-vanishing KATs constrain the shape tightly.
 
 ---
 
