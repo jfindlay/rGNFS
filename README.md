@@ -1,4 +1,4 @@
-# rho — Pollard rho: integer factorization and ECDLP
+# rGNFS: integer factorization and ECDLP
 
 A single Rust crate implementing two Pollard rho variants with all canonical optimizations layered
 in progressively:
@@ -17,6 +17,12 @@ durable DP storage. The architecture leaves a clean seam at the DP-submission bo
 distributed layer could be added later without restructuring.
 
 For the full pedagogical narrative see [`docs/PEDAGOGY.md`](docs/PEDAGOGY.md).
+
+When fully implemented, rGNFS is intended to be a completel treatment of discrete logarithm
+solutions and strategies for integer factorization, number fields, and fields over elliptic curves,
+in both classical and quantum form.  It is yet unknown whether this collection of focus areas is
+coherent and intuitive and complete enough to be useful without straining for a total covering.  The
+latter is usually futile, while the former, incomplete form is both more natural and accessible.
 
 ## Build and test
 
