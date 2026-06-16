@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2 + E.K.3).
+//! Known-answer tests (KATs) for the index-calculus module (E.K.1 + E.K.2 + E.K.3 + E.K.4).
 //!
 //! # Fixture
 //!
@@ -38,6 +38,15 @@
 //! 8. **over-determination**: the returned collection has at least `fb_size + 1` relations.
 //!    Guards the loop termination condition.
 //!
+//! # KAT coverage (E.K.4 — C-EKLinAlg)
+//!
+//! 9. **adapter-fidelity**: `build_ek_matrix` produces a matrix whose row `i` matches
+//!    `relations[i].exponents` exactly (same (index, value) pairs). Guards the near-identity
+//!    adapter from `Relation.exponents` to `FlSparseRow`.
+//! 10. **kernel-correctness**: `solve_ek_linalg` returns a kernel vector `v` that satisfies
+//!    `M·v = 0` over F_ℓ (i.e., for each relation row, the dot product of the exponent
+//!    vector with `v` is 0 mod ℓ). Guards the Z/ℓZ linear algebra step.
+//!
 //! # Principle-4 boundary
 //!
 //! The fixture is toy-scale (`p = 47`, `n = 60`). The algorithms are mechanism-correct;
@@ -48,7 +57,8 @@ use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
 use rho::field::{Fp, FpNaive};
 use rho::index_calculus::{
-    collect_relations, decompose, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE,
+    build_ek_matrix, collect_relations, decompose, solve_ek_linalg, IndexCalcStrategy, Relation,
+    TOY_ELL, TOY_FB_SIZE,
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -570,4 +580,125 @@ fn over_determination() {
         min_required,
         strategy.fb_size()
     );
+}
+
+// ─── KAT 9: adapter-fidelity (C-EKLinAlg) ────────────────────────────────────
+
+/// Adapter fidelity: `build_ek_matrix` row `i` matches `relations[i].exponents` exactly.
+///
+/// Calls `collect_relations` to get a real relation set, then calls `build_ek_matrix`
+/// and verifies that each row of the resulting `FlSparseMatrix` has the same (index, value)
+/// pairs as the corresponding `Relation.exponents`. Guards the near-identity adapter from
+/// `Relation.exponents` to `FlSparseRow`.
+///
+/// The adapter is a near-identity copy: `Relation.exponents` is already in the
+/// `Vec<(usize, FpNaive)>` shape that `FlSparseRow` expects (sorted by index, no zeros,
+/// no duplicates — invariants enforced by `Relation::from_decomposition`).
+#[test]
+fn adapter_fidelity() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    let relations = collect_relations(g, q, &strategy)
+        .expect("collect_relations should succeed for the toy fixture");
+
+    let matrix = build_ek_matrix(&relations, &strategy);
+
+    // Verify dimensions.
+    assert_eq!(
+        matrix.rows.len(),
+        relations.len(),
+        "matrix should have one row per relation"
+    );
+    assert_eq!(
+        matrix.num_cols,
+        strategy.fb_size(),
+        "matrix should have fb_size columns"
+    );
+
+    // Verify each row matches the corresponding relation's exponent vector.
+    for (i, (row, rel)) in matrix.rows.iter().zip(relations.iter()).enumerate() {
+        assert_eq!(
+            row.entries.len(),
+            rel.exponents.len(),
+            "row {i}: entry count should match exponents.len()"
+        );
+        for (j, ((ri, rv), (ei, ev))) in
+            row.entries.iter().zip(rel.exponents.iter()).enumerate()
+        {
+            assert_eq!(
+                ri, ei,
+                "row {i}, entry {j}: column index {ri} should match exponent index {ei}"
+            );
+            assert_eq!(
+                rv, ev,
+                "row {i}, entry {j}: value should match exponent value"
+            );
+        }
+    }
+}
+
+// ─── KAT 10: kernel-correctness (C-EKLinAlg) ─────────────────────────────────
+
+/// Kernel correctness: the kernel vector `v` returned by `solve_ek_linalg` satisfies
+/// `M·v = 0` over F_ℓ.
+///
+/// Calls `collect_relations` then `solve_ek_linalg`. For each relation row (exponent
+/// vector), computes the dot product with `v` over F_ℓ and verifies it is zero. This
+/// is the primary correctness signal for the Z/ℓZ linear algebra step (C-EKLinAlg).
+///
+/// Guards:
+/// - `build_ek_matrix` correctly encodes the relation system.
+/// - `solve_ek_linalg` finds a genuine kernel vector (not a spurious solution).
+/// - The kernel vector has length `fb_size` (one entry per factor-base point).
+#[test]
+fn kernel_correctness() {
+    let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
+    let curve = &strategy.curve;
+    let ell = ell();
+
+    let g: AffinePoint<FpNaive> = curve.generator();
+    let q = scalar_mul_u64(curve, &g, 7);
+
+    let relations = collect_relations(g, q, &strategy)
+        .expect("collect_relations should succeed for the toy fixture");
+
+    let kernel = solve_ek_linalg(&relations, &strategy)
+        .expect("solve_ek_linalg should find a kernel vector for the over-determined toy system");
+
+    // The kernel vector must have length fb_size.
+    assert_eq!(
+        kernel.len(),
+        strategy.fb_size(),
+        "kernel vector length should equal fb_size = {}",
+        strategy.fb_size()
+    );
+
+    // The kernel vector must not be all-zero (a trivial kernel is not useful).
+    let is_nontrivial = kernel.iter().any(|v| !v.is_zero(&ell));
+    assert!(
+        is_nontrivial,
+        "kernel vector should be non-trivial (not all zero)"
+    );
+
+    // For each relation row, verify the dot product with the kernel is 0 mod ℓ.
+    // dot(row_i, v) = Σ_{(j, e_j) in exponents_i} e_j * v[j]  (mod ℓ)
+    for (i, rel) in relations.iter().enumerate() {
+        let mut dot = FpNaive::zero(&ell);
+        for (j, exp) in &rel.exponents {
+            let prod = exp.mul(&kernel[*j], &ell);
+            dot = dot.add(&prod, &ell);
+        }
+        assert!(
+            dot.is_zero(&ell),
+            "kernel check failed for relation {i} (a={}, b={}): \
+             dot product = {:?}, expected 0 mod ℓ",
+            rel.a,
+            rel.b,
+            dot
+        );
+    }
 }
