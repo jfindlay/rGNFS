@@ -828,7 +828,7 @@ recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| E.K.1 ◆-start | Index-calculus strategy + factor base + relation/matrix contract | pending | | C-IndexCalcStrategy, C-EKRelation |
+| E.K.1 ◆-start | Index-calculus strategy + factor base + relation/matrix contract | done | 1f6757b | C-IndexCalcStrategy, C-EKRelation |
 | E.K.2 | Index-calculus point decomposition via Semaev | pending | | C-PointDecomp |
 | E.K.3 | Index-calculus relation collection | pending | | C-RelationCollect |
 | E.K.4 | Index-calculus `Z/ℓℤ` linear algebra adapter + solve | pending | | C-EKLinAlg |
@@ -851,7 +851,11 @@ Track-E index-calculus attack the project's NOTES.md framing anticipated.
 
 ## Action-frame digest
 
-*(none yet)*
+### E.K.1 — 2026-06-16
+Discovery/flex: The ◆-start inflection fork confirmed the C-EKRelation sparse-Vec<(usize, Fl)> shape is a near-identity map onto FlSparseRow — the partial-reuse survey finding cashed out in the type. Also confirmed rho::field::Fp is a re-export of shared_field::Fp, so no cross-crate scalar adapter is needed for the linalg reuse.
+Affected: C-EKRelation (ratified, not changed — confirmed sound)
+Deferred: no — all four ratification questions resolved affirmatively; ℓ=5/FB_SIZE=6/m=2 additive-reshard escapes pre-authorized if density falls short at E.K.3
+Texture: The inflection fork returned design-confident; self-continued. C1 trial_smooth confirmed NOT literally consumed — Relation mirrors the SmoothWitness idiom but does not call it.
 
 ---
 
