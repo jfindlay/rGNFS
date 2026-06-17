@@ -596,7 +596,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| S.C.1 | Toy curve + controlled point-addition quantum circuit | pending | | C-PointAdd |
+| S.C.1 | Toy curve + controlled point-addition quantum circuit | done | 82fb198 | C-PointAdd |
 | S.C.2 ◆ | Two-register ECDLP period-finding + discrete-log extraction + end-to-end solve | pending | | C-ECDLPSolve |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
@@ -617,7 +617,11 @@ attack); S.D (the PQ writeup + T.S) remains in Phase ε, then Phase ζ (umbrella
 
 ## Action-frame digest
 
-*(none yet)*
+### S.C.1 — 2026-06-17
+Discovery/flex: Implementation used permutation synthesis (ancilla-free direct permutation on the combined (x,y) register) rather than the explicit reversible affine formula with λ scratch — same approach as S.B.1's `apply_controlled_permutation`. The λ register is allocated in the PointAddLayout for S.C.2 compatibility but unused at runtime; scratch-clean invariant trivially satisfied.
+Affected: C-PointAdd (confirmed stable — permutation synthesis satisfies all C-PointAdd invariants: reversible permutation, scratch-clean, control-off no-op, exceptional cases handled, little-endian layout documented)
+Deferred: no — S.C.2 consumes C-PointAdd as frozen; the permutation-synthesis approach is transparent to the consumer (same circuit-builder interface, same register layout)
+Texture: `shor/src/arith/mod.rs` needed a one-line visibility change (`apply_controlled_permutation` → `pub(crate)`) to allow `ecc` to call it; allowed as plainly-part-of-unit. Curve: p=7, a=0, b=3 (y²=x³+3 mod 7), 12 affine points + ∞, group order r=13 (prime), generator G=(1,2). 45 KATs across all 5 required groups pass.
 
 ---
 
