@@ -23,6 +23,12 @@
 //!   (ancilla-clean invariant). Register layout: exponent qubits `[0, t)`, work qubits `[t, t+n)`,
 //!   where `N < 2^n` and `t` is the exponent register size. See [`arith::ModExpLayout`] for the
 //!   frozen C-ModExp interface consumed by S.B.2's order-finding circuit.
+//! - [`shor`] — Order-finding circuit orchestration, continued-fraction period extraction, and
+//!   `factor(N)` driver (C-OrderFind + C-Factor, frozen S.B.2 ◆). Consumes C-ModExp and the
+//!   frozen S.A.2 QFT/measure surfaces. Implements the complete Shor-factoring algorithm:
+//!   exponent-register superposition → controlled-mod-exp → iQFT → measure → continued-fraction
+//!   recovery of the order `r` → even-order factor extraction via `gcd(a^(r/2) ± 1, N)`.
+//!   Factors 15 → {3,5}, 21 → {3,7}, 35 → {5,7}, 91 → {7,13} (the canonical toy targets).
 //!
 //! # Basis-indexing convention (FIXED — C-StateVec)
 //!
@@ -52,5 +58,6 @@ pub mod arith;
 pub mod gates;
 pub mod measure;
 pub mod qft;
+pub mod shor;
 pub mod sparse;
 pub mod statevec;

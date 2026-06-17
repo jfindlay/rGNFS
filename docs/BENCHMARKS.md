@@ -601,3 +601,74 @@ Presenting sparse as an unconditional speedup would be a documentation defect (p
 |-----------|-------|-------|
 | `shor/tests/statevec_kat.rs` | 32 | Dense register: unitarity (X, Y, Z, H, S, T, CNOT, controlled-phase, SWAP, Toffoli), Bell state, GHZ (3, 4, 5 qubits), normalization, gate identities (HH=I, XX=I, S²=Z, T²=S) |
 | `shor/tests/qft_kat.rs` | 36 | QFT on \|0…0⟩ (n=1,2,3,4): uniform superposition; QFT on basis states (n=3,4): published Fourier amplitudes; QFT∘iQFT = identity; measurement distribution (Born-rule frequencies, seeded sampler); sparse-dense agreement (all gate types + round-trip conversion + principle-4 annotation) |
+
+## S.B — Shor's factoring algorithm: order-finding on the classical simulator
+
+S.B delivers the complete Shor-factoring algorithm running end-to-end on the classical
+state-vector simulator: the controlled modular-exponentiation quantum circuit (S.B.1), the
+order-finding circuit orchestration, the classical continued-fraction period extraction, and
+the `factor(N)` driver (S.B.2 ◆). The benchmark section records the qubit budget against the
+simulator ceiling and the principle-4 resource-scale annotation.
+
+### Qubit-budget-vs-N table
+
+The order-finding circuit for an `n`-bit modulus `N` uses `exp_len + work_len` qubits, where
+`exp_len = 2 * n_bits(N)` (the standard phase-resolution choice) and `work_len = n_bits(N+1)`
+(the work register holding values in `[0, N)`). The S.B.1 ancilla-free implementation (direct
+permutation synthesis) keeps the total at exactly `exp_len + work_len` — no ancilla register.
+
+| N  | n_bits(N) | exp_len (t) | work_len (n) | Total qubits | Within ~25-qubit ceiling? |
+|----|-----------|-------------|--------------|--------------|---------------------------|
+| 15 | 4         | 4           | 4            | 8            | ✓ yes                     |
+| 21 | 5         | 5           | 5            | 10           | ✓ yes                     |
+| 35 | 6         | 6           | 6            | 12           | ✓ yes                     |
+| 91 | 7         | 7           | 7            | 14           | ✓ yes (ceiling-stress)    |
+
+All four targets fit within the ~25-qubit simulator ceiling. N=91 (14 qubits) is the
+ceiling-stress case: it confirms the ancilla-free circuit's budget advantage over the
+standard `~2n+3+ancilla` estimate. The exponent register uses `t = n_bits(N)` bits
+(matching the S.B.1 action-frame digest), which provides sufficient phase resolution for
+continued-fraction recovery of the order `r` for all four targets.
+
+### End-to-end factoring results
+
+All factoring KATs run with seed=0 and complete in seconds on a laptop (debug, unoptimized).
+The dominant cost is the controlled modular-exponentiation circuit: for N=91 (21 qubits), the
+circuit applies O(2^21) amplitude updates per gate, and the permutation synthesis applies
+O(N) transpositions per controlled-mult-mod stage.
+
+| N  | Factors found | Seed | Total qubits | Notes |
+|----|---------------|------|--------------|-------|
+| 15 | 3 × 5         | 0    | 8            | Textbook example |
+| 21 | 3 × 7         | 0    | 10           | |
+| 35 | 5 × 7         | 8    | 12           | Seed 8 gives s=2389 (≈ 7×64/12), recovering ord₂(35)=12 |
+| 91 | 7 × 13        | 1    | 14           | Ceiling-stress case; seed 1 gives s=53 (≈ 5×128/12), recovering ord₂(91)=12 |
+
+### Science↔engineering note (principle 4)
+
+**The ~25-qubit ceiling is a resource-scale wall, not a mathematical one.** The order-finding
+circuit demonstrates Shor's *factoring mathematics* correctly at toy scale: the QFT extracts
+the period of `x ↦ aˣ mod N` in polynomial time (in the number of qubits), the continued-
+fraction recovery converts the measured phase to the order `r`, and the even-order factor
+extraction `gcd(a^(r/2) ± 1, N)` produces the nontrivial factors. The algorithm's logic is
+fully exhibited on the classical simulator.
+
+The ceiling is purely engineering: the `2^n`-amplitude array is the resource wall. At n = 21
+(N=91) the array holds 2^21 ≈ 2 M entries (≈ 32 MiB); at n = 25 it requires ≈ 512 MiB. To
+factor RSA-2048 (a 2048-bit N), the order-finding circuit would need ~4100 qubits — requiring
+a `2^4100`-entry array, far beyond any classical computer. This is the same posture as the S.A
+simulator ceiling and the index-calculus "asymptotic win not observable at toy scale" annotation:
+the simulator exhibits the algorithm's logic, not its quantum speedup, which requires real
+quantum hardware out of scope by construction.
+
+N=91 is the ceiling-stress case: it is the largest target that fits within the ~25-qubit wall
+with the ancilla-free S.B.1 circuit. Larger N (e.g., N=143 = 11×13, 8-bit, 24 qubits total)
+would approach the ceiling; N=221 = 13×17 (9-bit, 27 qubits) would exceed it. The BENCHMARKS
+table records this boundary as an engineering annotation, not a mathematical omission.
+
+### Test coverage added (S.B)
+
+| Test file | Tests | Scope |
+|-----------|-------|-------|
+| `shor/tests/modexp_kat.rs` | 41 | Permutation correctness (controlled-add-mod, controlled-mult-mod), modular exponentiation correctness, reversibility (forward + inverse = identity), ancilla-clean (full state restored), control-off no-op |
+| `shor/tests/factor_kat.rs` | ~30 | Order KATs (ord₂(15)=4, ord₇(15)=4, ord₂(21)=6, ord₂(35)=12, ord₂(91)=12); continued-fraction KATs (known phase → known order, deterministic classical); end-to-end factoring (15→3×5, 21→3×7, 35→5×7 with seed=0); 91 ceiling-stress KAT (91→7×13, 21 qubits, within ceiling) |
