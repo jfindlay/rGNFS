@@ -563,7 +563,7 @@ deliverable); its outcome is recorded in the Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | S.D.1 | Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP | done | `be8c238` | — (prose) |
-| S.D.2 ◆ | T.S: Shor's-algorithm mathematics (payoff) + post-quantum context | pending | — | — (prose) |
+| S.D.2 ◆ | T.S: Shor's-algorithm mathematics (payoff) + post-quantum context | done | `9277c23` | — (prose) |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
 factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, closed at the E.W ◆) — plus the shared
@@ -580,7 +580,11 @@ Phase ζ (the Z.1 umbrella) + the textbook bind (T.Z) remain to close the projec
 
 ## Action-frame digest
 
-*(none yet)*
+### S.D.2 ◆ — 2026-06-17
+Discovery/flex: ◆ juncture fork confirmed still-on-intent across all seven confirmation points; no drift detected.
+Affected: none (S.D freezes no contract)
+Deferred: no
+Texture: The chapter-pairing-table row (line 104) was fixed in-session by S.D.2 (gnfs→shor/docs/PEDAGOGY.md) — the same-file one-liner the PLAN left to agent judgment; judged correctly. Two copy-edit nits noted for T.Z (a cosmetic ket typo in §11.2 and a conversational aside in §11.4.1). Compounded ROADMAP static-frame debt (Phase ε still shows 0 done) is the fifth consecutive carry — flagged as capture candidate for Z.1/T.Z.
 
 ---
 
