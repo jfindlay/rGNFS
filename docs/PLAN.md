@@ -612,7 +612,7 @@ their outcomes are recorded in the Action-frame digest.
 |---|---------|--------|--------|-------|
 | Z.1.1 | README umbrella: workspace-level front page over all five tracks | done | `a78d36d` | — (prose) |
 | Z.1.2 | Master PEDAGOGY.md cross-track synthesis + L-notation comparison | done | `cfc2575` | — (prose) |
-| Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | pending | | — (prose) |
+| Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | done | `a592ebc` | — (prose) |
 | T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | pending | | — (prose) |
 
 Contracts frozen before these sub-tracks: the **entire library** — all of Tracks ρ (Pollard rho + the
@@ -629,7 +629,11 @@ umbrella + the maths-first textbook).**
 
 ## Action-frame digest
 
-*(none yet)*
+### Z.1.3 ◆ — 2026-06-17
+Discovery/flex: In-session location decision resolved: modularity chapter placed in `docs/MATHEMATICS.md` as Chapter 12 (not in `docs/PEDAGOGY.md`) — the chapter is mathematically substantial (modular forms, Hecke operators, TSW proof sketch, display math throughout), warranting textbook treatment over code-first connective tissue.
+Affected: T.Z (binds Chapter 12; must add it to the ToC, note its absence from the chapter-pairing table, and fix the README's stale "11-chapter" count)
+Deferred: no — the location choice is recorded; T.Z's bind targets are now concrete
+Texture: The README's "11-chapter" count (line 142) is stale post-Z.1.3; T.Z fixes it. The ToC does not yet list Chapter 12; T.Z adds it. The chapter-pairing table has no Chapter 12 row (it has no code-tour sibling, stated explicitly in §12.7). The Z.1 ◆ juncture fork will confirm coherence before T.Z proceeds.
 
 ---
 
