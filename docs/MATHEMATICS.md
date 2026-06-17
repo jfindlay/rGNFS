@@ -86,8 +86,17 @@ matrices, sub/superscript stacks — use MathJax delimiters.
 
 **`docs/MATHEMATICS.md`** (single file). Chapters are appended to this file as they are written
 (T.G appends the GNFS chapter; T.D, T.E, T.S append their chapters at their respective ◆
-boundaries). Promote to `docs/textbook/` only if the single file becomes unwieldy — decide at T.Z
-(the textbook bind) and record the decision here.
+boundaries).
+
+**T.Z promotion decision (recorded here per the C-Textbook charter).** The single-file format is
+retained. At approximately 4500 lines across 12 chapters, the file is large but navigable: every chapter is
+clearly delimited by a top-level heading, the ToC provides a complete map, and the cross-references
+are all intra-file or to named sections in the PEDAGOGY.md files. The principal argument for
+promotion to `docs/textbook/` would be if per-chapter editing became unwieldy or if a build system
+needed to process chapters independently — neither applies here. The single-file format preserves
+the ability to search the whole textbook in one pass, keeps all cross-references as intra-file
+anchors (no inter-file link management), and matches the `docs/PEDAGOGY.md` master-tour convention.
+**Decision: remain as `docs/MATHEMATICS.md` (single file). No promotion to `docs/textbook/`.**
 
 ### Chapter-pairing pattern
 
@@ -96,12 +105,24 @@ pairing is:
 
 | Textbook chapter (this file) | Code-tour chapter |
 |------------------------------|-------------------|
-| §Pollard Rho (ECDLP) | `docs/PEDAGOGY.md` |
-| §α-Substrate | `shared/numth/docs/PEDAGOGY.md` |
-| §GNFS (T.G, to be appended) | `gnfs/docs/PEDAGOGY.md` (integrative chapter) |
-| §NFS-DL (T.D, to be appended) | `gnfs/docs/PEDAGOGY.md` (NFS-DL chapter) |
-| §Algebraic ECDLP Attacks (T.E) | `gnfs/docs/PEDAGOGY.md` (Track E chapter) |
-| §Shor + Post-Quantum (T.S) | `shor/docs/PEDAGOGY.md` (Track S chapter) |
+| Ch. 6 — Pollard Rho for ECDLP | `docs/PEDAGOGY.md` §§1–7 (Track ρ code-tour) |
+| Ch. 7 — The α-Substrate | `shared/numth/docs/PEDAGOGY.md` (α-substrate code-tour) |
+| Ch. 8 — GNFS | `gnfs/docs/PEDAGOGY.md` §§52–62 (G.W integrative chapter) |
+| Ch. 9 — NFS-DL | `gnfs/docs/PEDAGOGY.md` §§63–71 (D.W NFS-DL chapter) |
+| Ch. 10 — Algebraic ECDLP Attacks | `docs/PEDAGOGY.md` §§8–18 (E.W integrative chapter) |
+| Ch. 11 — Shor's Algorithm and Post-Quantum Context | `shor/docs/PEDAGOGY.md` (Track S code-tour) |
+| Ch. 12 — Modularity and the Arithmetic of Elliptic Curves | *(no code-tour sibling — see §12.7)* |
+
+**Note on Ch. 10 (Track E).** The E.W integrative chapter lives in the master `docs/PEDAGOGY.md`
+§§8–18 — not in `gnfs/docs/PEDAGOGY.md`. The Track-E code (`rho::ecdlp`, `rho::pairing`,
+`rho::ssa`, `rho::ghs`, `rho::semaev`, `rho::index_calculus`) lives in the `rho` crate; the
+integrative code-tour was written as the E.W chapter of the master tour, not as a chapter in the
+`gnfs` tour. The pairing table previously pointed at `gnfs/docs/PEDAGOGY.md (Track E chapter)`;
+that was a structural mis-pairing corrected here at T.Z.
+
+**Note on Ch. 12 (Modularity).** Chapter 12 has no code-tour sibling. The modularity
+correspondence is not implemented in the rGNFS workspace; the chapter is a mathematical survey and
+speculation. See §12.7 for the explicit statement.
 
 The code-tour cites the textbook chapter for the mathematics; the textbook chapter cites the
 code-tour for the realisation. Neither is a prerequisite for the other — they are complementary
@@ -112,7 +133,7 @@ lenses on the same material.
 ## Table of Contents
 
 The chapter skeleton across the whole survey. Each entry is a chapter title and a one-sentence
-scope statement. Later `*.W` sessions fill the chapters marked *to be appended*.
+scope statement.
 
 1. **C-Textbook: Documentation-Register Contract** *(this section)* — the audience, depth,
    through-line, markup, and location contract every chapter obeys.
@@ -140,23 +161,30 @@ scope statement. Later `*.W` sessions fill the chapters marked *to be appended*.
    elliptic-curve method), and Tonelli–Shanks (square roots mod $p$); maths-first sibling to
    `shared/numth/docs/PEDAGOGY.md`.
 
-8. **GNFS: The General Number Field Sieve** *(T.G — to be appended)* — the number-field bridge,
-   factor-base smoothness, linear-algebra dependency, square-root recovery, and the full
-   $L_N[1/3, (64/9)^{1/3}]$ subexponentiality derivation as the payoff proof.
+8. **GNFS: The General Number Field Sieve** — the number-field bridge, factor-base smoothness,
+   linear-algebra dependency, square-root recovery, and the full $L_N[1/3, (64/9)^{1/3}]$
+   subexponentiality derivation as the payoff proof; maths-first sibling to
+   `gnfs/docs/PEDAGOGY.md` §§52–62.
 
-9. **NFS-DL: Discrete Logarithm via the Number Field Sieve** *(T.D — to be appended)* — the
-   adaptation of GNFS to the discrete-logarithm problem, Schirokauer maps, and the individual
-   logarithm descent.
+9. **NFS-DL: Discrete Logarithm via the Number Field Sieve** — the adaptation of GNFS to the
+   discrete-logarithm problem, Schirokauer maps, and the individual logarithm descent; maths-first
+   sibling to `gnfs/docs/PEDAGOGY.md` §§63–71.
 
-10. **Algebraic ECDLP Attacks** *(T.E — to be appended)* — Pohlig–Hellman, the MOV/Frey–Rück
-    reduction (payoff proof: the MOV bridge), Smart–Satoh–Araki, GHS/Weil descent, and
-    Gaudry–Diem–Joux–Vitse index calculus.
+10. **Algebraic ECDLP Attacks** — Pohlig–Hellman, the MOV/Frey–Rück reduction (payoff proof: the
+    MOV bridge), Smart–Satoh–Araki, GHS/Weil descent, and Gaudry–Diem–Joux–Vitse index calculus;
+    maths-first sibling to `docs/PEDAGOGY.md` §§8–18.
 
-11. **Shor's Algorithm and Post-Quantum Context** *(T.S)* — the quantum period-finding algorithm
-    as the fifth escape-from-search structure; the full payoff proof (QFT phase estimation,
-    order-finding → factoring reduction, two-register hidden-subgroup → ECDLP reduction); and the
-    post-quantum migration landscape (NIST PQC families, the SIDH/Castryck–Decru break as the
-    honest coda, the migration rationale).
+11. **Shor's Algorithm and Post-Quantum Context** — the quantum period-finding algorithm as the
+    fifth escape-from-search structure; the full payoff proof (QFT phase estimation, order-finding
+    → factoring reduction, two-register hidden-subgroup → ECDLP reduction); and the post-quantum
+    migration landscape (NIST PQC families, the SIDH/Castryck–Decru break as the honest coda, the
+    migration rationale); maths-first sibling to `shor/docs/PEDAGOGY.md`.
+
+12. **Modularity and the Arithmetic of Elliptic Curves: A Speculation** — the Taniyama–Shimura–Weil
+    correspondence as a structural phenomenon in the escape-from-search family; the connection to
+    point counting, isogenies, and the Castryck–Decru precedent; and an explicit speculation about
+    whether the modularity structure suggests further escapes from the ECDLP search bound. The
+    project's one chartered speculation; no code-tour sibling.
 
 ---
 
@@ -234,6 +262,49 @@ $$L_N[\alpha, c] = \exp\!\left(c \cdot (\log N)^\alpha \cdot (\log \log N)^{1-\a
 
 The through-line of this textbook is the story of how each step down this hierarchy is achieved by
 finding a new kind of exploitable structure.
+
+### Cross-track L-notation synthesis
+
+The table below gives the leading complexity for each track and each major attack, unified across
+all five tracks. This is the quantitative spine of the textbook: reading it top-to-bottom is the
+story of the project, from the generic $\sqrt{n}$ baseline through the subexponential classical
+attacks to the polynomial-time quantum dissolution. The per-track derivations are in §6 (ρ), §7
+(GNFS), §9.7 (NFS-DL), §10.6 (algebraic ECDLP), and §11.3.4 and §11.4.4 (Shor). The code-first
+version of this table is in `docs/PEDAGOGY.md` §0.2.
+
+| Track | Algorithm | Problem | $L$-notation complexity | Structure exploited |
+|-------|-----------|---------|------------------------|---------------------|
+| ρ | Pollard rho | ECDLP (generic curve) | $L_n[1,\, 1/2] = \Theta(\sqrt{n})$ | None — generic $\sqrt{n}$ walk; the baseline |
+| α | ECM (Lenstra) | Integer factoring (sub-step) | $L_p[1/2,\, 1]$ (largest prime factor $p$) | Group-order smoothness |
+| G | GNFS | Integer factoring | $L_N[1/3,\, (64/9)^{1/3}]$ | Number-field bridge + smoothness (§7) |
+| D | NFS-DL | DLP in $\mathbb{F}_p^*$ | $L_p[1/3,\, (64/9)^{1/3}]$ | Same number-field bridge; descent subdominant (§9.7) |
+| E | Pohlig–Hellman | ECDLP (composite order) | $L_{p_{\max}}[1,\, 1/2]$ (largest prime factor) | CRT group-order homomorphism (§10.1) |
+| E | Smart–Satoh–Araki | ECDLP (anomalous curve) | $L_p[0] = O(\log p)$ (polynomial time) | $p$-adic formal group logarithm (§10.2) |
+| E | GHS/Weil descent | ECDLP ($E/\mathbb{F}_{2^m}$) | Conditional: $L_{p^{m/l}}[1/2,\, c]$ (downstream) | Binary field tower; transfer to Jacobian (§10.3) |
+| E | Index calculus | ECDLP ($E/\mathbb{F}_{p^n}$, $n > 1$) | $L_{p^n}[1/2,\, c]$ (subexponential) | Factor-base decomposability (§10.4) |
+| E | MOV/Frey–Rück | ECDLP (small embedding degree) | $L_{p^k}[1/3,\, (64/9)^{1/3}]$ (via NFS-DL) | Pairing → $\mathbb{F}_{p^k}^*$ DLP (§10.5) |
+| S | Shor (factoring) | Integer factoring | $O((\log N)^3) = L_N[0,\, 3]$ | Quantum period-finding (§11.3) |
+| S | Shor (ECDLP) | ECDLP | $O((\log r)^3) = L_r[0,\, 3]$ | Quantum period-finding, 2-register HSP (§11.4) |
+
+**Reading the table.** The $\alpha$ exponent in $L[\alpha, c]$ is the key invariant. Track ρ sits
+at $\alpha = 1$ (fully exponential — the generic bound). Tracks G and D sit at $\alpha = 1/3$
+(subexponential via the number-field bridge). Track E spans the full range: Pohlig–Hellman stays
+at $\alpha = 1$ (structural speedup, not asymptotic); index calculus and GHS reach $\alpha = 1/2$
+(subexponential in the extension-field setting); MOV bridges ECDLP to the $\alpha = 1/3$ regime
+via NFS-DL; SSA achieves $\alpha = 0$ classically (polynomial time, but only for anomalous
+curves). Track S dissolves the $L$-notation framework entirely: $\alpha = 0$ polynomially for all
+curves and all integers.
+
+**Principle-4 honesty.** The $L$-notation separations in this table are NOT observable at the toy
+scale of the project's fixtures. The table reports theoretical complexity classes; the toy-scale
+timings are in `docs/BENCHMARKS.md`. The separation between $L[1, 1/2]$ (rho), $L[1/3]$
+(GNFS/NFS-DL/MOV), $L[1/2]$ (index calculus), and $L[0]$ (SSA, Shor) is a statement about
+asymptotic behaviour at cryptographic scale — not a ranking of toy-scale timings.
+
+**Chapter 12 (Modularity).** Chapter 12 is the project's one chartered speculation; it surveys
+the Taniyama–Shimura–Weil correspondence as a structural phenomenon and asks whether it suggests
+further escapes. No complexity claim is made for any modularity-based attack; the chapter does not
+add a row to this table.
 
 ### Why the bound matters
 
@@ -521,6 +592,59 @@ known algorithms run in $L_p[1/3, (64/9)^{1/3}]$ time (NFS-DL). The hardness of 
 a *computational assumption*, not a theorem — no proof that they require superpolynomial time is
 known.
 
+### Modular forms and Galois representations (Chapter 12)
+
+Chapter 12 (Modularity) uses concepts from the theory of modular forms and Galois representations
+that go beyond the standard undergraduate background. This section states the minimum needed to
+follow Chapter 12 at survey depth; full proofs are in the cited references.
+
+**The upper half-plane.** The *upper half-plane* $\mathfrak{H} = \{z \in \mathbb{C} : \mathrm{Im}(z)
+> 0\}$ is acted on by $\mathrm{SL}_2(\mathbb{Z})$ via Möbius transformations
+$\bigl(\begin{smallmatrix}a&b\\c&d\end{smallmatrix}\bigr) \cdot z = (az+b)/(cz+d)$. The congruence
+subgroup $\Gamma_0(N) \subset \mathrm{SL}_2(\mathbb{Z})$ consists of matrices with $c \equiv 0
+\pmod{N}$.
+
+**Modular forms and cusp forms.** A *modular form* of weight $k$ and level $N$ is a holomorphic
+function $f: \mathfrak{H} \to \mathbb{C}$ satisfying a transformation law under $\Gamma_0(N)$ and
+a growth condition at the cusps. A *cusp form* additionally vanishes at every cusp. Every cusp form
+has a Fourier expansion $f(z) = \sum_{n=1}^\infty a_n q^n$ with $q = e^{2\pi iz}$. The space
+$S_k(\Gamma_0(N))$ of cusp forms of weight $k$ and level $N$ is a finite-dimensional $\mathbb{C}$-vector
+space. Chapter 12 uses only weight-2 cusp forms ($k = 2$).
+
+**Hecke operators and newforms.** The space $S_k(\Gamma_0(N))$ carries commuting Hecke operators
+$T_p$ (for primes $p \nmid N$). A *newform* (or Hecke eigenform) is a cusp form that is a
+simultaneous eigenvector for all Hecke operators, normalised so that $a_1 = 1$. For a newform,
+the Hecke eigenvalue equals the Fourier coefficient: $T_p f = a_p f$.
+
+**L-functions.** To each newform $f = \sum a_n q^n$ one attaches an *L-function*
+$L(f, s) = \sum_{n=1}^\infty a_n n^{-s}$, which has an Euler product and extends to an entire
+function satisfying a functional equation. To each elliptic curve $E/\mathbb{Q}$ one attaches an
+L-function $L(E, s) = \prod_p L_p(E, s)$ via the trace of Frobenius $a_p(E) = p + 1 - \#E(\mathbb{F}_p)$.
+The Taniyama–Shimura–Weil theorem asserts $L(E, s) = L(f, s)$ for a unique newform $f$ of level
+equal to the conductor of $E$.
+
+**Galois representations.** To an elliptic curve $E/\mathbb{Q}$ and a prime $\ell$, one attaches
+the *$\ell$-adic Tate module* $T_\ell(E) = \varprojlim E[\ell^n]$, which gives a 2-dimensional
+$\ell$-adic Galois representation $\rho_{E,\ell}: \mathrm{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})
+\to \mathrm{GL}_2(\mathbb{Z}_\ell)$. The Frobenius element at $p$ (for $p \nmid N\ell$) acts with
+characteristic polynomial $x^2 - a_p(E) x + p$. The proof of the TSW theorem proceeds by showing
+this Galois representation is *modular* (arises from a modular form) via the $R = T$ strategy of
+Wiles. Chapter 12 uses this at the level of a proof sketch; the full argument is in [W95], [TW95],
+[BCDT01], and [DS05].
+
+**The Weil conjectures and the Ramanujan bound.** The *Weil conjectures* (proved by Deligne [D74])
+assert that the zeta function of a smooth projective variety over $\mathbb{F}_p$ satisfies a
+Riemann hypothesis. For an elliptic curve, this gives Hasse's bound $|a_p(E)| \leq 2\sqrt{p}$.
+For a weight-2 newform, the same bound $|a_p(f)| \leq 2\sqrt{p}$ is the *Ramanujan conjecture*
+(proved as a consequence of Deligne's theorem). Chapter 12 uses this bound to motivate the
+analogy between the two L-functions.
+
+**What Chapter 12 does NOT require.** The chapter is a survey and speculation, not a proof. It
+does not require: étale cohomology, the theory of $p$-adic representations beyond the sketch above,
+the theory of automorphic forms beyond the modular-form setting, or any graduate-level algebraic
+geometry beyond what is cited. A reader who has absorbed the prerequisites above and is comfortable
+with the elliptic-curve material in §Algebra can follow Chapter 12 at survey depth.
+
 ### References for prerequisites
 
 - [N99] Neukirch, J. *Algebraic Number Theory*. Springer, 1999. (Dedekind domains, ideal
@@ -534,6 +658,12 @@ known.
   (Smooth-number density, Dickman function.)
 - [CP05] Crandall, R., and Pomerance, C. *Prime Numbers: A Computational Perspective*. 2nd ed.
   Springer, 2005. (Miller–Rabin, Tonelli–Shanks, ECM, smoothness.)
+- [DS05] Diamond, F., and Shurman, J. *A First Course in Modular Forms*. Springer, 2005. (Modular
+  forms, Hecke operators, newforms, L-functions — the graduate-level reference for Chapter 12.)
+- [W95] Wiles, A. "Modular elliptic curves and Fermat's Last Theorem." *Annals of Mathematics*,
+  141(3), 1995. (The TSW proof for semistable curves; the $R = T$ strategy.)
+- [D74] Deligne, P. "La conjecture de Weil. I." *Publications Mathématiques de l'IHÉS*, 43, 1974.
+  (The Weil conjectures, including the Ramanujan bound as a special case.)
 
 ---
 
@@ -3387,8 +3517,7 @@ algorithm. The key lemma is:
 **Lemma (QFT concentrates amplitude on multiples of the inverse period).** *Let $r$ divide $M =
 2^t$, and let*
 
-$$|\psi_r\rangle = \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |jr/r \cdot M/r\rangle
-= \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |j \cdot M/r\rangle$$
+$$|\psi_r\rangle = \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |j \cdot M/r\rangle$$
 
 *be the uniform superposition over the multiples of $M/r$ in $\{0, \ldots, M-1\}$. Then*
 
@@ -3598,7 +3727,7 @@ the cosets of the *hidden subgroup*
 $$H = \{(a, b) \in \mathbb{Z}/r\mathbb{Z} \times \mathbb{Z}/r\mathbb{Z} : a + bk \equiv 0
 \pmod{r}\} = \{(bk \bmod r,\, -b \bmod r) : b \in \mathbb{Z}/r\mathbb{Z}\}.$$
 
-Wait — more precisely, $f(a, b) = f(a', b')$ if and only if $(a + bk) \equiv (a' + b'k) \pmod{r}$,
+More precisely, $f(a, b) = f(a', b')$ if and only if $(a + bk) \equiv (a' + b'k) \pmod{r}$,
 i.e. $(a - a') \equiv -(b - b')k \pmod{r}$. The hidden subgroup is the kernel of the map
 $(a, b) \mapsto a + bk \bmod r$, which is the cyclic subgroup generated by $(-k \bmod r, 1)$
 in $(\mathbb{Z}/r\mathbb{Z})^2$.
