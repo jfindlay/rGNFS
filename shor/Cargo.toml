@@ -11,6 +11,8 @@ rand_chacha = "0.3"
 
 [dev-dependencies]
 proptest = "1"
+rho = { path = "../rho" }
+crypto-bigint = { version = "0.5", features = ["rand_core"] }
 
 [lints.rust]
 unsafe_code = "forbid"
