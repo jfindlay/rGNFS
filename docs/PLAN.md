@@ -613,7 +613,7 @@ their outcomes are recorded in the Action-frame digest.
 | Z.1.1 | README umbrella: workspace-level front page over all five tracks | done | `a78d36d` | — (prose) |
 | Z.1.2 | Master PEDAGOGY.md cross-track synthesis + L-notation comparison | done | `cfc2575` | — (prose) |
 | Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | done | `a592ebc` | — (prose) |
-| T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | pending | | — (prose) |
+| T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | done | `9215d1c` | — (prose; `docs/textbook/` promotion decided: single-file retained, recorded in C-Textbook §location) |
 
 Contracts frozen before these sub-tracks: the **entire library** — all of Tracks ρ (Pollard rho + the
 Track-E algebraic attacks), G (GNFS, complete), D (NFS-DL, complete), E (algebraic ECDLP, closed at the
@@ -634,6 +634,12 @@ Discovery/flex: In-session location decision resolved: modularity chapter placed
 Affected: T.Z (binds Chapter 12; must add it to the ToC, note its absence from the chapter-pairing table, and fix the README's stale "11-chapter" count)
 Deferred: no — the location choice is recorded; T.Z's bind targets are now concrete
 Texture: The README's "11-chapter" count (line 142) is stale post-Z.1.3; T.Z fixes it. The ToC does not yet list Chapter 12; T.Z adds it. The chapter-pairing table has no Chapter 12 row (it has no code-tour sibling, stated explicitly in §12.7). The Z.1 ◆ juncture fork will confirm coherence before T.Z proceeds.
+
+### T.Z ◆ — 2026-06-17
+Discovery/flex: Chartered `docs/textbook/` promotion decision made: single-file retained (MATHEMATICS.md stays as-is; ~4500 lines navigable, intra-file cross-refs preserved, matches master-tour convention). Recorded in C-Textbook §location. T.Z ◆ juncture fork returned still-on-intent across all seven project-final checklist items.
+Affected: none (T.Z is the terminus; no downstream consumer)
+Deferred: no
+Texture: Structural bind complete — Track-E pairing-table mis-pairing fixed (gnfs→docs/PEDAGOGY.md §§8–18), cross-track L-notation synthesis written into §3, Chapter 12 prerequisites added, stale ToC labels removed, S.D.2 nits fixed, README chapter count corrected 11→12. One minor stale forward-reference in README (~line 141: "Z.1.2 *will* extend…" — Z.1.2 already did); judged reconcilable by the juncture fork, not a halt. ROADMAP static-frame debt (sixth consecutive carry) surfaced as project-final capture candidate. rGNFS is complete.
 
 ---
 
