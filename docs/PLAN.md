@@ -540,7 +540,7 @@ Texture: All 5 KAT categories pass (41 tests). The ancilla-free approach means t
 Discovery/flex: 91 ceiling-stress case confirmed reachable (14 qubits, well within ~25-qubit ceiling) — direct KAT factor(91)→{7,13} passes (not the fallback path). exp_len = n_bits(N) (not 2*n_bits(N)) proved sufficient for continued-fraction recovery at toy scale.
 Affected: C-OrderFind + C-Factor (frozen); BENCHMARKS.md ## S.B section added with qubit-budget table
 Deferred: no — all 4 KAT categories pass (29 tests, 1 ignored seed-finder). S.B sub-track complete.
-Texture: The S.B.2 ◆ boundary fork (@plan-juncture/opus) is pending — paged next per step 7.
+Texture: @plan-juncture/opus ◆ boundary verdict: still-on-intent. All 6 confirmation points verified. Two capture candidates surfaced: (1) ROADMAP static-frame debt (third reconciliation prompt — Phase δ complete, S.A done, S.B done; ROADMAP write outside @architect scope, for user to action); (2) stale 2·n_bits(N) qubit-count comments in BENCHMARKS.md + factor_kat.rs — fixed in commit 060bdf0.
 
 ---
 
