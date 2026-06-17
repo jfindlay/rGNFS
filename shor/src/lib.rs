@@ -16,6 +16,13 @@
 //! - [`qft`] — Quantum Fourier Transform over the dense register: Hadamard + controlled-phase
 //!   ladder (O(n²) gates), built from the frozen S.A.1 gate set. Inverse QFT. Bit-reversal
 //!   convention documented and included (see [`qft`] module for the load-bearing note).
+//! - [`arith`] — Reversible modular-arithmetic quantum circuit builders (C-ModExp, frozen S.B.1):
+//!   controlled-add-mod (`|x⟩ → |x + c mod N⟩`), controlled-mult-mod (`|x⟩ → |c·x mod N⟩`),
+//!   and controlled modular-exponentiation (`|x⟩|y⟩ → |x⟩|y·aˣ mod N⟩`). Assembled from the
+//!   frozen S.A gate set; no new gate added to the simulator. Every ancilla is returned to |0⟩
+//!   (ancilla-clean invariant). Register layout: exponent qubits `[0, t)`, work qubits `[t, t+n)`,
+//!   where `N < 2^n` and `t` is the exponent register size. See [`arith::ModExpLayout`] for the
+//!   frozen C-ModExp interface consumed by S.B.2's order-finding circuit.
 //!
 //! # Basis-indexing convention (FIXED — C-StateVec)
 //!
@@ -41,6 +48,7 @@
 //! laptop. The simulator demonstrates Shor's mathematics correctly at toy scale; it does not
 //! claim quantum speedup, which requires real quantum hardware out of scope by construction.
 
+pub mod arith;
 pub mod gates;
 pub mod measure;
 pub mod qft;
