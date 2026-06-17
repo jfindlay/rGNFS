@@ -23,6 +23,15 @@
 //!   (ancilla-clean invariant). Register layout: exponent qubits `[0, t)`, work qubits `[t, t+n)`,
 //!   where `N < 2^n` and `t` is the exponent register size. See [`arith::ModExpLayout`] for the
 //!   frozen C-ModExp interface consumed by S.B.2's order-finding circuit.
+//! - [`curve`] — Toy short-Weierstrass elliptic curve `y² = x³ + 3 mod 7` (C-PointAdd, frozen
+//!   S.C.1): plain `u64` affine group law (add, double, negate, scalar-mul), generator `G = (1,2)`,
+//!   prime order `r = 13`. The classical reference for the point-addition circuit's KATs. See
+//!   [`curve::PointAddLayout`] for the frozen register-layout map.
+//! - [`ecc`] — Reversible controlled point-addition quantum circuit (C-PointAdd, frozen S.C.1):
+//!   `|P⟩ → |P + cG⟩` for a classically-fixed point `cG`, controlled on a qubit. Assembled from
+//!   the frozen S.A gate set + S.B.1 permutation-synthesis primitive; no new gate added. Every
+//!   scratch register returns to |0⟩ (ancilla-clean invariant). Consumed by S.C.2's two-register
+//!   ECDLP period-finding circuit.
 //! - [`shor`] — Order-finding circuit orchestration, continued-fraction period extraction, and
 //!   `factor(N)` driver (C-OrderFind + C-Factor, frozen S.B.2 ◆). Consumes C-ModExp and the
 //!   frozen S.A.2 QFT/measure surfaces. Implements the complete Shor-factoring algorithm:
@@ -55,6 +64,8 @@
 //! claim quantum speedup, which requires real quantum hardware out of scope by construction.
 
 pub mod arith;
+pub mod curve;
+pub mod ecc;
 pub mod gates;
 pub mod measure;
 pub mod qft;

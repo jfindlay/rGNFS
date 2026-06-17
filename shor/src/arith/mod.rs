@@ -129,7 +129,7 @@ pub fn n_bits(n: u64) -> usize {
 /// # Panics
 ///
 /// Panics if `perm` is not a valid permutation (contains duplicates or out-of-range values).
-fn apply_controlled_permutation(
+pub(crate) fn apply_controlled_permutation(
     sv: &mut StateVec,
     ctrl: usize,
     work_qubits: &[usize],
