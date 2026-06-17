@@ -16,7 +16,7 @@
 //! 3. **End-to-end factoring** — `factor(15)→{3,5}`, `factor(21)→{3,7}`, `factor(35)→{5,7}`
 //!    with fixed seeds so the run is reproducible.
 //!
-//! 4. **91 ceiling-stress KAT** — `factor(91)→{7,13}`. N=91 uses 14 qubits (exp_len=14,
+//! 4. **91 ceiling-stress KAT** — `factor(91)→{7,13}`. N=91 uses 14 qubits (exp_len=7,
 //!    work=7), well within the ~25-qubit simulator ceiling. This is the principle-4
 //!    ceiling-stress case: the algorithm is correct; the qubit budget fits.
 //!
@@ -324,7 +324,7 @@ fn cf_order_from_phase_n21_a2_s27() {
 
 /// factor(15, seed=0) → {3, 5}.
 ///
-/// N=15 = 3×5. Uses 12 qubits (exp_len=8, work=4). Seed 0.
+/// N=15 = 3×5. Uses 8 qubits (exp_len=4, work=4). Seed 0.
 /// Published factorization: 15 = 3 × 5.
 #[test]
 fn factor_15_seed0() {
@@ -333,7 +333,7 @@ fn factor_15_seed0() {
 
 /// factor(21, seed=0) → {3, 7}.
 ///
-/// N=21 = 3×7. Uses 15 qubits (exp_len=10, work=5). Seed 0.
+/// N=21 = 3×7. Uses 10 qubits (exp_len=5, work=5). Seed 0.
 /// Published factorization: 21 = 3 × 7.
 #[test]
 fn factor_21_seed0() {
@@ -342,7 +342,7 @@ fn factor_21_seed0() {
 
 /// factor(35, seed=8) → {5, 7}.
 ///
-/// N=35 = 5×7. Uses 18 qubits (exp_len=12, work=6). Seed 8.
+/// N=35 = 5×7. Uses 12 qubits (exp_len=6, work=6). Seed 8.
 /// Published factorization: 35 = 5 × 7.
 ///
 /// Seed 8 is chosen because run_order_finding_circuit(2, layout_35, 8) measures s=2389
@@ -355,9 +355,9 @@ fn factor_35_seed8() {
 
 // ── KAT group 4: 91 ceiling-stress KAT ───────────────────────────────────────
 //
-// N=91 = 7×13. Uses 21 qubits (exp_len=14, work=7), well within the ~25-qubit ceiling.
+// N=91 = 7×13. Uses 14 qubits (exp_len=7, work=7), well within the ~25-qubit ceiling.
 // This is the principle-4 ceiling-stress case: the algorithm is correct and the qubit
-// budget fits. The S.B.1 ancilla-free implementation keeps the budget at exp_len+n=21.
+// budget fits. The S.B.1 ancilla-free implementation keeps the budget at exp_len+n=14.
 
 /// Seed finder for N=91 (run once in release mode to find the right seed).
 ///

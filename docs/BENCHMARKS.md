@@ -613,7 +613,7 @@ simulator ceiling and the principle-4 resource-scale annotation.
 ### Qubit-budget-vs-N table
 
 The order-finding circuit for an `n`-bit modulus `N` uses `exp_len + work_len` qubits, where
-`exp_len = 2 * n_bits(N)` (the standard phase-resolution choice) and `work_len = n_bits(N+1)`
+`exp_len = n_bits(N)` (the S.B.1 action-frame digest choice) and `work_len = n_bits(N+1)`
 (the work register holding values in `[0, N)`). The S.B.1 ancilla-free implementation (direct
 permutation synthesis) keeps the total at exactly `exp_len + work_len` — no ancilla register.
 
@@ -633,7 +633,7 @@ continued-fraction recovery of the order `r` for all four targets.
 ### End-to-end factoring results
 
 All factoring KATs run with seed=0 and complete in seconds on a laptop (debug, unoptimized).
-The dominant cost is the controlled modular-exponentiation circuit: for N=91 (21 qubits), the
+The dominant cost is the controlled modular-exponentiation circuit: for N=91 (14 qubits), the
 circuit applies O(2^21) amplitude updates per gate, and the permutation synthesis applies
 O(N) transpositions per controlled-mult-mod stage.
 
