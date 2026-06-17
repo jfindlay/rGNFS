@@ -1,4 +1,238 @@
-# Pollard Rho for ECDLP: A Phase-by-Phase Guide
+# rGNFS — Library-Wide Code-Tour: Structure-Based Escape from Search
+
+> **Maths-first sibling.** For the mathematical foundations of every algorithm surveyed here —
+> the birthday-paradox collision argument, the $L$-notation hierarchy, the number-field bridge,
+> the pairing reduction, the quantum period-finding argument, and the full taxonomy of
+> structure-based escapes — see `docs/MATHEMATICS.md`. That file is the maths-first textbook;
+> this file is the code-first tour. Neither is a prerequisite for the other.
+
+This document is the library-wide code-tour for the rGNFS workspace. It surveys all five tracks
+of the project — ρ (Pollard rho), G (GNFS), D (NFS-DL), E (algebraic ECDLP attacks), and S
+(Shor's algorithm) — as chapters in one story: the story of how each track finds a different kind
+of exploitable structure that escapes the generic search bound. The code is the example; this
+document is the lesson.
+
+**How to read this document.** The umbrella synthesis (§0) names the through-line once and maps
+all five tracks. The per-track chapters (§§1–7 for ρ, §§8–18 for E) are the depth for those two
+tracks; the remaining three tracks are threaded here as synthesis chapters that cite their
+per-crate tours for the implementation detail. The per-crate tours are:
+
+| Track | Code-tour | Sections here |
+|-------|-----------|---------------|
+| ρ — Pollard rho + ECDLP | *this file* §§1–7 | Full depth |
+| α — Arithmetic substrate | `shared/numth/docs/PEDAGOGY.md` | §0.3 (synthesis) |
+| NF — Number-field substrate | `shared/numfield/docs/PEDAGOGY.md` | §0.3 (synthesis) |
+| G+D — GNFS + NFS-DL | `gnfs/docs/PEDAGOGY.md` §§1–71 | §0.4 (synthesis) |
+| E — Algebraic ECDLP attacks | *this file* §§8–18 | Full depth |
+| S — Shor's algorithm | `shor/docs/PEDAGOGY.md` | §0.5 (synthesis) |
+
+---
+
+## §0. The Umbrella: Structure-Based Escape from Search
+
+### §0.1 The through-line
+
+Every algorithm in this library is a story about finding exploitable structure — a group
+homomorphism, a smoothness phenomenon, an endomorphism, a pairing, a quantum period — that
+escapes the generic $\sqrt{n}$ or $L$-notation search bound. This through-line is named once
+here and threaded through every chapter below.
+
+The generic bound is the starting point. For a group of order $n$, exhaustive search costs $O(n)$
+operations. The birthday paradox gives the first non-trivial improvement: by sampling $O(\sqrt{n})$
+random elements, one expects a collision. Pollard's rho algorithm (1978) meets this bound with
+$O(\sqrt{n})$ group operations — and for a *generic* group, this is the best any classical
+algorithm can do. The $\sqrt{n}$ barrier is the **generic search bound**.
+
+The algorithms in this library escape that barrier by finding structure. The structures fall into
+five families (the full taxonomy is in `docs/MATHEMATICS.md` §"Escape from Search: The
+Through-Line"):
+
+1. **Group homomorphisms / smoothness** — index calculus, NFS, NFS-DL (Tracks G, D).
+2. **Endomorphisms** — GLV, Koblitz (Track ρ, Phase 8).
+3. **Pairings** — MOV/Frey–Rück (Track E, §10).
+4. **Number-field structure** — GNFS, NFS-DL (Tracks G, D).
+5. **Quantum period-finding** — Shor's algorithm (Track S).
+
+Each track in this library demonstrates one or more of these escapes in working Rust code, at toy
+scale, with known-answer tests. The code is correct; the scale is not cryptographic (see
+`docs/MATHEMATICS.md` §"On Scale" for the honest science↔engineering gap).
+
+### §0.2 The comparative L-notation table
+
+The complexity of the best known algorithms for the main problems forms a hierarchy in
+$L$-notation:
+
+$$L_N[\alpha, c] = \exp\!\left(c \cdot (\log N)^\alpha \cdot (\log \log N)^{1-\alpha}\right)$$
+
+The table below gives the leading complexity for each track, read from the per-track derivations
+in `docs/MATHEMATICS.md` (§6 for ρ, §7 for GNFS, §9.7 for NFS-DL, §10.6 for algebraic ECDLP,
+§11.3.4 and §11.4.4 for Shor). **Do not recall these constants from memory — read the cited
+sections.**
+
+| Track | Algorithm | Problem | L-notation complexity | Structure exploited | Notes |
+|-------|-----------|---------|----------------------|---------------------|-------|
+| ρ | Pollard rho | ECDLP (generic curve) | $L_n[1,\, 1/2] = \Theta(\sqrt{n})$ | None — generic $\sqrt{n}$ walk | Fully exponential in $\log n$; the baseline all other tracks escape |
+| α | ECM (Lenstra) | Integer factoring (sub-step) | $L_p[1/2,\, 1]$ (largest prime factor $p$) | Group-order smoothness | Substrate; used inside NFS large-prime variations |
+| G | GNFS | Integer factoring | $L_N[1/3,\, (64/9)^{1/3}]$ | Number-field bridge + smoothness | Exponent $1/3$ from sieve/linear-algebra balance; constant from full analysis [LLMP93] |
+| D | NFS-DL | DLP in $\mathbb{F}_p^*$ | $L_p[1/3,\, (64/9)^{1/3}]$ | Same number-field bridge | Same exponent and constant as GNFS; descent is asymptotically subdominant (§9.7 delta) |
+| E | MOV/Frey–Rück | ECDLP (small embedding degree) | $L_{p^k}[1/3,\, (64/9)^{1/3}]$ (via NFS-DL) | Pairing → $\mathbb{F}_{p^k}^*$ DLP | Cross-track bridge: ECDLP → NFS-DL; precondition $\ell \mid p^k - 1$, $k$ small |
+| E | Smart–Satoh–Araki | ECDLP (anomalous curve) | $L_p[0] = O(\log p)$ (polynomial time) | $p$-adic formal group logarithm | Sharpest escape in Track E; precondition $\#E(\mathbb{F}_p) = p$ |
+| E | Index calculus | ECDLP ($E/\mathbb{F}_{p^n}$, $n > 1$) | $L_{p^n}[1/2,\, c]$ (subexponential) | Factor-base decomposability | Asymptotic win requires extension-field setting; toy fixture is $n = 1$ |
+| E | Pohlig–Hellman | ECDLP (composite order) | $L_{p_{\max}}[1,\, 1/2]$ (largest prime factor) | CRT group-order homomorphism | Reduces to prime-order subgroup DLPs; speedup requires $p_{\max} \ll n$ |
+| S | Shor (factoring) | Integer factoring | $O((\log N)^3) = L_N[0,\, 3]$ | Quantum period-finding | Polynomial in $\log N$; dissolves the $L$-notation framework entirely |
+| S | Shor (ECDLP) | ECDLP | $O((\log r)^3) = L_r[0,\, 3]$ | Quantum period-finding (2-register HSP) | Same polynomial collapse; ~768 qubits for secp256k1 |
+
+**The quantitative spine of the library.** Reading the table top-to-bottom is the story of the
+project: from the generic $\sqrt{n}$ baseline (ρ, $\alpha = 1$) through the subexponential
+classical attacks (G/D at $\alpha = 1/3$; index calculus at $\alpha = 1/2$; MOV bridging ECDLP
+to the $\alpha = 1/3$ regime) through the polynomial-time anomalous-curve attack (SSA, $\alpha = 0$
+classically) to the quantum dissolution of the $L$-notation framework entirely (Shor, $\alpha = 0$
+polynomially). Each step down the $\alpha$ hierarchy is achieved by finding a new kind of
+exploitable structure.
+
+**Principle-4 honesty.** The $L$-notation separations in this table are NOT observable at the toy
+scale of the project's fixtures. The table reports theoretical complexity classes; the toy-scale
+timings are in `docs/BENCHMARKS.md`. The separation between $L[1, 1/2]$ (rho), $L[1/3]$ (GNFS/
+NFS-DL/MOV), $L[1/2]$ (index calculus), and $L[0]$ (SSA, Shor) is a statement about asymptotic
+behaviour at cryptographic scale — not a ranking of toy-scale timings.
+
+### §0.3 The shared substrate: α and NF chapters
+
+Before the five tracks diverge, two shared substrate crates provide the arithmetic and algebraic
+infrastructure that every track sits on.
+
+**The α-substrate** (`shared/numth/docs/PEDAGOGY.md`). Three crates — `shared-field`,
+`shared-bigint`, and `shared-numth` — provide prime-field arithmetic, number-theoretic primitives,
+and cross-cutting helpers. The key algorithms: Miller–Rabin primality testing (needed to build
+factor bases and certify found factors), B-smoothness detection (the engine of every sieve),
+Lenstra's ECM (factoring by group-order smoothness — a direct application of the group-homomorphism
+structure, used inside NFS large-prime variations and Pohlig–Hellman), and Tonelli–Shanks square
+roots (needed for curve-point recovery and the GNFS square-root step). The α-substrate does not
+itself escape the generic bound — it provides the tools that other algorithms use to do so. For
+the full code-tour, see `shared/numth/docs/PEDAGOGY.md`; for the mathematical development, see
+`docs/MATHEMATICS.md` §"The α-Substrate: Primality, Smoothness, and ECM".
+
+**The number-field substrate** (`shared/numfield/docs/PEDAGOGY.md`). The `shared-numfield` crate
+provides the algebraic arithmetic of a number field $K = \mathbb{Q}(\alpha)$: polynomial
+arithmetic (`IntPoly`, `RatPoly`), number-field elements and the norm map, the resultant and
+subresultant GCD, ideal representation, and Dedekind factorisation (including bad primes and the
+Dedekind criterion). This substrate is the algebraic engine of Tracks G and D: the GNFS and
+NFS-DL algorithms both exploit the norm map $N_{K/\mathbb{Q}}$ to connect smoothness in $K$ to
+smoothness in $\mathbb{Z}$. For the full code-tour, see `shared/numfield/docs/PEDAGOGY.md`; for
+the mathematical development, see `docs/MATHEMATICS.md` §GNFS §3 "The Number-Field Bridge".
+
+### §0.4 Tracks G and D: GNFS and NFS-DL
+
+**The code-tour for Tracks G and D is `gnfs/docs/PEDAGOGY.md` §§1–71.** This section is the
+synthesis chapter; the per-crate tour is the depth.
+
+Both tracks live in the `gnfs` crate and exploit the same structure: the number-field bridge. The
+integers $\mathbb{Z}$ embed into a number field $K = \mathbb{Q}(\alpha)$, and the norm map
+$N_{K/\mathbb{Q}}$ connects factorisation in $K$ to factorisation in $\mathbb{Z}$. By sieving for
+pairs $(a, b)$ whose norms on both sides are $B$-smooth, collecting enough such *relations*, and
+solving a linear system, both algorithms extract the answer — a factor (Track G) or a discrete
+logarithm (Track D).
+
+**Track G — GNFS** (`gnfs/docs/PEDAGOGY.md` §§1–62). The General Number Field Sieve factors a
+large integer $N$ in five stages: polynomial selection (§§1–11), sieving (§§12–21), filtering
+(§§22–30), linear algebra over GF(2) (§§31–41), and square-root recovery (§§42–51). The
+integrative chapter (§§52–62) surveys the full pipeline end-to-end. The complexity is
+$L_N[1/3, (64/9)^{1/3}]$ — the derivation is the designated payoff proof in
+`docs/MATHEMATICS.md` §7.
+
+**Track D — NFS-DL** (`gnfs/docs/PEDAGOGY.md` §§63–71). The NFS-DL algorithm adapts GNFS to the
+discrete-logarithm problem in $\mathbb{F}_p^*$. The three DL-specific additions are: Schirokauer
+maps (resolving the unit-group obstruction that replaces GNFS's class-group obstruction),
+$\mathbb{F}_\ell$ linear algebra (replacing GF(2)), and individual-logarithm descent (a
+special-$q$ sieve that rewrites each target as a combination of factor-base elements). The
+complexity is $L_p[1/3, (64/9)^{1/3}]$ — the same exponent and constant as GNFS, because the
+descent is asymptotically subdominant (the delta proof is in `docs/MATHEMATICS.md` §9.7).
+
+**The shared substrate threading G and D.** Both tracks consume the α-substrate (smoothness
+detection, ECM for large-prime variations) and the number-field substrate (polynomial arithmetic,
+norm map, ideal factorisation, Dedekind criterion). The `PolyPair` contract (C-PolyPair, frozen
+G.B.1) is the load-bearing interface: it carries the polynomial pair $(f, g)$ with the shared-root
+invariant $f(m) \equiv 0 \pmod{N}$, and is consumed unchanged by D.A's relation collection.
+
+### §0.5 Track S: Shor's Algorithm
+
+**The code-tour for Track S is `shor/docs/PEDAGOGY.md`.** This section is the synthesis chapter;
+the per-crate tour is the depth.
+
+Track S is the fifth and final escape from search: quantum period-finding. Where the classical
+tracks find algebraic structure that *reduces* the search cost, Shor's algorithm finds a quantum
+period that **dissolves** the $L$-notation bound to polynomial time. The complexity drops from
+$L_N[1/3, (64/9)^{1/3}]$ (GNFS) to $O((\log N)^3)$ (Shor factoring) and from $L_n[1, 1/2]$
+(Pollard rho) to $O((\log r)^3)$ (Shor ECDLP): from subexponential or fully exponential to
+polynomial in the bit-length.
+
+Track S is organised into three sub-tracks (`shor/docs/PEDAGOGY.md` §§1–8):
+
+- **S.A** — the state-vector quantum-circuit simulator (`statevec`, `gates`, `sparse`, `measure`,
+  `qft`). The substrate on which Shor's algorithm runs: a classical program that faithfully
+  simulates the evolution of a quantum register by maintaining the full $2^n$-amplitude array.
+  The frozen gate set (C-StateVec, C-Sparse, C-QFT) is the "no new gate after S.A" invariant
+  that S.B and S.C consume.
+
+- **S.B** — Shor's factoring algorithm (`arith`, `shor`). The complete order-finding circuit
+  (reversible modular exponentiation via permutation synthesis, iQFT, continued-fraction period
+  extraction) and the `factor(N)` driver. Factors 15 → {3,5}, 21 → {3,7}, 35 → {5,7}, 91 →
+  {7,13} using 8–14 qubits.
+
+- **S.C** — Shor's ECDLP algorithm (`curve`, `ecc`, `ecdlp`). The two-register hidden-subgroup
+  construction: the $a$-register and $b$-register each hold $t$ qubits; the work register holds
+  the running point on $E$. The controlled point-addition circuit (permutation synthesis, ancilla-
+  free) evaluates $f(a, b) = a \cdot G + b \cdot Q$ in superposition; the two-dimensional iQFT
+  concentrates amplitude on the dual lattice of the hidden subgroup; the 2D-lattice extraction
+  recovers $k$ via $k \equiv -a' \cdot (b')^{-1} \pmod{r}$. Solves the ECDLP on a toy curve
+  ($r = 13$) using 17 qubits.
+
+For the mathematical development — the QFT phase-estimation argument, the order-finding →
+factoring reduction, the two-register hidden-subgroup proof, and the post-quantum migration
+landscape — see `docs/MATHEMATICS.md` ch. 11.
+
+### §0.6 Cross-track connections
+
+Three connections thread the five tracks into one story.
+
+**The MOV bridge (E → D).** The MOV/Frey–Rück reduction (Track E, §10) is the cross-track bridge
+of the library. Given an elliptic curve with small embedding degree $k$ ($\ell \mid p^k - 1$), the
+Weil/Tate pairing $e: E[\ell] \times E[\ell] \to \mu_\ell \subset \mathbb{F}_{p^k}^*$ transports
+the ECDLP to a DLP in $\mathbb{F}_{p^k}^*$, where NFS-DL (Track D) applies. In code: `mov_reduce`
+evaluates the reduced Tate pairing twice, encodes both outputs via the C-MovBridge
+(`fpext_to_bigint`), and calls `gnfs::dl::solve_dl` (the frozen C2 interface from D.C.3). The
+MOV bridge is the one place in the library where two tracks are directly composed at the code
+level.
+
+**The shared substrate threading G, D, and E.** The α-substrate (smoothness detection, ECM) and
+the number-field substrate (polynomial arithmetic, norm map, ideal factorisation) are consumed by
+all three classical-algebraic tracks. Track E's index-calculus attack (§§13–14) uses the same
+smoothness-detection infrastructure as Tracks G and D; the Semaev summation polynomial is the
+ECDLP analogue of the NFS factor base. The substrate is specified once (Phase α), for all
+consumers — the Category-A substrate-over-specifies discipline that runs through the whole project.
+
+**The classical → quantum arc (ρ/G/D/E → S).** The five tracks form a historical and conceptual
+arc. Pollard rho (1978) established the $\sqrt{n}$ generic bound and the first optimisations
+(distinguished points, negation map, GLV). GNFS (1993) broke the $L[1/2]$ quadratic-sieve barrier
+with the number-field bridge, reaching $L[1/3]$. NFS-DL extended the same structure to discrete
+logarithms. The algebraic ECDLP attacks (Track E) showed that the $\sqrt{n}$ ECDLP bound breaks
+whenever the curve has exploitable structure — pairing, anomalous order, binary field tower, or
+factor-base decomposability. Shor's algorithm (1994) dissolved the $L$-notation framework
+entirely in the quantum model. The arc is: generic search → subexponential classical → polynomial
+quantum. Track S is the honest coda: the post-quantum migration landscape (NIST PQC, the
+SIDH/Castryck–Decru break) shows that structure is a double-edged sword — the same structural
+richness that enables escapes also enables attacks on post-quantum candidates.
+
+**The honest terminus.** The whole library demonstrates the *mathematics* of each escape at toy
+scale, never at cryptographically relevant scale. The toy fixtures (secp_k1_toy at 63 bits,
+GNFS on small semiprimes, NFS-DL at $p = 11$, Shor factoring $N \leq 91$) are correct
+demonstrations of the algorithms; they are not attacks. The $L$-notation separations are
+asymptotic statements; the toy-scale timings are in `docs/BENCHMARKS.md`. This is the
+principle-4 honesty that runs through every chapter.
+
+---
+
+# Chapter ρ — Pollard Rho: Phase-by-Phase
 
 > **Maths-first treatment.** For the mathematical foundations — the birthday-paradox collision
 > argument, Floyd's cycle detection, the group-homomorphism structure that makes rho work on
@@ -6,9 +240,9 @@
 > `docs/MATHEMATICS.md §Pollard Rho for ECDLP`. This chapter is the code-tour sibling: it assumes
 > the reader knows the mathematics and focuses on the phase-by-phase implementation in Rust.
 
-This document explains the optimization sequence implemented in this crate. It is aimed at a reader
-who knows group theory and has seen the discrete logarithm problem before, but is new to the
-specific algorithmic techniques used here. The code is the example; this document is the lesson.
+This chapter explains the optimization sequence implemented in the `rho` crate. It is aimed at a
+reader who knows group theory and has seen the discrete logarithm problem before, but is new to the
+specific algorithmic techniques used here. The code is the example; this chapter is the lesson.
 
 ---
 
@@ -494,13 +728,14 @@ rho-dlog --curve secp-toy --walkers 4 --batch-size 16 --glv --theta 8
 
 ---
 
-# Track E — Algebraic ECDLP Attacks: An Integrative Chapter
+# Chapter E — Algebraic ECDLP Attacks: An Integrative Chapter
 
 This chapter is the integrative code-tour for the complete Track-E algebraic ECDLP attack survey.
-The eight Track-E sessions (E.A–E.K) each implemented one attack or primitive in isolation. This
-chapter surveys the whole attack landscape in a single narrative, names the cross-attack contracts
-that connect the attacks, verifies the project's design statement against the realised Track-E
-implementation, and annotates the scale-dependent phenomena at demonstration fidelity.
+It is the depth chapter for Track E in the umbrella synthesis (§0 above). The eight Track-E
+sessions (E.A–E.K) each implemented one attack or primitive in isolation. This chapter surveys the
+whole attack landscape in a single narrative, names the cross-attack contracts that connect the
+attacks, verifies the project's design statement against the realised Track-E implementation, and
+annotates the scale-dependent phenomena at demonstration fidelity.
 
 Track E is an *attack survey*, not a linear pipeline. The attacks do not compose sequentially —
 each exploits a different curve structure and applies only on the curve whose precondition it
