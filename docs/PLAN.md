@@ -512,7 +512,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | S.B.1 | Modular-exponentiation quantum circuit | done | 60aa816 | C-ModExp |
-| S.B.2 ◆ | Order-finding + continued-fraction extraction + end-to-end factoring | pending | | C-OrderFind, C-Factor |
+| S.B.2 ◆ | Order-finding + continued-fraction extraction + end-to-end factoring | done | 6cc4c6e | C-OrderFind, C-Factor |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
 factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, closed at the E.W ◆) — plus the shared
@@ -535,6 +535,12 @@ Discovery/flex: Implementation used direct permutation synthesis (ancilla-free, 
 Affected: C-ModExp (frozen), qubit budget for S.B.2's 91-target reachability check
 Deferred: no — 91 is well within budget (14 qubits total for N=91, t=7); S.B.2 should KAT factor(91)→{7,13} directly (not the fallback path). The ModExpLayout::standard(N, t) interface is the frozen C-ModExp surface.
 Texture: All 5 KAT categories pass (41 tests). The ancilla-free approach means the "ancilla-clean" KAT verifies the full state vector is restored (forward + inverse = identity), which is a stronger check than a separate ancilla register check.
+
+### S.B.2 ◆ — 2026-06-17
+Discovery/flex: 91 ceiling-stress case confirmed reachable (14 qubits, well within ~25-qubit ceiling) — direct KAT factor(91)→{7,13} passes (not the fallback path). exp_len = n_bits(N) (not 2*n_bits(N)) proved sufficient for continued-fraction recovery at toy scale.
+Affected: C-OrderFind + C-Factor (frozen); BENCHMARKS.md ## S.B section added with qubit-budget table
+Deferred: no — all 4 KAT categories pass (29 tests, 1 ignored seed-finder). S.B sub-track complete.
+Texture: The S.B.2 ◆ boundary fork (@plan-juncture/opus) is pending — paged next per step 7.
 
 ---
 
