@@ -2,7 +2,7 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: Track-S closes (S.D — post-quantum context + T.S, the Track-S writeup)
+# rGNFS — Current Plan: the project terminus (Phase ζ — Z.1 umbrella + T.Z textbook bind)
 
 The rolling, current-sub-track view of the work, in `/run-plan`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see
@@ -10,194 +10,200 @@ contracts + ledger + digest). Rewritten at sub-track boundaries. For the project
 `~/.config/opencode/multisession/multi-session-planning.md`.
 
 `juncture-tier: opus` (header above) — **kept at the default; the lever-5 opt-down is NOT available
-here (a different posture from S.C, where it was available-but-declined).** S.D is a **prose-only
-writeup sub-track** — the Track-S `*.W`-equivalent closeout (the code-tour) paired with **T.S** (the
-Track-S mathematics chapter, `MATHEMATICS.md` ch. 11, per the Track-τ folding rule). It freezes **no
-code contract**, consumes the documentation-register contract **C-Textbook** (frozen T.0)
-read-only, and produces **no input to any downstream sub-track** (Phase ζ's Z.1 umbrella consumes
-the *completed library*, not a Track-S code surface). The five levers:
+here (the same posture as S.D, and the firmest in the project).** This PLAN shards the **two paired
+closeout sub-tracks that end the project**: **Z.1** (the Phase-ζ umbrella narrative — the README +
+the master `docs/PEDAGOGY.md` tying the whole library together) and **T.Z** (the Phase-τ textbook
+bind — the final consistency pass over `docs/MATHEMATICS.md`). Both are **prose-only** and **all-Opus**
+(the ROADMAP: "*Z.1 … all sessions Opus-tier — this is the artifact-as-a-whole and the highest
+integrative judgment load in the project*"; "*T.Z … Opus-tier — highest integrative judgment load in
+the textbook*"). They freeze **no code contract**, consume the documentation-register contract
+**C-Textbook** (frozen T.0) read-only, and produce **no input to any downstream sub-track** (there is
+none — this is the terminus). The five levers:
 
-1. **Ambient complexity — moderate.** A mature doc corpus with a frozen register (C-Textbook), clean
-   genre templates (the `## E.W` integrative code-tour at `docs/PEDAGOGY.md` §8–18; the ch. 10
-   `## Algebraic ECDLP Attacks` chapter in `MATHEMATICS.md`), and a settled markup convention
-   (Markdown + MathJax). Low ambient risk for prose.
-2. **Irreducible complexity (the FLOOR) — two natural conceptual units.** The Track-S **code-tour**
-   (simulator + Shor-factoring + Shor-ECDLP as one integrative survey) is one unit; the **T.S math
-   chapter + post-quantum context** (Shor's algorithm mathematics — the *designated payoff* — plus
-   the PQC migration landscape) is the second. Neither fractures cleanly below its floor.
-3. **Cost of a design error — LOW.** Prose-only; no downstream code consumer; no contract freeze. A
-   wrong framing is cheaply re-editable. **(This is the lever that, with lever 4, licenses the larger
-   2-session shape over a 3-session split.)**
-4. **Correctness-criticality — moderate-low.** Expository: "correctness" is mathematical accuracy +
-   register-fidelity (C-Textbook), caught by review, not by a test suite.
-5. **Inner-loop bandwidth — WEAK, and this is load-bearing.** **There is no test inner-loop for
-   prose.** The VERIFY gate (`cargo test --workspace`) is trivially green throughout — S.D touches no
-   code — so no behavioural signal catches drift. Per the tuning law this pushes *toward smaller*
-   sessions **and forbids the juncture-tier opt-down**. The compensating inner loop for prose is the
-   **◆ juncture fork + human review** (which is why the ◆ is load-bearing here, not ceremonial).
+1. **Ambient complexity — HIGH, and this is load-bearing.** Z.1/T.Z synthesise the **entire library**:
+   9 workspace crates across 5 tracks (ρ, G, D, E, S), **five existing code-tours** (`docs/PEDAGOGY.md`
+   ρ+E §1–18; `gnfs/docs/PEDAGOGY.md` G+D §1–71; `shared/numth/docs/PEDAGOGY.md`;
+   `shared/numfield/docs/PEDAGOGY.md`; `shor/docs/PEDAGOGY.md`), and an **11-chapter `MATHEMATICS.md`**
+   (~4000 lines, all chapters now present through ch. 11). The cross-references that must resolve span
+   *every prior artifact in the project*. This pushes **strongly toward smaller sessions** (the
+   opposite of S.D's low-ambient license for the larger unit).
+2. **Irreducible complexity (the FLOOR) — four natural conceptual units.** The **README umbrella**
+   (supersede the rho-scoped README with a workspace-level narrative over all 5 tracks); the **master
+   PEDAGOGY.md cross-track synthesis** (turn the ρ+E-only master tour into the library-wide synthesis
+   of all 5 code-tours + the cross-track L-notation comparison); the **modularity-theorem speculation
+   chapter** (genuinely *new* content — it exists nowhere in the corpus, the one Z.1 deliverable that
+   is authored rather than aggregated); and the **T.Z textbook bind** (the maths-first consistency pass
+   over all 11 chapters). Each is a whole unit; none fractures cleanly below its floor.
+3. **Cost of a design error — LOW-to-MODERATE.** Prose; no downstream code consumer (this *is* the
+   terminus — nothing consumes it). **But the README is the project's front-door artifact** — a wrong
+   *framing* there is the most-read error in the project, and T.Z's bind is the last word on every
+   chapter. Moderate, not low (a different posture from S.D's lever-3-low).
+4. **Correctness-criticality — moderate.** Expository: "correctness" = cross-reference integrity
+   (every citation across README ↔ 5 PEDAGOGY.md ↔ 11-chapter MATHEMATICS.md resolves) +
+   register-fidelity (C-Textbook) + mathematical accuracy of the *new* modularity chapter. Caught by
+   review, not by a test suite.
+5. **Inner-loop bandwidth — WEAK, and this is load-bearing (the same reality as S.D).** **There is no
+   test inner-loop for prose.** The VERIFY gate (`cargo test --workspace`) is trivially green
+   throughout — Z.1/T.Z touch no code — so no behavioural signal catches drift. Per the tuning law this
+   pushes *toward smaller* sessions **and forbids the juncture-tier opt-down**. The compensating inner
+   loop is the **◆ juncture fork + human review** (load-bearing here, not ceremonial).
 
-On the levers: lever 3/4-low would license one large session, but the one-line-commit-title corollary
-+ lever-5-weak split it into **2 sessions** at the code-tour↔math-chapter seam (the two genres, two
-files, two registers — code-first vs maths-first — are a clean conceptual boundary). The lever-5
-weakness means the **opt-down is unavailable** (no `@plan-juncture-sonnet`): `juncture-tier: opus`,
-and S.D.2 is itself **Opus-tier** because the T.S Shor's-algorithm exposition is a **designated
-payoff** (the ROADMAP's Track-τ rule: "the mathematics is itself a designated payoff … Opus-tier" —
-the period-finding → hidden-subgroup reduction is the quantum analogue of the MOV/L-notation
-payoffs that made T.E/T.G Opus). The ◆ fork pages `@plan-juncture` at opus.
+On the levers: **lever 1 (HIGH ambient) and lever 5 (weak loop) both push toward small**, and the
+ROADMAP already flags every session Opus. This is the *opposite* posture from S.D, where lever-3/4-low
+licensed the larger unit. The decomposition is therefore **fine-grained: Z.1 splits into 3 sessions**
+(README / master-tour synthesis / modularity chapter — three distinct commit titles, the
+one-line-commit-title corollary applied), and **T.Z is its own session** (the maths-first bind, a
+different register and file from Z.1's code-first umbrella). The lever-5 weakness means the
+**opt-down is UNAVAILABLE** (no `@plan-juncture-sonnet`): `juncture-tier: opus`. Two ◆ boundaries —
+**Z.1.3 ◆** (the umbrella close, before T.Z consumes the finished synthesis) and **T.Z ◆** (the
+**project terminus**).
 
-**Scope boundary — S.D is the Track-S WRITEUP ONLY; it is PROSE-ONLY; it writes NO code and NO PQC
-implementation.** S.D produces three prose bodies across two sessions: **(1)** the **Track-S
-code-tour** (a new `shor/docs/PEDAGOGY.md`, the `*.W`-equivalent closeout surveying the landed S.A
-simulator + S.B Shor-factoring + S.C Shor-ECDLP); **(2)** **T.S** — `MATHEMATICS.md` ch. 11, the
-maths-first Shor's-algorithm chapter (quantum period-finding, the QFT, order-finding → factoring,
-the two-register hidden-subgroup → ECDLP); **(3)** the **post-quantum context** folded into ch. 11's
-second half (NIST PQC standardisation, the SIDH/SIKE break, the migration landscape). A `@build`
-agent that implements *any* PQC primitive (a lattice scheme, an isogeny, Kyber/Dilithium), adds a
-crate or a dependency, writes a benchmark, or touches `shor/src/` has reached past S.D's scope — S.D
-is **research-and-write within established literature**, no code (ROADMAP: "Prose-only — no PQC
-implementations").
+**Scope boundary — Z.1 + T.Z are PROSE-ONLY; they write NO code.** The work produces four prose bodies
+across four sessions: **(1)** a rewritten **`README.md`** — the workspace-level umbrella superseding the
+rho-scoped front page; **(2)** the **master `docs/PEDAGOGY.md` cross-track synthesis** — the library-wide
+code-tour that names the through-line once and shows each of the 5 existing tours as a chapter in one
+story, plus the comparative L-notation table across all 5 tracks; **(3)** the **modularity-theorem
+speculation chapter** (new content, location decided in-session — a Z.1 section in the master
+PEDAGOGY.md or a new MATHEMATICS.md chapter, see the open design choice in S.D detail); **(4)** **T.Z**
+— the consistency-bind pass over `docs/MATHEMATICS.md` (cross-references resolved, the stale ToC /
+chapter-pairing-table reconciled, notation unified, the prerequisites chapter checked against what the
+chapters actually used). A `@build` agent that writes *any* code, adds a crate/dependency/benchmark,
+touches any `*/src/`, or implements anything has reached past scope — Z.1/T.Z are
+**research-and-synthesise within the project's own completed artifacts**, no code.
 
-The substrate S.D documents is the **complete, frozen Track-S code** — the simulator (C-StateVec,
-C-Sparse, C-QFT, frozen S.A.2 ◆, `5ec563a`), Shor-factoring (C-ModExp/C-OrderFind/C-Factor, frozen
-across S.B, `60aa816`/`6cc4c6e`), and Shor-ECDLP (C-PointAdd/C-ECDLPSolve, frozen across S.C,
-`82fb198`/`a97e42d`). The shard-time survey (2026-06-17, `@explore` fork against the landed `shor`
-crate + the doc corpus) established five grounding facts:
+The substrate Z.1/T.Z document is the **complete, frozen library**: all of Tracks ρ/G/D/E/S and the
+shared substrate (field/bigint/numth/numfield/padic/gf2m), every code-tour, and every MATHEMATICS.md
+chapter through ch. 11. The shard-time survey (2026-06-17, `@explore` fork against the full doc corpus)
+established the grounding facts:
 
-1. **The `shor` crate is entirely undocumented in any PEDAGOGY.md — the Track-S code-tour is written
-   from scratch (the load-bearing discovery).** The crate has `## S.A`/`## S.B`/`## S.C` sections in
-   `docs/BENCHMARKS.md` (performance) but **zero presence in any code-tour**: no Track-S section in
-   `docs/PEDAGOGY.md` (which holds Pollard-rho + the E.W integrative chapter, §1–18) and none in
-   `gnfs/docs/PEDAGOGY.md` (which holds the G/D code-tours, §1–71). `shor/docs/` does not exist. This
-   **revises the ROADMAP's "S.D = 1–2 sessions"** assumption: the ROADMAP folded T.S into a *post-
-   quantum writeup* and assumed the code-tour existed; in fact the code-tour is owed too. This is an
-   **additive discovery** (more prose owed, no contradiction) — surfaced as a capture candidate.
+1. **The current `README.md` is rho-scoped, not a workspace umbrella (the load-bearing Z.1.1 fact).**
+   It (206 lines) describes only the original single-crate Pollard-rho work (Phases 0–8): build/test,
+   CLIs, benchmarks, the rho architectural decisions and optimization inventory. It names the other 8
+   crates nowhere and carries no cross-track narrative. The one umbrella hook is a single
+   forward-looking sentence (lines 21–25, "*intended to be a complete treatment…*"). **Z.1.1 rewrites
+   it from a rho front-page into a 5-track umbrella** — this is a supersede-and-restructure, not an
+   append.
 
-2. **`MATHEMATICS.md` ch. 11 (T.S) is a ToC stub only — also written from scratch.** Ch. 11
-   ("Shor's Algorithm and Post-Quantum Context") is named in the ToC (line 155, *"to be appended"*)
-   with **zero body text**. The highest existing chapter is ch. 10 (Algebraic ECDLP Attacks,
-   `docs/MATHEMATICS.md:2671`, ~535 lines), so T.S is correctly **ch. 11**. Scattered one-line Shor
-   mentions exist in the Through-Line (§3), On Scale (§5), and references (#14, Shor 1994) — these
-   are the hooks T.S resolves, not existing content. **No "post-quantum", "NIST", "SIDH", "lattice"
-   (PQC sense) content exists anywhere in the repo.**
+2. **The master `docs/PEDAGOGY.md` aggregates only ρ + E today (the load-bearing Z.1.2 fact).** It
+   (1166 lines) holds the rho code-tour (§1–7) and the E.W integrative Track-E chapter (§8–18) —
+   **nothing else**. The four other code-tours live in their own files (`gnfs/docs/PEDAGOGY.md` G+D
+   §1–71; `shared/numth/`; `shared/numfield/`; `shor/docs/PEDAGOGY.md`). **Z.1.2 turns this master
+   file into the library-wide synthesis** that names the through-line once and threads all 5 tours,
+   plus the cross-track L-notation comparison (per-track L-data exists; the *all-5-track* synthesis in
+   one narrative does not).
 
-3. **The code-tour location is `shor/docs/PEDAGOGY.md` (new) — resolving a stale-pairing-table
-   ambiguity (user-adjudicated at shard time, 2026-06-17).** The `MATHEMATICS.md` chapter-pairing
-   table (line 104, written before the `shor` crate existed) points the Track-S code-tour at
-   `gnfs/docs/PEDAGOGY.md` — but `shor` is **not part of `gnfs`**, so that target is structurally
-   wrong. The chosen location mirrors the per-crate precedent `shared/numth/docs/PEDAGOGY.md`. **The
-   pairing-table row is stale and owes a one-line fix** — out of `@architect` PLAN-write scope,
-   surfaced as a capture candidate for the ROADMAP/MATHEMATICS.md.
+3. **The modularity-theorem speculation chapter exists NOWHERE — it is the one authored (not
+   aggregated) Z.1 deliverable.** The ROADMAP names it as a Z.1 deliverable (Phase ζ: "*the
+   modularity-theorem speculation chapter*"); the only occurrence of "modularity" in the entire corpus
+   is that single ROADMAP line. **Z.1.3 writes it from scratch** — its location (a master-PEDAGOGY.md
+   section vs a new MATHEMATICS.md chapter) is the one genuine design choice, resolved in-session
+   against the through-line and C-Textbook (see the S.D detail).
 
-4. **`docs/BENCHMARKS.md` is complete for Track S — S.D touches it NOT.** `## S.A` (line 527),
-   `## S.B` (605), `## S.C` (676) all exist, each with the established genre (intro prose + qubit-
-   budget/results tables + a `### Science↔engineering note (principle 4)` + a test-coverage table).
-   S.D adds **no benchmark** (it adds no code), so it appends **no `## S.D`** section. The code-tour
-   *cites* the existing BENCHMARKS sections; it does not extend them.
+4. **All 11 MATHEMATICS.md chapters are present; the bind targets are the STALE cross-references (the
+   load-bearing T.Z fact).** Ch. 11 (Shor + PQC, S.D.2) is complete. The bind work is *consistency*,
+   not authoring: the **ToC (lines 143–160) still carries stale "*(T.G/T.D/T.E — to be appended)*"
+   labels** for chapters that now exist; the **chapter-pairing table (lines 97–105) is stale** — it
+   points the Track-E sibling at `gnfs/docs/PEDAGOGY.md (Track E chapter)` but the E.W integrative
+   chapter actually lives in the **master `docs/PEDAGOGY.md` §8–18** (a structural mis-pairing T.Z must
+   reconcile); the **comparative L-notation synthesis across all attacks** (ROADMAP T.Z deliverable)
+   must be unified into the textbook; the **prerequisites chapter** must be checked against what the
+   chapters actually leaned on; the **two S.D.2-flagged copy-edit nits** (a cosmetic ket typo in §11.2,
+   a conversational aside in §11.4.1) are T.Z fixes. **T.Z authors little; it binds much.**
 
 5. **C-Textbook is the only contract in play, consumed read-only.** The documentation register —
    audience (undergraduate maths background), depth (survey with proof-sketch depth; full proofs only
    at designated payoffs), through-line (structure-based escape from search), markup (Markdown +
-   MathJax) — is frozen (`5ec563a`-era T.0). T.S obeys it; the **Shor period-finding → HSP reduction
-   is the chapter's designated full-proof payoff** (the C-Textbook carve-out for payoff proofs). The
-   code-tour follows the code-first genre (module surface + KAT + one-line cross-reference to the
-   math chapter), no MathJax beyond inline Unicode, per the existing §8–18 / §1–71 precedent.
+   MathJax) — is frozen (T.0). Z.1's code-first umbrella follows the code-tour genre; T.Z's bind obeys
+   the maths-first register. **T.Z is the chartered moment to ratify the `docs/textbook/` promotion
+   question** (C-Textbook §location explicitly defers the single-file-vs-directory decision to T.Z) —
+   a register *decision* T.Z is empowered to make, distinct from a register *break*.
 
-The work splits at **one code-tour↔math-chapter contract-sharp seam (the two genres / two files /
-two registers), 2 sessions** (the ROADMAP "1–2 sessions", revised additively for the missing
-code-tour; the soft seam for an additive S.D.2a/S.D.2b — math chapter vs PQC survey — is named
-below):
+The work splits at **three contract-sharp seams** (README↔master-tour; master-tour↔modularity; Z.1
+umbrella↔T.Z bind), **4 sessions** across the two sub-tracks:
 
-1. **S.D.1 — Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP (Sonnet, Cat I).** A fresh
-   `shor/docs/PEDAGOGY.md` — the `*.W`-equivalent integrative code-tour for the whole Track-S code
-   surface, following the `docs/PEDAGOGY.md` §8–18 (Track-E integrative) genre: an at-a-glance table
-   (the three sub-tracks S.A/S.B/S.C, their module surfaces, frozen contracts, and toy fixtures), a
-   per-piece code-first narrative (the state-vector simulator + gate set + sparse path + measurement +
-   QFT; the reversible modular arithmetic + order-finding + `factor` driver; the toy curve + reversible
-   point-addition + two-register ECDLP solve), the cross-phase contract view (C-StateVec → C-ModExp →
-   C-PointAdd, the substrate-reuse story), the design-statement verification (principles 1/3/4 against
-   the realised Track-S code — the ~25-qubit ceiling as the principle-4 resource wall), a KAT summary,
-   and cross-references to T.S (ch. 11, to be written next) + the BENCHMARKS `## S.A`/`## S.B`/`## S.C`
-   sections. **Freezes nothing** (prose; the only "contract" is register-conformance to C-Textbook).
+1. **Z.1.1 — README umbrella: workspace-level front page over all five tracks (Opus, Cat I).** Rewrite
+   `README.md` from the rho-scoped front page into the project umbrella: the 5-track narrative (ρ/G/D/E/S),
+   the crate/track map (all 9 crates), the escape-from-search framing, pointers to the master
+   `docs/PEDAGOGY.md` and `docs/MATHEMATICS.md`, and the design-statement summary. **Freezes nothing.**
 
-2. **S.D.2 ◆ — T.S: Shor's-algorithm mathematics (payoff) + post-quantum context (Opus, Cat I).**
-   `MATHEMATICS.md` ch. 11 — the maths-first Shor chapter: the **quantum period-finding payoff
-   proof** (superposition → modular exponentiation / point-addition → QFT phase estimation →
-   continued-fraction / 2D-lattice extraction; *why* the period of `a ↦ g^a mod N` yields a factor,
-   and *why* the 2D hidden subgroup of `(a,b) ↦ a·G + b·Q` yields the discrete log — the quantum
-   "escape from search" that **dissolves** the L-notation bound, the chapter's through-line payload),
-   followed by the **post-quantum context** (NIST PQC standardisation — lattice/code/hash/isogeny
-   families; the SIDH/SIKE break as the cautionary counter-example; the migration landscape). Folds
-   T.S into ch. 11 per the Track-τ pairing. Resolves the ToC stub; extends the references section
-   (Proos–Zalka, Nielsen–Chuang, the NIST PQC standards, Castryck–Decru). Crosses the **S.D ◆
-   boundary** — **Track S / Phase ε is complete end-to-end** (the quantum-attack arc closed,
-   contextualised in the broader cryptanalytic and post-quantum landscape).
+2. **Z.1.2 — master PEDAGOGY.md cross-track synthesis + the L-notation comparison (Opus, Cat I).**
+   Transform `docs/PEDAGOGY.md` from the ρ+E-only file into the library-wide tour: name the through-line
+   once, thread all 5 existing code-tours as chapters in one story (citing each per-crate tour, not
+   duplicating it), and write the **comparative L-notation table across all 5 tracks** (ρ $L[1,1/2]$ →
+   GNFS/NFS-DL $L[1/3,\cdot]$ → algebraic-ECDLP per §10.6 → Shor $L[0]$). **Freezes nothing.**
 
-Re-read this intent at the ◆ boundary to catch **defocus** (implementing any PQC primitive — a
-lattice scheme, an isogeny, a signature — instead of *surveying* it; adding a crate/dependency/
-benchmark; touching `shor/src/`; writing the code-tour into `gnfs/docs/PEDAGOGY.md` per the stale
-table instead of the chosen `shor/docs/PEDAGOGY.md`; re-deriving Shor's mathematics in the code-tour
-instead of citing T.S) and **rigidity** (compressing the period-finding payoff proof to a sketch
-because "the code-tour shows it works" — T.S's Shor exposition *is* the designated full-proof payoff,
-principle of the C-Textbook carve-out; or refusing to extend the references / prerequisites where the
-quantum material genuinely needs a new citation — principle 4).
+3. **Z.1.3 ◆ — the modularity-theorem speculation chapter; close Z.1 (Opus, Cat I).** Author the new
+   modularity-theorem speculation chapter (the one aggregated-from-nothing Z.1 deliverable), location
+   resolved in-session. Crosses the **Z.1 ◆** — the umbrella is complete and coherent before T.Z
+   consumes its finished synthesis.
 
-**Scoping discipline.** S.D documents and contextualises at **survey-with-proof-sketch depth**
-(C-Textbook), with the **Shor period-finding reduction as the one full-proof payoff**. The
-**principle-4 science↔engineering gap is load-bearing and explicit in two registers:** (a) the
-~25-qubit simulator ceiling (the resource-scale wall already annotated in BENCHMARKS `## S.A`–`## S.C`)
-is restated in the code-tour's principle-4 summary and in T.S — the simulator exhibits Shor's
-*mathematics* (period-finding, the HSP reduction) correctly at toy scale, while the quantum *speedup*
-requires real quantum hardware out of scope by construction; (b) the post-quantum context is *itself*
-a principle-4 statement at project scale — the entire classical-attack arc (Tracks G/D/E) and the
-quantum arc (Track S) demonstrate *why* the migration is happening, without rGNFS implementing any
-PQC replacement (the migration landscape is surveyed, not built — the project's pedagogical terminus,
-not a new construction track).
+4. **T.Z ◆ — textbook bind: consistency pass over MATHEMATICS.md; close the project (Opus, Cat I).**
+   The maths-first consistency-bind over all 11 chapters: resolve every cross-reference, reconcile the
+   stale ToC + chapter-pairing table, unify the comparative L-notation synthesis into the textbook,
+   reconcile the prerequisites chapter against actual usage, ratify the `docs/textbook/` promotion
+   decision, fix the S.D.2-flagged nits. Crosses the **T.Z ◆ — the PROJECT TERMINUS** (the whole
+   library bound, every chapter consistent, rGNFS complete).
+
+Re-read this intent at each ◆ boundary to catch **defocus** (writing *any* code; adding a
+crate/dependency/benchmark; re-deriving in the umbrella mathematics that belongs in the textbook
+chapters; the README drifting back into rho-only scope) and **rigidity** (compressing the modularity
+chapter to a footnote because "it's speculative" — the ROADMAP charters it as a chapter; T.Z merely
+copy-editing instead of doing the *structural* bind — resolving the stale pairing table, the
+cross-track L-notation synthesis, the promotion decision).
+
+**Scoping discipline.** Z.1/T.Z synthesise and bind at **survey depth** (C-Textbook); the modularity
+chapter is **explicitly speculative** (it is the project's one chartered speculation — *what if the
+modularity theorem's structure suggests further escapes?* — flagged as speculation, not theorem). The
+**principle-4 honesty is the umbrella's closing note**: the whole project demonstrates the *mathematics*
+of each escape at toy scale, never the cryptographically-relevant scale — the umbrella states this once,
+for the artifact as a whole, as the project's honest terminus.
 
 ---
 
 ## Purpose (design intent)
 
-Per ROADMAP (Phase ε, S.D): "*S.D — Post-quantum context writeup. 1–2 sessions. No structural
-predecessor. NIST PQC, the SIDH break, the migration landscape. Prose-only — no PQC implementations.
-Sonnet (this is a research-and-write task within an established literature).*" Per the Track-τ
-folding rule (ROADMAP §Phase τ): "*T.S … folds into S.D … the writeup session produces two siblings:
-the code-tour chapter in PEDAGOGY.md and the maths-first textbook chapter … except where the
-mathematics is itself a designated payoff … which are Opus-tier.*" And per the design statement (item
-7): "*A post-quantum context chapter situating the classical work in the broader migration
-landscape.*"
+Per ROADMAP (Phase ζ, Z.1): "*Z.1 — Umbrella narrative. 2-4 sessions. Predecessor: everything. The
+README + the master PEDAGOGY.md that ties the whole library together. The L-notation comparison across
+attacks; the modularity-theorem speculation chapter; the structure-based-escape-from-search synthesis.
+All sessions Opus-tier — this is the artifact-as-a-whole and the highest integrative judgment load in
+the project.*" Per ROADMAP (Phase τ, T.Z): "*T.Z — Textbook bind. 1 session. Predecessor: all per-track
+chapters + Z.1. Sibling to Z.1: the final consistency pass binding the accreted chapters into one
+coherent, learnable document — cross-references resolved, the comparative L-notation synthesis across
+all attacks written, notation unified, the prerequisites chapter reconciled against what the chapters
+actually used. Opus-tier — highest integrative judgment load in the textbook, paired with Z.1's
+umbrella synthesis.*"
 
-S.D is **the Track-S closeout and the project's penultimate content sub-track** — the writeup that
-turns the landed Shor simulator + factoring + ECDLP code into the two complementary durable artifacts
-every track produces (a code-first code-tour and a maths-first textbook chapter), and that closes the
-quantum arc by situating it in the post-quantum migration landscape (design-statement item 7). Where
-Tracks G/D/E demonstrated the *classical* structure-based escapes from the √n / L-notation search
-bound — and where Shor's algorithm (Track S code) **dissolves** that bound entirely in the quantum
-model — S.D is where the project *says what that means*: the mathematics of the quantum escape (T.S,
-the designated payoff), and the cryptographic consequence (the migration to post-quantum primitives,
-surveyed not built). It is the natural terminus of the project's through-line ("structure-based escape
-from search") before the Phase-ζ umbrella (Z.1) and the textbook bind (T.Z) close the whole library.
+Z.1 + T.Z are **the project terminus** — the closeout that turns the completed library (all 5 tracks,
+9 crates, 5 code-tours, 11 textbook chapters) into the two artifacts-as-a-whole every reader meets
+first: the umbrella README + master code-tour (Z.1, code-first) and the bound, learnable textbook (T.Z,
+maths-first). Where each track demonstrated *one* structure-based escape from the search bound, Z.1/T.Z
+are where the project *says what the whole arc means*: the comparative L-notation hierarchy across all
+attacks (the quantitative spine), the structure-based-escape-from-search synthesis (the conceptual
+spine), and the one chartered speculation (the modularity chapter). It is the natural terminus of the
+project's through-line — after it, rGNFS is complete.
 
-The deliverable is two-fold (the two conceptual units, each a session):
+The deliverable is four-fold (the four conceptual units, each a session):
 
-1. **The Track-S code-tour (S.D.1).** A fresh `shor/docs/PEDAGOGY.md` — the integrative code-first
-   survey of the landed Track-S code (S.A simulator, S.B Shor-factoring, S.C Shor-ECDLP), in the
-   `*.W` genre (at-a-glance table → per-piece narrative → contract view → design-statement
-   verification → KAT summary → cross-references). The `shor` crate is currently undocumented in any
-   code-tour; this writes it from scratch. **Freezes nothing.**
+1. **The README umbrella (Z.1.1).** A rewritten `README.md` — the workspace-level front page over all
+   5 tracks, superseding the rho-scoped original. **Freezes nothing.**
 
-2. **T.S + post-quantum context (S.D.2 ◆).** `MATHEMATICS.md` ch. 11 — the maths-first Shor chapter
-   (quantum period-finding as the designated full-proof payoff, applied to factoring and ECDLP) +
-   the post-quantum context (NIST PQC, the SIDH break, the migration landscape). The maths-first
-   sibling of the S.D.1 code-tour; closes Track S. **Freezes nothing** (consumes C-Textbook
-   read-only).
+2. **The master PEDAGOGY.md cross-track synthesis (Z.1.2).** `docs/PEDAGOGY.md` transformed into the
+   library-wide code-tour synthesising all 5 existing tours + the comparative L-notation table.
+   **Freezes nothing.**
 
-S.D is **prose-only** (it implements no PQC, adds no crate, no dependency, no benchmark, touches no
-`shor/src/`), **substrate-documenting** (it explains the complete frozen Track-S code rather than
-extending it), and **principle-4-honest** (the simulator's ~25-qubit ceiling and the project-scale
-"migration surveyed, not built" posture are both annotated). Re-read this intent at the ◆ boundary to
-catch defocus (any PQC implementation, a crate/dep/bench, the wrong code-tour file, re-deriving Shor
-in the code-tour) and rigidity (compressing the period-finding payoff proof, refusing a needed
-reference/prerequisite extension).
+3. **The modularity-theorem speculation chapter (Z.1.3 ◆).** The one authored-new Z.1 deliverable;
+   closes the umbrella. **Freezes nothing.**
+
+4. **The textbook bind (T.Z ◆).** The maths-first consistency pass over all 11 MATHEMATICS.md chapters;
+   closes the project. **Freezes nothing** (consumes C-Textbook read-only; consumes Z.1's finished
+   synthesis for the cross-track L-notation material).
+
+Z.1/T.Z are **prose-only** (no code, no crate, no dependency, no benchmark, no `*/src/` edit),
+**library-synthesising** (they explain and bind the complete frozen corpus rather than extending it),
+and **principle-4-honest** (the toy-scale ceiling across the whole project is the umbrella's honest
+closing note). Re-read this intent at each ◆ to catch defocus (any code; the README narrowing to rho;
+re-deriving textbook mathematics in the umbrella) and rigidity (a footnote-sized modularity chapter; a
+copy-edit-only T.Z that skips the structural bind).
 
 ---
 
@@ -206,25 +212,28 @@ reference/prerequisite extension).
 `VERIFY_TEST = cargo test --workspace`. `VERIFY_TYPES = cargo check --workspace`. Discovered, not
 assumed: no Makefile / justfile / xtask wrapper (the workspace `Cargo.toml` carries only
 `[workspace]` members + a `[profile.bench]`); raw `cargo` is the only CI surface (unchanged since
-S.A / S.B / S.C). **S.D writes NO code** — it adds prose files (`shor/docs/PEDAGOGY.md`) and edits
-prose files (`docs/MATHEMATICS.md`) only. The VERIFY gate is therefore a **pure no-regression gate**
-(every existing crate's KATs stay green because S.D changes no source, no manifest, no module
+S.A–S.D). **Z.1/T.Z write NO code** — they add one prose file at most (a possible new
+modularity-chapter file, if that location is chosen) and edit prose files (`README.md`,
+`docs/PEDAGOGY.md`, `docs/MATHEMATICS.md`) only. The VERIFY gate is therefore a **pure no-regression
+gate** (every existing crate's KATs stay green because Z.1/T.Z change no source, no manifest, no module
 surface), with **no new test** to add and **no new compile** target. `/run-plan` re-discovers at
-preflight. The honest gate for a prose sub-track is **the no-regression VERIFY (trivially green) +
-the C-Textbook register-conformance review at the ◆** — the weak-lever-5 reality made explicit:
+preflight. The honest gate for a prose closeout is **the no-regression VERIFY (trivially green) + the
+C-Textbook register-conformance and cross-reference-integrity review at each ◆** — the weak-lever-5
+reality made explicit:
 
-- **The entire existing workspace KAT suite must stay green** — S.D touches no `.rs`, no
+- **The entire existing workspace KAT suite must stay green** — Z.1/T.Z touch no `.rs`, no
   `Cargo.toml`, no module. `cargo test --workspace` is a pure regression guard; it adds nothing and
-  must change nothing. *(If a session run reports any test delta, that is a red flag that S.D has
+  must change nothing. *(If a session run reports any test delta, that is a red flag that Z.1/T.Z have
   drifted into code — a defocus signal to HALT, not to accommodate.)*
 - **`cargo check --workspace` must stay green** — trivially, for the same reason.
-- **No `cargo bench` involvement** — S.D adds no benchmark (`docs/BENCHMARKS.md` is unchanged; the
-  `## S.A`/`## S.B`/`## S.C` sections are cited, not extended). `VERIFY_BENCH` is N/A for S.D.
-- **The real correctness gate is review, not tests (lever-5-weak made explicit).** Prose correctness
-  = mathematical accuracy + C-Textbook register-conformance + cross-reference integrity (the
-  code-tour↔T.S↔BENCHMARKS citations resolve). This is **not** machine-checkable; it is the human
-  review + the ◆ juncture's job. The MathJax renders (no build-time validation — a known C-Textbook
-  tradeoff, frozen at T.0); a renderer spot-check is the substitute.
+- **No `cargo bench` involvement** — Z.1/T.Z add no benchmark (`docs/BENCHMARKS.md` is unchanged; its
+  Phase-1–4 / G.B–G.W / E.W / S.A–S.C sections are cited, not extended). `VERIFY_BENCH` is N/A.
+- **The real correctness gate is review, not tests (lever-5-weak made explicit).** Prose correctness =
+  cross-reference integrity (every citation across README ↔ 5 PEDAGOGY.md ↔ 11-chapter MATHEMATICS.md
+  resolves) + C-Textbook register-conformance + mathematical accuracy of the new modularity chapter +
+  the bind's structural completeness (stale ToC/pairing-table reconciled, L-notation synthesis unified).
+  This is **not** machine-checkable; it is the human review + the ◆ juncture's job. The MathJax renders
+  (no build-time validation — a known C-Textbook tradeoff); a renderer spot-check is the substitute.
 
 ---
 
@@ -237,354 +246,390 @@ dispatched.
 
 | # | Session | Cat | Tier | Consumes | Expected files |
 |---|---------|-----|------|----------|----------------|
-| S.D.1 | Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP | I | Sonnet | C-Textbook (frozen T.0 — the documentation register; the code-tour follows the code-first `*.W` genre, citing the math chapter for the mathematics); the frozen Track-S code surface (C-StateVec/C-Sparse/C-QFT — S.A; C-ModExp/C-OrderFind/C-Factor — S.B; C-PointAdd/C-ECDLPSolve — S.C) as the documented subject; `docs/BENCHMARKS.md` `## S.A`/`## S.B`/`## S.C` (cited, not edited) | `shor/docs/PEDAGOGY.md` (new: the Track-S integrative code-tour — at-a-glance table, per-piece narrative for S.A/S.B/S.C, contract view, design-statement verification, KAT summary, cross-references) |
-| S.D.2 ◆ | T.S: Shor's-algorithm mathematics (payoff) + post-quantum context | I | Opus | C-Textbook (frozen T.0 — the register + the designated-payoff carve-out for full proofs); the S.D.1 code-tour (cited as the realisation sibling); the existing `MATHEMATICS.md` Through-Line (§3), On Scale (§5), and references (#14 Shor 1994) hooks | `docs/MATHEMATICS.md` (edit: fill ch. 11 "Shor's Algorithm and Post-Quantum Context" — currently a ToC stub at line 155; add the chapter body after ch. 10 which ends at EOF ~line 3206; extend the references section ~line 1180–1226; reconcile the chapter-pairing table row at line 104 IF in scope, else flag) |
+| Z.1.1 | README umbrella: workspace-level front page over all five tracks | I | Opus | C-Textbook (frozen T.0 — the register; the README follows the code-first umbrella genre); the complete library as the documented subject (all 9 crates, all 5 tracks); the existing `README.md` (superseded); the 5 code-tours + `docs/MATHEMATICS.md` (cited as the deep-dive pointers) | `README.md` (rewrite: rho-scoped → 5-track umbrella — narrative over ρ/G/D/E/S, the 9-crate/5-track map, escape-from-search framing, pointers to `docs/PEDAGOGY.md` + `docs/MATHEMATICS.md`, design-statement summary) |
+| Z.1.2 | Master PEDAGOGY.md cross-track synthesis + L-notation comparison | I | Opus | C-Textbook (frozen T.0); the 5 existing code-tours (`docs/PEDAGOGY.md` ρ+E §1–18; `gnfs/docs/PEDAGOGY.md` G+D §1–71; `shared/numth/`; `shared/numfield/`; `shor/docs/PEDAGOGY.md`) as the synthesised subject; `MATHEMATICS.md` "Escape from Search" §3 + §10.6 L-notation tables (cited) | `docs/PEDAGOGY.md` (extend: ρ+E-only master file → library-wide synthesis — through-line named once, all 5 tours threaded as chapters in one story, the comparative all-5-track L-notation table; cites each per-crate tour, does not duplicate) |
+| Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | I | Opus | C-Textbook (frozen T.0 — incl. the speculation register, flagged as speculation not theorem); the through-line synthesis (Z.1.2, the home it slots into); `MATHEMATICS.md` §3 (the escape-from-search taxonomy it speculates beyond) | `docs/PEDAGOGY.md` (new section) OR `docs/MATHEMATICS.md` (new chapter) — location resolved in-session against the through-line + C-Textbook; the genuinely new authored content |
+| T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | I | Opus | C-Textbook (frozen T.0 — the register + the chartered `docs/textbook/` promotion decision); Z.1's finished umbrella synthesis (the cross-track L-notation comparison T.Z unifies into the textbook); all 11 existing MATHEMATICS.md chapters (the bound subject) | `docs/MATHEMATICS.md` (edit: resolve cross-references; reconcile stale ToC "to be appended" labels lines 143–160 + the stale chapter-pairing table lines 97–105 — the Track-E sibling mis-points at `gnfs/` but lives in `docs/PEDAGOGY.md` §8–18; unify the comparative L-notation synthesis; reconcile the prerequisites chapter; ratify the `docs/textbook/` promotion; fix the §11.2 ket typo + §11.4.1 aside) |
 
-**Sequencing notes.** Strictly serial: **S.D.1 → S.D.2.** S.D.1 writes the code-first code-tour (the
-realisation survey); S.D.2 writes the maths-first chapter (which the code-tour cross-references) and
-closes the sub-track at the ◆. *(Order rationale: code-tour first so the math chapter can cite a
-stable `shor/docs/PEDAGOGY.md` §-structure for the "code realisation" pointers — the reverse order
-was considered and declined at shard time, see the why-2-sessions note. Tradeoff named: writing the
-code-tour first means S.D.1 cannot yet cite a finished T.S for "the mathematics"; it cites "ch. 11,
-to be appended" forward-references, which S.D.2 then satisfies — a minor asymmetry, accepted because
-the code-tour's cross-references are one-liners and the math chapter's "code realisation §N"
-pointers benefit more from a stable target.)* **One `@architect` marker:** the **S.D.2 ◆** (the
-sub-track-boundary juncture — ratifying the Track-S closeout + the post-quantum terminus). *(Tradeoff
-named: S.D pages a juncture only at the ◆-close, NOT at the open — same as S.A/S.B/S.C. There is no
-substrate-design judgment at the open: the code-tour genre is settled (§8–18 / §1–71 precedent) and
-the math chapter obeys frozen C-Textbook; the integrative judgment — does the writeup faithfully
-represent the landed code, land the period-finding payoff at full-proof depth, survey the PQC
-landscape accurately, and stay prose-only? — concentrates at the ◆ close. The juncture-tier is
-`opus`, the opt-down UNAVAILABLE per lever-5-weak, recorded in the header.)*
+**Sequencing notes.** Strictly serial: **Z.1.1 → Z.1.2 → Z.1.3 ◆ → T.Z ◆.** The README (Z.1.1) is the
+front page that points at the master tour; the master-tour synthesis (Z.1.2) establishes the
+through-line home the modularity chapter (Z.1.3) slots into and closes Z.1; T.Z then **consumes Z.1's
+finished synthesis** (it unifies the cross-track L-notation comparison Z.1.2 wrote into the textbook —
+the real cross-sub-track contract seam) and binds the project closed. *(Order rationale: README first
+so the deeper artifacts have a stable front page to be pointed at; master-tour before the modularity
+chapter so the chapter slots into a settled through-line; T.Z last because the bind's L-notation
+synthesis literally consumes Z.1.2's table — writing T.Z before Z.1 would force it to invent the
+cross-track comparison Z.1 owns. Tradeoff named: Z.1.1's README cites a `docs/PEDAGOGY.md` master
+synthesis that Z.1.2 has not yet written — a forward reference, accepted because the README's pointer
+is a one-liner and the alternative, README-after-synthesis, would leave the project's front page stale
+longest.)*
 
-**Why 2 sessions (the ROADMAP "1–2 sessions", revised additively).** The split is taken at the single
-code-tour↔math-chapter contract-sharp seam (two genres, two files, two registers):
-- **One-line-commit-title corollary.** "Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP"
-  and "T.S: Shor's-algorithm mathematics + post-quantum context" are **two distinct commit titles**.
-  Bundling them — "write the code-tour AND the Shor math chapter AND the post-quantum survey" — fails
-  the corollary, and the survey's discovery (the code-tour is owed, not just the PQC writeup) makes
-  the bundle materially larger than the ROADMAP's 1-session minimum assumed.
-- **Two conceptual units kept whole (lever 2).** S.D.1 is the code-first integrative survey (one
-  unit — the realisation tour across S.A/S.B/S.C); S.D.2 is the maths-first chapter + PQC context
-  (the second unit). Neither fractures cleanly: the code-tour is one `*.W`-genre document; the math
-  chapter is one ToC entry (ch. 11, titled to include the PQC context as its second half).
-- **Contract-sharp boundary (the genre/register seam).** The two halves obey *different* registers —
-  the code-tour is code-first (module surface + KAT + cross-reference, no full proofs), the math
-  chapter is maths-first with the C-Textbook designated-payoff carve-out (the period-finding full
-  proof). The math chapter *consumes* the code-tour (cites its §N for "code realisation"); the
-  code-tour *forward-references* the math chapter (cites "ch. 11" for "the mathematics"). The seam
-  is the project's settled code-tour↔textbook pairing pattern (`MATHEMATICS.md` §Chapter-pairing).
-- **Lower lever 3/4 license the larger unit; weak lever 5 forbids the opt-down.** Prose drift is
-  cheap to fix (lever 3/4-low → 2 sessions over 3), but there is no test inner-loop to catch it
-  (lever 5-weak → the ◆ + review IS the inner loop, and the juncture stays at opus).
+**Two `@architect` markers:** the **Z.1.3 ◆** (the umbrella close — ratifying README + master-tour +
+modularity chapter as a coherent whole before T.Z binds against it) and the **T.Z ◆** (the
+**project-final juncture** — the whole textbook bound, every chapter consistent, rGNFS complete).
+*(Tradeoff named: two ◆ halts cost two human glances rather than one continuous closeout; accepted
+because weak-lever-5 means no test catches a wrong umbrella synthesis, and T.Z binds *against* that
+synthesis — an intervening Z.1 ◆ checkpoint stops a wrong synthesis from propagating silently into the
+final bind. The juncture-tier is `opus`, the opt-down UNAVAILABLE per lever-5-weak, recorded in the
+header. Neither sub-track pages a juncture at its open: there is no substrate-design judgment — the
+umbrella and bind genres are settled (the `*.W` precedent + C-Textbook), and the integrative judgment
+concentrates at each ◆ close.)*
 
-**The softest seam — could S.D.2 split into T.S the math chapter (S.D.2a) and the post-quantum context
-(S.D.2b)?** The ROADMAP titles ch. 11 "Shor's Algorithm **and** Post-Quantum Context" — one chapter,
-two halves: the Shor mathematics (the designated full-proof payoff, Opus) and the PQC migration survey
-(research-and-write within established literature, Sonnet-shaped). A planner could split them. The
-chosen shard keeps **the whole ch. 11 in S.D.2**, because (a) the ToC entry, the chapter-pairing
-table, and the design statement all treat it as *one* chapter; (b) the PQC survey is a chapter
-*subsection* (a few thousand words situating the work), **not a full session's worth** — splitting it
-out would produce a sub-band commit with no contract seam worth taking (there is no freeze between the
-Shor-math half and the PQC-survey half — both are prose in one chapter, one register). **If S.D.2
-overruns** (the period-finding full-proof payoff — the QFT phase-estimation argument plus the 2D
-hidden-subgroup lattice for ECDLP, the chapter's hardest exposition — plus a thorough PQC survey
-pushes past the session band; plausible for a payoff chapter with two distinct payloads), the escape
-applies: **split at the math↔survey seam** (T.S the Shor mathematics in S.D.2a, Opus, the payoff; the
-post-quantum context in S.D.2b ◆, Sonnet, the survey) — an additive-reshard surfaced at the S.D.2
-readout or by S.D.2 once the payoff-proof length is concrete, never a silent overrun. This is the one
-place the 2-vs-3 sizing is genuinely uncertain until the period-finding payoff's true length is
-visible — the prose analogue of S.C's "circuit reversibility-KAT size" uncertainty.
+**Why 4 sessions (the ROADMAP "Z.1: 2–4" + "T.Z: 1").** The split is taken at three contract-sharp
+seams; lever 1 (HIGH ambient) and lever 5 (weak loop) both push toward the fine-grained end of the
+ROADMAP band:
+- **One-line-commit-title corollary.** "README umbrella", "master PEDAGOGY.md cross-track synthesis",
+  "modularity-theorem speculation chapter", and "textbook bind: consistency pass over MATHEMATICS.md"
+  are **four distinct commit titles**. Bundling any pair — e.g. "rewrite the README AND synthesise the
+  master tour" — fails the corollary.
+- **Four conceptual units kept whole (lever 2).** Each session is one unit: a front page, a code-first
+  synthesis, an authored speculation chapter, a maths-first bind. None fractures cleanly.
+- **Contract-sharp boundaries.** README↔master-tour (front page vs deep tour — different artifacts,
+  different files); master-tour↔modularity (aggregation vs authored-new — different work register);
+  Z.1-umbrella↔T.Z-bind (code-first vs maths-first — different register, different file, and T.Z
+  *consumes* Z.1's L-notation synthesis: a genuine cross-sub-track seam).
+- **HIGH ambient + weak loop drive the fine grain; lever-3-moderate keeps it from over-splitting.** The
+  whole-library cross-reference surface (lever 1) and the absent test loop (lever 5) argue for small
+  sessions, but cost-of-error is only moderate (lever 3), so 4 sessions — not a maximal split that
+  would carve sub-band commits with no contract seam (e.g. the L-notation table is a Z.1.2 subsection,
+  not its own session; the README sections are one unit).
+
+**The softest seam — could Z.1.2 split the L-notation comparison into its own session?** Considered and
+declined at shard time. The comparative all-5-track L-notation table is a *subsection* of the master-tour
+synthesis (a few hundred words + a table situating each track's complexity), **not a full session's
+worth**, and there is **no contract seam** between "thread the tours" and "tabulate their complexities"
+— both are the same cross-track-aggregation register in one file. Splitting it out would produce a
+sub-band commit with no freeze worth taking. **If Z.1.2 overruns** (the 5-tour synthesis + the L-notation
+comparison together push past the band — plausible given the breadth), the escape applies: **split at the
+synthesis↔comparison seam** (Z.1.2a the tour synthesis, Z.1.2b the L-notation comparison) — an
+additive-reshard surfaced at the Z.1.2 readout or by Z.1.2 once the synthesis length is concrete, never
+a silent overrun. This is the one place the sizing is genuinely uncertain until the master-tour synthesis's
+true length is visible.
+
+**The modularity chapter location — the one genuine in-session design choice.** Z.1.3's content is new;
+its *home* is a design decision deferred to the session (it has the full corpus in view): a section in
+the master `docs/PEDAGOGY.md` (code-first, speculative-but-grounded-in-the-library) vs a new chapter in
+`docs/MATHEMATICS.md` (maths-first, a textbook chapter). The PLAN does not pre-decide it because the
+right call depends on how the chapter reads once drafted; the Z.1.3 detail names the decision criteria,
+and the Z.1.3 ◆ confirms the choice.
 
 ---
 
 ## Session detail
 
-S.D.1 is specified at near-full fidelity (the code-tour genre is settled — the `docs/PEDAGOGY.md`
-§8–18 Track-E integrative chapter and the `gnfs/docs/PEDAGOGY.md` §1–71 per-stage tours are the
-templates; the subject — the landed S.A/S.B/S.C code — is fully frozen and surveyed; the design
-choices are the section breakdown and the §-numbering scheme, resolved below). S.D.2 is specified at
-the structural level (the ch. 11 outline + the per-half content sketched) — correct per the
-substrate-first discipline: the math chapter's exact cross-reference targets (the code-tour §N
-pointers) are crisp only after S.D.1's §-structure freezes.
+Z.1.1 and Z.1.2 are specified at near-full fidelity (the umbrella + master-tour genres are settled — the
+`*.W` integrative chapters across the project and the existing `docs/PEDAGOGY.md` §8–18 / §1–7 structure
+are the templates; the subject — the complete frozen library — is fully surveyed). Z.1.3 (the new
+modularity chapter) and T.Z (the bind) are specified at the structural level — correct per the
+substrate-first discipline: Z.1.3's exact home and T.Z's exact cross-reference targets are crisp only
+after Z.1.2's master-tour §-structure freezes.
 
-### S.D.1 — Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP (Sonnet, Cat I)
+### Z.1.1 — README umbrella: workspace-level front page over all five tracks (Opus, Cat I)
 
-**Deliverable:** a fresh `shor/docs/PEDAGOGY.md` — the integrative code-first code-tour for the
-complete Track-S code surface, in the `*.W` genre (modelled on `docs/PEDAGOGY.md` §8–18, the Track-E
-integrative chapter). The pieces:
-- **At-a-glance section** — a taxonomy-style table over the three sub-tracks: **S.A** (state-vector
-  simulator: `statevec`/`gates`/`sparse`/`measure`/`qft`; C-StateVec, C-Sparse, C-QFT), **S.B**
-  (Shor-factoring: `arith`/`shor`; C-ModExp, C-OrderFind, C-Factor; factors 15/21/35/91), **S.C**
-  (Shor-ECDLP: `curve`/`ecc`/`ecdlp`; C-PointAdd, C-ECDLPSolve; 4-bit toy curve) — each row naming
-  the module surface, the frozen contract, the toy fixture, and the BENCHMARKS section.
-- **Per-piece code-first narrative** — for each sub-track, a "what it realises / the module surface
-  (frozen contract) / the toy KAT / cross-reference" passage (the §9–§14 genre): the dense+sparse
-  state-vector register and the gate/QFT/measurement surface (S.A); the reversible modular-arithmetic
-  builders + order-finding orchestration + continued-fraction extraction + `factor` driver (S.B); the
-  `u64` toy curve + reversible controlled point-addition (permutation-synthesis) + two-register
-  period-finding + 2D-lattice extraction + `solve_ecdlp` driver (S.C). **Code-first: assume the
-  reader knows the mathematics, cite T.S (ch. 11) for it.**
-- **The cross-phase contract view** — the substrate-reuse story (the §15/§58 genre): C-StateVec (the
-  dense register + gate set, S.A) is the foundation; C-QFT + measure (S.A) are reused by both S.B and
-  S.C; C-ModExp's `arith` primitives (S.B) are *re-consumed* by S.C's point-addition circuit (the
-  S.B over-specification paying off); C-PointAdd (S.C) wraps into C-ECDLPSolve. The "Track S adds no
-  gate after S.A" invariant.
-- **Design-statement verification (principles 1/3/4)** — the §16/§59 genre, against the realised
-  Track-S code: principle 1 (algorithmic content complete — the full Shor-factoring and the
-  two-register Shor-ECDLP implemented head-on); principle 3 (no engineering optimization — the
-  point-addition uses the straightforward permutation-synthesis construction, not a qubit-optimized
-  one); principle 4 (the ~25-qubit simulator ceiling as the resource-scale wall, citing the
-  BENCHMARKS `### Science↔engineering note` in `## S.A`/`## S.B`/`## S.C`).
-- **KAT summary** — the §17/§62 genre: the Track-S test corpus at a glance (the simulator gate KATs,
-  the factoring KATs at 15/21/35/91, the ECDLP KATs + the `#[ignore]`-gated `rho` cross-check),
-  pointing at the actual `shor/tests/*_kat.rs` files.
-- **Cross-references + further reading** — to T.S (`MATHEMATICS.md` ch. 11, the maths-first sibling —
-  a forward reference S.D.2 satisfies), the BENCHMARKS sections, and the Shor (1994) / Proos–Zalka
-  literature.
+**Deliverable:** a rewritten `README.md` — the workspace-level umbrella superseding the rho-scoped front
+page. The pieces:
+- **The umbrella opening** — replace the rho-Phases-0–8 opening with the project's actual scope: a
+  *survey of discrete-logarithm algorithms and integer factorisation, classical and quantum*, organised
+  by the structure-based-escape-from-search through-line. Promote the lines-21–25 hook into the lead.
+- **The 5-track / 9-crate map** — ρ (Pollard rho + the algebraic-ECDLP attacks, `rho`), G (GNFS,
+  `gnfs`), D (NFS-DL, `gnfs`), E (algebraic ECDLP, `rho` + `shared/padic` + `shared/gf2m`), S (Shor,
+  `shor`), plus the shared substrate (`shared/field`/`bigint`/`numth`/`numfield`/`padic`/`gf2m`). Each
+  track gets a one-paragraph "what structure it exploits" gloss; the crate-structure section (currently
+  rho-only) is rebuilt for the workspace.
+- **The two-artifact pointer** — the master `docs/PEDAGOGY.md` (code-first tour) and
+  `docs/MATHEMATICS.md` (maths-first textbook) as the two complementary deep-dives, plus `docs/BENCHMARKS.md`.
+- **The preserved rho operational content** — build/test, CLIs, benchmarks: keep what is still accurate,
+  generalise it to the workspace (the build/test commands are workspace-wide), and demote the
+  rho-specific optimization inventory to its rho subsection.
+- **The design-statement + principle-4 honesty summary** — one paragraph: the project demonstrates the
+  *mathematics* of each escape at toy scale, never cryptographic scale (the honest front-page terminus).
 
-Consumes C-Textbook (frozen T.0 — the code-first code-tour register) and the frozen Track-S code as
-the documented subject. Reads the existing code-tour templates (`docs/PEDAGOGY.md` §8–18,
-`gnfs/docs/PEDAGOGY.md` §1–71) for genre, and the BENCHMARKS `## S.A`–`## S.C` for the performance
-facts to cite. **Freezes nothing** (prose; the only "contract" is register-conformance to C-Textbook).
+Consumes C-Textbook (frozen T.0) and the complete library as the documented subject. Reads the existing
+`README.md` (to preserve the accurate operational content) and the 5 code-tours + MATHEMATICS.md (to
+write accurate one-line pointers). **Freezes nothing.**
 
-**Quality gate (the prose analogue of a KAT — there is no machine check):** (1) **register-conformance**
-— code-first genre, MathJax/inline-Unicode per C-Textbook, the §-structure mirrors the §8–18
-precedent; (2) **factual fidelity** — every module surface, contract name, fixture, and KAT named
-matches the landed code (the `@build` agent reads `shor/src/` + `shor/tests/` and cites accurately,
-not from memory); (3) **cross-reference integrity** — the citations to T.S (ch. 11) and the BENCHMARKS
-sections are well-formed (T.S is a forward reference S.D.2 resolves); (4) **§-numbering** — the
-Track-S §N continues the project-wide code-tour numbering convention coherently (resolve the scheme:
-`shor/docs/PEDAGOGY.md` is a new file — decide whether its sections restart at §1 with a clear
-"Track S" chapter header, mirroring how `shared/numth/docs/PEDAGOGY.md` and `gnfs/docs/PEDAGOGY.md`
-each carry their own §-sequences, or continue a global count; the per-file restart is the survey-
-indicated precedent). **Verify gate:** `cargo test --workspace` green (pure regression — S.D.1
-changes no code); `cargo check --workspace` green; MathJax renders (spot-check).
+**Quality gate (prose analogue — no machine check):** (1) **scope-fidelity** — the README describes the
+*workspace*, not just `rho` (the central Z.1.1 risk is leaving it rho-scoped); (2) **factual fidelity** —
+every crate, track, CLI, and pointer named matches the actual workspace (read `Cargo.toml` + the dirs,
+do not recall); (3) **cross-reference integrity** — the pointers to `docs/PEDAGOGY.md` /
+`docs/MATHEMATICS.md` / `docs/BENCHMARKS.md` are well-formed (the master-PEDAGOGY pointer is a forward
+reference Z.1.2 satisfies). **Verify gate:** `cargo test --workspace` green (pure regression — Z.1.1
+changes no code); `cargo check --workspace` green.
 
-**Subtlety (load-bearing):** (1) **The code-tour is written from scratch — the `shor` crate has zero
-prior code-tour** (the survey's load-bearing discovery). This is *not* extending a stub; it is the
-full Track-S `*.W` chapter that the ROADMAP's "1–2 sessions" estimate did not account for. (2)
-**Code-first discipline — cite T.S, do not re-derive.** The code-tour shows *how the code realises*
-Shor's algorithm; the *why* (the period-finding → factor / discrete-log mathematics) is T.S's job.
-Re-deriving the QFT phase-estimation argument in the code-tour is rigidity (and duplicates S.D.2). (3)
-**Factual accuracy over recall — read the code.** The point-addition circuit landed via
-*permutation synthesis* (the S.C.1 digest: the group law computed classically inside
-`build_point_add_permutation`, the `λ` register allocated but unused at runtime), NOT the explicit
-reversible affine formula the S.C PLAN originally sketched — the code-tour must describe **what
-landed**, not what was planned (a `@build` agent citing the planned-but-not-built reversible-inverse
-construction would misrepresent the code). (4) **The location is `shor/docs/PEDAGOGY.md`, NOT
-`gnfs/docs/PEDAGOGY.md`** (the stale-pairing-table resolution) — writing it into the gnfs file is the
-defocus the scope boundary names. (5) **No code, no BENCHMARKS edit** — the code-tour *cites* the
-existing `## S.A`–`## S.C` sections; it adds no `## S.D`, no benchmark, no `.rs`.
+**Subtlety (load-bearing):** (1) **It is a supersede, not an append** — the README must stop being the
+rho front page; leaving the rho framing as the lead is the central defocus. (2) **Preserve the accurate
+operational content** — the build/test/CLI/benchmark sections are still useful; generalise, do not
+delete. (3) **No code, no `Cargo.toml` edit** — the crate map is *described*, not changed.
 
-**Deferred:** the maths-first T.S chapter (S.D.2 — the period-finding payoff proof, the PQC context);
-the chapter-pairing-table fix (a ROADMAP/MATHEMATICS.md capture candidate, out of PLAN scope, surfaced
-at the ◆); any PQC implementation (out of project scope — S.D is prose-only).
+**Deferred:** the master-tour synthesis (Z.1.2); the modularity chapter (Z.1.3); the textbook bind (T.Z).
 
-### S.D.2 ◆ — T.S: Shor's-algorithm mathematics (payoff) + post-quantum context (Opus, Cat I)
+### Z.1.2 — master PEDAGOGY.md cross-track synthesis + L-notation comparison (Opus, Cat I)
 
-**Deliverable:** `MATHEMATICS.md` ch. 11 ("Shor's Algorithm and Post-Quantum Context") — the
-maths-first sibling of the S.D.1 code-tour + the Track-S close. Structural-fidelity sketch (the
-per-section content is crisp once the S.D.1 §-structure freezes the cross-reference targets). The
-pieces:
-- **The chapter through-line** (the §10.0 genre) — Shor's algorithm as the **quantum** member of the
-  "escape from search" taxonomy (the hook already planted in `MATHEMATICS.md` §3 / §5): where the
-  classical attacks find *algebraic* structure to escape the √n / L-notation bound, Shor finds a
-  *quantum period* and **dissolves** the bound to polynomial time.
-- **The quantum period-finding payoff proof (the designated full proof — C-Textbook carve-out)** —
-  superposition over an exponent register → modular exponentiation (factoring) / controlled
-  point-addition (ECDLP) entangling the work register → QFT phase estimation concentrating amplitude
-  on multiples of the inverse period → measurement + continued-fraction (factoring) / 2D-lattice
-  (ECDLP) extraction. *Why* the period of `a ↦ g^a mod N` yields a non-trivial factor (the
-  order-finding → factoring reduction); *why* the 2D hidden subgroup of `(a,b) ↦ a·G + b·Q` yields
-  the discrete log `k` via `b·k ≡ −a mod r`. **This is the chapter's payoff — full proof, not sketch**
-  (the quantum analogue of the L-notation payoff in T.G/T.D and the MOV-bridge payoff in T.E). Heavy
-  MathJax (display blocks for the QFT, the phase-estimation sum, the continued-fraction / lattice
-  recovery).
-- **The post-quantum context** (the chapter's second half, ROADMAP design-statement item 7) — NIST
-  PQC standardisation (the lattice family — Kyber/ML-KEM, Dilithium/ML-DSA; code-based, hash-based,
-  isogeny-based families at survey depth); the **SIDH/SIKE break** (Castryck–Decru 2022) as the
-  cautionary counter-example — a candidate that *looked* post-quantum-safe and fell to a classical
-  attack, the honest "structure cuts both ways" coda to the through-line; the migration landscape
-  (why the classical+quantum arc this project demonstrates *is the reason* the migration is happening).
-  **Survey depth, prose-only — no PQC implementation, no code, no construction.**
-- **The principle-4 annotations** — the ~25-qubit simulator ceiling (resource-scale wall, the toy
-  scale exhibits the *mathematics* not the *speedup*); the project-scale principle-4 statement (the
-  migration is *surveyed, not built* — the pedagogical terminus, not a new construction track).
-- **References + ToC + pairing-table reconciliation** — extend the references section (~line 1180):
-  Proos–Zalka (the ECDLP circuit), Nielsen–Chuang (the quantum-computation text), the NIST PQC
-  standards (FIPS 203/204/205), Castryck–Decru (the SIDH break). Resolve the ch. 11 ToC stub (line
-  155 — drop the "to be appended"). **The chapter-pairing-table row (line 104, pointing at
-  `gnfs/docs/PEDAGOGY.md`) is stale** — fixing it to `shor/docs/PEDAGOGY.md` is in *this file's*
-  scope (T.S edits `MATHEMATICS.md`), so the fix is in-session IF the agent judges it part of the
-  chapter freeze; otherwise flag it for the ROADMAP capture. *(This is a same-file one-line edit, so
-  it is plainly-part-of-unit — distinct from the ROADMAP static-frame debt, which is a different
-  file and out of scope.)*
-- **The S.D ◆ close** — re-read the Purpose intent; verify the code-tour (S.D.1) + the math chapter
-  (S.D.2) are coherent complementary siblings (cross-references resolve both ways); verify the
-  period-finding payoff lands at full-proof depth (not compressed to a sketch); verify the PQC
-  context is accurate and prose-only (no implementation crept in); verify Track S is closed
-  end-to-end (the quantum arc documented + contextualised); confirm S.D stayed prose-only (no code,
-  no crate, no dep, no bench, no `shor/src/` edit).
+**Deliverable:** `docs/PEDAGOGY.md` transformed from the ρ+E-only file into the library-wide synthesis.
+Structural-near-full fidelity (the genre is the existing §8–18 integrative chapter; the subject is the 5
+frozen tours). The pieces:
+- **The umbrella through-line** — name the structure-based-escape-from-search spine *once* at the master
+  level (citing `MATHEMATICS.md` §3 for the full taxonomy), then frame the whole tour as one story.
+- **The 5-tour synthesis** — thread each existing code-tour as a chapter in the umbrella: ρ (`docs/PEDAGOGY.md`
+  §1–7, already here), the α-substrate (`shared/numth/`), the number-field substrate
+  (`shared/numfield/`), G+D (`gnfs/docs/PEDAGOGY.md` §1–71), E (the §8–18 chapter already here), S
+  (`shor/docs/PEDAGOGY.md`). **Cite each per-crate tour for the detail; do not duplicate it** — the
+  master file is the *synthesis*, the per-crate files remain the depth.
+- **The comparative all-5-track L-notation table** — ρ $L[1,1/2]$ → GNFS/NFS-DL $L_N[1/3,(64/9)^{1/3}]$
+  → algebraic-ECDLP attacks (per `MATHEMATICS.md` §10.6) → Shor $L[0]$ (polynomial). The per-track data
+  exists across MATHEMATICS.md §7/§9.7/§10.6 and the through-line §3 hierarchy table; this is the
+  *one-narrative cross-track* version, the quantitative spine of the umbrella.
+- **The cross-track connections** — the MOV bridge (E→D), the shared substrate reuse (the
+  smoothness/field/number-field substrate threading G/D/E), the classical→quantum arc (ρ/G/D/E→S).
 
-Consumes C-Textbook (frozen T.0 — the register + the designated-payoff carve-out) and the S.D.1
-code-tour (the realisation sibling it cross-references). **Freezes nothing.**
+Consumes C-Textbook (frozen T.0) and the 5 tours as the synthesised subject. Reads all 5 PEDAGOGY.md
+files (for accurate citation) and `MATHEMATICS.md` §3/§7/§9.7/§10.6 (for the L-notation facts). **Freezes
+nothing.**
 
-**Quality gate (prose analogue):** (1) **payoff depth** — the period-finding reduction is a *full
-proof*, the C-Textbook carve-out honoured (the rigidity guard: not compressed because "the code
-works"); (2) **register-conformance** — maths-first, MathJax display math for the QFT / lattice
-recovery, survey-with-proof-sketch depth elsewhere, C-Textbook audience floor; (3) **factual /
-literature accuracy** — the PQC survey is accurate to the established literature (NIST FIPS 203/204/
-205, the Castryck–Decru break), prose-only; (4) **cross-reference integrity** — the "code realisation
-§N" pointers resolve into the S.D.1 `shor/docs/PEDAGOGY.md` §-structure, the ToC stub is resolved,
-the references extended. **Verify gate:** `cargo test --workspace` green (pure regression — S.D.2
-changes no code); `cargo check --workspace` green; MathJax renders (spot-check the new display blocks).
+**Quality gate (prose analogue):** (1) **synthesis-not-duplication** — the master file *cites* the
+per-crate tours, it does not re-tour them (the central Z.1.2 risk is bloating into a copy); (2)
+**cross-reference integrity** — every citation into the 5 tours + MATHEMATICS.md resolves; (3)
+**L-notation accuracy** — the comparative table matches the per-track derivations (read §7/§9.7/§10.6,
+do not recall the constants); (4) **register-conformance** — code-first umbrella genre, C-Textbook.
+**Verify gate:** `cargo test --workspace` + `cargo check --workspace` green (pure regression); MathJax
+renders (spot-check the L-notation table).
 
-**Subtlety (load-bearing):** (1) **The period-finding payoff is the designated FULL proof, not a
-sketch** — this is *why* S.D.2 is Opus-tier (the Track-τ rule: "the mathematics is itself a designated
-payoff"). The quantum escape from the L-notation bound is the chapter's payload; compressing it is the
-central rigidity risk. (2) **Prose-only — survey PQC, do not build it** — the central defocus risk.
-NIST PQC, the SIDH break, the migration landscape are *surveyed within established literature*; a
-`@build` agent that implements a lattice scheme, an isogeny, or any PQC primitive has broken the scope
-(design statement item 7: "no PQC implementations"). (3) **The SIDH break is the honest coda, not a
-footnote** — the through-line is "structure-based escape from search"; the SIDH break shows structure
-*also* enables the attacker, the principled close to the survey (the same "structure cuts both ways"
-honesty as the principle-4 annotations). (4) **Two distinct payloads in one chapter — the soft-seam
-risk** — the Shor-math half (full-proof payoff, Opus) and the PQC-survey half (research-and-write,
-Sonnet-shaped) cohere as one ch. 11 but are the named additive-reshard seam (S.D.2a/S.D.2b) if the
-session overruns. (5) **No code, no BENCHMARKS, no `shor/src/`** — T.S is `MATHEMATICS.md`-only (+ the
-same-file ToC/references/pairing edits); the BENCHMARKS `## S.A`–`## S.C` are cited, not extended.
+**Subtlety (load-bearing):** (1) **Synthesis, not re-tour** — the master file is small-and-connective,
+not a 5× concatenation; the per-crate tours stay the depth. (2) **The current §1–18 content stays** —
+the ρ tour (§1–7) and the E.W chapter (§8–18) are *part of* the synthesis, re-framed under the umbrella
+through-line, not deleted. (3) **The soft synthesis↔comparison seam** — if the session overruns, split
+at the L-notation-table seam (the named additive-reshard), surfaced at the readout. (4) **No code, no
+BENCHMARKS edit** — the performance facts are cited from `docs/BENCHMARKS.md`, not extended.
 
-**Deferred:** the Phase-ζ umbrella (Z.1 — the README + master PEDAGOGY.md tying the whole library
-together; the cross-track L-notation comparison; all-Opus); the textbook bind (T.Z — the final
-consistency pass over all accreted chapters, paired with Z.1); the ROADMAP static-frame reconciliation
-(the compounded Progress/Remaining debt — a capture candidate, out of PLAN scope); the chapter-pairing
-table fix IF judged out of the chapter-freeze unit (then a MATHEMATICS.md/ROADMAP capture). **S.D
-closes Track S / Phase ε; Phase ζ (Z.1) + T.Z close the project.**
+**Deferred:** the modularity chapter (Z.1.3); the textbook bind (T.Z); the L-notation-table split (the
+soft seam, only if overrun).
+
+### Z.1.3 ◆ — modularity-theorem speculation chapter; close Z.1 (Opus, Cat I)
+
+**Deliverable:** the new modularity-theorem speculation chapter — the one Z.1 deliverable authored from
+scratch (it exists nowhere in the corpus). Structural-fidelity sketch (the content is genuinely new; the
+detail crisps in-session). The pieces:
+- **The chapter framing** — modularity (the Taniyama–Shimura–Weil correspondence between elliptic curves
+  and modular forms) as a *structural* phenomenon in the same escape-from-search family the project
+  surveys: a deep correspondence that *could* suggest further structure to exploit. **Explicitly flagged
+  as speculation** (the project's one chartered speculation), not a theorem the project implements.
+- **The connection to the through-line** — how the modularity structure relates to the five escape
+  families (it is a structure-revealing correspondence; the speculation is whether such correspondences
+  point at attacks not yet realised). Survey depth; the honest "this is speculative" register.
+- **The location decision (the one in-session design choice)** — a section in the master
+  `docs/PEDAGOGY.md` (code-first umbrella, where it reads as "a further direction the library gestures
+  at") vs a new `docs/MATHEMATICS.md` chapter (maths-first, where it reads as a textbook speculation
+  chapter). **Decision criteria:** if the chapter is mathematically substantial enough to warrant
+  textbook treatment (display math, theorem statements), it belongs in MATHEMATICS.md as a new chapter
+  (and T.Z binds it); if it is a connective speculation gesturing at directions, it belongs in the
+  master PEDAGOGY.md umbrella. Resolve at draft time; record the choice at the ◆.
+- **The Z.1 ◆ close** — re-read the Purpose intent; verify the README (Z.1.1) + master-tour (Z.1.2) +
+  modularity chapter (Z.1.3) are a coherent umbrella (cross-references resolve, the through-line is
+  named once and threaded consistently); verify the umbrella stayed prose-only; confirm the L-notation
+  synthesis is complete (T.Z will consume it).
+
+Consumes C-Textbook (frozen T.0 — incl. the speculation register) and the Z.1.2 through-line synthesis
+(the home it slots into). **Freezes nothing.**
+
+**Quality gate (prose analogue):** (1) **chartered-as-a-chapter, not a footnote** — the modularity
+chapter is a real section/chapter (the rigidity guard: the ROADMAP charters it; do not compress it to a
+footnote because it is speculative); (2) **flagged-as-speculation** — it is explicitly the project's one
+speculation, not a claimed result (the honesty guard); (3) **location-coherence** — the home chosen
+reads naturally for the register (code-first vs maths-first); (4) **cross-reference integrity** — it
+slots into the Z.1.2 through-line. **Verify gate:** `cargo test`/`cargo check --workspace` green (pure
+regression); MathJax renders (if it carries display math).
+
+**Subtlety (load-bearing):** (1) **It is chartered as a chapter, not a footnote** — the central rigidity
+risk; the ROADMAP names it a Z.1 deliverable. (2) **Speculation, explicitly flagged** — the central
+honesty risk; it must not read as a claimed attack. (3) **The location is an in-session design choice** —
+resolved against the decision criteria, recorded at the ◆. (4) **No code** — it surveys/speculates, it
+implements nothing.
+
+**Deferred:** the textbook bind (T.Z); the ROADMAP static-frame reconciliation (a capture candidate, out
+of `@architect` PLAN scope).
 
 **`@architect` ◆ confirmation (post-landing, Opus, one-shot).** Page a `@plan-juncture` fork at the
-S.D.2 ◆ to confirm: (1) **the code-tour faithfully represents the landed code** — every module
-surface, contract, fixture, and KAT in `shor/docs/PEDAGOGY.md` matches `shor/src/` + `shor/tests/`
-(in particular, the point-addition circuit is described as the *permutation-synthesis* construction
-that landed, NOT the planned-but-unbuilt reversible-affine-inverse one — the S.C.1/S.C.2 digest
-finding); (2) **the period-finding payoff lands at full-proof depth** — the QFT phase-estimation +
-order-finding→factoring + 2D-hidden-subgroup→ECDLP reduction is a *proof*, not a sketch (the
-designated payoff; the rigidity guard); (3) **the PQC context is accurate and prose-only** — NIST PQC
-families, the SIDH/Castryck–Decru break, the migration landscape surveyed within established
-literature, **no PQC implementation, no code, no crate, no dep, no bench** (the defocus guard); (4)
-**the two siblings are coherent and cross-reference both ways** — `shor/docs/PEDAGOGY.md` ↔
-`MATHEMATICS.md` ch. 11, the citations resolve, the ToC stub is filled, the references extended; (5)
-**C-Textbook register-conformance** — audience floor, depth, MathJax, through-line all obeyed across
-both artifacts; (6) **Track S is closed end-to-end** — the quantum arc (S.A simulator → S.B factoring
-→ S.C ECDLP) is documented (code-tour) + contextualised (T.S + PQC), Phase ε complete; (7) S.D stayed
-in scope — **prose-only, no code, the code-tour in `shor/docs/PEDAGOGY.md` (not the gnfs file)**.
-**Also: surface the compounded static-frame ROADMAP debt** (the Progress/Remaining reconciliation owed
-since the E.W ◆, flagged at the S.A ◆, S.B ◆, and S.C ◆ — now a FIFTH consecutive juncture; with S.D
-landing, Track S / Phase ε is complete and the ROADMAP tables still show ε at "0 sessions") **and the
-stale chapter-pairing-table row** (line 104 → `shor/docs/PEDAGOGY.md`, if not fixed in-session) —
-**note both as capture candidates, not PLAN edits**. One-shot findings; does not implement. Held at
-**opus** per the header (the lever-5-weak forbids the opt-down — UNAVAILABLE, not merely declined).
+Z.1.3 ◆ to confirm: (1) **the README is a workspace umbrella, not rho-scoped** — it describes all 5
+tracks / 9 crates accurately; (2) **the master PEDAGOGY.md synthesises, not duplicates** — it cites the
+5 per-crate tours and threads them under one through-line; (3) **the comparative L-notation table is
+accurate and complete** across all 5 tracks (T.Z will consume it); (4) **the modularity chapter is
+chartered-as-a-chapter and flagged-as-speculation** — not a footnote, not a claimed result, with its
+location-choice recorded; (5) **the umbrella is internally coherent** — README ↔ master-tour ↔
+modularity cross-references resolve; (6) **Z.1 stayed prose-only** — no code, no crate, no dep, no
+bench, no `*/src/` edit. **Also: surface the compounded static-frame ROADMAP debt** (Phase ε still shows
+"0 done" despite Track S complete — now the SIXTH consecutive carry, and Phase ζ now opening) **as a
+capture candidate, not a PLAN edit.** One-shot findings; does not implement. Held at **opus** per the
+header (lever-5-weak forbids the opt-down — UNAVAILABLE).
+
+### T.Z ◆ — textbook bind: consistency pass over MATHEMATICS.md; close the project (Opus, Cat I)
+
+**Deliverable:** `docs/MATHEMATICS.md` bound into one coherent, learnable document — the maths-first
+sibling of Z.1's code-first umbrella, and the **project terminus**. Structural-fidelity sketch (the exact
+edits crisp once Z.1's synthesis freezes). The pieces:
+- **Cross-reference resolution** — every chapter's "code realisation" pointer resolves into the correct
+  PEDAGOGY.md (incl. the corrected master-tour structure Z.1.2 froze); every textbook-internal
+  cross-reference (ch. N → ch. M) resolves.
+- **The stale-ToC reconciliation** — the ToC (lines 143–160) still carries "*(T.G/T.D/T.E — to be
+  appended)*" for chapters that now exist; drop the stale labels, confirm the chapter numbers.
+- **The stale chapter-pairing-table reconciliation** — the pairing table (lines 97–105) points the
+  Track-E sibling at `gnfs/docs/PEDAGOGY.md (Track E chapter)`, but the E.W integrative chapter actually
+  lives in the master `docs/PEDAGOGY.md` §8–18 (a structural mis-pairing); fix the row. Confirm the other
+  rows against the frozen master-tour structure.
+- **The comparative L-notation synthesis (the ROADMAP T.Z deliverable)** — unify the cross-track
+  L-notation comparison into the textbook (consuming Z.1.2's table), as the textbook's quantitative
+  spine across all attacks; reconcile it against §3's hierarchy table, §7, §9.7, §10.6.
+- **The prerequisites-chapter reconciliation** — check the prerequisites chapter (lines 252–539) against
+  what the chapters *actually* leaned on (the ROADMAP T.Z deliverable: "reconciled against what the
+  chapters actually used"); add/trim as the accreted chapters demand.
+- **Notation unification** — one notation across all 11 chapters (the bind's core consistency job).
+- **The `docs/textbook/` promotion decision (chartered to T.Z)** — ratify whether the single-file
+  MATHEMATICS.md is promoted to a `docs/textbook/` directory (C-Textbook §location defers this to T.Z);
+  record the decision in C-Textbook.
+- **The S.D.2-flagged nits** — fix the §11.2 ket typo and the §11.4.1 conversational aside.
+- **The T.Z ◆ — the PROJECT TERMINUS** — re-read the Purpose intent; verify the whole textbook is
+  bound (cross-references resolve, ToC/pairing-table reconciled, L-notation synthesis unified, notation
+  uniform, prerequisites reconciled, promotion decided); verify T.Z stayed prose-only; **confirm rGNFS
+  is complete** (all 5 tracks documented + contextualised + bound, both the code-first umbrella and the
+  maths-first textbook coherent).
+
+Consumes C-Textbook (frozen T.0 — the register + the chartered promotion decision) and Z.1's finished
+umbrella synthesis (the L-notation comparison it unifies). **Freezes nothing** (it may *amend* C-Textbook's
+location clause via the chartered promotion decision — a decision T.Z is empowered to make, recorded as a
+register decision, not a register break).
+
+**Quality gate (prose analogue):** (1) **structural bind, not copy-edit** — the central T.Z rigidity
+risk is doing only typo-fixing and skipping the stale-pairing-table / L-notation-synthesis /
+prerequisites-reconciliation / promotion-decision structural work; (2) **cross-reference integrity** —
+every citation across all 11 chapters + into the PEDAGOGY.md tours resolves; (3) **L-notation synthesis
+unified** — the cross-track comparison is in the textbook, consistent with §3/§7/§9.7/§10.6; (4)
+**notation uniform** — one notation across all chapters; (5) **register-conformance** — C-Textbook
+obeyed, the promotion decision recorded. **Verify gate:** `cargo test`/`cargo check --workspace` green
+(pure regression); MathJax renders (spot-check edited display blocks).
+
+**Subtlety (load-bearing):** (1) **The bind is STRUCTURAL, not copy-edit** — the central rigidity risk;
+T.Z must resolve the stale pairing table, write the cross-track L-notation synthesis, reconcile
+prerequisites, and decide the promotion — not merely fix typos. (2) **The pairing-table Track-E row is
+structurally wrong** — it points at `gnfs/` but the chapter is in `docs/PEDAGOGY.md` §8–18; the fix is a
+T.Z structural reconciliation. (3) **The promotion decision is chartered to T.Z** — it is empowered to
+amend C-Textbook's location clause (a decision, not a break). (4) **T.Z consumes Z.1's L-notation table** —
+the cross-sub-track seam; T.Z must not re-derive what Z.1.2 owns. (5) **No code** — `MATHEMATICS.md`
+(+ possibly the modularity chapter if Z.1.3 placed it here) only.
+
+**Deferred:** nothing downstream — **T.Z is the project terminus.** The ROADMAP static-frame
+reconciliation (the compounded Progress/Remaining debt) is a capture candidate, out of `@architect` PLAN
+scope, surfaced at the ◆.
+
+**`@architect` ◆ confirmation (post-landing, Opus, one-shot — the PROJECT-FINAL juncture).** Page a
+`@plan-juncture` fork at the T.Z ◆ to confirm: (1) **the bind is structural, not copy-edit** — the stale
+ToC + pairing table reconciled, the cross-track L-notation synthesis written, the prerequisites chapter
+reconciled, notation unified, the promotion decision made and recorded; (2) **every cross-reference
+resolves** across all 11 chapters and into the PEDAGOGY.md tours (incl. the corrected Track-E pairing);
+(3) **the L-notation synthesis is unified and consistent** with §3/§7/§9.7/§10.6 and with Z.1.2's table;
+(4) **C-Textbook register-conformance** holds across the whole textbook, and the `docs/textbook/`
+promotion decision is recorded; (5) **the two siblings are coherent** — Z.1's code-first umbrella ↔ the
+maths-first textbook, the project's two artifacts-as-a-whole; (6) **rGNFS is complete end-to-end** — all
+5 tracks documented (code-tours) + contextualised + bound (textbook), every escape-from-search structure
+in one coherent survey; (7) T.Z stayed prose-only — **no code**. **Also: surface the compounded
+static-frame ROADMAP debt** (now owed at the project's close — the Progress/Remaining tables need the
+full reconciliation marking every phase complete) **as the project-final capture candidate, not a PLAN
+edit.** One-shot findings; does not implement. Held at **opus** per the header (lever-5-weak forbids the
+opt-down — UNAVAILABLE). **This is the last juncture of the project.**
 
 ---
 
 ## Cross-session contracts
 
-S.D **freezes no contract** — it is a prose-only writeup sub-track. It **amends no prior frozen
-contract** (it documents the frozen Track-S code surface read-only) and **consumes exactly one
-contract read-only: C-Textbook** (the documentation register, frozen T.0). S.D adds no workspace
-member, no `shor` dependency (library *or* dev), no benchmark, and no `.rs`. **Unlike S.A/S.B/S.C, S.D
-produces no new code contract** — there is nothing for a downstream sub-track to consume; the Phase-ζ
-umbrella (Z.1) consumes the *completed library and its documentation*, not a Track-S code interface.
-This is the lever-3-low (no design-error propagation) that — combined with lever-4-low — licensed the
-larger 2-session shape; but the **absent test inner-loop (lever-5-weak) made the juncture-tier
-opt-down UNAVAILABLE** (a different posture from S.C, where it was available-but-declined).
+Z.1 and T.Z **freeze no code contract** — they are prose-only closeout sub-tracks. They **amend no prior
+frozen code contract** (they document and bind the complete frozen library read-only) and **consume
+exactly one contract: C-Textbook** (the documentation register, frozen T.0). They add no workspace
+member, no dependency, no benchmark, and no `.rs`. **There is no downstream consumer** — this is the
+terminus; nothing follows. The one intra-PLAN producer→consumer edge is **prose, not code: T.Z consumes
+Z.1.2's comparative L-notation synthesis** (T.Z unifies it into the textbook). This is the lever-1-high
+(whole-library cross-reference surface) + lever-5-weak (no test loop) that drove the fine-grained
+4-session split; the **absent test inner-loop made the juncture-tier opt-down UNAVAILABLE** (the same
+firm posture as S.D).
 
-### C-Textbook — the documentation-register contract (prose-enforced) — *frozen T.0, consumed read-only by S.D*
+### C-Textbook — the documentation-register contract (prose-enforced) — *frozen T.0; consumed read-only by Z.1; the chartered `docs/textbook/` promotion decided by T.Z*
 
-**Defined in:** T.0 (`5ec563a`-era; the contract is documented in `MATHEMATICS.md` §1 and the ROADMAP
-§Phase τ scope contract). **Consumed by:** every textbook chapter and every `*.W` code-tour — here,
-S.D.1 (the code-tour follows the code-first genre) and S.D.2 (T.S obeys the maths-first register +
-the designated-payoff carve-out). Prose-enforced (no compiler/test gate — the C-Textbook tradeoff,
-frozen at T.0: MathJax fails silently in a renderer, there is no build-time math validation).
+**Defined in:** T.0 (`5c9b783`; the contract is documented in `MATHEMATICS.md` §1 "C-Textbook" lines
+8–111, and the ROADMAP §Phase τ scope contract). **Consumed by:** every textbook chapter and every
+`*.W` code-tour — here, Z.1.1/Z.1.2/Z.1.3 (the umbrella follows the code-first genre + the chartered
+speculation register) and T.Z (the bind obeys the maths-first register). Prose-enforced (no
+compiler/test gate — the C-Textbook tradeoff, frozen at T.0: MathJax fails silently in a renderer, there
+is no build-time math validation).
 
-**Ratified shape (consumed as-is — S.D does NOT amend it).** Audience: the interested mathematics
-student with a full undergraduate maths background (proofs + intro analysis/algebra/probability/logic).
-Depth: **survey with proof-sketch depth** — complete and clinical, not exhaustive, not inscrutable;
-**full proofs only at designated payoffs** (T.S's period-finding reduction is one such payoff — the
-carve-out S.D.2 invokes). Through-line: **structure-based escape from search** (Shor is the quantum
-member; the SIDH break is the "structure cuts both ways" coda). Markup: **Markdown + MathJax** (`$…$`
-inline, `$$…$$` display; trivial glyphs may stay Unicode). Location: `docs/MATHEMATICS.md`
-(single-file; the promotion to `docs/textbook/` is deferred to T.Z, not S.D). **Invariant for S.D:**
-S.D obeys the register; it does not flex it. If the quantum material genuinely needs a register break
-(it should not — undergraduate quantum-computation background is within the C-Textbook audience floor
-given the prerequisites chapter), that is a discovery to surface at the ◆, not a silent raise.
+**Ratified shape (consumed as-is by Z.1; one chartered amendment available to T.Z).** Audience: the
+interested mathematics student with a full undergraduate maths background. Depth: **survey with
+proof-sketch depth** — full proofs only at designated payoffs. Through-line: **structure-based escape
+from search** (the umbrella synthesis names it once; the modularity chapter speculates beyond it). Markup:
+**Markdown + MathJax**. Location: `docs/MATHEMATICS.md` single-file — **the promotion to `docs/textbook/`
+is explicitly chartered to T.Z** (C-Textbook §location: "*decide at T.Z*"). **Invariant for Z.1:** Z.1
+obeys the register; it does not flex it. **T.Z's chartered carve-out:** T.Z may *decide* the
+single-file-vs-directory promotion and record it — a register *decision* the contract explicitly defers
+to T.Z, distinct from a register *break* (a break still surfaces at the ◆, not silently).
 
-### Frozen Track-S code surface read by S.D (documented, not amended)
+### Frozen library surface read by Z.1/T.Z (synthesised/bound, not amended)
 
-S.D documents — and amends none of — the complete frozen Track-S code:
-- **C-StateVec / C-Sparse / C-QFT (frozen S.A.2 ◆, `5ec563a`)** — the simulator substrate (dense +
-  sparse register, gate set, QFT/iQFT, seeded measurement). S.D.1 surveys it; T.S explains its
-  mathematics.
-- **C-ModExp / C-OrderFind / C-Factor (frozen across S.B, `60aa816`/`6cc4c6e`)** — the Shor-factoring
-  arithmetic + order-finding + `factor` driver. S.D.1 surveys it (factors 15/21/35/91); T.S proves the
-  order-finding → factoring reduction.
-- **C-PointAdd / C-ECDLPSolve (frozen across S.C, `82fb198`/`a97e42d`)** — the toy curve + reversible
-  point-addition (permutation-synthesis) + two-register period-finding + 2D-lattice extraction +
-  `solve_ecdlp`. S.D.1 surveys it (**describing the permutation-synthesis construction that landed**,
-  per the S.C digests); T.S proves the two-register hidden-subgroup → discrete-log reduction.
+Z.1/T.Z synthesise and bind — and amend none of — the complete frozen library:
+- **The 5 tracks** — ρ (`rho`: Pollard rho + the Track-E algebraic attacks), G (`gnfs`: GNFS), D
+  (`gnfs`: NFS-DL), E (`rho` + `shared/padic` + `shared/gf2m`: algebraic ECDLP), S (`shor`: Shor). Z.1
+  synthesises them; T.Z binds their textbook chapters.
+- **The 5 code-tours** — `docs/PEDAGOGY.md` (ρ §1–7 + E.W §8–18), `gnfs/docs/PEDAGOGY.md` (G+D §1–71),
+  `shared/numth/docs/PEDAGOGY.md`, `shared/numfield/docs/PEDAGOGY.md`, `shor/docs/PEDAGOGY.md`. Z.1.2
+  threads them under the umbrella; `docs/PEDAGOGY.md` is the one Z.1 *edits* (the master synthesis).
+- **The 11 MATHEMATICS.md chapters** — C-Textbook §1, ToC §2, through-line §3, prerequisites §4, On
+  Scale §5, ρ §6, α-substrate §7, GNFS (§§1–8 GNFS block), NFS-DL (§§9.1–9.8), ch. 10 algebraic ECDLP,
+  ch. 11 Shor + PQC. T.Z binds them into one coherent document.
+- **`docs/BENCHMARKS.md`** (Phase 1–4 / G.B–G.W / E.W / S.A–S.C) — cited by the umbrella, **not edited**.
 
-### Downstream contracts S.D does NOT produce (named, to bound scope)
+### Downstream contracts Z.1/T.Z do NOT produce (named, to bound scope)
 
-- **No code contract.** S.D is prose; it freezes nothing for any consumer.
-- **No PQC primitive, no crate, no dependency, no benchmark.** The post-quantum context is *surveyed*,
-  not *built* (design statement item 7). A `@build` agent that implements any PQC scheme, adds a
-  crate/dep/bench, or touches `shor/src/` has reached past S.D's prose-only scope.
-- **The Phase-ζ umbrella (Z.1) and the textbook bind (T.Z) are NOT S.D.** Z.1 (the master README +
-  cross-track synthesis, all-Opus) consumes the completed library; T.Z (the final textbook
-  consistency pass) binds all chapters including ch. 11. S.D produces ch. 11 and the Track-S code-tour
-  as *inputs* to those closers, nothing more.
+- **No code contract.** Z.1/T.Z are prose; they freeze nothing for any consumer.
+- **No downstream consumer at all.** This is the project terminus — nothing follows Z.1/T.Z. (The one
+  intra-PLAN edge is prose: T.Z consumes Z.1.2's L-notation synthesis.)
+- **No new content beyond the chartered deliverables.** Z.1 authors exactly one new body (the
+  modularity chapter); everything else is synthesis/bind of existing artifacts. A `@build` agent that
+  writes code, adds a crate/dep/bench, or implements anything has reached past scope.
 
 ### Workspace edges (no new member, no new dependency, no code)
 
-- **No new member, no new dependency (library or dev), no `.rs`, no benchmark.** S.D adds one new
-  prose file (`shor/docs/PEDAGOGY.md`) and edits one prose file (`docs/MATHEMATICS.md`). The workspace
-  `Cargo.toml`, every crate's `Cargo.toml`, and all source are unchanged; `cargo check`/`cargo test`
-  are pure regression guards (trivially green).
+- **No new member, no new dependency (library or dev), no `.rs`, no benchmark.** Z.1/T.Z edit prose
+  files (`README.md`, `docs/PEDAGOGY.md`, `docs/MATHEMATICS.md`) and may add at most one new prose file
+  (the modularity chapter, if Z.1.3 places it standalone). The workspace `Cargo.toml`, every crate's
+  `Cargo.toml`, and all source are unchanged; `cargo check`/`cargo test` are pure regression guards
+  (trivially green).
 
 ---
 
 ## Progress ledger
 
-`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion.
-"Froze" names contracts this session locked (S.D freezes none — the column reads "—"). The S.D.2 ◆
-`@architect` confirmation is not a separate ledger row (a paged fork with no commit-shaped
-deliverable); its outcome is recorded in the Action-frame digest.
+`/run-plan` updates this table; status ∈ {pending, done}. Commit-hash recorded on completion. "Froze"
+names contracts this session locked (Z.1/T.Z freeze none — the column reads "—"). The Z.1.3 ◆ and T.Z ◆
+`@architect` confirmations are not separate ledger rows (paged forks with no commit-shaped deliverable);
+their outcomes are recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| S.D.1 | Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP | done | `be8c238` | — (prose) |
-| S.D.2 ◆ | T.S: Shor's-algorithm mathematics (payoff) + post-quantum context | done | `9277c23` | — (prose) |
+| Z.1.1 | README umbrella: workspace-level front page over all five tracks | pending | | — (prose) |
+| Z.1.2 | Master PEDAGOGY.md cross-track synthesis + L-notation comparison | pending | | — (prose) |
+| Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | pending | | — (prose) |
+| T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | pending | | — (prose) |
 
-Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
-factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, closed at the E.W ◆) — plus the shared
-substrate (C1 smoothness, the field/bigint/numfield/padic/gf2m crates), the Track-τ register
-(C-Textbook, frozen T.0), the Track-S simulator substrate (C-StateVec, C-Sparse, C-QFT, frozen at the
-S.A.2 ◆, `5ec563a`), the Shor-factoring arithmetic (C-ModExp, C-OrderFind, C-Factor, frozen across
-S.B, `60aa816`/`6cc4c6e`), and the Shor-ECDLP circuit (C-PointAdd, C-ECDLPSolve, frozen across S.C,
-`82fb198`/`a97e42d`). **S.D consumes C-Textbook read-only and documents the frozen Track-S code
-surface; it freezes no new contract and amends none.** **With the S.D ◆, Track S / Phase ε is complete
-end-to-end (the quantum arc documented + contextualised in the post-quantum migration landscape);
-Phase ζ (the Z.1 umbrella) + the textbook bind (T.Z) remain to close the project.**
+Contracts frozen before these sub-tracks: the **entire library** — all of Tracks ρ (Pollard rho + the
+Track-E algebraic attacks), G (GNFS, complete), D (NFS-DL, complete), E (algebraic ECDLP, closed at the
+E.W ◆), and S (Shor, closed at the S.D ◆) — plus the shared substrate (the field/bigint/numth/numfield/
+padic/gf2m crates), the Track-τ register (C-Textbook, frozen T.0, `5c9b783`), and all 11 MATHEMATICS.md
+chapters + 5 code-tours. **Z.1/T.Z consume C-Textbook read-only and synthesise/bind the frozen library;
+they freeze no new contract and amend none (save T.Z's chartered `docs/textbook/` promotion decision).**
+**With the T.Z ◆, rGNFS is complete end-to-end — every structure-based escape from the search bound
+surveyed, toured, contextualised, and bound into the project's two artifacts-as-a-whole (the code-first
+umbrella + the maths-first textbook).**
 
 ---
 
 ## Action-frame digest
 
-### S.D.2 ◆ — 2026-06-17
-Discovery/flex: ◆ juncture fork confirmed still-on-intent across all seven confirmation points; no drift detected.
-Affected: none (S.D freezes no contract)
-Deferred: no
-Texture: The chapter-pairing-table row (line 104) was fixed in-session by S.D.2 (gnfs→shor/docs/PEDAGOGY.md) — the same-file one-liner the PLAN left to agent judgment; judged correctly. Two copy-edit nits noted for T.Z (a cosmetic ket typo in §11.2 and a conversational aside in §11.4.1). Compounded ROADMAP static-frame debt (Phase ε still shows 0 done) is the fifth consecutive carry — flagged as capture candidate for Z.1/T.Z.
+*(none yet)*
 
 ---
 
@@ -593,141 +638,128 @@ Texture: The chapter-pairing-table row (line 104) was fixed in-session by S.D.2 
 Phrased as `/run-plan` reads for discovery adjudication (internal-continue / additive-reshard /
 destructive-HALT).
 
-- **The Track-S code-tour is owed and was never written — the ROADMAP "1–2 sessions" is revised
-  additively (the load-bearing shard-time discovery, 2026-06-17).** The `shor` crate (S.A/S.B/S.C) has
-  `## S.A`–`## S.C` BENCHMARKS sections but **zero code-tour** in any PEDAGOGY.md, and ch. 11 (T.S) is
-  a ToC stub. The ROADMAP folded T.S into a *post-quantum writeup*, assuming the code-tour existed; it
-  does not. **Additive-reshard (taken at this shard): S.D = 2 sessions** (the code-tour + the math
-  chapter/PQC context), not 1. A discovery that the code-tour + math chapter together still overrun is
-  an **additive S.D.2a/S.D.2b split** (the named soft seam) surfaced at the ◆, never a silent overrun.
+- **The README is rho-scoped, not a workspace umbrella — the load-bearing Z.1.1 fact (shard-time
+  survey, 2026-06-17).** The current `README.md` (206 lines) describes only the original Pollard-rho
+  crate; it names the other 8 crates nowhere and carries no cross-track narrative. **Internal-continue →
+  Z.1.1 rewrites it into a 5-track umbrella (supersede, not append);** leaving it rho-scoped is the
+  central Z.1.1 defocus.
 
-- **S.D is PROSE-ONLY — the central defocus risk is implementing PQC (or any code).** Design statement
-  item 7: "no PQC implementations." A `@build` agent that implements a lattice scheme, an isogeny, any
-  PQC primitive; adds a crate/dependency/benchmark; or touches `shor/src/` has broken scope. **Internal-
-  continue → S.D writes `shor/docs/PEDAGOGY.md` + edits `docs/MATHEMATICS.md` and nothing else;** any
-  `.rs`/`Cargo.toml`/`benches/` change is a HALT-and-surface defocus signal, not an accommodation.
+- **The master `docs/PEDAGOGY.md` aggregates only ρ + E — the load-bearing Z.1.2 fact.** It holds the
+  rho tour (§1–7) and the E.W chapter (§8–18); the 4 other tours live in their own files. **Internal-
+  continue → Z.1.2 synthesises (cites the per-crate tours, threads them under one through-line, writes
+  the cross-track L-notation table); it does NOT duplicate the per-crate tours** (bloating into a 5×
+  concatenation is the central Z.1.2 risk). A discovery that the synthesis + L-notation table overrun is
+  an **additive Z.1.2a/Z.1.2b split** (the named soft seam) surfaced at the readout, never a silent
+  overrun.
 
-- **The period-finding payoff is the designated FULL proof — the central rigidity risk is compressing
-  it.** T.S's Shor exposition is the chapter's designated payoff (the Track-τ rule → Opus-tier);
-  compressing the QFT phase-estimation + order-finding→factoring + 2D-HSP→ECDLP reduction to a sketch
-  because "the code-tour shows it works" is rigidity. **Internal-continue → full proof at C-Textbook
-  payoff depth; the code-tour cites it, does not duplicate it.**
+- **Z.1/T.Z are PROSE-ONLY — the central defocus risk is writing code.** A `@build` agent that writes
+  any `.rs`, adds a crate/dependency/benchmark, or touches any `*/src/` has broken scope. **Internal-
+  continue → Z.1/T.Z edit `README.md` + `docs/PEDAGOGY.md` + `docs/MATHEMATICS.md` (and at most add one
+  new prose file for the modularity chapter) and nothing else;** any code change is a HALT-and-surface
+  defocus signal, not an accommodation.
 
-- **The code-tour describes WHAT LANDED, not what was planned (the S.C permutation-synthesis finding).**
-  The S.C point-addition circuit landed via *permutation synthesis* (group law computed classically in
-  `build_point_add_permutation`; the `λ` register allocated but unused) — NOT the reversible-affine-
-  inverse construction the S.C PLAN originally sketched. **Internal-continue → the code-tour reads
-  `shor/src/ecc/` + the S.C digests and describes the permutation-synthesis reality;** citing the
-  planned-but-unbuilt reversible-inverse construction would misrepresent the code.
+- **The modularity-theorem speculation chapter exists NOWHERE — it is authored from scratch, and is
+  chartered as a chapter (the central Z.1.3 rigidity risk).** The ROADMAP names it a Z.1 deliverable;
+  the only "modularity" mention in the corpus is that ROADMAP line. **Internal-continue → Z.1.3 writes
+  it as a real chapter/section, flagged explicitly as speculation;** compressing it to a footnote
+  because it is speculative is rigidity. Its location (master PEDAGOGY.md section vs new MATHEMATICS.md
+  chapter) is an in-session design choice, recorded at the ◆.
 
-- **The code-tour location is `shor/docs/PEDAGOGY.md` (new), not `gnfs/docs/PEDAGOGY.md` (the stale
-  pairing-table target).** The `MATHEMATICS.md` pairing table (line 104) predates the `shor` crate and
-  points at the gnfs file, which is structurally wrong (`shor` ∉ `gnfs`). **Internal-continue → write
-  to `shor/docs/PEDAGOGY.md` (per-crate, mirroring `shared/numth/docs/PEDAGOGY.md`); the pairing-table
-  fix is a same-file one-liner T.S may take in-session, or a capture candidate.**
+- **All 11 MATHEMATICS.md chapters are present; the T.Z bind is STRUCTURAL consistency, not authoring
+  (the central T.Z rigidity risk).** Ch. 11 is complete. The bind work is: resolve cross-references;
+  reconcile the stale ToC "to be appended" labels (lines 143–160); fix the **structurally-wrong
+  chapter-pairing-table Track-E row** (lines 97–105 — points at `gnfs/`, but the E.W chapter is in
+  `docs/PEDAGOGY.md` §8–18); unify the cross-track L-notation synthesis; reconcile the prerequisites
+  chapter against actual usage; ratify the `docs/textbook/` promotion; fix the §11.2/§11.4.1 nits.
+  **Internal-continue → T.Z does the STRUCTURAL bind, not a copy-edit-only pass;** skipping the
+  structural work is the central T.Z rigidity.
+
+- **T.Z consumes Z.1.2's L-notation synthesis — the cross-sub-track seam.** T.Z unifies the comparative
+  L-notation comparison Z.1.2 writes into the textbook. **Internal-continue → if Z.1.2's synthesis is
+  wrong, the Z.1.3 ◆ catches it before T.Z inherits it;** this is why the Z.1 ◆ is load-bearing (weak-
+  lever-5: no test catches a wrong synthesis).
 
 - **There is no test inner-loop for prose (lever-5-weak) — the ◆ + review IS the inner loop.** The
-  VERIFY gate is trivially green throughout (S.D touches no code), so no behavioural signal catches
-  drift. **Internal-continue → the quality gate is human review + the opus ◆ juncture (register-
-  conformance, factual fidelity, cross-reference integrity, payoff depth); the juncture-tier opt-down
-  is UNAVAILABLE.** A test delta in any session run is a defocus red flag (S.D has drifted into code).
+  VERIFY gate is trivially green throughout (Z.1/T.Z touch no code), so no behavioural signal catches
+  drift. **Internal-continue → the quality gate is human review + the two opus ◆ junctures
+  (cross-reference integrity, register-conformance, synthesis-not-duplication, structural-bind-not-copy-
+  edit); the juncture-tier opt-down is UNAVAILABLE.** A test delta in any session run is a defocus red
+  flag (Z.1/T.Z drifted into code).
 
-- **Static-frame ROADMAP debt (surface at the S.D ◆ — out of `@architect` PLAN-write scope; a capture
-  candidate) — carried from the E.W ◆, flagged at the S.A ◆, S.B ◆, and S.C ◆, now compounded by S.D's
-  landing into a FIFTH consecutive carry.** The ROADMAP Progress table still shows "ε — Shor + PQ (S)
-  … 0 (S.A sharded, not yet executed)" and the Remaining table still lists "S.A" and "S.B–S.D" as
-  un-started — stale by the full Track-S arc: S.A (`5ec563a`), S.B (`6cc4c6e`/`2a79bd9`), S.C
-  (`82fb198`/`a97e42d`) all landed, and with S.D **Phase ε is complete end-to-end**. The S.A/S.B/S.C
-  ◆ digests each named this; the write was deferred (out of `@architect` PLAN-write scope) every time.
-  **The S.D close is the fifth and natural-terminal prompt** (Track S done; only Phase ζ + T.Z
-  remain). The full reconciliation (mark S.A–S.D done; mark Phase ε complete; advance Remaining to
-  Z.1 + T.Z only; reconcile the Track-τ row for T.S folded into S.D) is owed. **This is a ROADMAP
+- **The `docs/textbook/` promotion is chartered to T.Z — a register DECISION, not a break.** C-Textbook
+  §location explicitly defers the single-file-vs-directory question to T.Z. **Internal-continue → T.Z
+  decides and records it in C-Textbook;** this is the one chartered amendment, distinct from a register
+  break (which would still surface at the ◆).
+
+- **Static-frame ROADMAP debt (surface at the Z.1.3 + T.Z ◆ — out of `@architect` PLAN-write scope; a
+  capture candidate) — now compounded to a SIXTH consecutive carry.** The ROADMAP Progress table still
+  shows "ε — Shor + PQ (S) … 0 (S.A sharded, not yet executed)" and lists S.A–S.D as un-started —
+  **stale by the full Track-S arc** (all of S.A/S.B/S.C/S.D landed; Phase ε is complete) — and now Phase
+  ζ is opening with Z.1 sharded. The S.A/S.B/S.C/S.D ◆ digests each named this; the write was deferred
+  (out of `@architect` PLAN-write scope) every time. **With the project closing at the T.Z ◆, the full
+  reconciliation is owed** (mark every phase complete; mark the whole project done). **This is a ROADMAP
   write — outside the `@architect` PLAN-only write scope; surfaced here as a capture candidate for the
-  user to action (via `/note` or a ROADMAP edit), not a PLAN edit.** Not an implementation concern;
-  does not block S.D.
-
-- **The chapter-pairing-table row (MATHEMATICS.md line 104) is stale — a same-file capture candidate.**
-  It points the Track-S code-tour at `gnfs/docs/PEDAGOGY.md`; the chosen location is
-  `shor/docs/PEDAGOGY.md`. The fix is a one-line edit *within `MATHEMATICS.md`*, so T.S (S.D.2) may
-  take it as plainly-part-of-the-chapter-freeze unit — or, if judged out of unit, flag it. **Internal-
-  continue → fix in-session if part of the ch. 11 freeze, else surface at the ◆.**
+  user to action (via `/note` or a ROADMAP edit), not a PLAN edit.** Not an implementation concern; does
+  not block Z.1/T.Z.
 
 ---
 
 ## Notes for executors
 
-- Read `docs/ROADMAP.md` (Phase ε — S.D: "*Post-quantum context writeup. 1–2 sessions … NIST PQC, the
-  SIDH break, the migration landscape. Prose-only — no PQC implementations. Sonnet.*"; the Track-τ
-  pairing — §Phase τ, "*T.S … folds into S.D … except where the mathematics is itself a designated
-  payoff … Opus-tier*"; the design statement item 7 — "*A post-quantum context chapter situating the
-  classical work in the broader migration landscape*") and this PLAN before any session. **NOTE: the
-  ROADMAP Progress / Remaining tables are stale by the FULL Track-S arc (S.A + S.B + S.C landed; with
-  S.D, Phase ε is complete); the S.D close is the fifth reconciliation prompt — surface it at the ◆,
-  but it is outside `@architect` PLAN-write scope (a capture candidate).** **CAUTION on the ROADMAP's
-  "1–2 sessions":** that estimate assumed S.D = a post-quantum writeup with the Track-S code-tour
-  already written; in fact the code-tour was never written (the `shor` crate has zero code-tour
-  anywhere) — so S.D is **2 sessions** (code-tour + math/PQC chapter), an additive revision recorded
-  in Discoveries.
-- Read the **frozen code to document** (do NOT modify): `shor/src/lib.rs` (the crate root + the
-  little-endian / QFT-bit-reversal / ~25-qubit conventions); `shor/src/statevec/`, `shor/src/gates/`,
-  `shor/src/sparse/`, `shor/src/measure/`, `shor/src/qft/` (S.A — the simulator surface);
-  `shor/src/arith/`, `shor/src/shor/` (S.B — Shor-factoring; **note the order-finding + `factor`
-  driver, factors 15/21/35/91**); `shor/src/curve/`, `shor/src/ecc/`, `shor/src/ecdlp/` (S.C — the toy
-  curve `y²=x³+3 mod 7`, the **permutation-synthesis** point-addition circuit, the two-register
-  solve). Read the **test corpus to summarise**: `shor/tests/*_kat.rs`. Read the **templates to
-  mirror**: `docs/PEDAGOGY.md` §8–18 (the Track-E *integrative* code-tour — the closest genre for the
-  Track-S integrative code-tour: at-a-glance table → per-piece narrative → contract view → design-
-  statement verification → KAT summary → cross-references); `gnfs/docs/PEDAGOGY.md` §1–71 (the
-  per-stage code-tour genre — the "what it exploits / module surface / toy KAT / cross-reference"
-  passage shape); `docs/MATHEMATICS.md` ch. 10 (`## Algebraic ECDLP Attacks`, ~535 lines — the
-  maths-first chapter genre: through-line → per-topic subsections with proof sketches and the
-  designated-payoff full proofs → L-notation comparison → cross-references → references; heavy
-  MathJax). Read the **performance facts to cite** (do NOT edit): `docs/BENCHMARKS.md` `## S.A`/
-  `## S.B`/`## S.C` (the qubit-budget tables + `### Science↔engineering note (principle 4)` — the
-  ~25-qubit ceiling).
-- **Register:** S.D is **PROSE ONLY** (`STYLE-DOC.md`). Two registers: **S.D.1** the code-first
-  code-tour register (module surface + KAT + one-line cross-reference, inline-Unicode math per the
-  §8–18 / §1–71 precedent — MathJax optional); **S.D.2** the maths-first textbook register
-  (C-Textbook: survey-with-proof-sketch depth, full proof at the period-finding payoff, MathJax
-  display math). **No `STYLE-CODE.md` register applies** — S.D writes no code.
-- **Tier routing:** **S.D.1 is Sonnet `@build`** (the code-tour is a faithful survey of frozen code in
-  a settled genre — the judgment is accurate representation + register-conformance, not design).
-  **S.D.2 is Opus `@build`** (the T.S period-finding exposition is a **designated payoff** per the
-  Track-τ rule — the quantum escape-from-search proof is the chapter's payload, the same Opus
-  justification as the L-notation payoff in T.G/T.D and the MOV bridge in T.E). **juncture-tier
-  (header) is `opus`** — the **lever-5 opt-down is UNAVAILABLE** (no prose test inner-loop, so the ◆ +
-  review is the only correctness gate; this is a stricter posture than S.C, where the opt-down was
-  available-but-declined). The ◆ fork pages `@plan-juncture` at opus.
-- **Invariants to preserve:** **S.D is prose-only** (no `.rs`, no `Cargo.toml`, no `benches/`, no
-  crate, no dependency — a code change is a HALT-and-surface defocus signal). **S.D amends NO frozen
-  contract** (it documents the Track-S code surface and consumes C-Textbook read-only). **The
-  code-tour describes WHAT LANDED** (the permutation-synthesis point-addition, not the planned
-  reversible-affine-inverse construction — read `shor/src/ecc/` + the S.C digests). **The code-tour
-  location is `shor/docs/PEDAGOGY.md`** (per-crate, NOT `gnfs/docs/PEDAGOGY.md` per the stale pairing
-  table). **The period-finding reduction is a FULL proof** (the C-Textbook designated-payoff carve-out
-  — not compressed to a sketch). **The PQC context is SURVEYED, not built** (NIST PQC / SIDH break /
-  migration landscape within established literature — no implementation). **The SIDH break is the
-  honest "structure cuts both ways" coda** (the through-line's principled close). **Both principle-4
-  annotations are present** (the ~25-qubit ceiling = resource-scale wall; the migration =
-  surveyed-not-built project terminus). **BENCHMARKS is cited, not edited** (no `## S.D` section — S.D
-  adds no benchmark). **C-Textbook is consumed read-only** (the register is obeyed, not flexed).
-- **No code, no crate, no dependency, no benchmark, two prose files (load-bearing for S.D).** S.D adds
-  one new prose file (`shor/docs/PEDAGOGY.md`) and edits one prose file (`docs/MATHEMATICS.md` — ch. 11
-  body + the ToC stub + the references section + optionally the line-104 pairing row). No `.rs`, no
-  manifest, no `benches/`; `cargo check`/`cargo test --workspace` are pure regression guards (trivially
-  green — a non-green result means S.D drifted into code).
+- Read `docs/ROADMAP.md` (Phase ζ — Z.1: "*Umbrella narrative. 2-4 sessions. Predecessor: everything.
+  The README + the master PEDAGOGY.md … The L-notation comparison across attacks; the modularity-theorem
+  speculation chapter; the structure-based-escape-from-search synthesis. All sessions Opus-tier.*"; Phase
+  τ — T.Z: "*Textbook bind. 1 session. Predecessor: all per-track chapters + Z.1 … cross-references
+  resolved, the comparative L-notation synthesis across all attacks written, notation unified, the
+  prerequisites chapter reconciled … Opus-tier.*") and this PLAN before any session. **NOTE: the ROADMAP
+  Progress / Remaining tables are stale by the FULL Track-S arc (S.A–S.D landed; Phase ε complete) and
+  now Phase ζ is opening; this is the SIXTH reconciliation prompt — surface it at the ◆, but it is
+  outside `@architect` PLAN-write scope (a capture candidate).**
+- Read the **artifacts to synthesise/bind** (do NOT modify the code): `README.md` (the rho-scoped front
+  page Z.1.1 supersedes); the **5 code-tours** — `docs/PEDAGOGY.md` (ρ §1–7 + E.W §8–18, the file Z.1.2
+  edits), `gnfs/docs/PEDAGOGY.md` (G+D §1–71), `shared/numth/docs/PEDAGOGY.md`,
+  `shared/numfield/docs/PEDAGOGY.md`, `shor/docs/PEDAGOGY.md`; the **11 chapters** of
+  `docs/MATHEMATICS.md` (esp. §3 through-line, §7 GNFS L-notation payoff, §9.7 NFS-DL delta, §10.6
+  algebraic-ECDLP comparison, the ToC lines 143–160, the chapter-pairing table lines 97–105). Read the
+  **crate/track map** from `Cargo.toml` (9 members across 5 tracks + shared substrate). Read the
+  **performance facts to cite** (do NOT edit): `docs/BENCHMARKS.md`.
+- **Register:** Z.1/T.Z are **PROSE ONLY** (`STYLE-DOC.md`). Two registers: **Z.1 (.1/.2/.3)** the
+  code-first umbrella register (narrative + cross-reference + the chartered speculation register for the
+  modularity chapter); **T.Z** the maths-first textbook register (C-Textbook: survey-with-proof-sketch
+  depth, MathJax display math, the chartered promotion decision). **No `STYLE-CODE.md` register
+  applies** — Z.1/T.Z write no code.
+- **Tier routing:** **all four sessions are Opus `@build`** (the ROADMAP: "*Z.1 — all sessions Opus-tier
+  … the highest integrative judgment load in the project*"; "*T.Z — Opus-tier — highest integrative
+  judgment load in the textbook*"). The whole-library synthesis (Z.1) and the whole-textbook bind (T.Z)
+  are the project's peak integrative judgment. **juncture-tier (header) is `opus`** — the **lever-5
+  opt-down is UNAVAILABLE** (no prose test inner-loop; the ◆ + review is the only correctness gate; the
+  same firm posture as S.D). Both ◆ forks page `@plan-juncture` at opus.
+- **Invariants to preserve:** **Z.1/T.Z are prose-only** (no `.rs`, no `Cargo.toml`, no `benches/`, no
+  crate, no dependency — a code change is a HALT-and-surface defocus signal). **They amend NO frozen
+  code contract** (they synthesise/bind the library and consume C-Textbook read-only; the one chartered
+  exception is T.Z's `docs/textbook/` promotion *decision*). **The README is a workspace umbrella, not
+  rho-scoped.** **The master PEDAGOGY.md synthesises, not duplicates** (cites the per-crate tours). **The
+  modularity chapter is chartered-as-a-chapter and flagged-as-speculation** (not a footnote, not a
+  claimed result). **The T.Z bind is STRUCTURAL** (the stale pairing table + ToC reconciled, the
+  cross-track L-notation synthesis written, prerequisites reconciled, promotion decided — not a
+  copy-edit-only pass). **The comparative L-notation synthesis is accurate** (read §7/§9.7/§10.6, do not
+  recall constants). **BENCHMARKS is cited, not edited.** **C-Textbook is consumed read-only** (save the
+  chartered T.Z promotion decision).
+- **No code, no crate, no dependency, no benchmark; prose files only (load-bearing).** Z.1/T.Z edit
+  `README.md`, `docs/PEDAGOGY.md`, `docs/MATHEMATICS.md` and may add at most one new prose file (the
+  modularity chapter). No `.rs`, no manifest, no `benches/`; `cargo check`/`cargo test --workspace` are
+  pure regression guards (trivially green — a non-green result means Z.1/T.Z drifted into code).
 - Suggested first invocation: **`/run-plan docs/PLAN.md halt-at-boundaries`** — the shard pattern (a
-  code-tour session, then a math-chapter + PQC-context session closing at the ◆) is a *new* pattern
-  for this project (the first prose-only Track closeout where the code-tour was *missing*, not merely
-  paired — every prior `*.W` either had its code already toured or wrote the tour alongside fresh
-  code), and S.D introduces **two new judgment surfaces** (a from-scratch Track-S code-tour spanning
-  three sub-tracks; the Shor period-finding *full-proof payoff*), the S.D.2 ◆ confirms the Track-S /
-  Phase-ε closeout, and **there is no test inner-loop to catch prose drift** — so the conservative
-  default is to halt at the S.D.2 ◆ for the human glance + the opus juncture fork. Both sessions are
-  prose in settled genres, so S.D.1 could run autonomously, but the missing-code-tour-from-scratch +
-  the no-test-loop reality + the Phase-ε-closeout milestone argue for `halt-at-boundaries` on the
-  first invocation; the S.D.2 ◆ fork is itself a halt. *(Tradeoff vs autonomous: `halt-at-boundaries`
-  trades a little velocity on the mechanical S.D.1 for a guaranteed human check at the Track-S close +
-  the payoff-depth verification + the prose-only-scope confirmation — the right trade given lever-5 is
-  weak. If S.D.1 lands clean and reads faithfully against the code, S.D.2 can be dispatched
-  immediately after the ◆ glance.)*
+  3-session umbrella closing at the Z.1 ◆, then the textbook bind closing the project at the T.Z ◆) is
+  the **project terminus**, the highest-judgment closeout in the project, with **two new judgment
+  surfaces** (the whole-library cross-track synthesis spanning 5 tours + 11 chapters; the authored-new
+  modularity speculation chapter) and **no test inner-loop to catch prose drift**, plus a genuine
+  cross-sub-track seam (T.Z consumes Z.1's L-notation synthesis). The conservative default is to halt at
+  **both** ◆ — the Z.1 ◆ (so a wrong umbrella synthesis does not propagate silently into the final bind)
+  and the T.Z ◆ (the project-final human glance + opus juncture). All four sessions are prose in settled
+  genres, so Z.1.1/Z.1.2 could run autonomously between halts, but the whole-library breadth + the
+  no-test-loop reality + the project-close milestone argue for `halt-at-boundaries`. *(Tradeoff vs
+  autonomous: `halt-at-boundaries` trades velocity on the mechanical README/synthesis work for a
+  guaranteed human check at the umbrella close + the project terminus — the right trade given lever-5 is
+  weak and lever-1 is high. If Z.1.1/Z.1.2 land clean and read faithfully against the corpus, Z.1.3 can
+  be dispatched immediately after each glance.)*
