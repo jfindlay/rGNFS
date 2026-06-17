@@ -101,7 +101,7 @@ pairing is:
 | §GNFS (T.G, to be appended) | `gnfs/docs/PEDAGOGY.md` (integrative chapter) |
 | §NFS-DL (T.D, to be appended) | `gnfs/docs/PEDAGOGY.md` (NFS-DL chapter) |
 | §Algebraic ECDLP Attacks (T.E) | `gnfs/docs/PEDAGOGY.md` (Track E chapter) |
-| §Shor + Post-Quantum (T.S) | `gnfs/docs/PEDAGOGY.md` (Track S chapter) |
+| §Shor + Post-Quantum (T.S) | `shor/docs/PEDAGOGY.md` (Track S chapter) |
 
 The code-tour cites the textbook chapter for the mathematics; the textbook chapter cites the
 code-tour for the realisation. Neither is a prerequisite for the other — they are complementary
@@ -152,9 +152,11 @@ scope statement. Later `*.W` sessions fill the chapters marked *to be appended*.
     reduction (payoff proof: the MOV bridge), Smart–Satoh–Araki, GHS/Weil descent, and
     Gaudry–Diem–Joux–Vitse index calculus.
 
-11. **Shor's Algorithm and Post-Quantum Context** *(T.S — to be appended)* — the quantum period-
-    finding algorithm, its application to factoring and ECDLP, and the post-quantum migration
-    landscape.
+11. **Shor's Algorithm and Post-Quantum Context** *(T.S)* — the quantum period-finding algorithm
+    as the fifth escape-from-search structure; the full payoff proof (QFT phase estimation,
+    order-finding → factoring reduction, two-register hidden-subgroup → ECDLP reduction); and the
+    post-quantum migration landscape (NIST PQC families, the SIDH/Castryck–Decru break as the
+    honest coda, the migration rationale).
 
 ---
 
@@ -3204,3 +3206,799 @@ for the five attacks. The chapter-pairing is:
 42. **Galbraith, S. D. (2012).** *Mathematics of Public Key Cryptography*. Cambridge University
     Press. Chapter 19 for pairings and the MOV reduction; Chapter 21 for index calculus on
     elliptic curves.
+
+43. **Proos, J., and Zalka, C. (2003).** "Shor's discrete logarithm quantum algorithm for
+    elliptic curves." *Quantum Information and Computation*, 3(4), 317–344. [PZ03] The
+    two-register hidden-subgroup construction for ECDLP; the qubit-budget analysis for
+    elliptic-curve period finding. Source for §11.3.
+
+44. **Nielsen, M. A., and Chuang, I. L. (2000).** *Quantum Computation and Quantum Information*.
+    Cambridge University Press. [NC00] §5.3 (order-finding and factoring), §5.4 (discrete
+    logarithms), §5.2 (the quantum Fourier transform and phase estimation). The standard
+    textbook reference for the QFT, phase estimation, and Shor's algorithm.
+
+45. **National Institute of Standards and Technology (2024).** *Module-Lattice-Based
+    Key-Encapsulation Mechanism Standard*. FIPS 203. U.S. Department of Commerce. [FIPS203]
+    The ML-KEM (Kyber) standard — the primary lattice-based key-encapsulation mechanism
+    standardised by NIST.
+
+46. **National Institute of Standards and Technology (2024).** *Module-Lattice-Based Digital
+    Signature Standard*. FIPS 204. U.S. Department of Commerce. [FIPS204] The ML-DSA
+    (Dilithium) standard — the primary lattice-based digital signature scheme standardised
+    by NIST.
+
+47. **National Institute of Standards and Technology (2024).** *Stateless Hash-Based Digital
+    Signature Standard*. FIPS 205. U.S. Department of Commerce. [FIPS205] The SLH-DSA
+    (SPHINCS+) standard — the hash-based digital signature scheme standardised by NIST.
+
+48. **Castryck, W., and Decru, T. (2023).** "An efficient key recovery attack on SIDH."
+    *Advances in Cryptology — EUROCRYPT 2023*, LNCS 14008, 423–447. [CD23] The classical
+    polynomial-time attack on SIDH/SIKE; the break that eliminated the leading isogeny-based
+    key-encapsulation candidate from the NIST PQC process.
+
+---
+
+## Shor's Algorithm and Post-Quantum Context
+
+*Maths-first sibling to `shor/docs/PEDAGOGY.md` (Track S code-tour). For the phase-by-phase
+implementation — module surfaces, toy fixtures, KAT summary, and design-statement verification —
+see `shor/docs/PEDAGOGY.md`. This chapter is the mathematical development: the full payoff proof
+(QFT phase estimation, order-finding → factoring, two-register hidden-subgroup → ECDLP), and the
+post-quantum migration survey.*
+
+---
+
+### §11.0 The Through-Line for This Chapter
+
+The §"Escape from Search" chapter established five families of exploitable structure. The first
+four are classical: group homomorphisms (index calculus), endomorphisms (GLV/Koblitz), pairings
+(MOV), and number-field structure (GNFS/NFS-DL). Each reduces the search cost from fully
+exponential to subexponential — from $L_N[1, c]$ to $L_N[1/3, c]$ or better — but none escapes
+the $L$-notation framework entirely.
+
+Shor's algorithm (1994) is the fifth structure: **quantum period-finding**. Where the classical
+attacks find algebraic structure that *reduces* the search cost, Shor finds a quantum period that
+**dissolves** the $L$-notation bound to polynomial time. The escape is not incremental — it is a
+phase transition. The complexity drops from $L_N[1/3, (64/9)^{1/3}]$ (GNFS) to $O((\log N)^3)$
+(Shor): from subexponential to polynomial in the bit-length of $N$.
+
+The structure exploited is *periodicity*: the function $f(k) = g^k \bmod N$ is periodic with
+period equal to the multiplicative order of $g$ modulo $N$. Classical algorithms cannot find this
+period efficiently — the best classical period-finding algorithms are as hard as factoring itself.
+The quantum Fourier transform finds the period in polynomial time by concentrating amplitude on
+the multiples of the inverse period. This is the quantum analogue of the classical Fourier
+transform's ability to detect periodicity — but in a superposition that evaluates $f$ at
+exponentially many points simultaneously.
+
+**The honest coda.** The post-quantum context (§11.5–§11.7) closes the through-line with an
+important counterpoint: the SIDH/SIKE break (Castryck–Decru, 2022) shows that structure is a
+double-edged sword. A post-quantum candidate that appeared to resist both classical and quantum
+attacks fell to a classical polynomial-time attack exploiting the very structure that made it
+efficient. The through-line — "structure enables escape" — applies to the attacker as well as the
+defender.
+
+---
+
+### §11.1 Quantum Computation: The Minimal Background
+
+This section states the quantum-mechanical facts that Shor's algorithm uses, at the level needed
+to follow the proof. It is not a course in quantum mechanics; it is the undergraduate-background
+bridge for this chapter.
+
+#### State vectors and superposition
+
+An $n$-qubit quantum register is described by a *state vector* $|\psi\rangle \in \mathbb{C}^{2^n}$,
+written in the computational basis as
+
+$$|\psi\rangle = \sum_{k=0}^{2^n - 1} \alpha_k |k\rangle,$$
+
+where $|k\rangle$ denotes the basis state corresponding to the binary representation of $k$, and
+the amplitudes $\alpha_k \in \mathbb{C}$ satisfy the normalisation condition $\sum_k |\alpha_k|^2 = 1$.
+
+A *superposition* is any state with more than one non-zero amplitude. The key property of
+superposition is that a quantum gate applied to a superposition acts on all basis states
+simultaneously — this is the source of quantum parallelism.
+
+#### Unitary evolution and quantum gates
+
+Quantum evolution is described by *unitary operators* $U: \mathbb{C}^{2^n} \to \mathbb{C}^{2^n}$
+(matrices satisfying $U^\dagger U = I$). A *quantum gate* is a unitary operator acting on one or
+more qubits. The gates used in Shor's algorithm are:
+
+- **Hadamard gate $H$:** $H|0\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle + |1\rangle)$,
+  $H|1\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle - |1\rangle)$. Applied to all $t$ qubits of a
+  register initialised to $|0\rangle$, it produces the uniform superposition
+  $\tfrac{1}{\sqrt{2^t}} \sum_{k=0}^{2^t-1} |k\rangle$.
+
+- **Controlled-$U_f$ gate:** Given a classical function $f: \{0,\ldots,2^t-1\} \to \{0,\ldots,2^n-1\}$,
+  the gate $|x\rangle|y\rangle \mapsto |x\rangle|y \oplus f(x)\rangle$ evaluates $f$ reversibly.
+  For Shor's factoring algorithm, $f(x) = a^x \bmod N$ (modular exponentiation); for the ECDLP
+  algorithm, $f(a, b) = a \cdot G + b \cdot Q$ (elliptic-curve scalar multiplication).
+
+- **Quantum Fourier Transform (QFT):** defined in §11.2 below.
+
+#### Measurement and the Born rule
+
+*Measuring* the register in the computational basis yields outcome $k$ with probability
+$|\alpha_k|^2$, and collapses the state to $|k\rangle$. This is the **Born rule**. After
+measurement, the quantum information is destroyed — the register is in a definite classical state.
+
+The art of quantum algorithm design is to arrange the amplitudes so that the *useful* outcomes
+have high probability before measurement. Shor's algorithm does this by using the QFT to
+concentrate amplitude on the multiples of the inverse period.
+
+#### Entanglement
+
+When two registers are in a *product state* $|\psi\rangle \otimes |\phi\rangle$, they are
+independent. When the state cannot be written as a product — when the amplitudes of the joint
+system are correlated — the registers are *entangled*. The modular-exponentiation step in Shor's
+algorithm creates entanglement between the exponent register and the work register: measuring the
+work register collapses the exponent register to a superposition over the preimage of the measured
+value, which is exactly the periodic superposition the QFT needs.
+
+---
+
+### §11.2 The Quantum Fourier Transform
+
+#### Definition
+
+The **Quantum Fourier Transform** (QFT) over $\mathbb{Z}/M\mathbb{Z}$ (with $M = 2^t$) is the
+unitary operator defined on basis states by
+
+$$\mathrm{QFT}_M |j\rangle = \frac{1}{\sqrt{M}} \sum_{k=0}^{M-1} e^{2\pi i jk/M} |k\rangle.$$
+
+This is the discrete Fourier transform (DFT) over $\mathbb{Z}/M\mathbb{Z}$, implemented as a
+quantum gate. The QFT is unitary because the DFT matrix is unitary (its rows are orthonormal
+characters of $\mathbb{Z}/M\mathbb{Z}$).
+
+By linearity, the QFT acts on a general state $|\psi\rangle = \sum_j \alpha_j |j\rangle$ as
+
+$$\mathrm{QFT}_M |\psi\rangle = \sum_{k=0}^{M-1} \hat{\alpha}_k |k\rangle,
+\quad \text{where} \quad
+\hat{\alpha}_k = \frac{1}{\sqrt{M}} \sum_{j=0}^{M-1} \alpha_j e^{2\pi i jk/M}.$$
+
+The amplitudes $\hat{\alpha}_k$ are the DFT coefficients of the input amplitudes $\alpha_j$.
+
+#### The circuit
+
+The QFT over $\mathbb{Z}/2^t\mathbb{Z}$ can be implemented with $O(t^2)$ gates using the
+Hadamard + controlled-phase ladder. For a $t$-qubit register, the circuit is:
+
+$$\mathrm{QFT}_{2^t}: \quad
+H \text{ on qubit } t-1, \quad
+R_2 \text{ on qubit } t-1 \text{ controlled by qubit } t-2, \quad
+\ldots, \quad
+H \text{ on qubit } 0,$$
+
+where $R_k$ is the phase gate $|1\rangle \mapsto e^{2\pi i/2^k}|1\rangle$. The circuit produces
+the QFT in bit-reversed order; a bit-reversal permutation (SWAP network) at the output corrects
+this. See Nielsen–Chuang [NC00, §5.1] for the full circuit derivation.
+
+**Code realisation.** The `qft` module in Track S implements this circuit exactly, with the
+bit-reversal convention described in `shor/docs/PEDAGOGY.md` §2.2. The little-endian qubit
+ordering requires an input bit-reversal step before the Hadamard + controlled-phase ladder; see
+§2.2 for the load-bearing convention note.
+
+#### Phase estimation: the key lemma
+
+The QFT is the engine of *quantum phase estimation*, the subroutine at the heart of Shor's
+algorithm. The key lemma is:
+
+**Lemma (QFT concentrates amplitude on multiples of the inverse period).** *Let $r$ divide $M =
+2^t$, and let*
+
+$$|\psi_r\rangle = \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |jr/r \cdot M/r\rangle
+= \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |j \cdot M/r\rangle$$
+
+*be the uniform superposition over the multiples of $M/r$ in $\{0, \ldots, M-1\}$. Then*
+
+$$\mathrm{QFT}_M |\psi_r\rangle = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{2\pi i \cdot 0 \cdot s/r}
+|s \cdot M/r\rangle = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} |s \cdot M/r\rangle = |\psi_r\rangle.$$
+
+*More generally, for the uniform superposition over a coset $\{a_0 + j \cdot M/r : j = 0, \ldots,
+r-1\}$, the QFT concentrates amplitude on the multiples of $r$ in the frequency domain.*
+
+The general statement — which is what Shor's algorithm actually uses — is:
+
+**Lemma (phase estimation, general).** *Let $r \mid M$ and let $c \in \{0, \ldots, M/r - 1\}$.
+Define the periodic superposition*
+
+$$|\phi_c\rangle = \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |c + j \cdot (M/r)\rangle.$$
+
+*Then*
+
+$$\mathrm{QFT}_M |\phi_c\rangle = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1}
+e^{2\pi i c s / M} \cdot |s \cdot (M/r)\rangle.$$
+
+*In particular, measuring the QFT output yields a uniformly random element of
+$\{0, M/r, 2M/r, \ldots, (r-1)M/r\}$, each with probability $1/r$.*
+
+*Proof.* Compute directly:
+
+$$\mathrm{QFT}_M |\phi_c\rangle
+= \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} \mathrm{QFT}_M |c + j(M/r)\rangle
+= \frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} \frac{1}{\sqrt{M}} \sum_{k=0}^{M-1}
+  e^{2\pi i (c + j M/r) k / M} |k\rangle.$$
+
+Swap the order of summation:
+
+$$= \frac{1}{\sqrt{rM}} \sum_{k=0}^{M-1} e^{2\pi i ck/M}
+  \left(\sum_{j=0}^{r-1} e^{2\pi i jk/r}\right) |k\rangle.$$
+
+The inner sum $\sum_{j=0}^{r-1} e^{2\pi i jk/r}$ is a geometric series. It equals $r$ when
+$r \mid k$, and $0$ otherwise (since the $r$-th roots of unity sum to zero when $r \nmid k$).
+Therefore only the terms with $k = s \cdot (M/r)$ for $s \in \{0, \ldots, r-1\}$ survive:
+
+$$= \frac{1}{\sqrt{rM}} \sum_{s=0}^{r-1} e^{2\pi i c s (M/r) / M} \cdot r \cdot |s(M/r)\rangle
+= \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{2\pi i cs/r} |s(M/r)\rangle. \quad \square$$
+
+**Remark (the case $r \nmid M$).** In practice, $r$ does not divide $M = 2^t$ exactly. The
+analysis extends to this case: the QFT output is concentrated near the multiples of $M/r$, with
+amplitude falling off as $1/|k - s \cdot M/r|$ for $k$ not a multiple of $M/r$. The
+continued-fraction algorithm (§11.3.3) recovers $r$ from the approximate multiples. See
+Nielsen–Chuang [NC00, §5.3.1] for the full analysis with the approximation error.
+
+---
+
+### §11.3 Shor's Factoring Algorithm: The Full Proof
+
+#### §11.3.1 The order-finding reduction
+
+**Theorem (order-finding → factoring).** *Let $N$ be an odd composite integer with no small prime
+factors. Let $a$ be chosen uniformly at random from $\{2, \ldots, N-2\}$ with $\gcd(a, N) = 1$.
+Let $r = \mathrm{ord}_N(a)$ be the multiplicative order of $a$ modulo $N$ (i.e. the smallest
+positive integer with $a^r \equiv 1 \pmod{N}$). If $r$ is even and $a^{r/2} \not\equiv -1
+\pmod{N}$, then $\gcd(a^{r/2} - 1, N)$ and $\gcd(a^{r/2} + 1, N)$ are both non-trivial factors
+of $N$.*
+
+*Proof.* Since $a^r \equiv 1 \pmod{N}$, we have $N \mid (a^r - 1) = (a^{r/2} - 1)(a^{r/2} + 1)$.
+Since $a^{r/2} \not\equiv -1 \pmod{N}$, we have $N \nmid (a^{r/2} + 1)$, so
+$\gcd(a^{r/2} + 1, N) < N$. Since $a^{r/2} \not\equiv 1 \pmod{N}$ (because $r$ is the *minimal*
+order), we have $N \nmid (a^{r/2} - 1)$, so $\gcd(a^{r/2} - 1, N) < N$. Since $N \mid
+(a^{r/2}-1)(a^{r/2}+1)$, at least one of the two GCDs is $> 1$. $\square$
+
+**Probability of success.** The condition "$r$ is even and $a^{r/2} \not\equiv -1 \pmod{N}$"
+holds for a random $a$ with probability at least $1 - 1/2^{k-1}$, where $k$ is the number of
+distinct odd prime factors of $N$. For $N = pq$ (a semiprime), this probability is at least $1/2$.
+The proof uses the structure of $(\mathbb{Z}/N\mathbb{Z})^*$ as a product of cyclic groups (one
+per prime factor) and the Chinese Remainder Theorem; see Nielsen–Chuang [NC00, §5.3.2] for the
+full argument.
+
+**Consequence.** To factor $N$, it suffices to find the order $r = \mathrm{ord}_N(a)$ for a
+random $a$. The quantum part of Shor's algorithm solves this order-finding problem in polynomial
+time.
+
+#### §11.3.2 The quantum order-finding circuit
+
+**Setup.** Choose $t = \lceil 2 \log_2 N \rceil + 1$ (so that $M = 2^t > N^2$; this precision
+is needed for the continued-fraction step). Let $n = \lceil \log_2 N \rceil$. The circuit uses
+$t + n$ qubits: the *exponent register* of $t$ qubits and the *work register* of $n$ qubits.
+
+**Step 1: Uniform superposition.** Initialise both registers to $|0\rangle$. Apply $H$ to each
+qubit of the exponent register:
+
+$$|0\rangle_t |0\rangle_n \xrightarrow{H^{\otimes t} \otimes I}
+\frac{1}{\sqrt{M}} \sum_{x=0}^{M-1} |x\rangle |0\rangle.$$
+
+**Step 2: Modular exponentiation.** Apply the controlled modular-exponentiation gate
+$|x\rangle|y\rangle \mapsto |x\rangle|y \cdot a^x \bmod N\rangle$ (with $y = 1$):
+
+$$\frac{1}{\sqrt{M}} \sum_{x=0}^{M-1} |x\rangle |0\rangle
+\xrightarrow{U_{a,N}}
+\frac{1}{\sqrt{M}} \sum_{x=0}^{M-1} |x\rangle |a^x \bmod N\rangle.$$
+
+This step entangles the exponent register with the work register. The function $x \mapsto a^x
+\bmod N$ is periodic with period $r$: $a^{x+r} \equiv a^x \pmod{N}$.
+
+**Step 3: Measure the work register.** Measure the work register. Suppose the outcome is some
+value $v = a^{x_0} \bmod N$ for some $x_0 \in \{0, \ldots, r-1\}$. The measurement collapses
+the exponent register to the uniform superposition over all $x$ with $a^x \equiv v \pmod{N}$,
+i.e. over the coset $\{x_0, x_0 + r, x_0 + 2r, \ldots\}$ (truncated to $\{0, \ldots, M-1\}$):
+
+$$\frac{1}{\sqrt{\lfloor M/r \rfloor}} \sum_{j=0}^{\lfloor M/r \rfloor - 1} |x_0 + jr\rangle.$$
+
+This is the periodic superposition $|\phi_{x_0}\rangle$ from the phase-estimation lemma (§11.2),
+with period $r$ and offset $x_0$.
+
+**Remark.** In practice, the work-register measurement is not performed explicitly — the QFT
+step works equally well on the mixed state that results from tracing out the work register. The
+analysis is the same either way; the explicit measurement is a pedagogical convenience.
+
+**Step 4: Apply the inverse QFT.** Apply $\mathrm{QFT}_M^\dagger$ (the inverse QFT) to the
+exponent register. By the phase-estimation lemma:
+
+$$\mathrm{QFT}_M^\dagger |\phi_{x_0}\rangle
+= \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{-2\pi i x_0 s / r} |s \cdot (M/r)\rangle$$
+
+(using $\mathrm{QFT}^\dagger = \mathrm{QFT}^{-1}$ and the lemma with the phase conjugated).
+Each outcome $s \cdot (M/r)$ appears with probability $1/r$.
+
+**Step 5: Measure the exponent register.** The measurement yields some value $y \approx s \cdot
+M/r$ for a uniformly random $s \in \{0, \ldots, r-1\}$. The rational number $y/M$ is close to
+$s/r$:
+
+$$\left| \frac{y}{M} - \frac{s}{r} \right| \leq \frac{1}{2M}.$$
+
+#### §11.3.3 Continued-fraction period extraction
+
+**The continued-fraction algorithm.** Given the measured value $y$ and the precision $M = 2^t$,
+expand $y/M$ as a continued fraction:
+
+$$\frac{y}{M} = a_0 + \cfrac{1}{a_1 + \cfrac{1}{a_2 + \cdots}}$$
+
+and compute the convergents $p_0/q_0, p_1/q_1, p_2/q_2, \ldots$ (the rational approximations
+obtained by truncating the continued fraction). The convergents satisfy
+
+$$\left| \frac{y}{M} - \frac{p_k}{q_k} \right| \leq \frac{1}{q_k q_{k+1}}.$$
+
+**Theorem (continued-fraction recovery).** *If $|y/M - s/r| \leq 1/(2M)$ and $r < N$, then
+$s/r$ appears as a convergent of the continued fraction of $y/M$.*
+
+*Proof.* Since $r < N \leq \sqrt{M}$ (by the choice $M > N^2$), we have $r^2 < M$, so
+$1/(2M) < 1/(2r^2)$. By the theory of continued fractions (see Hardy–Wright, §10.15), any
+rational $p/q$ with $q \leq r$ and $|y/M - p/q| < 1/(2q^2)$ is a convergent of $y/M$. Since
+$|y/M - s/r| \leq 1/(2M) < 1/(2r^2)$, the fraction $s/r$ (in lowest terms) is a convergent.
+$\square$
+
+**The recovery procedure.** For each convergent $p_k/q_k$ of $y/M$ with $q_k < N$, test whether
+$a^{q_k} \equiv 1 \pmod{N}$. If so, $q_k$ is a multiple of $r$; the smallest such $q_k$ is $r$
+itself (or a divisor of $r$, which can be handled by testing $a^{q_k/p} \equiv 1$ for small
+primes $p \mid q_k$). The order $r$ is recovered with probability $\Omega(1/\log \log r)$ from a
+single measurement; repeating $O(\log \log N)$ times gives $r$ with high probability.
+
+**Code realisation.** The `order_from_phase` function in `shor/src/shor.rs` implements this
+continued-fraction recovery. See `shor/docs/PEDAGOGY.md` §3.2 for the module surface and §3.3
+for the KAT.
+
+#### §11.3.4 Complexity
+
+**Theorem (Shor's factoring algorithm, complexity).** *Shor's algorithm factors an $n$-bit
+integer $N$ in expected time $O(n^3)$ on a quantum computer.*
+
+*Proof sketch.* The circuit uses $t + n = O(n)$ qubits. The modular-exponentiation circuit
+(Step 2) requires $O(n^3)$ elementary quantum gates (using standard reversible arithmetic). The
+QFT (Step 4) requires $O(n^2)$ gates. The continued-fraction computation (Step 5) is classical
+and costs $O(n^2)$. The expected number of repetitions before a successful factorisation is
+$O(\log \log N) = O(\log n)$. The total expected gate count is $O(n^3)$. $\square$
+
+**The L-notation collapse.** GNFS factors $N$ in time $L_N[1/3, (64/9)^{1/3}]$. Shor factors
+$N$ in time $O((\log N)^3) = L_N[0, 3]$. The exponent drops from $1/3$ to $0$: from
+subexponential to polynomial. This is not an incremental improvement — it is the dissolution of
+the $L$-notation framework. The quantum period-finding structure does not reduce the search cost;
+it eliminates the search entirely.
+
+**Principle-4 annotation.** The Track-S implementation (S.B) factors $N \in \{15, 21, 35, 91\}$
+using 8–14 qubits on a classical state-vector simulator. The simulator holds $2^n$ complex
+amplitudes; at $n = 25$ qubits, this is $2^{25} \approx 33\,\mathrm{M}$ entries ($\approx 512\,
+\mathrm{MiB}$), the practical ceiling on a laptop. To factor RSA-2048 ($N$ a 2048-bit integer),
+the circuit would need approximately 4100 qubits — requiring a $2^{4100}$-entry amplitude array,
+far beyond any classical computer. The simulator demonstrates Shor's mathematics correctly at toy
+scale; it does not claim quantum speedup, which requires real quantum hardware out of scope by
+construction. See `shor/docs/PEDAGOGY.md` §6.3 and `docs/BENCHMARKS.md` §S.B for the full
+resource-scale annotation.
+
+---
+
+### §11.4 Shor's ECDLP Algorithm: The Two-Register Hidden-Subgroup Proof
+
+#### §11.4.1 The hidden-subgroup formulation
+
+The ECDLP asks: given $G$ and $Q = k \cdot G$ on an elliptic curve of prime order $r$, find $k$.
+Shor's approach (Proos–Zalka [PZ03]) reformulates this as a **two-register hidden-subgroup
+problem** (HSP) over $\mathbb{Z}/M\mathbb{Z} \times \mathbb{Z}/M\mathbb{Z}$ (with $M = 2^t$,
+$t = \lceil \log_2 r \rceil + 1$).
+
+**The function.** Define $f: \mathbb{Z}/M\mathbb{Z} \times \mathbb{Z}/M\mathbb{Z} \to E$ by
+
+$$f(a, b) = a \cdot G + b \cdot Q.$$
+
+Since $Q = k \cdot G$, we have $f(a, b) = (a + bk) \cdot G$. The function $f$ is constant on
+the cosets of the *hidden subgroup*
+
+$$H = \{(a, b) \in \mathbb{Z}/r\mathbb{Z} \times \mathbb{Z}/r\mathbb{Z} : a + bk \equiv 0
+\pmod{r}\} = \{(bk \bmod r,\, -b \bmod r) : b \in \mathbb{Z}/r\mathbb{Z}\}.$$
+
+Wait — more precisely, $f(a, b) = f(a', b')$ if and only if $(a + bk) \equiv (a' + b'k) \pmod{r}$,
+i.e. $(a - a') \equiv -(b - b')k \pmod{r}$. The hidden subgroup is the kernel of the map
+$(a, b) \mapsto a + bk \bmod r$, which is the cyclic subgroup generated by $(-k \bmod r, 1)$
+in $(\mathbb{Z}/r\mathbb{Z})^2$.
+
+**The HSP.** The hidden subgroup $H \leq (\mathbb{Z}/r\mathbb{Z})^2$ is generated by $(-k, 1)$.
+Finding $H$ (or its generator) yields $k$ directly. The quantum algorithm finds $H$ by preparing
+a superposition over $(\mathbb{Z}/M\mathbb{Z})^2$, entangling it with the function values
+$f(a, b)$, and applying the two-dimensional QFT.
+
+#### §11.4.2 The two-register circuit
+
+**Setup.** Use two exponent registers of $t$ qubits each (the $a$-register and $b$-register) and
+one work register of $n$ qubits (holding the running point on $E$). Total: $2t + n$ qubits.
+For the Track-S toy curve ($r = 13$, $t = 4$, $n = 6$), this is 14 qubits for the exponent
+registers plus 3 bits each for $x$ and $y$ coordinates, giving 17 qubits total (see
+`shor/docs/PEDAGOGY.md` §4.2).
+
+**Step 1: Uniform superposition.** Apply $H^{\otimes t}$ to both the $a$-register and
+$b$-register:
+
+$$|0\rangle_t |0\rangle_t |0\rangle_n
+\xrightarrow{H^{\otimes 2t} \otimes I}
+\frac{1}{M} \sum_{a=0}^{M-1} \sum_{b=0}^{M-1} |a\rangle |b\rangle |\mathcal{O}\rangle,$$
+
+where $\mathcal{O}$ is the identity element of $E$ (the point at infinity).
+
+**Step 2: Controlled point addition.** For each bit $j$ of the $a$-register, apply the
+controlled point-addition gate $|P\rangle \mapsto |P + 2^j G\rangle$ controlled on
+$a$-register qubit $j$. Then for each bit $j$ of the $b$-register, apply $|P\rangle \mapsto
+|P + 2^j Q\rangle$ controlled on $b$-register qubit $j$. The combined effect is:
+
+$$\frac{1}{M} \sum_{a=0}^{M-1} \sum_{b=0}^{M-1} |a\rangle |b\rangle |a \cdot G + b \cdot Q\rangle.$$
+
+This is the quantum evaluation of $f(a, b) = a \cdot G + b \cdot Q$ in superposition.
+
+**Step 3: Measure the work register.** Measuring the work register yields some point
+$P_0 = a_0 \cdot G + b_0 \cdot Q$ for some $(a_0, b_0)$. The exponent registers collapse to
+the uniform superposition over all $(a, b)$ with $a \cdot G + b \cdot Q = P_0$, i.e. over the
+coset $(a_0, b_0) + H$ in $(\mathbb{Z}/r\mathbb{Z})^2$:
+
+$$\frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |a_0 - jk \bmod M\rangle |b_0 + j \bmod M\rangle.$$
+
+(Here we use $M \gg r$ so that the coset wraps around at most once in $\{0, \ldots, M-1\}^2$.)
+
+**Step 4: Apply the inverse QFT to both registers.** Apply $\mathrm{QFT}_M^\dagger$ independently
+to the $a$-register and to the $b$-register. By the two-dimensional phase-estimation lemma
+(the direct product of two one-dimensional lemmas), the output is concentrated on the dual
+lattice of $H$:
+
+$$\mathrm{QFT}_M^\dagger \otimes \mathrm{QFT}_M^\dagger \left(
+\frac{1}{\sqrt{r}} \sum_{j=0}^{r-1} |a_0 - jk\rangle |b_0 + j\rangle \right)
+\approx \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{2\pi i \phi_s} |s \cdot M/r\rangle |s \cdot kM/r\rangle,$$
+
+where $\phi_s$ is a phase depending on $a_0, b_0, s$. The output is concentrated on pairs
+$(a', b')$ with $a' \approx s \cdot M/r$ and $b' \approx s \cdot kM/r$ for some $s$.
+
+**Step 5: Measure the exponent registers.** The measurement yields $(a', b')$ with
+$a' \approx s \cdot M/r$ and $b' \approx s \cdot kM/r$ for a uniformly random $s$.
+
+#### §11.4.3 The 2D-lattice extraction
+
+**The key relation.** From the measurement $(a', b')$, we have
+
+$$\frac{a'}{M} \approx \frac{s}{r}, \qquad \frac{b'}{M} \approx \frac{sk}{r}.$$
+
+Dividing: $b'/a' \approx k$. More precisely, the continued-fraction algorithm applied to $a'/M$
+recovers $s/r$ (as in the factoring case), giving $s$ and $r$. Then
+
+$$k \equiv \frac{b' \cdot r}{s \cdot M} \cdot M \equiv \frac{b'}{s} \cdot \frac{r}{M} \cdot M
+\equiv b' \cdot s^{-1} \pmod{r}$$
+
+(when $\gcd(s, r) = 1$, which holds for a random $s$ with probability $\phi(r)/r \to 1$ as
+$r \to \infty$).
+
+**Theorem (2D-lattice extraction).** *Let $r$ be prime, and let $(a', b')$ be the measurement
+outcome from the two-register circuit. If $b' \not\equiv 0 \pmod{r}$, then*
+
+$$k \equiv -a' \cdot (b')^{-1} \pmod{r}.$$
+
+*Proof.* The measurement outcome satisfies $a' \approx s \cdot M/r$ and $b' \approx sk \cdot M/r$
+for some $s \in \{0, \ldots, r-1\}$. In the exact case (when $r \mid M$), we have $a' = s \cdot
+M/r$ and $b' = sk \cdot M/r$ exactly. Then $b' \cdot r / M = sk$ and $a' \cdot r / M = s$, so
+$b' / a' = k$ (when $s \neq 0$). Equivalently, $b' \cdot s^{-1} \equiv sk \cdot s^{-1} = k
+\pmod{r}$. Since $a' = s \cdot M/r$, we have $s \equiv a' \cdot r / M \pmod{r}$; substituting,
+$k \equiv b' \cdot (a' \cdot r/M)^{-1} \cdot r/M \equiv b' \cdot (a')^{-1} \pmod{r}$.
+
+In the general case ($r \nmid M$), the continued-fraction algorithm recovers $s/r$ from $a'/M$
+to within $1/(2M)$, and the same argument applies with the approximation error absorbed. The
+condition $b' \not\equiv 0 \pmod{r}$ ensures $s \not\equiv 0 \pmod{r}$ (i.e. the measurement
+is informative). $\square$
+
+**The formula in the code.** The `extract_k_from_measurement` function in `shor/src/ecdlp.rs`
+implements $k = (-a') \cdot (b')^{-1} \bmod r$ directly. See `shor/docs/PEDAGOGY.md` §4.2 for
+the module surface. The sign convention ($-a'$ rather than $a'$) arises from the orientation of
+the hidden subgroup generator $(-k, 1)$: the coset offset is $(a_0, b_0)$ with $a_0 + b_0 k
+\equiv 0 \pmod{r}$, so $a_0 \equiv -b_0 k \pmod{r}$, giving $k \equiv -a_0 \cdot b_0^{-1}
+\pmod{r}$.
+
+#### §11.4.4 Complexity
+
+**Theorem (Shor's ECDLP algorithm, complexity).** *Shor's ECDLP algorithm solves the ECDLP on
+an elliptic curve of prime order $r$ in expected time $O((\log r)^3)$ on a quantum computer.*
+
+*Proof sketch.* The circuit uses $2t + n = O(\log r)$ qubits. The controlled point-addition
+circuit (Step 2) requires $O((\log r)^3)$ elementary quantum gates (using reversible elliptic-
+curve arithmetic; see Proos–Zalka [PZ03] for the gate count). The two QFTs (Step 4) each require
+$O((\log r)^2)$ gates. The 2D-lattice extraction (Step 5) is classical and costs $O((\log r)^2)$.
+The total expected gate count is $O((\log r)^3)$. $\square$
+
+**Principle-4 annotation.** The Track-S implementation (S.C) solves the ECDLP on a toy curve
+with $r = 13$ using 17 qubits. To solve the ECDLP on secp256k1 ($r \approx 2^{256}$), the
+circuit would need approximately 768 qubits (Proos–Zalka [PZ03]) — requiring a $2^{768}$-entry
+amplitude array on a classical simulator, far beyond any classical computer. The simulator
+demonstrates the mathematics correctly at toy scale; the quantum speedup requires real quantum
+hardware. See `shor/docs/PEDAGOGY.md` §6.3 and `docs/BENCHMARKS.md` §S.C.
+
+---
+
+### §11.5 Post-Quantum Cryptography: The Migration Landscape
+
+#### §11.5.1 Why Shor's algorithm forces a migration
+
+The security of RSA, Diffie–Hellman, and elliptic-curve cryptography rests on the hardness of
+integer factoring and the discrete logarithm problem. Shor's algorithm solves both in polynomial
+time on a quantum computer. A sufficiently large, fault-tolerant quantum computer would therefore
+break all three families simultaneously.
+
+The migration is not hypothetical. The question is not whether quantum computers will eventually
+be built at the scale needed to run Shor's algorithm on cryptographic parameters — the physics
+is not in dispute. The question is when, and the answer is uncertain. The conservative response
+— adopted by NIST, NSA, and the major standards bodies — is to begin the migration now, before
+large-scale quantum computers exist, because:
+
+1. **Harvest-now, decrypt-later.** An adversary can record encrypted traffic today and decrypt
+   it once a quantum computer is available. For data with long-term confidentiality requirements
+   (state secrets, medical records, financial records), the threat is present even if quantum
+   computers are decades away.
+
+2. **Migration timelines are long.** Replacing cryptographic primitives in deployed systems
+   takes years to decades. The migration from SHA-1 to SHA-2/SHA-3 took over a decade; the
+   migration from RSA-1024 to RSA-2048 is still incomplete. Starting the migration before the
+   threat materialises is the only way to complete it in time.
+
+3. **The classical+quantum arc this project demonstrates is the reason.** The rGNFS project
+   documents the complete classical attack surface (Pollard rho, GNFS, NFS-DL, algebraic ECDLP
+   attacks) and the quantum attack (Shor's algorithm). Together, they show that every classical
+   hardness assumption underlying RSA and ECC is broken — classically by subexponential
+   algorithms, quantumly by polynomial-time algorithms. The migration is the engineering response
+   to this mathematical reality.
+
+#### §11.5.2 The NIST PQC standardisation process
+
+The National Institute of Standards and Technology (NIST) ran a multi-year public competition
+(2016–2024) to standardise post-quantum cryptographic algorithms. The competition evaluated
+candidates across four families: lattice-based, code-based, hash-based, and isogeny-based.
+
+**The lattice family (primary standardisation).** The two primary standards are:
+
+- **ML-KEM (FIPS 203, 2024)** — Module-Lattice-Based Key-Encapsulation Mechanism, based on
+  the Module Learning With Errors (MLWE) problem. The underlying scheme is Kyber. ML-KEM
+  provides key encapsulation (the post-quantum replacement for RSA-KEM and ECDH) at three
+  security levels (ML-KEM-512, ML-KEM-768, ML-KEM-1024), targeting 128, 192, and 256 bits of
+  classical security respectively.
+
+- **ML-DSA (FIPS 204, 2024)** — Module-Lattice-Based Digital Signature Standard, based on the
+  Module Learning With Errors and Module Short Integer Solution (MSIS) problems. The underlying
+  scheme is Dilithium. ML-DSA provides digital signatures at three security levels (ML-DSA-44,
+  ML-DSA-65, ML-DSA-87).
+
+**The hardness assumption.** Both ML-KEM and ML-DSA rest on the hardness of the Learning With
+Errors (LWE) problem: given a matrix $A \in \mathbb{Z}_q^{m \times n}$ and a vector
+$b = As + e \pmod{q}$ (where $s$ is a secret vector and $e$ is a small error vector), find $s$.
+The LWE problem is believed to be hard for both classical and quantum computers; the best known
+quantum algorithms for LWE (lattice sieving with quantum speedup) achieve only a quadratic
+speedup over the best classical algorithms, leaving the security level intact at the parameter
+sizes chosen by NIST.
+
+**The hash-based family.** SLH-DSA (FIPS 205, 2024) — Stateless Hash-Based Digital Signature
+Standard, based on SPHINCS+. Hash-based signatures derive their security entirely from the
+collision resistance and preimage resistance of the underlying hash function (SHA-256 or SHAKE).
+Their post-quantum security is well-understood: Grover's algorithm gives a quadratic speedup for
+preimage search, which is accounted for by doubling the hash output length. SLH-DSA is the
+conservative choice: its security rests on minimal assumptions (hash function security only),
+but its signatures are large (8–50 KB depending on the parameter set).
+
+**The code-based family.** Code-based cryptography (McEliece, 1978) encodes the public key as
+a generator matrix of a binary Goppa code with a hidden structure. The hardness assumption is
+the syndrome decoding problem (NP-hard in the worst case). The Classic McEliece scheme was a
+NIST finalist; it was not standardised in the first round due to its very large public keys
+(hundreds of kilobytes), but remains a conservative candidate. NIST has indicated it may be
+standardised in a future round.
+
+**The isogeny-based family.** Isogeny-based cryptography (Couveignes, Rostovtsev–Stolbunov,
+SIDH/SIKE) constructs key exchange from the hardness of finding an isogeny between two
+supersingular elliptic curves. The SIDH/SIKE scheme was a NIST finalist — until it was broken
+in 2022 (see §11.6).
+
+#### §11.5.3 The security landscape
+
+The post-quantum security of the standardised schemes rests on different mathematical
+assumptions, providing defence in depth:
+
+| Family | Hardness assumption | Best quantum attack | Security level (128-bit) |
+|--------|--------------------|--------------------|--------------------------|
+| Lattice (ML-KEM, ML-DSA) | MLWE / MSIS | Lattice sieving + Grover | ML-KEM-768 / ML-DSA-65 |
+| Hash-based (SLH-DSA) | Hash collision/preimage | Grover (quadratic speedup) | SLH-DSA-128f |
+| Code-based (McEliece) | Syndrome decoding | Information-set decoding + Grover | Classic McEliece 6688128 |
+
+No polynomial-time quantum algorithm is known for any of these problems. The lattice and
+code-based problems are believed to be in the complexity class $\mathbf{QMA}$-hard (quantum
+analogue of $\mathbf{NP}$-hard), though this is not proven.
+
+---
+
+### §11.6 The SIDH Break: Structure Cuts Both Ways
+
+#### §11.6.1 The SIDH construction
+
+Supersingular Isogeny Diffie–Hellman (SIDH), introduced by Jao and De Feo (2011), constructs
+a key-exchange protocol from the following mathematical structure. Let $p$ be a prime of the
+form $p = \ell_A^{e_A} \ell_B^{e_B} f \pm 1$ (with $\ell_A = 2$, $\ell_B = 3$ in the standard
+parameters). Let $E_0$ be a supersingular elliptic curve over $\mathbb{F}_{p^2}$.
+
+Alice's secret is an isogeny $\phi_A: E_0 \to E_A$ with kernel a random subgroup of
+$E_0[\ell_A^{e_A}]$. Bob's secret is an isogeny $\phi_B: E_0 \to E_B$ with kernel a random
+subgroup of $E_0[\ell_B^{e_B}]$. The shared secret is the $j$-invariant of the curve
+$E_{AB} = E_A / \phi_A(\ker \phi_B) = E_B / \phi_B(\ker \phi_A)$.
+
+**The apparent post-quantum security.** The hardness assumption is the Supersingular Isogeny
+Diffie–Hellman (SIDH) problem: given $E_A$ and $E_B$ (and the images of the torsion-point
+generators under $\phi_A$ and $\phi_B$), find the shared $j$-invariant. No polynomial-time
+classical or quantum algorithm was known for this problem prior to 2022. The scheme was a
+finalist in the NIST PQC competition under the name SIKE (Supersingular Isogeny Key
+Encapsulation).
+
+#### §11.6.2 The Castryck–Decru attack (2022)
+
+In July 2022, Wouter Castryck and Thomas Decru published a classical polynomial-time attack on
+SIDH [CD23]. The attack was subsequently refined by Maino–Martindale and Robert, and the full
+SIKE parameter sets were broken within weeks.
+
+**The key insight.** The SIDH protocol publishes, as part of the public key, the images of the
+torsion-point generators $P_A, Q_A \in E_0[\ell_A^{e_A}]$ under $\phi_A$:
+
+$$\phi_A(P_A), \quad \phi_A(Q_A) \in E_A[\ell_A^{e_A}].$$
+
+This auxiliary information — published to enable the key exchange — turns out to be fatal. It
+allows an attacker to recover the secret isogeny $\phi_A$ using a technique from the theory of
+*abelian varieties with extra structure*.
+
+**The mathematical mechanism.** The attack uses the fact that an isogeny between supersingular
+curves is determined by its action on torsion points. The published torsion-point images
+$\phi_A(P_A), \phi_A(Q_A)$ constrain the isogeny $\phi_A$ to a small set of candidates. The
+Castryck–Decru attack constructs a sequence of auxiliary isogenies (using the theory of
+$(2, 2)$-isogenies between products of elliptic curves, i.e. isogenies of abelian surfaces)
+that progressively narrows this set to a single candidate, recovering $\phi_A$ in polynomial
+time.
+
+The attack runs in $O(p^{1/2})$ time in the original formulation (polynomial in $\log p$, since
+$p$ is the security parameter), and was subsequently improved to $O(p^{1/4})$ and then to
+$O((\log p)^c)$ for a small constant $c$ — fully polynomial.
+
+**The structural lesson.** The SIDH break is the honest coda to the through-line of this
+textbook. The through-line is "structure enables escape from search" — and the SIDH break shows
+that this cuts both ways. The torsion-point auxiliary information that made SIDH efficient (it
+enabled the commutativity of the diagram $E_{AB} = E_A / \phi_A(\ker \phi_B)$) is the same
+structure that enabled the attack. The scheme published too much information about the secret
+isogeny; the attacker used that information to reconstruct it.
+
+This is not a failure of the isogeny-based paradigm in general — it is a failure of the specific
+SIDH construction. Isogeny-based schemes that do not publish torsion-point images (such as
+CSIDH, which uses commutative group actions on ordinary curves) are not broken by the
+Castryck–Decru attack. But the SIDH break is a vivid reminder that:
+
+1. **Post-quantum security is not self-evident.** A scheme can resist all known classical and
+   quantum attacks for years and then fall to a classical attack exploiting structure that was
+   always present but not recognised.
+
+2. **Auxiliary information is dangerous.** The torsion-point images were published for
+   efficiency; they were the attack surface. The principle "publish only what is necessary" is
+   as important in post-quantum cryptography as in classical cryptography.
+
+3. **Structure is the double-edged sword.** Every escape from search in this textbook — group
+   homomorphisms, endomorphisms, pairings, number-field structure, quantum periods — is a
+   structure that the algorithm exploits. The SIDH break shows that the attacker can exploit
+   structure too. The history of cryptanalysis is a history of finding structure in systems
+   that were believed to be structureless.
+
+#### §11.6.3 The aftermath
+
+The NIST PQC competition removed SIKE from consideration immediately after the Castryck–Decru
+publication. The remaining candidates — ML-KEM, ML-DSA, SLH-DSA — were standardised in 2024.
+Research on isogeny-based cryptography continues, with attention shifted to constructions that
+avoid the fatal torsion-point leakage.
+
+---
+
+### §11.7 The Migration Rationale: Closing the Through-Line
+
+The rGNFS project documents the complete arc from classical to quantum cryptanalysis:
+
+- **Track ρ (Pollard rho):** the generic $\sqrt{n}$ bound and the birthday-paradox collision
+  argument — the baseline that every subsequent attack must beat.
+- **Track G (GNFS):** the number-field structure that reduces factoring to $L_N[1/3, (64/9)^{1/3}]$
+  — the best known classical attack on RSA.
+- **Track D (NFS-DL):** the adaptation of GNFS to discrete logarithms — the best known classical
+  attack on Diffie–Hellman.
+- **Track E (algebraic ECDLP attacks):** the five algebraic structures (Pohlig–Hellman, SSA,
+  GHS, index calculus, MOV) that escape the generic bound for elliptic-curve DLP — the classical
+  attack surface for ECC.
+- **Track S (Shor's algorithm):** the quantum period-finding structure that dissolves the
+  $L$-notation bound entirely — the quantum attack on RSA, DH, and ECC simultaneously.
+
+Together, these tracks show that every classical hardness assumption underlying RSA and ECC is
+broken — classically by subexponential algorithms, quantumly by polynomial-time algorithms. The
+post-quantum migration is the engineering response to this mathematical reality.
+
+**The principle-4 statement for Track S.** The Track-S implementation demonstrates Shor's
+mathematics at toy scale (up to 17 qubits, $N \leq 91$, $r = 13$). The ~25-qubit simulator
+ceiling is a resource-scale wall: the dense state-vector simulator holds $2^n$ complex
+amplitudes, and at $n = 25$ this is the practical memory limit on a laptop. The ceiling is not
+a mathematical one — the algorithm is correct at all scales. The quantum speedup (the polynomial
+vs subexponential separation) is not observable at toy scale; it requires real quantum hardware
+with thousands of fault-tolerant qubits. The migration is *surveyed, not built* — the
+pedagogical terminus of this project, not a new construction track.
+
+**The survey is the contribution.** The post-quantum migration landscape (NIST PQC families,
+the SIDH break, the migration rationale) is surveyed within established literature. No PQC
+primitive is implemented; no new crate, dependency, or benchmark is added. The contribution of
+Track S is the documentation of the quantum arc — the mathematics (this chapter) and the code
+realisation (`shor/docs/PEDAGOGY.md`) — that contextualises the migration and closes the
+project's classical+quantum survey.
+
+---
+
+### §11.8 Cross-References
+
+#### Code realisation
+
+The Track-S code-tour in `shor/docs/PEDAGOGY.md` is the code-first sibling to this chapter.
+The chapter-pairing is:
+
+| This chapter | Code-tour section |
+|-------------|-------------------|
+| §11.2 QFT and phase estimation | `shor/docs/PEDAGOGY.md` §2.2 (`qft` module) |
+| §11.3 Shor's factoring algorithm | `shor/docs/PEDAGOGY.md` §3 (Sub-Track S.B) |
+| §11.4 Shor's ECDLP algorithm | `shor/docs/PEDAGOGY.md` §4 (Sub-Track S.C) |
+| §11.7 Principle-4 annotation | `shor/docs/PEDAGOGY.md` §6.3 (resource ceiling) |
+
+#### Within this textbook
+
+- **§"Escape from Search: The Through-Line"** — the five-family structure taxonomy and the
+  L-notation hierarchy table. This chapter is the fifth entry: quantum period-finding, $L[0]$.
+
+- **§"On Scale: A Natural-Philosophy Interlude"** — the three axes of scale and the
+  science↔engineering gap. The ~25-qubit simulator ceiling is an instance of Axis 1
+  (resource/operational scale); the quantum vs classical complexity separation is an instance
+  of Axis 3 (structural scale — a threshold where a different machine applies).
+
+- **§10 (Algebraic ECDLP Attacks)** — the classical attack surface for ECC. The MOV reduction
+  (§10.5) is the cross-track bridge from ECDLP to NFS-DL; Shor's ECDLP algorithm (§11.4) is
+  the quantum dissolution of the same problem.
+
+#### Benchmark data
+
+- **`docs/BENCHMARKS.md` §§ S.A–S.C** — the qubit-budget tables, wall-clock timings, and
+  `### Science↔engineering note` annotations for the three Track-S sub-tracks.
+
+---
+
+### §11.9 Further Reading
+
+43. **Proos, J., and Zalka, C. (2003).** "Shor's discrete logarithm quantum algorithm for
+    elliptic curves." *Quantum Information and Computation*, 3(4), 317–344. [PZ03] The
+    two-register ECDLP construction; the qubit-budget analysis.
+
+44. **Nielsen, M. A., and Chuang, I. L. (2000).** *Quantum Computation and Quantum Information*.
+    Cambridge University Press. [NC00] §5.2 (QFT), §5.3 (order-finding and factoring), §5.4
+    (discrete logarithms). The standard textbook reference.
+
+45. **NIST FIPS 203 (2024).** *Module-Lattice-Based Key-Encapsulation Mechanism Standard*.
+    [FIPS203] The ML-KEM (Kyber) standard.
+
+46. **NIST FIPS 204 (2024).** *Module-Lattice-Based Digital Signature Standard*. [FIPS204]
+    The ML-DSA (Dilithium) standard.
+
+47. **NIST FIPS 205 (2024).** *Stateless Hash-Based Digital Signature Standard*. [FIPS205]
+    The SLH-DSA (SPHINCS+) standard.
+
+48. **Castryck, W., and Decru, T. (2023).** "An efficient key recovery attack on SIDH."
+    *Advances in Cryptology — EUROCRYPT 2023*, LNCS 14008, 423–447. [CD23] The classical
+    polynomial-time break of SIDH/SIKE.
+
+49. **Shor, P. W. (1994).** "Algorithms for quantum computation: discrete logarithms and
+    factoring." *Proceedings of the 35th Annual Symposium on Foundations of Computer Science*,
+    124–134. [Shor94] The original paper. (Also cited as ref. 14 in the main references section.)
+
+50. **Jao, D., and De Feo, L. (2011).** "Towards quantum-resistant cryptosystems from
+    supersingular elliptic curve isogenies." *Post-Quantum Cryptography — PQCrypto 2011*,
+    LNCS 7071, 19–34. The original SIDH construction.
+
+51. **Bernstein, D. J., and Lange, T. (2017).** "Post-quantum cryptography." *Nature*, 549,
+    188–194. A survey of the post-quantum landscape accessible to a broad scientific audience.
