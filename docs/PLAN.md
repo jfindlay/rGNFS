@@ -610,7 +610,7 @@ their outcomes are recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| Z.1.1 | README umbrella: workspace-level front page over all five tracks | pending | | — (prose) |
+| Z.1.1 | README umbrella: workspace-level front page over all five tracks | done | `a78d36d` | — (prose) |
 | Z.1.2 | Master PEDAGOGY.md cross-track synthesis + L-notation comparison | pending | | — (prose) |
 | Z.1.3 ◆ | Modularity-theorem speculation chapter; close Z.1 | pending | | — (prose) |
 | T.Z ◆ | Textbook bind: consistency pass over MATHEMATICS.md; close the project | pending | | — (prose) |
