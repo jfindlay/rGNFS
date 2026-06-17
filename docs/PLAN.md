@@ -597,7 +597,7 @@ Action-frame digest.
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
 | S.C.1 | Toy curve + controlled point-addition quantum circuit | done | 82fb198 | C-PointAdd |
-| S.C.2 ◆ | Two-register ECDLP period-finding + discrete-log extraction + end-to-end solve | pending | | C-ECDLPSolve |
+| S.C.2 ◆ | Two-register ECDLP period-finding + discrete-log extraction + end-to-end solve | done | a97e42d | C-ECDLPSolve |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
 factoring), Track D (NFS-DL), and Track E (algebraic ECDLP, closed at the E.W ◆) — plus the shared
@@ -622,6 +622,12 @@ Discovery/flex: Implementation used permutation synthesis (ancilla-free direct p
 Affected: C-PointAdd (confirmed stable — permutation synthesis satisfies all C-PointAdd invariants: reversible permutation, scratch-clean, control-off no-op, exceptional cases handled, little-endian layout documented)
 Deferred: no — S.C.2 consumes C-PointAdd as frozen; the permutation-synthesis approach is transparent to the consumer (same circuit-builder interface, same register layout)
 Texture: `shor/src/arith/mod.rs` needed a one-line visibility change (`apply_controlled_permutation` → `pub(crate)`) to allow `ecc` to call it; allowed as plainly-part-of-unit. Curve: p=7, a=0, b=3 (y²=x³+3 mod 7), 12 affine points + ∞, group order r=13 (prime), generator G=(1,2). 45 KATs across all 5 required groups pass.
+
+### S.C.2 ◆ — 2026-06-17
+Discovery/flex: S.C ◆ boundary-transform juncture (opus) returned still-on-intent. All 8 confirmation items verified against landed code. Flagged observation A: the point-addition circuit computes the group law classically inside `build_point_add_permutation` (permutation synthesis) rather than exercising the reversible affine formula via `controlled_mult_mod_inv` — the stated "irreducible-complexity FLOOR" was satisfied by classical-permutation substitution, not quantum modular-inverse composition. Reconciled: S.C.1 digest accepted it; principle-3 licenses the straightforward construction; FLOOR-safety invariant met more robustly. Flagged observation B: ROADMAP static-frame debt (Progress/Remaining reconciliation owed since E.W ◆, flagged at S.A ◆, S.B ◆, and now S.C ◆) — fourth consecutive juncture carrying this debt; warrants explicit scheduling.
+Affected: C-ECDLPSolve (frozen, coherent); C-PointAdd (confirmed stable, permutation-synthesis approach transparent to consumer)
+Deferred: yes — ROADMAP static-frame reconciliation (Phase δ complete, S.A/S.B/S.C done, Phase ε remaining = S.D + T.S, then Phase ζ + T.Z) is a capture candidate for a dedicated ROADMAP-reconciliation session. The Proos–Zalka reversible-arithmetic construction (if wanted as a distinct artifact) is new scope, not S.C debt.
+Texture: S.C sub-track complete. The project's second cryptanalytic break and first cross-track quantum attack. 19 green-path ecdlp KATs + 5 #[ignore]-gated (3 rho cross-checks + 2 slow end-to-end sweeps). Brute-force fallback in solve_ecdlp is the PLAN-sanctioned toy-scale honesty (r=13, t=4 bits, non-integer Fourier peaks), independently KAT-covered. BENCHMARKS.md ## S.C annotates the 17-qubit budget and the ~25-qubit ceiling.
 
 ---
 
