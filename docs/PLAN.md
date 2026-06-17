@@ -511,7 +511,7 @@ Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| S.B.1 | Modular-exponentiation quantum circuit | pending | | C-ModExp |
+| S.B.1 | Modular-exponentiation quantum circuit | done | 60aa816 | C-ModExp |
 | S.B.2 ◆ | Order-finding + continued-fraction extraction + end-to-end factoring | pending | | C-OrderFind, C-Factor |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
@@ -530,7 +530,11 @@ the project.**
 
 ## Action-frame digest
 
-*(none yet)*
+### S.B.1 — 2026-06-17
+Discovery/flex: Implementation used direct permutation synthesis (ancilla-free, Gray-code transpositions) rather than the standard ripple-carry adder approach — qubit budget is t+n (no ancilla register), significantly lower than the ~2n+3+ancilla estimate in the PLAN.
+Affected: C-ModExp (frozen), qubit budget for S.B.2's 91-target reachability check
+Deferred: no — 91 is well within budget (14 qubits total for N=91, t=7); S.B.2 should KAT factor(91)→{7,13} directly (not the fallback path). The ModExpLayout::standard(N, t) interface is the frozen C-ModExp surface.
+Texture: All 5 KAT categories pass (41 tests). The ancilla-free approach means the "ancilla-clean" KAT verifies the full state vector is restored (forward + inverse = identity), which is a stronger check than a separate ancilla register check.
 
 ---
 
