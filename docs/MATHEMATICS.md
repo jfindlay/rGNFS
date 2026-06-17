@@ -4002,3 +4002,462 @@ The chapter-pairing is:
 
 51. **Bernstein, D. J., and Lange, T. (2017).** "Post-quantum cryptography." *Nature*, 549,
     188–194. A survey of the post-quantum landscape accessible to a broad scientific audience.
+
+---
+
+## Chapter 12 — Modularity and the Arithmetic of Elliptic Curves: A Speculation
+
+> **This chapter is the project's one chartered speculation.** Everything in Chapters 1–11 is
+> implemented, KAT-verified, and mathematically established. This chapter is different: it surveys
+> the Taniyama–Shimura–Weil modularity theorem as a *structural* phenomenon in the same
+> escape-from-search family the project surveys, and then asks — explicitly as speculation, not as
+> a claimed result — whether the kind of deep correspondence it exemplifies points at attacks not
+> yet realised. The speculation is flagged at every turn. No algorithm in this chapter is
+> implemented; no complexity claim is made; no attack is asserted. The chapter is here because the
+> ROADMAP charters it as a Z.1 deliverable: the project's honest closing gesture toward the
+> mathematics that lies beyond its own scope.
+
+### §12.1 Introduction: Correspondences as Structure
+
+The through-line of this textbook is structure-based escape from search. Every chapter has told
+the same story: an algorithm finds a piece of exploitable structure — a group homomorphism, a
+smoothness phenomenon, an endomorphism, a pairing, a quantum period — and uses it to escape the
+generic search bound. The structures are diverse in their details but uniform in their role: they
+are *correspondences* between two mathematical worlds, and the correspondence is what the algorithm
+exploits.
+
+The Taniyama–Shimura–Weil (TSW) theorem is the deepest known correspondence in the arithmetic of
+elliptic curves. It asserts that every elliptic curve over $\mathbb{Q}$ is, in a precise sense,
+the same object as a modular form — that the two mathematical worlds of elliptic curves and modular
+forms are not merely analogous but *identified* by a canonical map. This identification is not an
+algorithm; it is a structural theorem. But the history of the subject suggests that deep structural
+theorems of this kind have a way of generating algorithms — sometimes decades later, sometimes in
+ways their discoverers did not anticipate.
+
+This chapter surveys the TSW correspondence at the depth the C-Textbook register permits (survey
+with proof-sketch depth; full proofs are cited, not given). It then asks, explicitly as
+speculation: does the modularity structure suggest further escapes from the search bound that have
+not yet been realised? The answer is: possibly, but we do not know. The speculation is honest
+about its own uncertainty.
+
+### §12.2 Modular Forms: The Other Side of the Correspondence
+
+To state the TSW theorem, we need both sides of the correspondence. The elliptic-curve side is
+developed in the Prerequisites chapter (§4) and used throughout the textbook. The modular-form
+side requires a brief introduction.
+
+#### §12.2.1 The upper half-plane and modular symmetry
+
+Let $\mathfrak{H} = \{z \in \mathbb{C} : \mathrm{Im}(z) > 0\}$ be the *upper half-plane*. The
+group $\mathrm{SL}_2(\mathbb{Z})$ of $2 \times 2$ integer matrices with determinant 1 acts on
+$\mathfrak{H}$ by Möbius transformations:
+
+$$\begin{pmatrix} a & b \\ c & d \end{pmatrix} \cdot z = \frac{az + b}{cz + d}.$$
+
+A *modular form* of weight $k$ and level $N$ is a holomorphic function $f: \mathfrak{H} \to
+\mathbb{C}$ that transforms in a controlled way under the action of the congruence subgroup
+
+$$\Gamma_0(N) = \left\{ \begin{pmatrix} a & b \\ c & d \end{pmatrix} \in \mathrm{SL}_2(\mathbb{Z})
+: c \equiv 0 \pmod{N} \right\},$$
+
+satisfies a growth condition at the cusps (the boundary points of $\mathfrak{H}$ in
+$\mathbb{P}^1(\mathbb{Q})$), and — for the *cusp forms* that appear in the TSW theorem — vanishes
+at every cusp. Precisely: $f$ is a cusp form of weight $k$ and level $N$ if
+
+$$f\!\left(\frac{az+b}{cz+d}\right) = (cz+d)^k f(z) \quad \text{for all } \begin{pmatrix} a & b
+\\ c & d \end{pmatrix} \in \Gamma_0(N),$$
+
+and $f$ vanishes at every cusp of $\Gamma_0(N) \backslash \mathfrak{H}$.
+
+Every cusp form has a Fourier expansion at the cusp $i\infty$:
+
+$$f(z) = \sum_{n=1}^{\infty} a_n q^n, \quad q = e^{2\pi i z}.$$
+
+The coefficients $a_n$ are the arithmetic data carried by the modular form.
+
+#### §12.2.2 Hecke operators and eigenforms
+
+The space $S_k(\Gamma_0(N))$ of cusp forms of weight $k$ and level $N$ is a finite-dimensional
+$\mathbb{C}$-vector space. It carries a commuting family of *Hecke operators* $T_p$ (one for each
+prime $p \nmid N$) and $U_p$ (for $p \mid N$). A *Hecke eigenform* (or *newform*) is a cusp form
+$f$ that is a simultaneous eigenvector for all Hecke operators and is normalised so that $a_1 = 1$.
+For a newform $f$ with $T_p f = \lambda_p f$, the eigenvalue satisfies $\lambda_p = a_p$ (the
+$p$-th Fourier coefficient).
+
+The Hecke eigenvalues of a newform satisfy a remarkable bound: for $p \nmid N$,
+
+$$|a_p| \leq 2\sqrt{p}.$$
+
+This is the *Ramanujan conjecture* (proved for weight-2 newforms as a consequence of the Weil
+conjectures; proved in general by Deligne [D74]). The bound $|a_p| \leq 2\sqrt{p}$ is the modular
+analogue of Hasse's bound $|p + 1 - \#E(\mathbb{F}_p)| \leq 2\sqrt{p}$ for elliptic curves — and
+this analogy is not a coincidence.
+
+#### §12.2.3 The L-function of a modular form
+
+To each newform $f = \sum a_n q^n$ one attaches an *L-function*:
+
+$$L(f, s) = \sum_{n=1}^{\infty} \frac{a_n}{n^s} = \prod_{p \nmid N} \frac{1}{1 - a_p p^{-s} +
+p^{k-1-2s}} \cdot \prod_{p \mid N} \frac{1}{1 - a_p p^{-s}}.$$
+
+The Euler product converges for $\mathrm{Re}(s)$ sufficiently large. The L-function extends to an
+entire function on $\mathbb{C}$ and satisfies a functional equation relating $L(f, s)$ to
+$L(f, k - s)$. These analytic properties are consequences of the modularity of $f$.
+
+### §12.3 The Taniyama–Shimura–Weil Theorem
+
+The TSW theorem (conjectured by Taniyama in 1955, refined by Shimura, and given its modern form
+by Weil [W67]) asserts that the two L-functions — the one attached to an elliptic curve and the
+one attached to a modular form — are the same.
+
+#### §12.3.1 The L-function of an elliptic curve
+
+For an elliptic curve $E/\mathbb{Q}$, the *L-function* is defined by an Euler product over primes.
+For a prime $p$ of good reduction (where $E$ has a smooth reduction mod $p$), the local factor is
+
+$$L_p(E, s) = \frac{1}{1 - a_p(E) p^{-s} + p^{1-2s}},$$
+
+where $a_p(E) = p + 1 - \#E(\mathbb{F}_p)$ is the *trace of Frobenius* at $p$. For primes of bad
+reduction, the local factor is simpler (depending on the reduction type). The global L-function is
+
+$$L(E, s) = \prod_p L_p(E, s).$$
+
+By Hasse's bound, $|a_p(E)| \leq 2\sqrt{p}$, so the product converges for $\mathrm{Re}(s) > 3/2$.
+
+#### §12.3.2 The theorem
+
+**Theorem (Taniyama–Shimura–Weil; Wiles [W95], Taylor–Wiles [TW95], Breuil–Conrad–Diamond–Taylor
+[BCDT01]).** *Every elliptic curve $E/\mathbb{Q}$ is modular: there exists a newform $f \in
+S_2(\Gamma_0(N))$ of weight 2 and level $N$ (the conductor of $E$) such that*
+
+$$L(E, s) = L(f, s).$$
+
+*Equivalently, for every prime $p \nmid N$,*
+
+$$a_p(E) = a_p(f).$$
+
+*The map $E \mapsto f$ is the modularity correspondence.*
+
+*Proof sketch.* The proof proceeds via Galois representations. To $E$ one attaches the
+$\ell$-adic Tate module $T_\ell(E) = \varprojlim E[\ell^n]$, which gives a 2-dimensional
+$\ell$-adic Galois representation $\rho_{E,\ell}: \mathrm{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})
+\to \mathrm{GL}_2(\mathbb{Z}_\ell)$. The Frobenius element at $p$ (for $p \nmid N\ell$) acts with
+characteristic polynomial $x^2 - a_p(E) x + p$, which encodes the point count $\#E(\mathbb{F}_p)$.
+Wiles's strategy is to show that this Galois representation is *modular* — that it arises from a
+modular form — by proving that a certain deformation ring equals a Hecke ring ($R = T$). The
+semistable case (Wiles [W95], Taylor–Wiles [TW95]) sufficed to prove Fermat's Last Theorem; the
+full theorem for all elliptic curves over $\mathbb{Q}$ was completed by Breuil, Conrad, Diamond,
+and Taylor [BCDT01]. See Diamond and Shurman [DS05] for a graduate-level exposition. $\square$
+
+#### §12.3.3 What the theorem says, structurally
+
+The TSW theorem is a *correspondence*: it identifies two mathematical objects — an elliptic curve
+and a modular form — that appear to live in entirely different worlds. The elliptic curve is a
+geometric object (a smooth projective curve of genus 1 over $\mathbb{Q}$); the modular form is an
+analytic object (a holomorphic function on the upper half-plane with prescribed symmetry). The
+identification is canonical: the Fourier coefficients $a_p(f)$ of the modular form are exactly the
+point counts $a_p(E) = p + 1 - \#E(\mathbb{F}_p)$ of the elliptic curve.
+
+This is the same kind of structural identification that runs through the rest of this textbook —
+but deeper. The MOV reduction identifies the ECDLP with a DLP in $\mathbb{F}_{p^k}^*$ via a
+pairing; the identification is useful because the target world ($\mathbb{F}_{p^k}^*$) has more
+structure (index calculus applies). The TSW correspondence identifies an elliptic curve with a
+modular form; the identification is useful because the modular world has analytic structure
+(L-functions, functional equations, Hecke operators) that the geometric world does not obviously
+possess.
+
+### §12.4 Modularity in the Escape-from-Search Family
+
+The five escape families surveyed in §"Escape from Search: The Through-Line" are all
+*computational* structures: they enable algorithms that run faster than generic search. The TSW
+correspondence is a *structural* theorem, not an algorithm. But the two are related in a way that
+is worth making explicit.
+
+#### §12.4.1 Point counting and the Frobenius trace
+
+The most direct connection between modularity and the algorithms in this textbook is through point
+counting. The quantity $\#E(\mathbb{F}_p) = p + 1 - a_p(E)$ is the group order that determines
+the security of ECDLP. Computing $\#E(\mathbb{F}_p)$ efficiently is a prerequisite for deploying
+an elliptic curve in cryptography (to verify that the group order is prime, or to find its
+factorisation for Pohlig–Hellman).
+
+The Schoof–Elkies–Atkin (SEA) algorithm [S85, E92, A92] computes $\#E(\mathbb{F}_p)$ in
+polynomial time by computing $a_p(E) \bmod \ell$ for small primes $\ell$ (using the $\ell$-torsion
+structure of $E$) and then applying the Chinese Remainder Theorem. The modularity correspondence
+enters here implicitly: the Hecke operators $T_\ell$ act on the modular form $f$ associated to $E$
+with eigenvalue $a_\ell(f) = a_\ell(E)$, and the SEA algorithm can be understood as computing
+these eigenvalues directly from the curve.
+
+This connection is computational but not an escape from search: SEA computes the group order, it
+does not solve the ECDLP. The modularity structure is used to *understand* the curve, not to
+*attack* it.
+
+#### §12.4.2 The Weil conjectures and the Ramanujan bound
+
+The Ramanujan bound $|a_p(E)| \leq 2\sqrt{p}$ — which is Hasse's theorem for elliptic curves —
+is a consequence of the Weil conjectures (proved by Deligne [D74] in general). The Weil
+conjectures assert that the zeta function of a smooth projective variety over $\mathbb{F}_p$
+satisfies a Riemann hypothesis: its zeros lie on the line $\mathrm{Re}(s) = 1/2$ (in the
+appropriate normalisation). For an elliptic curve, this gives $|a_p| \leq 2\sqrt{p}$.
+
+The Weil conjectures are a structural theorem about the arithmetic of varieties over finite fields.
+They do not directly enable attacks, but they constrain the structure of the objects that attacks
+must work with. The Hasse bound, for instance, constrains the group order $\#E(\mathbb{F}_p)$ to
+lie in a narrow interval around $p + 1$, which is why the SEA algorithm can find it efficiently.
+
+#### §12.4.3 Isogenies and the structure of the modular correspondence
+
+The TSW correspondence is mediated by *isogenies*: morphisms $\phi: E_1 \to E_2$ of elliptic
+curves (defined over $\mathbb{Q}$) that are group homomorphisms with finite kernel. The modular
+curve $X_0(N)$ parametrises pairs $(E, C)$ where $E$ is an elliptic curve and $C \subset E$ is a
+cyclic subgroup of order $N$; the modularity of $E$ is witnessed by a non-constant map
+$X_0(N) \to E$ (a *modular parametrisation*). The degree of this map is the *Manin constant* of
+$E$.
+
+Isogenies are the morphisms of the category of elliptic curves. They are also the objects of
+study in *isogeny-based cryptography* — a family of post-quantum proposals (SIDH, CSIDH, SQISign)
+that base their security on the difficulty of computing isogenies between supersingular elliptic
+curves. The Castryck–Decru break of SIDH [CD23] (surveyed in §11.6) used the structure of the
+isogeny graph — specifically, the action of the class group of an imaginary quadratic field on the
+set of supersingular curves — to recover the secret isogeny in polynomial time. This is a
+structural escape from search: the class-group action provides the exploitable structure.
+
+The connection to modularity is that the isogeny graph of supersingular elliptic curves over
+$\overline{\mathbb{F}_p}$ is the Bruhat–Tits tree of $\mathrm{PGL}_2(\mathbb{Q}_p)$, and the
+Hecke operators on modular forms act on this graph. The Castryck–Decru attack exploits the
+*endomorphism ring* structure of supersingular curves — a structure that is deeply connected to
+the modularity of those curves. This is not a coincidence; it is a manifestation of the same
+correspondence.
+
+### §12.5 The Speculation: Does Modularity Suggest Further Escapes?
+
+> **The following is speculation.** The observations in §§12.3–12.4 are established mathematics.
+> The question posed in this section — whether the modularity structure suggests further escapes
+> from the search bound that have not yet been realised — is open. No algorithm is claimed; no
+> complexity bound is asserted; no attack is described. The speculation is here because it is the
+> honest closing gesture of a project that has surveyed the known escapes and wants to gesture
+> honestly at the unknown ones.
+
+The five escape families in this textbook are all *known*: they have been discovered, analysed,
+and (at toy scale) implemented. The question is whether there are further escapes — structural
+correspondences that have not yet been turned into algorithms.
+
+#### §12.5.1 The pattern of structural escapes
+
+Looking back at the five families, a pattern emerges:
+
+1. **Group homomorphisms / smoothness** (index calculus, NFS): the structure is a homomorphism
+   from the group to a simpler object ($\mathbb{Z}/n\mathbb{Z}$, a factor base). The escape is
+   that the simpler object can be computed with.
+
+2. **Endomorphisms** (GLV, Koblitz): the structure is a self-map of the curve that acts as scalar
+   multiplication by a fixed $\lambda$. The escape is that the orbit collapses, reducing the
+   effective group size.
+
+3. **Pairings** (MOV): the structure is a bilinear map from the curve to a multiplicative group.
+   The escape is that the target group has more structure (index calculus applies).
+
+4. **Number-field structure** (GNFS, NFS-DL): the structure is an embedding of $\mathbb{Z}$ into
+   a number field where smoothness is more tractable. The escape is that the number field provides
+   a richer arithmetic.
+
+5. **Quantum period-finding** (Shor): the structure is the periodicity of modular exponentiation,
+   accessible only in the quantum model. The escape is that the quantum Fourier transform can find
+   the period efficiently.
+
+In each case, the escape is enabled by a *correspondence* between the problem's native world and
+a world with more exploitable structure. The MOV reduction is a pairing (a bilinear correspondence
+between two groups). The GNFS is a norm map (a multiplicative correspondence between a number
+field and $\mathbb{Z}$). Shor's algorithm is a Fourier transform (a correspondence between a
+function and its frequency spectrum).
+
+The TSW correspondence is a deeper identification: it says that the arithmetic of an elliptic
+curve over $\mathbb{Q}$ is *the same* as the arithmetic of a modular form. The modular world has
+structure that the geometric world does not obviously possess: Hecke operators, L-functions,
+functional equations, the Ramanujan bound. If any of this structure could be turned into an
+algorithm — a way to compute something about the curve by working in the modular world instead —
+it would be a new escape.
+
+#### §12.5.2 What would a modularity-based escape look like?
+
+**Speculation (not a claimed result).** A modularity-based escape from the ECDLP search bound
+would require:
+
+1. A way to *compute* in the modular world using only information available to an attacker (the
+   curve $E$, the generator $G$, the target $Q$).
+
+2. A way to *translate* the result back to the ECDLP: to recover the scalar $k$ from information
+   about the modular form $f$ associated to $E$.
+
+3. A complexity advantage: the computation in the modular world should be faster than $O(\sqrt{n})$
+   group operations.
+
+None of these three requirements is obviously satisfiable. The modularity correspondence is
+*existential* (every elliptic curve over $\mathbb{Q}$ has an associated modular form) but not
+obviously *constructive* in the sense needed for an attack. Computing the modular parametrisation
+$X_0(N) \to E$ explicitly is a hard problem; the conductor $N$ of a cryptographic curve is
+enormous (of the order of $p^2$, where $p$ is the field size), and the modular curve $X_0(N)$ at
+that level is intractable.
+
+The Hecke operators $T_p$ act on the modular form $f$ with eigenvalue $a_p(E) = p + 1 -
+\#E(\mathbb{F}_p)$. Computing $a_p(E)$ is exactly the point-counting problem, which SEA solves
+in polynomial time — but this is point counting, not ECDLP. The ECDLP asks for the scalar $k$
+such that $Q = k \cdot G$; the Hecke eigenvalue $a_p(E)$ encodes the group order, not the
+discrete logarithm of a specific point.
+
+#### §12.5.3 The isogeny connection and the Castryck–Decru precedent
+
+The most suggestive precedent is the Castryck–Decru break of SIDH [CD23]. SIDH was designed to
+be secure against both classical and quantum attacks; its security rested on the difficulty of
+computing isogenies between supersingular elliptic curves. The break exploited the structure of
+the isogeny graph — specifically, the action of the endomorphism ring of a supersingular curve —
+to recover the secret isogeny in polynomial time.
+
+The endomorphism ring of a supersingular elliptic curve over $\overline{\mathbb{F}_p}$ is a
+maximal order in a quaternion algebra ramified at $p$ and $\infty$. This is a deeply modular
+object: the Eichler orders in this quaternion algebra correspond to Hecke operators on modular
+forms of level $p$. The Castryck–Decru attack is, in a precise sense, an attack that exploits
+the modular structure of supersingular curves.
+
+**Speculation.** The Castryck–Decru break suggests that the modularity structure of elliptic
+curves — specifically, the endomorphism ring structure and its connection to Hecke operators —
+can be turned into an attack when the problem is set up in a way that exposes this structure.
+SIDH exposed the structure by revealing auxiliary torsion points; the attack used this exposure
+to compute the endomorphism ring and then the secret isogeny.
+
+The question is whether a similar exposure exists for the ECDLP on ordinary (non-supersingular)
+elliptic curves over prime fields — the setting of secp256k1 and the other curves used in
+practice. The endomorphism ring of an ordinary elliptic curve over $\mathbb{F}_p$ is an order in
+an imaginary quadratic field (not a quaternion algebra), and its structure is less rich. The
+modularity correspondence for ordinary curves is the TSW theorem (over $\mathbb{Q}$), which does
+not obviously expose the same kind of structure that the Castryck–Decru attack exploited.
+
+**This is where the speculation ends.** We do not know whether the modularity structure of
+ordinary elliptic curves can be turned into an ECDLP attack. The question is open; the answer
+is likely "no" for the curves used in practice (the security of secp256k1 and similar curves is
+not threatened by any known modularity-based attack), but the honest answer is that we do not
+have a proof that no such attack exists.
+
+#### §12.5.4 L-functions and the Birch–Swinnerton-Dyer conjecture
+
+One further speculative direction: the Birch–Swinnerton-Dyer (BSD) conjecture [BSD65] asserts
+that the rank of the Mordell–Weil group $E(\mathbb{Q})$ (the group of rational points) equals the
+order of vanishing of $L(E, s)$ at $s = 1$. The BSD conjecture is one of the Millennium Prize
+Problems; it is not proved in general.
+
+The connection to cryptography is indirect. The ECDLP is defined over $\mathbb{F}_p$ (a finite
+field), not over $\mathbb{Q}$. The Mordell–Weil group $E(\mathbb{Q})$ is a finitely generated
+abelian group (by the Mordell–Weil theorem), but it is not the group in which the ECDLP is posed.
+The BSD conjecture concerns the arithmetic of $E$ over $\mathbb{Q}$; the ECDLP concerns the
+arithmetic of $E$ over $\mathbb{F}_p$.
+
+**Speculation.** If the BSD conjecture were proved, and if the proof were constructive (giving an
+algorithm to compute the rank and generators of $E(\mathbb{Q})$ from $L(E, s)$), it would not
+directly give an ECDLP algorithm — the groups are different. But it would give a deeper
+understanding of the arithmetic of $E$ over $\mathbb{Q}$, which might (speculatively) shed light
+on the arithmetic of $E$ over $\mathbb{F}_p$ via the reduction map $E(\mathbb{Q}) \to
+E(\mathbb{F}_p)$.
+
+This is a very long chain of speculation. The honest assessment is: the BSD conjecture, even if
+proved, would not obviously give an ECDLP attack. The connection is structural (both concern the
+arithmetic of $E$) but not algorithmic (the groups are different, and the L-function encodes
+global arithmetic, not local discrete logarithms).
+
+### §12.6 Why This Speculation Belongs Here
+
+The project's through-line is structure-based escape from search. The five escape families
+surveyed in Chapters 6–11 are the known escapes; they are implemented, KAT-verified, and
+mathematically established. This chapter is the honest closing gesture: a survey of the deepest
+known structural theorem about elliptic curves (TSW), an account of how it connects to the
+algorithms in this textbook (point counting, isogenies, the Castryck–Decru precedent), and an
+explicit speculation about whether it points at further escapes.
+
+The speculation is chartered because it is the intellectually honest terminus of the through-line.
+Having surveyed every known escape, the project should gesture at the unknown ones — not by
+claiming them, but by naming the mathematical structures that might generate them and being
+explicit about what is known and what is not.
+
+**The honest summary.** The TSW correspondence is a deep structural theorem that identifies
+elliptic curves with modular forms. It connects to the algorithms in this textbook through point
+counting (SEA), isogenies (the Castryck–Decru break of SIDH), and the Weil conjectures (the
+Hasse bound). Whether it suggests further escapes from the ECDLP search bound is an open
+question. The most suggestive precedent — the Castryck–Decru break — exploited the modular
+structure of *supersingular* curves in a setting (SIDH) that exposed the endomorphism ring. The
+ordinary curves used in practice (secp256k1, P-256) do not obviously expose the same structure.
+No modularity-based ECDLP attack is known; no proof that none exists is known. The speculation
+is honest about its own uncertainty, and that honesty is the point.
+
+### §12.7 Cross-References
+
+#### Within this textbook
+
+- **§"Escape from Search: The Through-Line"** — the five-family structure taxonomy and the
+  L-notation hierarchy. This chapter speculates beyond that taxonomy.
+
+- **§4 (Prerequisites), §"Elliptic curves"** — the group law, Hasse's bound, and the Weil
+  conjectures. The Ramanujan bound (§12.2.2) is the modular analogue of Hasse's bound.
+
+- **§10 (Algebraic ECDLP Attacks)** — the five algebraic structures that escape the generic
+  bound for ECDLP. The MOV reduction (§10.5) is the cross-track bridge; the isogeny connection
+  (§12.4.3) is the speculative extension.
+
+- **§11 (Shor's Algorithm and Post-Quantum Context)** — the quantum dissolution of the
+  L-notation bound, and the post-quantum migration landscape. The Castryck–Decru break of SIDH
+  (§11.6) is the precedent for a modularity-based attack; §12.4.3 and §12.5.3 revisit it in the
+  modularity context.
+
+#### Code realisation
+
+This chapter has no code-tour sibling. The modularity correspondence is not implemented in the
+rGNFS workspace; no algorithm in this chapter is realised in code. The chapter is a mathematical
+survey and speculation, not a code-tour. The code-first umbrella (`docs/PEDAGOGY.md` §0) names
+the through-line and the five escape families; this chapter is the maths-first extension of that
+through-line into speculative territory.
+
+### §12.8 Further Reading
+
+52. **Wiles, A. (1995).** "Modular elliptic curves and Fermat's Last Theorem." *Annals of
+    Mathematics*, 141(3), 443–551. [W95] The proof of the semistable case of the TSW conjecture;
+    the central step in the proof of Fermat's Last Theorem.
+
+53. **Taylor, R., and Wiles, A. (1995).** "Ring-theoretic properties of certain Hecke algebras."
+    *Annals of Mathematics*, 141(3), 553–572. [TW95] The companion paper completing the $R = T$
+    argument.
+
+54. **Breuil, C., Conrad, B., Diamond, F., and Taylor, R. (2001).** "On the modularity of
+    elliptic curves over $\mathbb{Q}$: wild 3-adic exercises." *Journal of the American
+    Mathematical Society*, 14(4), 843–939. [BCDT01] The completion of the TSW theorem for all
+    elliptic curves over $\mathbb{Q}$.
+
+55. **Diamond, F., and Shurman, J. (2005).** *A First Course in Modular Forms*. Springer
+    Graduate Texts in Mathematics, vol. 228. [DS05] The standard graduate-level introduction to
+    modular forms and the TSW theorem; accessible to a reader with a solid undergraduate algebra
+    background.
+
+56. **Silverman, J. H. (2009).** *The Arithmetic of Elliptic Curves*, 2nd ed. Springer Graduate
+    Texts in Mathematics, vol. 106. [S09] The standard reference for elliptic curves; Chapter V
+    covers the Hasse bound and the Weil conjectures.
+
+57. **Schoof, R. (1985).** "Elliptic curves over finite fields and the computation of square
+    roots mod $p$." *Mathematics of Computation*, 44(170), 483–494. [S85] The original
+    polynomial-time point-counting algorithm.
+
+58. **Elkies, N. D. (1992).** "Explicit isogenies." Unpublished manuscript. [E92] The Elkies
+    improvement to Schoof's algorithm (the SEA algorithm).
+
+59. **Deligne, P. (1974).** "La conjecture de Weil. I." *Publications Mathématiques de
+    l'IHÉS*, 43, 273–307. [D74] The proof of the Weil conjectures (including the Ramanujan
+    conjecture for weight-2 newforms as a special case).
+
+60. **Birch, B. J., and Swinnerton-Dyer, H. P. F. (1965).** "Notes on elliptic curves. II."
+    *Journal für die reine und angewandte Mathematik*, 218, 79–108. [BSD65] The original
+    formulation of the BSD conjecture.
+
+61. **Castryck, W., and Decru, T. (2023).** "An efficient key recovery attack on SIDH."
+    *Advances in Cryptology — EUROCRYPT 2023*, LNCS 14008, 423–447. [CD23] The classical
+    polynomial-time break of SIDH/SIKE; the precedent for a modularity-based attack on
+    isogeny-based cryptography. (Also cited as ref. 48 in §11.9.)
+
+62. **Weil, A. (1967).** "Über die Bestimmung Dirichletscher Reihen durch Funktionalgleichungen."
+    *Mathematische Annalen*, 168, 149–156. [W67] Weil's formulation of the conjecture that every
+    elliptic curve over $\mathbb{Q}$ has an associated modular form with the same L-function.
