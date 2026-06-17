@@ -562,7 +562,7 @@ deliverable); its outcome is recorded in the Action-frame digest.
 
 | # | Session | Status | Commit | Froze |
 |---|---------|--------|--------|-------|
-| S.D.1 | Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP | pending | — | — (prose) |
+| S.D.1 | Track-S code-tour: simulator + Shor-factoring + Shor-ECDLP | done | `be8c238` | — (prose) |
 | S.D.2 ◆ | T.S: Shor's-algorithm mathematics (payoff) + post-quantum context | pending | — | — (prose) |
 
 Contracts frozen before this sub-track: the entire classical-attack arc — all of Track G (GNFS
