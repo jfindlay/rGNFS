@@ -24,6 +24,16 @@ textbook rather than a companion reference, and with its algorithmic spectrum co
 deliberately extended) across the integer / finite-field / elliptic-curve × classical / quantum
 DLP matrix.**
 
+**The artifact must stand on its own terms, not as the realization of an executed plan.** A reader
+who never saw the roadmap should encounter a library organized by *topic* — the mathematics of
+discrete logarithms — not by *track* and *phase*, the order in which the work was built. The git
+history is where the construction narrative belongs; the code, docs, and names should cohere on the
+subject's own principles. Planning-frame vocabulary (track/phase/sub-track ids, `◆` boundary marks,
+letter-id labels) that leaked into the finished artifact is provenance residue to be re-anchored on
+the mathematics — **except where a grouping genuinely coincides with a mathematical topic, in which
+case the grouping survives and only the planning label changes** (e.g. "Track ρ" → "Pollard rho, the
+birthday-bound baseline").
+
 The arc-2 discipline is **survey-first**: the project's actual current shape is *discovered by audit*
 before any consolidation or refactoring commits to scope. The anti-defocus anchor is this: arc 2 does
 not add algorithmic mass for its own sake — every campaign serves either *coherence* (the library
@@ -88,8 +98,12 @@ findings ledger; every campaign is **gated behind survey findings** — the road
   (6) math-exposition continuity (textbook-vs-reference, dir/file/notation/voice/audience
   consistency, code↔math cross-reference health); (7) algorithmic-spectrum completeness across the
   integer/field/EC × classical/quantum matrix; (8) distillation of the 4 quantum-DLP references into
-  candidate inclusions. Each dimension's findings land as Discoveries-log entries that shape the
-  campaigns. Category: **substrate (audit)** — high-judgment, wide design surface, front-loaded.
+  candidate inclusions; (9) **provenance leakage & topic-vs-track organization** — catalog every
+  planning-frame token (track/phase/sub-track ids, `◆` marks, letter-id labels) at every depth (prose
+  docs, code identifiers, module/file/dir names, benchmark labels, test names) and classify each as
+  pure residue (re-anchor on topic) or grouping-that-coincides-with-a-topic (keep grouping, change
+  label). Each dimension's findings land as Discoveries-log entries that shape the campaigns.
+  Category: **substrate (audit)** — high-judgment, wide design surface, front-loaded.
 
 - **B. ALIGN**. Charge: reconcile rGNFS with its `~/Source/rust-template` seed in **both
   directions** — backport template formalities rGNFS lacks (per survey: `deny.toml`, `rustfmt.toml`,
@@ -105,16 +119,22 @@ findings ledger; every campaign is **gated behind survey findings** — the road
   independent.
 
 - **D. REFACTOR**. Charge: restructure crate peering/organisation and eliminate duplicative code,
-  **strictly gated on the SURVEY layout audit** — no speculative restructuring. Category:
+  **strictly gated on the SURVEY layout audit** — no speculative restructuring. **Also owns the
+  code-depth half of the de-provenancing (D9):** renaming planning-frame code identifiers, module/
+  file/dir names, benchmark labels, and test names onto topic terms, where SURVEY classified them as
+  residue (a rename is a layout change with compiler blast radius, so it lives here). Category:
   **substrate (layout)**. Must precede CONSOLIDATE and EXTEND so docs and new code target the final
   shape.
 
 - **E. CONSOLIDATE**. Charge: the exposition campaign — (a) enforce the three-docs-layer discipline
-  (inline / human-code-ref / agent-docs) with correct reference directions, and (b) rewrite the
+  (inline / human-code-ref / agent-docs) with correct reference directions, (b) rewrite the
   mathematical exposition so it **reads as a continuous textbook with a suggested path**, internally
   consistent in dir/file names, notation, audience, voice, thoroughness — readable independently yet
-  cross-referring to code where useful. Category: **integrative**. Depends on REFACTOR (docs point at
-  final layout).
+  cross-referring to code where useful, and (c) **own the prose-depth half of the de-provenancing
+  (D9):** re-anchor planning-frame vocabulary in all human-facing prose (PEDAGOGY/MATHEMATICS/README)
+  onto topic terms, so the docs read as a treatment of the mathematics, not a record of an executed
+  plan. Category: **integrative**. Depends on REFACTOR (docs point at final layout *and* at the
+  already-renamed identifiers).
 
 - **F. EXTEND** *(content gated behind survey findings)*. Charge: add the algorithmic components the
   SURVEY's spectrum-gap audit + 4-reference distillation actually justify — across integer / finite-
@@ -138,6 +158,7 @@ junctures.
 | **C-Layout** | compiler | REFACTOR → CONSOLIDATE, EXTEND | The final crate-peering/module structure. Once REFACTOR freezes it, docs reference it and new code sits in it. Compiler-enforced (workspace members, module paths). |
 | **C-DocsLayer** | prose | CONSOLIDATE → all future docs | The three-layer reference-direction discipline (inline ↔ human-code-ref ↔ agent-docs: who may reference whom). Frozen at CONSOLIDATE; governs all subsequent doc edits including the math textbook. |
 | **C-MathSpine** | prose | CONSOLIDATE → EXTEND | The textbook's suggested-path spine, notation, voice, audience. Any EXTEND chapter must slot into this spine, not append incoherently. Frozen at CONSOLIDATE. |
+| **C-Coherence** | prose | SURVEY → REFACTOR, CONSOLIDATE, EXTEND | The artifact-stands-on-its-own-terms principle: the finished library is organized and named by mathematical topic, not by planning track/phase; provenance residue is re-anchored, groupings that coincide with a topic are kept under topic labels. Frozen at SURVEY (the residue catalog + the keep/rename classification); enforced by REFACTOR (identifiers) and CONSOLIDATE (prose), and binding on all EXTEND naming. |
 | **C-Oracle** | test | ORACLE → regression suite | The CADO-NFS sidecar build + invocation interface (automatic + on-demand). Downstream regression/comparison tests consume it. Frozen at ORACLE close. |
 | **C-TemplateSeed** | prose | ALIGN ↔ rust-template | The agreed bidirectional formalities set: what flows template→rGNFS and what flows rGNFS→template. Recorded so future template-derived projects inherit the reconciled discipline. |
 
@@ -221,6 +242,19 @@ arc 2 runs.
   library across its domains and strategize inclusion. *Feeds F (content), possibly CONSOLIDATE
   (new exposition).* **Note:** arxiv IDs `2603.*`/`2606.*` are dated beyond construction time
   (2026-06) — SURVEY must verify the identifiers resolve; if not, surface for correction.
+- **D9 — Provenance leakage / topic-vs-track organization (open, coherence).** The arc-1 codebase and
+  docs bear the fingerprints of their own construction: "Track ρ/G/D/E/S", "Phase α…ζ", sub-track
+  letter-ids (E.W, G.A.3), `◆` boundary marks, and planning vocabulary appear in prose
+  (PEDAGOGY/MATHEMATICS/README), and likely in code identifiers, module/file/dir names, benchmark
+  labels, and test names. The artifact should read as a DLP library organized by *topic*, not as the
+  realization of an executed plan — the git log carries the construction narrative; the code coheres
+  on its own terms. SURVEY catalogs every occurrence at every depth and classifies each as **pure
+  residue** (re-anchor on the mathematics) or **grouping-coincides-with-topic** (keep the grouping,
+  change only the planning label — e.g. the five "tracks" map onto five real mathematical families, so
+  the grouping survives as "Pollard rho / GNFS / NFS-DL / algebraic-ECDLP attacks / Shor"). Split
+  execution: *prose fixes → CONSOLIDATE; identifier/file/dir/bench/test renames → REFACTOR* (a rename
+  carries compiler blast radius). *Feeds REFACTOR + CONSOLIDATE → C-Coherence; binding on EXTEND
+  naming.*
 
 ### Open questions for the human (resolve at SURVEY close or earlier)
 
@@ -231,6 +265,9 @@ arc 2 runs.
   specific coverage doctrine?
 - F-EXTEND scope ceiling: if SURVEY finds genuine spectrum gaps, is arc 2 the place to fill them, or
   do they become an arc-3 roadmap (keeping arc 2 consolidation-focused)?
+- C-Coherence (D9): for borderline groupings where track and topic nearly-but-not-exactly coincide,
+  what's the default — preserve the grouping under a topic label, or dissolve it into a purer topical
+  organization? (Sets how aggressively REFACTOR/CONSOLIDATE cut.)
 
 ---
 
@@ -260,3 +297,8 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
   history). Constructed via `/roadmap-construct` from the four-cluster intent seed. Six sub-tracks:
   one survey substrate + five gated campaign slots. Survey-first discipline; extension gated behind
   findings.
+- **2026-06-17 — Coherence audit added (D9 / C-Coherence).** Folded in a ninth SURVEY dimension —
+  provenance leakage & topic-vs-track organization — so the finished artifact stands on the
+  mathematics' own terms rather than as the realization of an executed plan. Split execution across
+  REFACTOR (identifiers/files/benches) and CONSOLIDATE (prose); no new sub-track. Design intent
+  amended to state the standalone-artifact principle.
