@@ -1551,3 +1551,333 @@ highest density of sub-track IDs (G.B–G.W, D.A–D.W) but these are mostly gro
 topic and survive as pipeline-stage labels under topic-native names.
 
 *Feeds C-DocsLayer (sketch), C-MathSpine (sketch), and the prose half of C-Coherence.*
+
+---
+
+## A.5 — CADO-NFS sidecar build/trigger design needs (D6)
+
+**Charge:** audit the design space for the dynamic CADO-NFS sidecar — build-trigger model,
+version pinning strategy, what regression/comparison tests it would gate, and how it honors the
+arc-1 dev-oracle policy (CADO as opt-in validation sidecar, never part of how rGNFS computes).
+Feeds C-Oracle (sketch); consumed by ORACLE.
+
+**Observed state of CADO-NFS oracle tests in the codebase:**
+
+Four `#[ignore]`-gated CADO-NFS oracle tests exist across the `gnfs` crate:
+
+| File | Test name | Oracle role |
+|---|---|---|
+| `gnfs/tests/line_sieve_kat.rs` | `kat_c_cado_nfs_oracle` | Compare relation count from rGNFS line sieve against CADO-NFS at matched parameters; tolerance ±3× (CADO uses large-prime relations) |
+| `gnfs/tests/merge_kat.rs` | `kat_c_cado_nfs_oracle` | Compare filtered matrix dimensions (row count, column count, Hamming weight) against CADO output at matched parameters; tolerance ±10% on row count |
+| `gnfs/tests/lanczos_kat.rs` | `kat_c_cado_oracle_n35` | Expand Lanczos kernel vector through provenance to a congruence of squares; verify the factor matches what CADO-NFS finds for N=35 |
+| `gnfs/tests/factor_end_to_end_kat.rs` | `kat_c_oracle_80_100_bit_challenge` | Factor an 80–100-bit semiprime end-to-end; verify against CADO-NFS / msieve |
+
+All four tests are stubs: the CADO invocation logic is documented in comments but not implemented
+(`unimplemented!` or `todo!` macros). The tests are gated with
+`#[ignore = "CADO-NFS not installed; run manually when available"]`. The existing test code
+references `cado-nfs.py` as the invocation entry point (the Python orchestration script).
+
+**Observed CADO-NFS project structure (from GitHub mirror `cado-nfs/cado-nfs`):**
+
+- **Authoritative source:** `https://gitlab.inria.fr/cado-nfs/cado-nfs` (mirrored to GitHub at
+  `https://github.com/cado-nfs/cado-nfs`; the README states the GitHub mirror is kept up-to-date
+  with the master branch).
+- **Build system:** CMake + GNU make (C/C++ project). Build produces binaries in
+  `build/$(hostname)/`; the Python orchestration script `cado-nfs.py` calls these binaries.
+- **Build requirements:** GCC ≥ 10 (or Clang ≥ 12, Apple Clang ≥ 16, Intel ICX ≥ 2023),
+  CMake ≥ 3.18, Python ≥ 3.8, GMP ≥ 5 (with `--enable-shared`). As of `cado-nfs-3.0.0`,
+  C++20 is required.
+- **Invocation entry point:** `./cado-nfs.py <N>` for factoring; `./cado-nfs.py <param_file>`
+  for a pre-configured run. The existing test stubs reference `cado-nfs.py` as the entry point.
+- **Version tags (GitHub mirror):** `git-2.0.1` (Oct 2020, commit `88c4751`) is the most recent
+  tagged version on the GitHub mirror. The README references `cado-nfs-3.0.0` as requiring C++20,
+  indicating a 3.0.0 release exists on the Inria GitLab (the authoritative source). The Inria
+  GitLab is bot-protected and could not be directly browsed; the GitHub mirror is the accessible
+  pinning target.
+- **Docker containers:** pre-compiled containers are available at
+  `registry.gitlab.inria.fr/cado-nfs/cado-nfs/factoring-full` (x86_64, Haswell or later).
+
+---
+
+### Part (a) — Build-trigger model
+
+#### Design space
+
+Two trigger models are possible:
+
+1. **CI-eager:** CADO-NFS is always built in CI (every push triggers a CADO build). The sidecar
+   is always present; the `#[ignore]`-gated oracle tests can be promoted to the standard CI run.
+   The oracle is no longer opt-in — it becomes part of the green path.
+
+2. **Lazy/on-demand + opt-in CI flag:** CADO-NFS is built only when explicitly requested — either
+   by the developer running `cargo test -- --ignored` locally, or by a CI job triggered with an
+   explicit flag (e.g., an environment variable `CADO_ORACLE=1` or a CI job variant). The
+   `#[ignore]`-gated tests remain gated; the sidecar is available but not mandatory.
+
+#### Recommendation
+
+**Lazy/on-demand + opt-in CI flag.** Rationale:
+
+- **Arc-1 dev-oracle policy fidelity.** The policy is explicit: CADO-NFS is an opt-in validation
+  sidecar, never part of how rGNFS computes. CI-eager violates this policy by making the oracle
+  mandatory — a CI failure due to CADO unavailability or a CADO version change would block the
+  green path. The `#[ignore]` gate is the policy's mechanical expression; the trigger model must
+  honor it.
+- **Build cost.** CADO-NFS is a large C/C++ project (CMake + make, GCC ≥ 10, GMP). Building it
+  in every CI run adds significant wall-clock time and dependency surface to a project whose CI
+  currently runs `cargo test --workspace` only. The pedagogical library's CI should remain fast
+  and dependency-light.
+- **Dependency surface.** CI-eager requires GCC/Clang, CMake, GMP, and Python in the CI
+  environment. The current rGNFS CI surface is pure Rust (`cargo`). Adding a C/C++ build
+  dependency to the mandatory CI path is a scope expansion that ORACLE must justify — and the
+  arc-1 policy already answers: it is not justified for the mandatory path.
+- **Opt-in CI flag is sufficient.** A CI job variant (e.g., a separate GitHub Actions job or a
+  Makefile target `make oracle-check`) that builds CADO and runs the `--ignored` tests provides
+  the regression/comparison signal without polluting the mandatory green path. This is the
+  standard pattern for optional integration tests in Rust projects.
+
+---
+
+### F-D6-01 · Sidecar trigger = lazy on-demand + opt-in CI flag
+
+**Falsifiable finding:**
+
+> **The CADO-NFS sidecar trigger model is lazy/on-demand + opt-in CI flag.** The `#[ignore]`-gated
+> oracle tests (`kat_c_cado_nfs_oracle` in `line_sieve_kat.rs` and `merge_kat.rs`,
+> `kat_c_cado_oracle_n35` in `lanczos_kat.rs`, `kat_c_oracle_80_100_bit_challenge` in
+> `factor_end_to_end_kat.rs`) remain gated behind `#[ignore]` in the standard test run. They are
+> exercised only when the developer explicitly passes `-- --ignored` or when a CI job variant
+> (opt-in flag) is triggered. The sidecar is never on the mandatory green path.
+>
+> **Downstream checks:**
+> - ORACLE must NOT promote the `#[ignore]`-gated tests to the standard `cargo test --workspace`
+>   run. Doing so is a policy violation.
+> - ORACLE's CI integration (if any) must be a separate, opt-in job — not a required check on
+>   every push.
+> - The `docs/development.md` that ALIGN adds (F-D1-07) must document the opt-in invocation
+>   (`cargo test -- --ignored` or the CI flag) as the way to run oracle tests.
+
+*Feeds ORACLE; seeds C-Oracle (sketch).*
+
+---
+
+### Part (b) — Version pinning strategy
+
+#### Design space
+
+Three pinning strategies are possible:
+
+1. **Git tag pin:** pin to a specific git tag (e.g., `git-2.0.1` or a future `3.0.0` tag). Tags
+   are human-readable and stable; the GitHub mirror carries them. Reproducible via
+   `git clone --branch git-2.0.1 --depth 1`.
+
+2. **Commit hash pin:** pin to a specific commit hash (e.g., `88c4751` for `git-2.0.1`). More
+   precise than a tag (tags can be moved, though rarely); requires knowing the hash in advance.
+   Reproducible via `git checkout 88c4751`.
+
+3. **Release tarball:** download a versioned tarball from the Inria GitLab or GitHub mirror
+   (e.g., `git-2.0.1.tar.gz`). No git dependency at build time; reproducible via checksum.
+   Requires storing the tarball URL and a SHA-256 checksum.
+
+#### Recommendation
+
+**Git tag pin, with the GitHub mirror as the source.** Rationale:
+
+- **Human-readable and auditable.** A tag like `git-2.0.1` is self-documenting; a raw commit
+  hash is opaque. The tag is the right unit of "this is the version we validated against."
+- **GitHub mirror is accessible.** The authoritative Inria GitLab is bot-protected and may be
+  inaccessible in automated environments. The GitHub mirror (`github.com/cado-nfs/cado-nfs`) is
+  publicly accessible and kept in sync with the master branch.
+- **Tag + commit hash together.** The pin should record both the tag name and its commit hash
+  (e.g., `git-2.0.1` → `88c4751ca1fe4677d6b83efa348d4a7b4d15d1fa`) so that ORACLE can verify
+  the checkout is correct even if the tag were to be moved.
+- **Tarball is an alternative if git is unavailable.** The GitHub mirror provides `.tar.gz`
+  downloads for each tag. If the CI environment lacks git, ORACLE may use the tarball + SHA-256
+  checksum as a fallback. This is a ORACLE implementation decision; SURVEY records the option.
+
+**Version to pin:** The most recent tagged version on the GitHub mirror is `git-2.0.1` (Oct 2020,
+commit `88c4751`). The README references `cado-nfs-3.0.0` as requiring C++20 — if a 3.0.0 tag
+exists on the Inria GitLab and is mirrored to GitHub, ORACLE should prefer it (C++20 is the
+current standard; GCC ≥ 10 is widely available). ORACLE must verify the tag resolves before
+committing to a pin. If only `git-2.0.1` is accessible, pin to that.
+
+---
+
+### F-D6-02 · Version pin = git tag on GitHub mirror, tag + commit hash recorded
+
+**Falsifiable finding:**
+
+> **The CADO-NFS sidecar pins to a specific git tag on the GitHub mirror
+> (`github.com/cado-nfs/cado-nfs`), with the commit hash recorded alongside the tag name.**
+> The pin is recorded in a prose file (e.g., `docs/development.md` or a dedicated
+> `docs/oracle.md`) — not in a `Cargo.toml` or build script (those are ORACLE scope). The
+> minimum pin is `git-2.0.1` (commit `88c4751`); ORACLE should prefer the most recent tagged
+> version that resolves on the GitHub mirror at ORACLE build time.
+>
+> **Downstream checks:**
+> - ORACLE's build script must clone or download the pinned tag, not `master` or `HEAD`.
+> - The pin must be recorded as both a tag name and a full commit hash (40 hex characters).
+> - If ORACLE upgrades the pin, the commit hash must be updated in the same change.
+
+*Feeds ORACLE; seeds C-Oracle (sketch).*
+
+---
+
+### Part (c) — Regression/comparison tests gated by the sidecar
+
+#### What the sidecar gates
+
+The four existing `#[ignore]`-gated stubs define the comparison surface ORACLE must implement:
+
+| Test | rGNFS output | CADO-NFS output | Comparison |
+|---|---|---|---|
+| `line_sieve_kat.rs` `kat_c_cado_nfs_oracle` | Relation count from `line_sieve` at matched polynomial + factor-base bounds | Relation count from `cado-nfs.py` at same parameters | rGNFS count ≥ CADO count / 3.0 (CADO finds more via large-prime relations) |
+| `merge_kat.rs` `kat_c_cado_nfs_oracle` | Filtered matrix dimensions (rows, cols, Hamming weight) from rGNFS filtering pipeline | Filtered matrix dimensions from CADO's `.mat` output at matched parameters | Dimensions within ±10% of CADO's output |
+| `lanczos_kat.rs` `kat_c_cado_oracle_n35` | Lanczos kernel vector expanded through provenance to a factor of N=35 | CADO-NFS factor of N=35 | Both recover the same nontrivial factor (5 or 7) |
+| `factor_end_to_end_kat.rs` `kat_c_oracle_80_100_bit_challenge` | Full GNFS pipeline factor of an 80–100-bit semiprime | CADO-NFS factor of the same semiprime | Both recover the same nontrivial factor |
+
+**What the sidecar does NOT gate:** rGNFS's correctness on the green path. The green-path KATs
+(the 53 external `*_kat.rs` files and the inline `#[test]` blocks) are self-contained — they do
+not require CADO. The sidecar gates only the cross-validation comparisons, which are opt-in.
+
+**What the sidecar enables:** the comparisons above validate that rGNFS's GNFS pipeline stages
+(sieving, filtering, linear algebra, end-to-end) produce outputs that are quantitatively
+consistent with CADO-NFS at matched parameters. This is the "live correctness oracle" the ROADMAP
+charges ORACLE to build. The comparisons are not equality checks — they are tolerance-bounded
+consistency checks, because rGNFS is a demonstration-fidelity implementation (no large-prime
+relations, no FFT sieve) while CADO is a production implementation.
+
+---
+
+### F-D6-03 · Sidecar gates four tolerance-bounded consistency comparisons, not equality checks
+
+**Falsifiable finding:**
+
+> **The CADO-NFS sidecar gates exactly four comparison tests, each with a documented tolerance:**
+> (1) relation count from line sieve: rGNFS ≥ CADO / 3.0; (2) filtered matrix dimensions: within
+> ±10% of CADO; (3) Lanczos factor of N=35: same nontrivial factor as CADO; (4) end-to-end factor
+> of an 80–100-bit semiprime: same nontrivial factor as CADO. The comparisons are
+> tolerance-bounded, not equality checks, because rGNFS is a demonstration-fidelity
+> implementation. ORACLE implements these four tests by filling in the `unimplemented!` / `todo!`
+> stubs in the existing test files.
+>
+> **Downstream checks:**
+> - ORACLE must not change the tolerance values without a documented rationale.
+> - ORACLE must not add new oracle tests to the mandatory green path.
+> - The four stub tests are the complete CADO oracle surface; ORACLE does not need to add new
+>   `#[ignore]`-gated tests (it implements the existing stubs).
+
+*Feeds ORACLE; seeds C-Oracle (sketch).*
+
+---
+
+### Part (d) — Dev-oracle policy fidelity
+
+#### The arc-1 dev-oracle policy (observed)
+
+The policy is stated in `docs/PEDAGOGY.md` (Principle 3 verification, line 1242–1266) and
+`gnfs/docs/PEDAGOGY.md` (Principle 3, lines 4100–4123):
+
+> CADO-NFS / msieve remain dev-only oracles, gated behind `#[ignore]` KATs. No production
+> dependency was added. The oracle KATs are ignored in the standard test run.
+
+The policy has three components:
+1. **Never on the green path.** Oracle tests are `#[ignore]`-gated; `cargo test --workspace`
+   never runs them.
+2. **Never a production dependency.** CADO-NFS is not a `[dev-dependencies]` entry in any
+   `Cargo.toml`; it is an external tool invoked by a test stub.
+3. **Opt-in validation only.** The oracle validates rGNFS outputs; it does not compute them.
+   rGNFS's GNFS pipeline is self-contained; CADO is a cross-check, not a component.
+
+#### How the sidecar design honors the policy
+
+The lazy/on-demand + opt-in CI flag trigger model (F-D6-01) directly honors all three components:
+
+- **Never on the green path:** the `#[ignore]` gate is preserved; the sidecar is not built in
+  the standard CI run.
+- **Never a production dependency:** CADO-NFS is built as an external binary sidecar, not linked
+  into the rGNFS workspace. No `Cargo.toml` entry is added.
+- **Opt-in validation only:** the sidecar's role is comparison (rGNFS output vs CADO output at
+  matched parameters). The comparison is always rGNFS-first: rGNFS computes the output; CADO
+  validates it. The direction is never reversed.
+
+The tolerance-bounded comparison design (F-D6-03) also honors the policy: the tolerances
+acknowledge that rGNFS is a demonstration-fidelity implementation, not a CADO clone. A strict
+equality check would conflate "rGNFS is correct" with "rGNFS matches CADO exactly" — the latter
+is false by design (rGNFS has no large-prime relations, no FFT sieve). The tolerance-bounded
+check is the honest oracle: it validates that rGNFS is in the right ballpark, not that it
+replicates CADO's engineering optimizations.
+
+---
+
+### F-D6-04 · Dev-oracle policy fidelity: sidecar is validation-only, never on the green path
+
+**Falsifiable finding:**
+
+> **The CADO-NFS sidecar honors the arc-1 dev-oracle policy on all three axes:**
+> (1) never on the green path — `#[ignore]` gate preserved, `cargo test --workspace` never runs
+> oracle tests; (2) never a production dependency — CADO-NFS is an external binary, no
+> `Cargo.toml` entry; (3) opt-in validation only — rGNFS computes, CADO validates, never the
+> reverse. The tolerance-bounded comparison design (F-D6-03) is the honest oracle: it validates
+> correctness-in-ballpark, not engineering-optimization parity.
+>
+> **Downstream checks:**
+> - ORACLE must not add CADO-NFS to any `[dev-dependencies]` or `[build-dependencies]` in any
+>   `Cargo.toml`. A `Cargo.toml` delta touching CADO is a policy violation.
+> - ORACLE must not change the `#[ignore]` attribute on any of the four oracle tests. Removing
+>   `#[ignore]` is a policy violation.
+> - The comparison direction is always rGNFS-first: rGNFS computes the output, CADO validates.
+>   A test that calls CADO to compute a result and then checks rGNFS against it is a policy
+>   violation.
+
+*Feeds ORACLE; seeds C-Oracle (sketch).*
+
+---
+
+### Summary table — CADO-NFS sidecar design findings
+
+| # | Finding | Recommendation | Consuming campaign |
+|---|---|---|---|
+| F-D6-01 | Sidecar trigger model | Lazy/on-demand + opt-in CI flag; `#[ignore]` gate preserved | ORACLE |
+| F-D6-02 | Version pinning strategy | Git tag on GitHub mirror, tag + commit hash recorded; minimum `git-2.0.1` (`88c4751`) | ORACLE |
+| F-D6-03 | Gated comparisons | Four tolerance-bounded consistency checks (relation count, matrix dims, N=35 factor, 80–100-bit factor); ORACLE fills existing stubs | ORACLE |
+| F-D6-04 | Dev-oracle policy fidelity | Sidecar is validation-only, never on green path, never a `Cargo.toml` dependency | ORACLE |
+
+---
+
+### Subtleties and deferrals
+
+**Build automation intricacy (ROADMAP flag).** The ROADMAP notes "opus only if build automation
+proves intricate" for ORACLE. The CADO-NFS build is a CMake + make C/C++ project with non-trivial
+dependencies (GMP, Python, GCC ≥ 10). The build automation is not trivial, but it is also not
+unprecedented — the CADO README documents a two-step build (`make` then `./cado-nfs.py`), and
+Docker containers are available for x86_64. A.5 records the build requirements and the invocation
+entry point; ORACLE decides whether the automation warrants an opus juncture. **This is not an
+A.7 open-Q** — the ROADMAP already flags it as an ORACLE-internal decision. A.5's finding is that
+the design (trigger model, pinning, gated comparisons) can be settled as findings; the build
+automation complexity is ORACLE's to assess.
+
+**`git-2.0.1` vs `3.0.0` pin.** The GitHub mirror's most recent tag is `git-2.0.1` (Oct 2020).
+The README references `cado-nfs-3.0.0` as requiring C++20, suggesting a newer release exists on
+the Inria GitLab. ORACLE must verify which tags are accessible on the GitHub mirror at ORACLE
+build time and pin to the most recent accessible tag. If the Inria GitLab becomes accessible,
+ORACLE may prefer it as the authoritative source. A.5 records the uncertainty; ORACLE resolves it.
+
+**Tolerance values.** The tolerances in F-D6-03 (3× for relation count, ±10% for matrix dims)
+are taken from the existing test stub comments. They are design intent, not measured values.
+ORACLE must validate these tolerances against actual CADO runs at the pinned version and adjust
+if the stubs' intent does not match observed behavior. A.5 records the intent; ORACLE calibrates.
+
+**`factor_end_to_end_kat.rs` stub is a `todo!`.** Unlike the other three stubs (which have
+partial implementation logic), `kat_c_oracle_80_100_bit_challenge` is a bare `todo!` — the full
+GNFS pipeline (polyselect → sieve → filter → linalg → sqrt) is not yet wired end-to-end in the
+test. ORACLE must wire the pipeline before the oracle comparison is meaningful. This is the
+highest-complexity stub; ORACLE may defer it to a later ORACLE session if the pipeline wiring
+proves intricate.
+
+**msieve as an alternative oracle.** `factor_end_to_end_kat.rs` references "CADO-NFS or msieve"
+as the oracle. msieve is a simpler build (single C binary, no Python, no CMake). ORACLE may use
+msieve as a fallback oracle for the end-to-end test if CADO proves difficult to build. A.5 notes
+the option; ORACLE decides.
+
+*Feeds ORACLE; seeds C-Oracle (sketch).*
