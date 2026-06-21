@@ -11,7 +11,7 @@
 //! - **G** = `(3, 821_487_384_573_098_969)`
 //!
 //! The group order n is not used internally (it is not required for
-//! Phase 3–4 work), but several reference multiples of G are recorded
+//! curve-arithmetic and r-adding walk work), but several reference multiples of G are recorded
 //! in the KATs for correctness checking.
 //!
 //! # Cross-check note

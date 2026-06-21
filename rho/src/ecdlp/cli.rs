@@ -27,7 +27,7 @@
 //!
 //! # GLV mode
 //!
-//! Pass `--glv` to enable the Phase 8 GLV endomorphism solver (`solve_dp_glv`).
+//! Pass `--glv` to enable the GLV endomorphism solver (`solve_dp_glv`).
 //! Requires `--walkers > 0` and `--curve secp-toy`.  The GLV endomorphism
 //! collapses the 6-orbit `{W, φ(W), φ²(W), −W, −φ(W), −φ²(W)}` to a single
 //! canonical representative, giving a √3 speedup vs the negation-map-only walk.
@@ -82,14 +82,14 @@ struct Args {
     #[arg(long, default_value_t = false)]
     negmap: bool,
 
-    /// Batch size B for the Phase 7 batched-inversion solver (default: 1 = no batching).
+    /// Batch size B for the batched-inversion solver (default: 1 = no batching).
     ///
     /// When > 1, `solve_dp_batch` is used instead of `solve_dp` or `solve_dp_negmap`.
     /// Requires `--walkers > 0`.  Typical values: 8–32.
     #[arg(long, default_value_t = 1usize)]
     batch_size: usize,
 
-    /// Enable the GLV endomorphism optimisation (Phase 8).
+    /// Enable the GLV endomorphism optimisation.
     ///
     /// When true, `solve_dp_glv` is used.  Requires `--walkers > 0` and
     /// `--curve secp-toy` (the GLV constants are secp-toy-specific).
@@ -167,10 +167,10 @@ fn main() {
 
     // Solve: use parallel DP solver when --walkers > 0, otherwise Brent.
     // Priority within the parallel path (highest to lowest):
-    //   --glv          → solve_dp_glv  (Phase 8; secp-toy only)
-    //   --batch-size>1 → solve_dp_batch (Phase 7)
-    //   --negmap       → solve_dp_negmap (Phase 6)
-    //   (default)      → solve_dp (Phase 5)
+    //   --glv          → solve_dp_glv  (GLV endomorphism; secp-toy only)
+    //   --batch-size>1 → solve_dp_batch (batched inversion)
+    //   --negmap       → solve_dp_negmap (negation map)
+    //   (default)      → solve_dp (distinguished-point search)
     let result = if args.walkers > 0 {
         if args.glv {
             if args.curve != "secp-toy" {

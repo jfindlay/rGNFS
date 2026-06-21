@@ -1,15 +1,15 @@
 //! ECDLP benchmark: Brent (single-threaded) vs DP parallel (1, 2, 4 walkers)
-//! vs DP with negation map (Phase 6).
+//! vs DP with negation map.
 //!
-//! Phase 5 deliverable extended in Phase 6.  Measures wall time to solve a
-//! fixed 35-bit DLP on `secp_k1_toy` with each solver variant.
+//! Measures wall time to solve a fixed 35-bit DLP on `secp_k1_toy` with each
+//! solver variant, demonstrating the speedup of each optimization layer.
 //!
-//! The Phase 5 pedagogical signal is the parallel speedup: each doubling of
-//! walkers should roughly halve wall time.
+//! The distinguished-point parallel speedup: each doubling of walkers should
+//! roughly halve wall time.
 //!
-//! The Phase 6 pedagogical signal is the negation-map speedup: `solve_dp_negmap`
-//! with 2 walkers should be ~√2 faster than `solve_dp` with 2 walkers, because
-//! the negation map halves the effective group size.
+//! The negation-map speedup: `solve_dp_negmap` with 2 walkers should be ~√2
+//! faster than `solve_dp` with 2 walkers, because the negation map halves the
+//! effective group size.
 //!
 //! # Fixed DLP
 //!
@@ -86,7 +86,7 @@ fn bench_solve_dp(c: &mut Criterion) {
     group.finish();
 }
 
-// ── Phase 6: DP vs DP+negmap comparison ──────────────────────────────────────
+// ── Negation-map vs plain DP comparison ──────────────────────────────────────
 
 /// Compare `solve_dp` and `solve_dp_negmap` at 2 walkers on the same 35-bit DLP.
 ///
@@ -97,7 +97,7 @@ fn bench_negmap_vs_dp(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ecdlp/negmap_vs_dp");
 
-    // Plain DP with 2 walkers (Phase 5 baseline).
+    // Plain distinguished-point search with 2 walkers (baseline).
     group.bench_function("solve_dp/walkers=2", |b| {
         b.iter(|| {
             solve_dp(&curve, &g, &q, SECP_N, 2, THETA, SEED)
@@ -105,7 +105,7 @@ fn bench_negmap_vs_dp(c: &mut Criterion) {
         });
     });
 
-    // DP + negation map with 2 walkers (Phase 6).
+    // DP + negation-map optimization with 2 walkers.
     group.bench_function("solve_dp_negmap/walkers=2", |b| {
         b.iter(|| {
             solve_dp_negmap(&curve, &g, &q, SECP_N, 2, THETA, SEED)
@@ -116,21 +116,21 @@ fn bench_negmap_vs_dp(c: &mut Criterion) {
     group.finish();
 }
 
-// ── Phase 7: batched-inversion vs negmap comparison ──────────────────────────
+// ── Batched-inversion vs negation-map comparison ─────────────────────────────
 
-/// Compare `solve_dp_negmap` (Phase 6) vs `solve_dp_batch` (Phase 7) at 2 walkers
-/// on the same 35-bit DLP.
+/// Compare `solve_dp_negmap` vs `solve_dp_batch` (batched-inversion optimization)
+/// at 2 walkers on the same 35-bit DLP.
 ///
-/// The Phase 7 pedagogical signal is the batched-inversion speedup: with
-/// `batch_size = 16`, each thread performs 1 inversion + 45 multiplications
-/// instead of 16 inversions per 16 steps, reducing the dominant per-step cost.
+/// The batched-inversion speedup: with `batch_size = 16`, each thread performs
+/// 1 inversion + 45 multiplications instead of 16 inversions per 16 steps,
+/// reducing the dominant per-step cost.
 fn bench_batch_vs_negmap(c: &mut Criterion) {
     let (curve, q) = make_q();
     let g: AffinePoint<FpMonty> = curve.generator();
 
     let mut group = c.benchmark_group("ecdlp/batch_vs_negmap");
 
-    // Phase 6 baseline: negmap with 2 walkers.
+    // Negation-map baseline: negmap with 2 walkers.
     group.bench_function("solve_dp_negmap/walkers=2", |b| {
         b.iter(|| {
             solve_dp_negmap(&curve, &g, &q, SECP_N, 2, THETA, SEED)
@@ -138,7 +138,7 @@ fn bench_batch_vs_negmap(c: &mut Criterion) {
         });
     });
 
-    // Phase 7: batched inversion with 2 walkers, batch_size=16.
+    // Batched-inversion optimization with 2 walkers, batch_size=16.
     group.bench_function("solve_dp_batch/walkers=2/batch=16", |b| {
         b.iter(|| {
             solve_dp_batch(&curve, &g, &q, SECP_N, 2, 16, THETA, SEED)
@@ -149,22 +149,22 @@ fn bench_batch_vs_negmap(c: &mut Criterion) {
     group.finish();
 }
 
-// ── Phase 8: GLV vs batch comparison ─────────────────────────────────────────
+// ── GLV endomorphism vs batched-inversion comparison ─────────────────────────
 
-/// Compare `solve_dp_negmap` (Phase 6), `solve_dp_batch` (Phase 7), and
-/// `solve_dp_glv` (Phase 8) at 2 walkers on the same 35-bit DLP.
+/// Compare `solve_dp_negmap`, `solve_dp_batch` (batched-inversion), and
+/// `solve_dp_glv` (GLV endomorphism) at 2 walkers on the same 35-bit DLP.
 ///
-/// The Phase 8 pedagogical signal is the GLV speedup: `solve_dp_glv` collapses
-/// the 6-orbit `{W, φ(W), φ²(W), −W, −φ(W), −φ²(W)}` to a single canonical
-/// representative, reducing the effective group size by 6 and the expected
-/// rho steps by √6 vs the plain walk (√3 vs negmap alone).
+/// The GLV endomorphism speedup: `solve_dp_glv` collapses the 6-orbit
+/// `{W, φ(W), φ²(W), −W, −φ(W), −φ²(W)}` to a single canonical representative,
+/// reducing the effective group size by 6 and the expected rho steps by √6 vs
+/// the plain walk (√3 vs negmap alone).
 fn bench_glv_vs_batch(c: &mut Criterion) {
     let (curve, q) = make_q();
     let g: AffinePoint<FpMonty> = curve.generator();
 
     let mut group = c.benchmark_group("ecdlp/glv_vs_batch");
 
-    // Phase 6 baseline: negmap with 2 walkers.
+    // Negation-map baseline with 2 walkers.
     group.bench_function("solve_dp_negmap/walkers=2", |b| {
         b.iter(|| {
             solve_dp_negmap(&curve, &g, &q, SECP_N, 2, THETA, SEED)
@@ -172,7 +172,7 @@ fn bench_glv_vs_batch(c: &mut Criterion) {
         });
     });
 
-    // Phase 7: batched inversion with 2 walkers, batch_size=16.
+    // Batched-inversion optimization with 2 walkers, batch_size=16.
     group.bench_function("solve_dp_batch/walkers=2/batch=16", |b| {
         b.iter(|| {
             solve_dp_batch(&curve, &g, &q, SECP_N, 2, 16, THETA, SEED)
@@ -180,7 +180,7 @@ fn bench_glv_vs_batch(c: &mut Criterion) {
         });
     });
 
-    // Phase 8: GLV endomorphism with 2 walkers, batch_size=16.
+    // GLV endomorphism optimization with 2 walkers, batch_size=16.
     group.bench_function("solve_dp_glv/walkers=2/batch=16", |b| {
         b.iter(|| {
             solve_dp_glv(&curve, &g, &q, SECP_N, 2, 16, THETA, SEED)

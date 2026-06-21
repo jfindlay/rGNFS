@@ -1,13 +1,13 @@
 //! ECDLP solver via Pollard rho.
 //!
-//! Optimization layers (per the plan):
-//! 4. r-adding walk (Teske, r≈20) + Brent's cycle detection — Phase 4.
-//! 5. Distinguished points + parallel collision search (van Oorschot–Wiener) — Phase 5.
-//! 6. Negation map + fruitless-cycle escape (BKNS) — Phase 6.
+//! Optimization layers:
+//! 4. r-adding walk (Teske, r≈20) + Brent's cycle detection.
+//! 5. Distinguished points + parallel collision search (van Oorschot–Wiener).
+//! 6. Negation map + fruitless-cycle escape (BKNS).
 //! 7. Batched field inversion + affine coordinates.
 //! 8. GLV endomorphism (order-3, secp-toy curve only).
 //!
-//! # Solver (Phase 4)
+//! # r-adding walk solver
 //!
 //! [`solve_brent`] is the single-threaded entry point.  It runs Brent's cycle
 //! detection on top of an r-adding walk, tracking `(a, b)` scalars throughout
@@ -18,7 +18,7 @@
 //! degenerate failures (`b_h = b_t mod n`), which occur with probability `~1/n`
 //! per attempt.
 //!
-//! # Solver (Phase 5)
+//! # Distinguished-point parallel solver
 //!
 //! [`solve_dp`] is the parallel entry point.  It spawns `num_walkers` threads,
 //! each running an r-adding walk and emitting a [`dp::DpRecord`] whenever the
@@ -581,17 +581,17 @@ fn run_walker_negmap<F: Fp<4>>(
     }
 }
 
-// ── Batched-inversion parallel solver (Phase 7) ───────────────────────────────
+// ── Batched-inversion parallel solver ────────────────────────────────────────
 
 /// Solve `Q = k·G` via the van Oorschot–Wiener parallel rho algorithm with
-/// batched field inversion (Phase 7).
+/// batched field inversion.
 ///
 /// Each thread owns a [`BatchedWalker`] with `batch_size` walk states.  After
 /// each [`BatchedWalker::step_all`] call, each walk is checked for distinguished
 /// points.  The negation map ([`canonical_rep`]) is applied after every step,
 /// and a [`FruitlessCycleDetector`] is maintained per walk.
 ///
-/// The batched inversion amortises the dominant per-step field inversion cost:
+/// The batched-inversion optimization amortises the dominant per-step field inversion cost:
 /// `batch_size` inversions are replaced by 1 inversion + 3(batch_size−1)
 /// multiplications per `step_all` call.
 ///
@@ -798,10 +798,10 @@ fn run_walker_batch<F: Fp<4>>(
     }
 }
 
-// ── GLV parallel solver (Phase 8) ─────────────────────────────────────────────
+// ── GLV parallel solver ───────────────────────────────────────────────────────
 
 /// Solve `Q = k·G` via the van Oorschot–Wiener parallel rho algorithm with
-/// the GLV endomorphism (Phase 8).
+/// the GLV endomorphism optimization.
 ///
 /// **Restriction**: this solver is designed for the `secp_k1_toy` curve.  It
 /// uses the secp_k1_toy GLV constants (`BETA`, `LAMBDA`) internally.  Calling
@@ -812,7 +812,7 @@ fn run_walker_batch<F: Fp<4>>(
 /// representative.  This reduces the effective group size by a factor of 6,
 /// giving a √6 speedup vs the plain walk and √3 vs the negation-map-only walk.
 ///
-/// The batched-inversion infrastructure from Phase 7 is reused: each thread
+/// The batched-inversion infrastructure is reused: each thread
 /// owns a [`BatchedWalker`] with `batch_size` walk states.
 ///
 /// # Arguments
@@ -1053,7 +1053,7 @@ mod tests {
     use crate::curve::test_curves::{tiny_a, TINY_A_N, tiny_glv, TINY_GLV_N, TINY_GLV_BETA, TINY_GLV_LAMBDA};
     use negmap::{canonical_rep, negate_scalars};
 
-    // ── solve_brent tests (Phase 4) ───────────────────────────────────────────
+    // ── solve_brent tests (r-adding walk) ────────────────────────────────────
 
     /// Solve a known DLP on the 20-bit test curve A and verify the result.
     ///
@@ -1086,7 +1086,7 @@ mod tests {
         check_dlog(100);
     }
 
-    // ── solve_dp tests (Phase 5) ──────────────────────────────────────────────
+    // ── solve_dp tests (distinguished-point search) ──────────────────────────
 
     /// Solve a known 20-bit DLP on tiny_a with a single walker.
     ///
@@ -1125,7 +1125,7 @@ mod tests {
         assert_eq!(check, q, "solve_dp_parallel: k·G ≠ Q (k={k}, expected k={k_target})");
     }
 
-    // ── Phase 6: negation-map tests ───────────────────────────────────────────
+    // ── negation-map tests ────────────────────────────────────────────────────
 
     /// canonical_rep(P) and canonical_rep(−P) produce the same point.
     ///
@@ -1300,7 +1300,7 @@ mod tests {
         assert_eq!(check, q, "solve_dp_batch_tiny: k·G ≠ Q (k={k})");
     }
 
-    // ── Phase 8: GLV tests ────────────────────────────────────────────────────
+    // ── GLV endomorphism tests ────────────────────────────────────────────────
 
     /// solve_dp_glv solves a known DLP on the tiny GLV test curve.
     ///

@@ -1,10 +1,10 @@
 //! Factorization benchmark: Floyd vs Brent vs Brent+batched-GCD.
 //!
-//! Phase 2 deliverable.  Measures total wall time to factor three semiprimes
-//! of increasing size (30, 50, 64 bits) with each variant.  The pedagogical
-//! signal is the wall-clock ordering: Floyd > Brent > brent_batched, with the
-//! batched-GCD advantage growing with semiprime size (larger N ⟹ more rho
-//! steps per run ⟹ more GCD savings per run).
+//! Measures total wall time to factor three semiprimes of increasing size
+//! (30, 50, 64 bits) with each variant.  The pedagogical signal is the
+//! wall-clock ordering: Floyd > Brent > brent_batched, with the batched-GCD
+//! advantage growing with semiprime size (larger N ⟹ more rho steps per run
+//! ⟹ more GCD savings per run).
 //!
 //! We do not include `factor` (parallel multi-c) in the microbenchmark because
 //! Criterion runs each function many times in the same process and rayon thread

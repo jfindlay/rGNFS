@@ -1,8 +1,7 @@
 //! Field arithmetic benchmark: FpNaive vs FpMonty.
 //!
-//! Phase 1 deliverable. Measures `mul`, `square`, and `inv` on the secp256k1
-//! prime (256-bit) for both implementations, giving the first pedagogical
-//! "see the Montgomery-form speedup" moment.
+//! Measures `mul`, `square`, and `inv` on the secp256k1 prime (256-bit) for
+//! both implementations, demonstrating the Montgomery-form speedup.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use crypto_bigint::Uint;

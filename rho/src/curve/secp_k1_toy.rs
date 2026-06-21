@@ -23,7 +23,7 @@
 //!
 //! For any point P = (x, y), `φ(P) = (β·x mod p, y)` and `φ(P) = λ·P`.
 //! This lets any scalar k be split as `k = k₁ + k₂·λ (mod n)` with
-//! `k₁, k₂ ≈ √n`, halving the effective scalar-multiplication cost (Phase 8).
+//! `k₁, k₂ ≈ √n`, halving the effective scalar-multiplication cost (GLV endomorphism optimization).
 //!
 //! # Parameter derivation
 //!
@@ -74,7 +74,7 @@ pub fn secp_k1_toy() -> Curve {
 
 /// Apply the GLV endomorphism to an x-coordinate: `x ↦ β·x mod p`.
 ///
-/// Used in Phase 8 to evaluate `φ(P) = (glv_phi_x(P.x), P.y)` cheaply
+/// Used in the GLV endomorphism optimization to evaluate `φ(P) = (glv_phi_x(P.x), P.y)` cheaply
 /// (one multiplication, no inversion).
 ///
 /// The `p` argument must equal [`P`]; it is accepted explicitly so the

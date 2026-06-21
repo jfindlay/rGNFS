@@ -1,4 +1,4 @@
-//! Known-answer tests for Phase 3 curve arithmetic and Phase 4 ECDLP solver.
+//! Known-answer tests for curve arithmetic and the Pollard-rho ECDLP solver.
 //!
 //! # What is tested
 //!
@@ -269,7 +269,7 @@ fn k256_scalar_mul_sanity() {
     );
 }
 
-// ── Phase 4 — ECDLP solver KATs ──────────────────────────────────────────────
+// ── r-adding walk ECDLP solver KATs ──────────────────────────────────────────
 //
 // These tests verify `solve_brent` on two 20-bit prime-order test curves.
 // Expected steps to solution: O(√n) ≈ O(2^10) — fast even in debug mode.
@@ -349,15 +349,15 @@ fn tiny_b_dlog_k99991() {
     check_solver_on_curve(&tiny_b(), TINY_B_N, 99_991, "tiny_b");
 }
 
-// ── Phase E.A.2 — Pohlig–Hellman composite-order ECDLP KATs ──────────────────
+// ── Pohlig–Hellman composite-order ECDLP KATs ────────────────────────────────
 //
-// These tests verify `solve_ecdlp_composite` on the C-CompositeCurve fixture:
+// These tests verify `solve_ecdlp_composite` on the composite-order toy curve:
 // y² = x³ + x + 33 mod 47, generator G = (10, 3), order n = 60 = 2² · 3 · 5.
 //
 // The solver is not required to return the specific k used to construct Q;
 // any k' ∈ [0, n) with k'·G = Q is a valid solution.  The assertion checks Q.
 //
-// Coverage requirements (from E.A.2 contract):
+// Coverage:
 // - At least one case exercises the e>1 lift (the 2² factor).
 // - At least one case exercises the multi-prime CRT (all three primes 2, 3, 5).
 

@@ -15,7 +15,7 @@
 //! Brent's cycle detection is applied in [`super::solve_brent`]; this module provides
 //! only the walk primitive used by the solver.
 //!
-//! # Batched-inversion walk (Phase 7)
+//! # Batched-inversion walk
 //!
 //! [`AffineWalkState`] keeps the current point in affine coordinates throughout.
 //! [`BatchedWalker`] owns B such states and advances them all in lock-step via
@@ -193,7 +193,7 @@ impl<F: Fp<4>> WalkState<F> {
         // lazily by reading the Jacobian representation.  We need to fully convert to
         // affine to get the reduced x; this is necessary for correctness of the partition
         // function.  The cost is one inversion per step — expensive, but this is the
-        // Phase 4 baseline.  Phase 7 (batched inversion) amortises this.
+        // r-adding walk baseline.  The batched-inversion optimization amortises this.
         let pt_affine = self.point_jac.to_affine(&curve.p);
         let idx = table.partition(&pt_affine);
         let addend = &table.entries[idx];
@@ -218,7 +218,7 @@ impl<F: Fp<4>> WalkState<F> {
     }
 }
 
-// ── Affine walk state (Phase 7) ───────────────────────────────────────────────
+// ── Affine walk state (batched-inversion optimization) ───────────────────────
 
 /// Walk state using affine coordinates throughout.
 ///
@@ -261,7 +261,7 @@ impl<F: Fp<4>> AffineWalkState<F> {
     }
 }
 
-// ── Batched walker (Phase 7) ──────────────────────────────────────────────────
+// ── Batched walker ────────────────────────────────────────────────────────────
 
 /// B r-adding walks advanced in lock-step with batched field inversion.
 ///

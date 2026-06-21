@@ -1,4 +1,4 @@
-//! Small curves for unit tests and Phase 4–E ECDLP KATs.
+//! Small curves for unit tests and ECDLP KATs.
 //!
 //! Parameters were computed offline via point-counting (brute-force enumeration of
 //! `y² = x³ + ax + b mod p` for each `x`) and verified by checking that `n·G = ∞`.

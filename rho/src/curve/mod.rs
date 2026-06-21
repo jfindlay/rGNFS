@@ -16,7 +16,7 @@
 //! Two concrete curves are defined in sub-modules:
 //! - [`generic`] — a random 64-bit Weierstrass prime field curve used for baseline ECDLP.
 //! - [`secp_k1_toy`] — a downsized GLV-friendly secp256k1-style curve (64-bit order) with
-//!   an explicit order-3 endomorphism (λ, β) for Phase 8.
+//!   an explicit order-3 endomorphism (λ, β) for the GLV endomorphism optimization.
 
 pub mod generic;
 pub mod secp_k1_toy;
