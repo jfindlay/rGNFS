@@ -379,7 +379,7 @@ contract(s) each session froze).
 
 | #   | Session                                                              | Status  | Commit | Froze |
 |-----|---------------------------------------------------------------------|---------|--------|-------|
-| D.1 | Collapse `rho` re-export wrappers + freeze final crate layout       | pending |        |       |
+| D.1 | Collapse `rho` re-export wrappers + freeze final crate layout       | done    | 42e2356 | C-Layout (compiler, pending D.6 ratification); extras: `shor/Cargo.toml` (dev-dep forced by collapse), `shor/tests/ecdlp_kat.rs`, `Cargo.lock` |
 | D.2 | Re-anchor `rho` baseline doc-comment provenance                     | pending |        |       |
 | D.3 | Re-anchor `rho` attack-module provenance + rename the one test id   | pending |        |       |
 | D.4 | Re-anchor `gnfs` doc-comment provenance                             | pending |        |       |
@@ -395,7 +395,11 @@ collapse missed that the compiler caught, a token that resists clean topic-nativ
 borderline grouping where open-Q-4's preserve-under-topic-label is ambiguous, an algorithmic-vs-
 planning `Phase N` judgment call) and that the D.6 ◆ juncture fork consumes.
 
-*(none yet)*
+### D.1 — 2026-06-21
+Discovery/flex: `rho/src/field/` had 3 files (monty.rs, naive.rs were dead code never declared in mod.rs); `shor/tests/ecdlp_kat.rs` imported `rho::field::FpMonty` and required `shor/Cargo.toml` dev-dep addition.
+Affected: C-Layout (no change to layout premise; extras are mechanical consequences of the collapse)
+Deferred: no
+Texture: Both discoveries are internal-continue; the `shor` dev-dep addition is a structural necessity (compiler-forced), not a REFACTOR-scope violation. C-Layout is established; D.6 ratifies.
 
 ---
 
