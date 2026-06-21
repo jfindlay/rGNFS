@@ -26,9 +26,10 @@
 use crypto_bigint::Uint;
 use rand::RngCore;
 
+use shared_field::Fp;
+use shared_bigint::batch_invert;
+
 use crate::curve::{AffinePoint, Curve, JacobianPoint};
-use crate::field::Fp;
-use crate::util::batch_invert;
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -416,8 +417,9 @@ mod tests {
     use super::*;
     use rand_chacha::ChaCha20Rng;
     use rand::SeedableRng;
+    use shared_field::FpMonty4 as FpMonty;
+
     use crate::curve::test_curves::{tiny_a, TINY_A_N};
-    use crate::field::FpMonty;
 
     /// Check that the walk invariant `W = a·G + b·Q` holds after construction
     /// and after a sequence of steps.

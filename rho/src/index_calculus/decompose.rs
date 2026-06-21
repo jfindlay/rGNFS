@@ -38,8 +38,9 @@
 //! Native enumeration is O(|FB|^m) — acceptable for toy `m = 2` and `|FB| = 6`.
 //! Crypto-scale decomposition requires Gröbner-basis solvers (msolve, F4/F5).
 
+use shared_field::{Fp, FpNaive4 as FpNaive};
+
 use crate::curve::{AffinePoint, JacobianPoint};
-use crate::field::{Fp, FpNaive};
 use crate::index_calculus::strategy::{FbPoint, IndexCalcStrategy};
 use crate::semaev::semaev_poly;
 

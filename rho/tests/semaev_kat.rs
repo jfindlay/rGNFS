@@ -77,7 +77,7 @@
 //! crypto-scale-correct; only the parameters are small for auditability.
 
 use crypto_bigint::Uint;
-use rho::field::{Fp, FpNaive};
+use shared_field::{Fp, FpNaive4 as FpNaive};
 use rho::semaev::poly::{FpPoly, MultiPoly, resultant};
 use rho::semaev::base::{s2 as base_s2, s3, vanishes_s2, vanishes_s3};
 use rho::semaev::{SEMAEV_TOY_P, SemaevError, semaev_poly, semaev_toy};

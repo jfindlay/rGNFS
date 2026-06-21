@@ -353,7 +353,7 @@ fn rho_crosscheck_k3() {
     use crypto_bigint::Uint;
     use rho::curve::{AffinePoint, Curve};
     use rho::ecdlp::solve_brent;
-    use rho::field::FpMonty;
+    use shared_field::FpMonty4 as FpMonty;
 
     // Build the rho::Curve from the toy curve parameters.
     let toy_curve = Curve {
@@ -384,7 +384,7 @@ fn rho_crosscheck_k7() {
     use crypto_bigint::Uint;
     use rho::curve::{AffinePoint, Curve};
     use rho::ecdlp::solve_brent;
-    use rho::field::FpMonty;
+    use shared_field::FpMonty4 as FpMonty;
 
     let toy_curve = Curve {
         p: Uint::<4>::from(7u64),
@@ -416,7 +416,7 @@ fn rho_crosscheck_agrees_with_shor_k5() {
     use crypto_bigint::Uint;
     use rho::curve::{AffinePoint, Curve};
     use rho::ecdlp::solve_brent;
-    use rho::field::FpMonty;
+    use shared_field::FpMonty4 as FpMonty;
 
     let toy_curve = Curve {
         p: Uint::<4>::from(7u64),

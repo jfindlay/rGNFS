@@ -1,9 +1,0 @@
-//! Shared utilities.
-//!
-//! - [`batch_inv`]: Montgomery's batched inversion trick (re-exported from ``shared-bigint``).
-//! - [`mp`]: multi-precision helpers beyond ``crypto-bigint`` if needed.
-
-pub mod batch_inv;
-pub mod mp;
-
-pub use batch_inv::batch_invert;

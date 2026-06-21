@@ -30,8 +30,9 @@ use num_bigint::BigInt;
 use shared_numfield::poly::IntPoly;
 use shared_padic::{Zp, hensel_lift};
 
+use shared_field::Fp;
+
 use crate::curve::{AffinePoint, Curve};
-use crate::field::Fp;
 use crate::ssa::{SsaError, uint4_to_bigint};
 
 // ─── point lift ──────────────────────────────────────────────────────────────

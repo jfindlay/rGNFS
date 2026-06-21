@@ -96,8 +96,9 @@ pub fn glv_phi_x(x_uint: Uint<4>) -> Uint<4> {
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::{Fp, FpMonty4 as FpMonty};
+
     use crate::curve::AffinePoint;
-    use crate::field::{Fp, FpMonty};
 
     // Reference points for `y² = x³ + 7 mod p`, computed by independent
     // Python affine-coordinate reference implementation:
@@ -192,7 +193,7 @@ mod tests {
         let beta = Uint::<4>::from(BETA);
         let p    = Uint::<4>::from(P);
         let three = Uint::<4>::from(3u64);
-        use crate::field::{Fp, FpMonty};
+        use shared_field::{Fp, FpMonty4 as FpMonty};
         let beta_fp = FpMonty::from_uint(beta, &p);
         let beta3   = beta_fp.pow(&three, &p);
         assert_eq!(beta3, FpMonty::one(&p), "β³ ≢ 1 (mod p)");

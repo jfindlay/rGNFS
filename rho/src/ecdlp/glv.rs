@@ -30,8 +30,9 @@
 
 use crypto_bigint::Uint;
 
+use shared_field::Fp;
+
 use crate::curve::AffinePoint;
-use crate::field::Fp;
 
 // ── GLV endomorphism ──────────────────────────────────────────────────────────
 
@@ -169,9 +170,10 @@ fn negate_scalar(a: u64, n: u64) -> u64 {
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::FpMonty4 as FpMonty;
+
     use crate::curve::AffinePoint;
     use crate::curve::secp_k1_toy::{secp_k1_toy, P, N as SECP_N, BETA, LAMBDA};
-    use crate::field::FpMonty;
 
     // ── Endomorphism order ────────────────────────────────────────────────────
 

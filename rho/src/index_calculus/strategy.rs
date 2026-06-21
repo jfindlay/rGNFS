@@ -29,8 +29,9 @@
 
 use crypto_bigint::Uint;
 
+use shared_field::{Fp, FpNaive4 as FpNaive};
+
 use crate::curve::{AffinePoint, Curve};
-use crate::field::{Fp, FpNaive};
 use crate::index_calculus::IndexCalcError;
 use crate::semaev::semaev_toy;
 

@@ -37,8 +37,9 @@ use num_integer::Integer;
 use num_traits::{One, Zero};
 use shared_padic::Zp;
 
+use shared_field::Fp;
+
 use crate::curve::{AffinePoint, Curve};
-use crate::field::Fp;
 use crate::ssa::formal_log::{elliptic_log_proj, padic_valuation_bigint, pow_bigint};
 use crate::ssa::lift::lift_point;
 use crate::ssa::{SsaError, uint4_to_bigint, uint4_to_u64, verify_anomalous};

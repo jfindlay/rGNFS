@@ -32,7 +32,7 @@ use rho::curve::secp_k1_toy::{secp_k1_toy, GX, LAMBDA};
 use rho::curve::test_curves::{composite_toy, tiny_a, tiny_b, COMPOSITE_TOY_N, TINY_A_N, TINY_B_N};
 use rho::ecdlp::pohlig::solve_ecdlp_composite;
 use rho::ecdlp::solve_brent;
-use rho::field::{Fp, FpMonty};
+use shared_field::{Fp, FpMonty4 as FpMonty};
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

@@ -148,7 +148,7 @@ pub fn semaev_toy() -> Curve {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FpMonty;
+    use shared_field::FpMonty4 as FpMonty;
     use crate::curve::AffinePoint;
 
     #[test]

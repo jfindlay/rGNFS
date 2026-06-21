@@ -23,8 +23,7 @@ pub mod secp_k1_toy;
 pub mod test_curves;
 
 use crypto_bigint::Uint;
-
-use crate::field::Fp;
+use shared_field::Fp;
 
 // ── Point types ──────────────────────────────────────────────────────────────
 
@@ -389,7 +388,7 @@ impl Curve {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FpMonty;
+    use shared_field::FpMonty4 as FpMonty;
 
     /// A tiny 5-point curve: y² = x³ + x + 1 over GF(7).
     ///

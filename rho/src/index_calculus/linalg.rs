@@ -26,8 +26,7 @@
 //! observable at this scale — a deferred re-shard.
 
 use gnfs::dl::linalg::{FlMatrixOperator, FlSparseMatrix, FlSparseRow, block_wiedemann_fl};
-
-use crate::field::FpNaive;
+use shared_field::FpNaive4 as FpNaive;
 use crate::index_calculus::strategy::{IndexCalcStrategy, Relation};
 use crate::index_calculus::IndexCalcError;
 

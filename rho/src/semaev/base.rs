@@ -62,8 +62,9 @@
 //! The fixture is toy-scale (`p = 47`, group order `n = 60`). The algorithms are
 //! crypto-scale-correct; only the parameters are small for auditability.
 
+use shared_field::Fp;
+
 use crate::curve::{AffinePoint, Curve, JacobianPoint};
-use crate::field::Fp;
 use crate::semaev::poly::MultiPoly;
 
 // ─── S_2 ─────────────────────────────────────────────────────────────────────
@@ -341,7 +342,7 @@ pub fn vanishes_s3<F: Fp<4>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FpNaive;
+    use shared_field::FpNaive4 as FpNaive;
     use crate::semaev::{SEMAEV_TOY_P, semaev_toy};
     use crypto_bigint::Uint;
 

@@ -45,8 +45,9 @@ pub fn generic_curve() -> Curve {
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::{Fp, FpMonty4 as FpMonty};
+
     use crate::curve::{AffinePoint, JacobianPoint};
-    use crate::field::{Fp, FpMonty};
 
     // Reference points computed by independent Python affine arithmetic:
     //   y² = x³ − 3x + 1  mod  9_223_372_036_854_775_783

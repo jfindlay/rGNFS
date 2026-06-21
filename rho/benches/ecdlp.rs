@@ -27,7 +27,7 @@ use crypto_bigint::Uint;
 use rho::curve::secp_k1_toy::{secp_k1_toy, N as SECP_N};
 use rho::curve::AffinePoint;
 use rho::ecdlp::{solve_brent, solve_dp, solve_dp_batch, solve_dp_glv, solve_dp_negmap};
-use rho::field::FpMonty;
+use shared_field::FpMonty4 as FpMonty;
 
 // ── Fixed DLP parameters ──────────────────────────────────────────────────────
 

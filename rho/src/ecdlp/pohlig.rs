@@ -31,9 +31,10 @@ use crypto_bigint::Uint;
 
 use shared_numth::{factor_base_up_to, is_prime, trial_smooth};
 
+use shared_field::Fp;
+
 use crate::curve::{AffinePoint, Curve, JacobianPoint};
 use crate::ecdlp::solve_brent;
-use crate::field::Fp;
 
 // ── factor_order ──────────────────────────────────────────────────────────────
 
@@ -334,8 +335,9 @@ fn mod_inv(a: u64, m: u64) -> u64 {
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::FpMonty4 as FpMonty;
+
     use crate::curve::test_curves::{composite_toy, COMPOSITE_TOY_FACTORS, COMPOSITE_TOY_N};
-    use crate::field::FpMonty;
 
     // ── factor_order KATs ─────────────────────────────────────────────────────
 

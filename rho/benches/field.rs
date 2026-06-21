@@ -6,7 +6,7 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use crypto_bigint::Uint;
-use rho::field::{Fp, FpMonty, FpNaive};
+use shared_field::{Fp, FpMonty4 as FpMonty, FpNaive4 as FpNaive};
 
 /// secp256k1 prime: p = 2^256 - 2^32 - 977.
 fn secp_p() -> Uint<4> {

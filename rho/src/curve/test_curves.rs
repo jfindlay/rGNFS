@@ -164,8 +164,9 @@ pub const COMPOSITE_TOY_FACTORS: &[(u64, u32)] = &[(2, 2), (3, 1), (5, 1)];
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::{Fp, FpMonty4 as FpMonty};
+
     use crate::curve::AffinePoint;
-    use crate::field::{Fp, FpMonty};
 
     #[test]
     fn tiny_a_generator_on_curve() {

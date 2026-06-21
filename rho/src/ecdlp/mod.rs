@@ -40,8 +40,9 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 
+use shared_field::Fp;
+
 use crate::curve::{AffinePoint, Curve, JacobianPoint};
-use crate::field::Fp;
 use coordinator::Coordinator;
 use dp::{DpRecord, is_distinguished};
 use glv::glv_canonical;
@@ -1047,8 +1048,9 @@ fn run_walker_glv<F: Fp<4>>(
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::FpMonty4 as FpMonty;
+
     use crate::curve::test_curves::{tiny_a, TINY_A_N, tiny_glv, TINY_GLV_N, TINY_GLV_BETA, TINY_GLV_LAMBDA};
-    use crate::field::FpMonty;
     use negmap::{canonical_rep, negate_scalars};
 
     // ── solve_brent tests (Phase 4) ───────────────────────────────────────────
@@ -1279,30 +1281,6 @@ mod tests {
 
         let check = curve.scalar_mul(&g, &Uint::<4>::from(k));
         assert_eq!(check, q, "solve_dp_negmap_tiny: k·G ≠ Q (k={k})");
-    }
-
-    // ── Phase 7: batch inversion tests ───────────────────────────────────────
-
-    /// batch_invert produces the same results as calling F::inv individually.
-    ///
-    /// Verifies correctness of Montgomery's batched inversion trick on a set
-    /// of field elements from the tiny_a prime field.
-    #[test]
-    fn batch_inv_correctness() {
-        use crate::util::batch_invert;
-        use crate::field::FpMonty;
-
-        let curve = tiny_a();
-        let p = &curve.p;
-        let vals: &[u64] = &[1, 2, 3, 5, 7, 11, 13, 100, 999, 1_048_516];
-        let mut xs: Vec<FpMonty> = vals.iter().map(|&v| FpMonty::from_u64(v, p)).collect();
-        let expected: Vec<FpMonty> = xs.iter().map(|x| x.inv(p)).collect();
-
-        batch_invert(&mut xs, p);
-
-        for (i, (got, want)) in xs.iter().zip(expected.iter()).enumerate() {
-            assert_eq!(got, want, "batch_inv_correctness: mismatch at index {i} (val={})", vals[i]);
-        }
     }
 
     /// solve_dp_batch solves a known 20-bit DLP on tiny_a.

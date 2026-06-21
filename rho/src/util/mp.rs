@@ -1,4 +1,0 @@
-//! Multi-precision helpers beyond ``crypto-bigint``.
-//!
-//! Re-exports from ``shared-bigint::mp`` when that module gains content.
-//! Populated if/when later sessions reveal gaps in the ``crypto-bigint`` API.

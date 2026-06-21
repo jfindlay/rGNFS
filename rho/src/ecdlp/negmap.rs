@@ -17,8 +17,9 @@
 
 use crypto_bigint::Uint;
 
+use shared_field::Fp;
+
 use crate::curve::AffinePoint;
-use crate::field::Fp;
 
 // ── Canonical representative ──────────────────────────────────────────────────
 
@@ -157,8 +158,9 @@ impl FruitlessCycleDetector {
 mod tests {
     use super::*;
     use crypto_bigint::Uint;
+    use shared_field::FpMonty4 as FpMonty;
+
     use crate::curve::test_curves::tiny_a;
-    use crate::field::FpMonty;
 
     /// canonical_rep is idempotent: applying it twice gives the same result.
     #[test]

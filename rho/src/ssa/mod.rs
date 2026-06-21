@@ -33,8 +33,9 @@ use num_bigint::BigInt;
 use shared_padic::HenselError;
 use shared_padic::ZpError;
 
+use shared_field::Fp;
+
 use crate::curve::Curve;
-use crate::field::Fp;
 
 // ─── error type ──────────────────────────────────────────────────────────────
 

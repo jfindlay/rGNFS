@@ -27,13 +27,12 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use crypto_bigint::Uint;
-use shared_field::{Fp as FpTrait, FpNaive as FpNaive4};
+use shared_field::{Fp as FpTrait, FpMonty4 as FpMonty, FpNaive4 as FpNaive};
 use shared_gf2m::F2mNaive;
 
 use rho::curve::AffinePoint;
 use rho::curve::test_curves::{COMPOSITE_TOY_N, composite_toy};
 use rho::ecdlp::pohlig::solve_ecdlp_composite;
-use rho::field::{FpMonty, FpNaive};
 use rho::ghs::{GHS_POLY2, GhsParams, ghs_descend, ghs_toy_curve, verify_log_preservation};
 use rho::index_calculus::{IndexCalcStrategy, collect_relations, decompose, index_calculus_dlp};
 use rho::pairing::ecext::PairingPoint;
@@ -85,15 +84,15 @@ fn bench_mov(c: &mut Criterion) {
     let (curve, modulus, ell, p_point, q_point) = pairing_toy();
     let p = curve.p;
     // Curve coefficient a = 1 lifted into F_{47²} (needed for scalar_mul on PairingPoint).
-    let a_ext = FpExt::from_base(FpNaive4::<4>::from_u64(1, &p), 2, &p);
+    let a_ext = FpExt::from_base(FpNaive::from_u64(1, &p), 2, &p);
 
     // Q' = 2·G — the ECDLP target with known scalar k = 2.
-    let q_prime: PairingPoint<FpNaive4<4>> = p_point.scalar_mul(2, &a_ext, &modulus, &p);
+    let q_prime: PairingPoint<FpNaive> = p_point.scalar_mul(2, &a_ext, &modulus, &p);
     // R = Q (the fixture's extension-field 3-torsion point, a μ_ℓ-generator).
     let r_point = q_point;
 
     // Pre-check: assert the solver returns the known answer before timing.
-    let result = mov_reduce::<FpNaive4<4>>(&curve, &modulus, &p_point, &q_prime, &r_point, ell)
+    let result = mov_reduce::<FpNaive>(&curve, &modulus, &p_point, &q_prime, &r_point, ell)
         .expect("MOV pre-check: mov_reduce must succeed");
     assert_eq!(
         result, 2u64,
@@ -102,7 +101,7 @@ fn bench_mov(c: &mut Criterion) {
 
     c.bench_function("attacks/mov_frey_ruck", |b| {
         b.iter(|| {
-            mov_reduce::<FpNaive4<4>>(&curve, &modulus, &p_point, &q_prime, &r_point, ell)
+            mov_reduce::<FpNaive>(&curve, &modulus, &p_point, &q_prime, &r_point, ell)
                 .expect("MOV: mov_reduce must succeed")
         });
     });

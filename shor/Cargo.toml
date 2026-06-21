@@ -12,6 +12,7 @@ rand_chacha = "0.3"
 [dev-dependencies]
 proptest = "1"
 rho = { path = "../rho" }
+shared-field = { path = "../shared/field" }
 crypto-bigint = { version = "0.5", features = ["rand_core"] }
 
 [lints.rust]

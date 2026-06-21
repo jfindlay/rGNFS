@@ -70,7 +70,7 @@
 use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
 use rho::ecdlp::pohlig::solve_ecdlp_composite;
-use rho::field::{Fp, FpNaive};
+use shared_field::{Fp, FpNaive4 as FpNaive};
 use rho::index_calculus::{
     build_ek_matrix, collect_relations, decompose, index_calculus_dlp, solve_ek_linalg,
     IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE,

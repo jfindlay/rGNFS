@@ -43,7 +43,7 @@ use std::collections::HashMap;
 
 use crypto_bigint::Uint;
 
-use crate::field::Fp;
+use shared_field::Fp;
 use crate::semaev::SemaevError;
 
 // ─── FpPoly: univariate polynomial over F_p ───────────────────────────────────
@@ -905,7 +905,7 @@ fn det_recursive(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FpNaive;
+    use shared_field::FpNaive4 as FpNaive;
 
     const P31: u64 = 31;
 

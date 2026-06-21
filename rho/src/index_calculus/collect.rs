@@ -24,8 +24,9 @@
 
 use crypto_bigint::Uint;
 
+use shared_field::FpNaive4 as FpNaive;
+
 use crate::curve::{AffinePoint, JacobianPoint};
-use crate::field::FpNaive;
 use crate::index_calculus::decompose::decompose;
 use crate::index_calculus::strategy::{IndexCalcStrategy, Relation};
 use crate::index_calculus::IndexCalcError;

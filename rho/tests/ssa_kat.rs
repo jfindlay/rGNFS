@@ -46,7 +46,7 @@ use crypto_bigint::Uint;
 use num_bigint::BigInt;
 use rho::curve::{AffinePoint, Curve};
 use rho::ecdlp::solve_brent;
-use rho::field::{Fp, FpNaive};
+use shared_field::{Fp, FpNaive4 as FpNaive};
 use rho::ssa::lift::{check_lift_on_curve, lift_point};
 use rho::ssa::{ANOMALOUS_TOY_P, SsaError, anomalous_toy, verify_anomalous, ssa_solve};
 use shared_padic::HenselError;

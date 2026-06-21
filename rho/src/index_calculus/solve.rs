@@ -40,8 +40,9 @@
 //! NOT faster than Pollard-rho — the mechanism is demonstrated, not the asymptotic
 //! advantage.
 
+use shared_field::{Fp, FpNaive4 as FpNaive};
+
 use crate::curve::AffinePoint;
-use crate::field::{Fp, FpNaive};
 use crate::index_calculus::collect::collect_relations;
 use crate::index_calculus::linalg::solve_ek_linalg;
 use crate::index_calculus::strategy::{IndexCalcStrategy, Relation};
