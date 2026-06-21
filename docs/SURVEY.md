@@ -612,3 +612,307 @@ extensively in doc-comments alongside the sub-track IDs. They are planning-frame
 Their classification is the same as the sub-track IDs (pure residue) — the mathematical content
 is the algorithm or interface, not the contract name. REFACTOR replaces with topic-native
 descriptions. A.2 notes them here; the full catalog is in F-D9-03.
+
+---
+
+## A.3 — Testing balance + coverage-doctrine resolution (D2)
+
+**Charge:** (a) audit the unit/integration mix across the workspace — count KAT files per crate,
+identify over-long tests, map inline-vs-`tests/` distribution, confirm the `shared/numth`
+no-`tests/`-dir case, note bench files; (b) resolve the meta-question "is full/100% line coverage
+the right target for toy-scale-but-compute-heavy KAT-driven pedagogical code, or does KAT +
+property coverage of *mathematical* behavior matter more?" — stated as a resolved coverage
+doctrine. Freezes C-Testing-Philosophy; consumed by ALIGN (coverage-gate), CONSOLIDATE, F-EXTEND.
+
+---
+
+### Part (a) — Testing balance
+
+#### KAT file counts per crate
+
+| Crate | `tests/` KAT files | `benches/` files | Inline `#[test]` in `src/` |
+|---|---|---|---|
+| `gnfs` | 23 | 0 | yes (many — linalg, polyselect, dl substrates) |
+| `rho` | 11 | 4 | yes (many — ghs, pairing, hyperelliptic, field, util) |
+| `shor` | 6 | 0 | no |
+| `shared/field` | 1 | 0 | yes (naive.rs: 12, monty.rs: 11) |
+| `shared/bigint` | 1 | 0 | yes (batch_inv.rs: 3, isqrt.rs: 6) |
+| `shared/numth` | **0** | 0 | yes (prime.rs: 10, smooth.rs: 12, ecm.rs: 12) |
+| `shared/numfield` | 5 | 0 | yes (dedekind.rs: 10, ideal.rs: 4, poly.rs: 12, element.rs: 8, resultant.rs: 8) |
+| `shared/padic` | 3 | 0 | no |
+| `shared/gf2m` | 3 | 0 | yes (opt.rs: 5, convert.rs: 4, subfield.rs: 9, normal.rs: 4, inv.rs: 5, naive.rs: 10, poly.rs: 29) |
+| **Total** | **53** | **4** | — |
+
+**Confirmed counts vs PLAN.md survey notes:** `gnfs` has 23 KAT files (matches); `rho` has 11 KAT
+files + 4 bench files (matches). Total workspace: 53 external KAT files + 4 bench files.
+
+---
+
+### F-D2-01 · `shared/numth` has no `tests/` directory — all tests are inline
+
+**Observed state:** `shared/numth/` contains `Cargo.toml`, `docs/`, and `src/` only — no `tests/`
+directory. All 34 tests for `shared/numth` are inline `#[cfg(test)]` blocks inside the source
+files:
+- `src/prime.rs`: 10 inline tests (Miller–Rabin primality, trial division, prime-power detection)
+- `src/smooth.rs`: 12 inline tests (B-smooth detection, factor-base construction, sieve correctness)
+- `src/ecm.rs`: 12 inline tests (ECM factorization at toy scale, stage-1 and stage-2 correctness)
+
+**Finding:** `shared/numth` has no `tests/` directory; all 34 tests are inline in `src/`. This is
+the only crate in the workspace with no external `tests/` directory and a non-trivial test suite.
+The inline tests are mathematically substantive (they verify ECM factorization, primality, and
+smooth-number detection at toy scale) and are not merely unit-level scaffolding. → CONSOLIDATE
+decision: whether to migrate `shared/numth`'s inline tests to an external `tests/` directory for
+consistency with the rest of the workspace, or accept the inline pattern as appropriate for
+`shared/numth`'s role as a utility crate. A.3 records the inconsistency; CONSOLIDATE owns the
+decision. *Feeds CONSOLIDATE; seeds C-Testing-Philosophy.*
+
+---
+
+### F-D2-02 · Inline `#[test]` usage is widespread — not confined to `shared/numth`
+
+**Observed state:** inline `#[test]` blocks appear in `src/` files across 7 of 9 crates:
+`gnfs`, `rho`, `shared/field`, `shared/bigint`, `shared/numth`, `shared/numfield`, `shared/gf2m`.
+Only `shor` and `shared/padic` have no inline tests in `src/`.
+
+The inline tests in `gnfs/src/` are particularly extensive: `linalg/blockvec.rs` (5),
+`linalg/lanczos.rs` (8), `linalg/operator.rs` (4), `linalg/wiedemann.rs` (9), `linalg/qc.rs`
+(6), `linalg/kernel.rs` (7), `dl/linalg/blockvec_fl.rs` (8), `dl/linalg/lanczos_fl.rs` (3),
+`dl/linalg/wiedemann_fl.rs` (6), `dl/schirokauer.rs` (3), `dl/relation.rs` (2),
+`dl/ext/target.rs` (17), `dl/descent/solve.rs` (5), `polyselect/base_m.rs` (6),
+`polyselect/root_sieve.rs` (5), `polyselect/roots.rs` (6). These inline tests cover
+linear-algebra primitives (block-vector operations, Lanczos/Wiedemann kernel steps, QC matrix
+operations) that are also covered by the external `tests/` KAT files — the inline tests are
+lower-level unit tests for the substrates, while the external KATs test the composed algorithms.
+
+**Finding:** inline `#[test]` usage is the norm for low-level substrate verification (linear
+algebra primitives, field arithmetic, polynomial operations), while external `tests/*_kat.rs`
+files are the norm for algorithm-level KATs. The two layers are complementary, not redundant:
+inline tests catch substrate regressions; external KATs verify mathematical correctness of
+composed algorithms. This is a healthy two-tier pattern. → No action needed; the pattern is
+intentional and consistent with the codebase's pedagogical structure. *Feeds C-Testing-Philosophy
+(the inline/external split is part of the doctrine).*
+
+---
+
+### F-D2-03 · Over-long test files: 12 files exceed 500 lines
+
+**Observed state (files > 500 lines, sorted descending):**
+
+| File | Lines | Character |
+|---|---|---|
+| `rho/tests/ghs_kat.rs` | 1646 | GHS Weil-descent: 5 sub-modules (E.H.2–E.H.5), each with multiple KATs |
+| `shared/gf2m/tests/gf2m_kat.rs` | 1330 | GF(2^m) field axioms across 3 implementations × 2 field sizes |
+| `rho/tests/semaev_kat.rs` | 1165 | Semaev polynomials: resultant, multivariate, summation-poly, ECDLP |
+| `gnfs/tests/dl_descent_kat.rs` | 1110 | NFS-DL descent: frontier, smoothing, C2, single-node, multi-level, log assembly |
+| `rho/tests/index_calculus_kat.rs` | 979 | Index calculus: decomposition, collection, linear algebra, solve, end-to-end |
+| `gnfs/tests/dl_linalg_kat.rs` | 887 | NFS-DL linear algebra: Lanczos-FL, Wiedemann-FL, block-vector operations |
+| `shared/gf2m/tests/gf2m_poly_kat.rs` | 779 | GF(2^m) polynomial arithmetic: 29+ operations |
+| `rho/tests/hyperelliptic_kat.rs` | 756 | Hyperelliptic curves: Cantor group law, Mumford divisors, ECDLP reduction |
+| `shor/tests/modexp_kat.rs` | 712 | Quantum modular exponentiation: circuit construction, measurement statistics |
+| `shor/tests/qft_kat.rs` | 640 | Quantum Fourier transform: state-vector correctness, period finding |
+| `gnfs/tests/lattice_kat.rs` | 628 | GNFS lattice sieve: lattice reduction, sieve region, relation collection |
+| `shor/tests/pointadd_kat.rs` | 627 | Quantum point addition: circuit correctness, ancilla management |
+| `shor/tests/statevec_kat.rs` | 618 | Quantum state-vector: amplitude correctness, measurement probabilities |
+| `rho/tests/binary_curve_kat.rs` | 605 | Binary curve group law: López–Dahab, Koblitz, axioms |
+| `shared/gf2m/tests/gf2m_subfield_kat.rs` | 595 | GF(2^m) subfield operations |
+| `gnfs/tests/special_q_kat.rs` | 559 | GNFS special-q sieve |
+| `gnfs/tests/linalg_substrate_kat.rs` | 544 | GNFS linear algebra substrate |
+| `gnfs/tests/merge_kat.rs` | 541 | GNFS relation merging |
+| `shor/tests/factor_kat.rs` | 512 | Shor factorization: circuit, period, factor extraction |
+
+**Analysis:** the over-long files are not monolithic tests — they are multi-KAT files covering
+several related sub-modules or algorithm stages in a single file. For example, `ghs_kat.rs`
+(1646 lines) covers 5 distinct GHS sub-modules (Artin–Schreier algebra, curve extraction, transfer
+map, Jacobian reduction, and the PARI oracle cross-check), each with multiple KATs. The length
+reflects the mathematical depth of the subject, not test bloat. The files are well-structured with
+section headers and doc-comment coverage tables.
+
+**Finding:** 12 KAT files exceed 500 lines; the longest (`ghs_kat.rs`, 1646 lines) covers 5
+distinct algorithm sub-modules. The length is driven by mathematical depth, not by test bloat —
+each file is a coherent KAT suite for a single algorithm or module family. Splitting would
+fragment the coverage narrative. → No mandatory split is warranted; the test-length norm for this
+codebase is "one file per algorithm family, however long that takes." CONSOLIDATE may add
+section-level navigation (e.g., `mod` blocks within the file) to the longest files if readability
+suffers, but splitting is not the right remedy. *Feeds C-Testing-Philosophy (test-length norm).*
+
+---
+
+### F-D2-04 · Bench/test ratio: 4 bench files vs 53 KAT files; benches are `rho`-only
+
+**Observed state:** the workspace has 4 bench files, all in `rho/benches/`:
+- `rho/benches/field.rs` (86 lines) — FpNaive vs FpMonty multiplication/inversion speedup
+- `rho/benches/factor.rs` (61 lines) — Floyd vs Brent vs Brent+batched-GCD factorization
+- `rho/benches/ecdlp.rs` (202 lines) — Pollard-rho ECDLP optimization layers (Phases 5–8)
+- `rho/benches/attacks.rs` (254 lines) — cross-attack ECDLP comparison (E.W.1)
+
+No bench files exist in `gnfs/`, `shor/`, or any `shared/*` crate. The `docs/BENCHMARKS.md`
+records results from these 4 benches (603 total bench lines) plus narrative for Phase 3 (curve
+arithmetic, no bench — "the deliverable is correctness: 50 tests, 0 failures").
+
+**Finding:** benches are confined to `rho/` (4 files, 603 lines). The bench/KAT ratio is 4:53
+(~1:13). The `gnfs` and `shor` crates have no benches — their compute-heavy paths (GNFS sieving,
+quantum circuit simulation) are too slow for Criterion benchmarks at non-toy scale, and the toy
+scale used in KATs is not representative of algorithmic performance. The `shared/*` crates have no
+benches — their primitives are benchmarked indirectly through `rho`. This is appropriate for the
+codebase's pedagogical scope. → No bench additions are warranted by this finding; the bench
+coverage is intentional. *Feeds C-Testing-Philosophy (bench scope norm).*
+
+---
+
+### F-D2-05 · `#[ignore]`-gated oracle tests: 15 tests across 10 files
+
+**Observed state:** 15 tests carry `#[ignore]` across 10 test files:
+- PARI/GP oracle cross-checks: `shared/padic/tests/log_kat.rs` (1), `gnfs/tests/dl_individual_log_kat.rs`
+  (1), `gnfs/tests/dl_end_to_end_kat.rs` (1), `rho/tests/hyperelliptic_kat.rs` (1),
+  `gnfs/tests/dl_relation_kat.rs` (1), `rho/tests/semaev_kat.rs` (1), `rho/tests/ghs_kat.rs` (1),
+  `rho/tests/mov_kat.rs` (1), `rho/tests/ssa_kat.rs` (2), `gnfs/tests/dl_ext_kat.rs` (1).
+- CADO-NFS oracle cross-checks: `gnfs/tests/merge_kat.rs` (1), `gnfs/tests/factor_end_to_end_kat.rs`
+  (1), `gnfs/tests/lanczos_kat.rs` (1), `gnfs/tests/line_sieve_kat.rs` (1).
+- Compute-heavy `#[ignore]` (not oracle): `shor/tests/ecdlp_kat.rs` (5 — quantum circuit
+  instances too slow for CI), `shor/tests/factor_kat.rs` (1 — slow quantum simulation).
+
+**Finding:** the `#[ignore]`-gate pattern is consistently applied: external-tool oracle KATs
+(PARI, CADO-NFS) and compute-heavy quantum circuit tests are gated behind `#[ignore]` with
+descriptive messages. The pattern is the arc-1 dev-oracle policy in action. The 15 `#[ignore]`
+tests are not dead tests — they are opt-in validation sidecars. → No action needed; the pattern
+is correct and consistent. *Feeds C-Testing-Philosophy (oracle-gate norm).*
+
+---
+
+### Part (b) — Coverage doctrine resolution
+
+#### The meta-question (D2)
+
+> Is full/100% line coverage the right target for toy-scale-but-compute-heavy KAT-driven
+> pedagogical code, or does KAT + property coverage of *mathematical* behavior matter more?
+
+#### Evidence from the observed test suite
+
+1. **The entire test suite is KAT-based.** Every external test file is named `*_kat.rs`. There
+   are no property-based tests (no `proptest`, no `quickcheck`). The KATs verify mathematical
+   correctness: field axioms, group laws, algorithm outputs against hand-computed or
+   oracle-verified answers.
+
+2. **The compute-heavy paths are already exercised at toy scale.** ECM, Pollard rho, GNFS
+   sieving, and quantum circuit simulation all run in the KAT suite at toy scale (small primes,
+   small fields, small circuits). The `#[ignore]`-gated tests extend this to oracle cross-checks.
+   100% line coverage would require these paths to run — and they do, at toy scale, in the KATs.
+
+3. **The inline tests cover low-level substrates; the external KATs cover composed algorithms.**
+   This two-tier structure means the coverage signal is already split: inline tests catch
+   substrate regressions (field arithmetic, linear algebra primitives); external KATs verify
+   mathematical correctness of composed algorithms. A line-coverage gate would not distinguish
+   these two tiers.
+
+4. **The template's 100% gate is calibrated for a simple single-crate project.** The template's
+   `--fail-under-lines 100` is appropriate for a project where every line is reachable from a
+   small, deterministic test suite. In a 9-crate compute-heavy math library, 100% line coverage
+   is achievable only if every compute path runs at toy scale — which the KATs already ensure for
+   the mathematically meaningful paths. The `#[ignore]`-gated tests cover the oracle paths; the
+   remaining uncovered lines (if any) are likely error-handling branches and dead-code candidates.
+
+5. **Mathematical behavior is the correctness signal, not line coverage.** A field-arithmetic
+   implementation that passes all field-axiom KATs (associativity, distributivity, inversion
+   round-trip, Frobenius fixed-field law) is correct regardless of whether every branch in the
+   implementation is covered. A line-coverage gate that misses a mathematical property (e.g., a
+   KAT that doesn't test the `inv(zero)` panic path) is a weaker correctness signal than a
+   KAT-completeness check.
+
+#### Resolved doctrine
+
+**C-Testing-Philosophy (frozen at A.3, ratified at A.7):**
+
+> **Primary correctness target: mathematical-behavior KAT coverage.** Every public API must have
+> at least one KAT exercising its mathematical contract (the algorithm produces the correct answer
+> on a known input). Field axioms, group laws, and algorithm-level correctness are the primary
+> correctness signals. Line coverage is a secondary signal — a floor, not a ceiling.
+>
+> **Coverage gate: 80% line coverage as a dead-code floor.** A line-coverage gate of 80% (not
+> 100%) is appropriate for this codebase. The gate's purpose is to catch dead code and
+> unreachable branches, not to mandate that every compute path is exercised by a test. The
+> `#[ignore]`-gated oracle tests are excluded from the gate (they are opt-in sidecars, not CI
+> tests). The gate is implemented by ALIGN using `cargo llvm-cov --workspace --fail-under-lines
+> 80` (or equivalent), honoring the `#[ignore]` exclusion.
+>
+> **Unit/integration norm: two-tier (inline substrate + external KAT).** Inline `#[test]` blocks
+> in `src/` are appropriate for low-level substrate verification (field arithmetic, linear algebra
+> primitives, polynomial operations). External `tests/*_kat.rs` files are the norm for
+> algorithm-level KATs. New tests (CONSOLIDATE, F-EXTEND) follow this split: substrate-level
+> tests go inline; algorithm-level KATs go in `tests/`.
+>
+> **Test-length norm: one file per algorithm family, however long that takes.** KAT files may
+> exceed 500 lines if the algorithm family has multiple sub-modules or stages. Splitting is not
+> warranted by length alone; splitting is warranted only if a file covers genuinely distinct
+> algorithm families that would be clearer as separate files. The longest files (e.g.,
+> `ghs_kat.rs` at 1646 lines) are coherent KAT suites for a single algorithm family and should
+> not be split.
+>
+> **Oracle-gate norm: `#[ignore]` for all external-tool and compute-heavy tests.** PARI, CADO-NFS,
+> and slow quantum circuit tests are gated behind `#[ignore]` with descriptive messages. This is
+> the arc-1 dev-oracle policy; new tests (CONSOLIDATE, F-EXTEND) honor it.
+>
+> **`shared/numth` inline-test pattern: accept as-is.** The 34 inline tests in `shared/numth/src/`
+> are mathematically substantive and cover ECM, primality, and smooth-number detection. Migration
+> to an external `tests/` directory is a CONSOLIDATE decision (not mandated by this doctrine).
+
+---
+
+### F-D2-06 · Coverage doctrine resolved — C-Testing-Philosophy frozen
+
+**Falsifiable finding (the primary deliverable of A.3):**
+
+> **Coverage doctrine = mathematical-behavior KAT coverage over line coverage; gate at 80% line
+> coverage as a dead-code floor (not a correctness ceiling).**
+>
+> **Downstream checks:**
+> - ALIGN's coverage-gate implementation must use `--fail-under-lines 80` (not 100), with
+>   `#[ignore]`-gated tests excluded from the gate. A gate of 100% would be a doctrine violation.
+> - New tests added by CONSOLIDATE and F-EXTEND must follow the two-tier pattern (inline for
+>   substrate, external KAT for algorithm-level) and the oracle-gate norm (`#[ignore]` for
+>   external-tool and compute-heavy tests).
+> - A new test that covers a line but not a mathematical property is not a KAT and does not
+>   satisfy the doctrine. A new test that covers a mathematical property but misses a line is
+>   acceptable.
+
+*Freezes C-Testing-Philosophy. Feeds ALIGN (coverage-gate value), CONSOLIDATE (new test norms),
+F-EXTEND (new test norms).*
+
+---
+
+### Summary table — testing-balance findings
+
+| # | Finding | Action | Consuming campaign |
+|---|---|---|---|
+| F-D2-01 | `shared/numth` has no `tests/` dir; all 34 tests are inline | CONSOLIDATE decision: migrate or accept | CONSOLIDATE |
+| F-D2-02 | Inline `#[test]` is widespread (7/9 crates); two-tier pattern is healthy | No action — pattern is intentional | — |
+| F-D2-03 | 12 KAT files exceed 500 lines; length reflects mathematical depth, not bloat | No mandatory split; CONSOLIDATE may add section navigation | CONSOLIDATE |
+| F-D2-04 | 4 bench files, all in `rho/`; bench/KAT ratio 1:13; no benches in `gnfs`/`shor`/`shared/*` | No action — bench scope is intentional | — |
+| F-D2-05 | 15 `#[ignore]`-gated oracle/compute-heavy tests across 10 files; pattern is consistent | No action — pattern is correct | — |
+| F-D2-06 | **Coverage doctrine resolved: math-behavior KAT coverage; 80% line gate** | ALIGN implements gate; CONSOLIDATE/F-EXTEND honor norms | ALIGN, CONSOLIDATE, F-EXTEND |
+
+---
+
+### Subtleties and deferrals
+
+**The 80% gate value is a recommendation, not a measurement.** A.3 does not run `cargo llvm-cov`
+(SURVEY writes no code and runs no benchmarks). The 80% floor is reasoned from the codebase
+structure: the KAT suite exercises all mathematically meaningful paths at toy scale; the remaining
+uncovered lines are likely error-handling branches and dead-code candidates. ALIGN should run
+`cargo llvm-cov --workspace` to measure the actual baseline before setting the gate, and may
+adjust the threshold if the baseline is significantly above or below 80%. The doctrine (math-
+behavior KAT over line coverage) is fixed; the gate value is ALIGN's calibration decision.
+
+**`shared/numth` inline-test migration (F-D2-01).** The 34 inline tests are substantive and
+correct. Migration to `tests/` is a consistency question, not a correctness question. CONSOLIDATE
+owns the decision; A.3 records the inconsistency.
+
+**`rho/src/util/batch_inv.rs` duplicated tests (from A.2, F-D5-02).** The three inline tests in
+`rho/src/util/batch_inv.rs` duplicate the tests in `shared/bigint/tests/isqrt_gcd_kat.rs`. This
+is a dedup candidate for REFACTOR (noted in A.2); the coverage doctrine does not change this
+assessment.
+
+**The human's lean on the 80% vs 100% question is an open-Q at A.7.** The doctrine recommends
+80%; the human may prefer a different threshold (e.g., 90% as a tighter floor, or 100% with
+`#[ignore]` exclusions making it achievable). A.7 surfaces this as an open-Q. The doctrine's
+*shape* (math-behavior KAT primary, line coverage secondary) is frozen here; the *gate value* is
+an A.7 open-Q if the human disagrees with 80%.
