@@ -544,7 +544,7 @@ contract(s) each session froze).
 | A.4 | Audit docs-layer discipline + math-continuity + prose provenance       | done    | a99b61e | C-DocsLayer sketch; C-MathSpine sketch; C-Coherence prose-half (S.A/S.B/S.C borderline open-Q at A.7) |
 | A.5 | Audit CADO-NFS sidecar build/trigger design needs                      | done    | ab62f21 | C-Oracle sketch (trigger=lazy/on-demand; pin=git-2.0.1; 4 tolerance-bounded comparisons) |
 | A.6 | Audit spectrum completeness + distil 4 quantum-DLP references          | done    | 61ef5ff | F-D7-01 (hyperelliptic Jacobian DLP gap — F-EXTEND candidate); arxiv IDs resolved (risk flag not triggered) |
-| A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | done    | —      | C-Findings (frozen); C-Testing-Philosophy (ratified); C-Coherence (frozen); C-Layout/C-DocsLayer/C-MathSpine/C-Oracle sketches updated |
+| A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | done    | daa342f | C-Findings (frozen); C-Testing-Philosophy (ratified); C-Coherence (frozen); C-Layout/C-DocsLayer/C-MathSpine/C-Oracle sketches updated |
 
 ---
 
