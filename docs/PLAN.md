@@ -405,15 +405,35 @@ recommendations; they do not block the freeze:
    only the fine-grained S.X.Y / G.X.Y session IDs are pure residue and dissolve. *(Worse at: keeps a
    faint planning-shaped silhouette in the section structure.)*
 
-### C-Testing-Philosophy *(prose)* — **to be frozen at A.3, ratified at A.7**
+### C-Testing-Philosophy *(prose)* — **FROZEN at A.3, ratified at A.7 ◆**
 
 - **Defined-in:** A.3 (resolved), A.7 (ratified into the ledger).
 - **Consumed-by:** ALIGN (coverage-gate decision), CONSOLIDATE, F-EXTEND (new tests honor it).
-- **Statement:** The resolved doctrine for "what is the right testing target for toy-scale
-  compute-heavy KAT-driven pedagogical code" — coverage target, unit/integration balance, test-length
-  norms. *(Content TBD by A.3; the human's lean is an A.7 open-Q.)*
+- **Statement:**
+  - **Primary correctness target: mathematical-behavior KAT coverage.** Every public API must have
+    at least one KAT exercising its mathematical contract (the algorithm produces the correct answer
+    on a known input). Field axioms, group laws, and algorithm-level correctness are the primary
+    correctness signals. Line coverage is a secondary signal — a floor, not a ceiling.
+  - **Coverage gate: 80% line coverage as a dead-code floor.** The gate's purpose is to catch dead
+    code and unreachable branches, not to mandate that every compute path is exercised by a test.
+    The `#[ignore]`-gated oracle tests are excluded from the gate. ALIGN calibrates the gate value
+    against a measured `cargo llvm-cov` baseline; the 80% number is a reasoned recommendation, not
+    a measurement — a baseline far from 80% should move it. The gate value is an open-Q (see
+    C-Findings open-Q 2).
+  - **Unit/integration norm: two-tier (inline substrate + external KAT).** Inline `#[test]` blocks
+    in `src/` are appropriate for low-level substrate verification (field arithmetic, linear algebra
+    primitives, polynomial operations). External `tests/*_kat.rs` files are the norm for
+    algorithm-level KATs. New tests (CONSOLIDATE, F-EXTEND) follow this split.
+  - **Test-length norm: one file per algorithm family, however long that takes.** KAT files may
+    exceed 500 lines if the algorithm family has multiple sub-modules or stages. Splitting is not
+    warranted by length alone; splitting is warranted only if a file covers genuinely distinct
+    algorithm families. The longest files (e.g., `ghs_kat.rs` at 1646 lines) are coherent KAT
+    suites for a single algorithm family and should not be split.
+  - **Oracle-gate norm: `#[ignore]` for all external-tool and compute-heavy tests.** PARI,
+    CADO-NFS, and slow quantum circuit tests are gated behind `#[ignore]` with descriptive
+    messages. This is the arc-1 dev-oracle policy; new tests (CONSOLIDATE, F-EXTEND) honor it.
 
-### C-Coherence *(prose)* — **to be frozen at A.7** (catalog assembled across A.2 + A.4)
+### C-Coherence *(prose)* — **FROZEN at A.7 ◆** (catalog assembled across A.2 + A.4)
 
 - **Defined-in:** A.2 (code-depth catalog), A.4 (prose-depth catalog), A.7 (consolidated
   classification).
@@ -423,29 +443,84 @@ recommendations; they do not block the freeze:
   named by mathematical topic, not by planning track/phase. The catalog of every provenance token at
   every depth, each classified **pure residue** (re-anchor on the mathematics) or
   **grouping-coincides-with-topic** (keep the grouping, change only the planning label).
+  - **Code-half (A.2):** all planning-frame tokens in code identifiers, module/file/dir names,
+    benchmark labels, and test names are **pure residue** — except Track-X labels in doc-comments
+    where the grouping coincides with a mathematical topic (grouping-coincides-with-topic). Exactly
+    one planning-frame token was found in a code identifier: the `sub_track_close_curve_axioms_intact`
+    test name in `rho/tests/binary_curve_kat.rs`. All other tokens are in `//!`/`///`/`//` comments.
+    The de-provenancing blast radius is **doc-comment-heavy, identifier-light**.
+  - **Prose-half (A.4):** approximately 185 tokens across six prose files. Approximately 110 are
+    "Track X" tokens classified as **grouping-coincides-with-topic** (the five tracks map onto five
+    real mathematical families: Pollard rho / GNFS / NFS-DL / algebraic ECDLP attacks / Shor's
+    algorithm). Approximately 75 are **pure residue** (Phase N, session IDs, ◆ marks, fine-grained
+    sub-track IDs like S.A.1/G.B.2). The coarse groupings (S.A/S.B/S.C Shor sub-tracks; G.B–G.W
+    GNFS pipeline stages) are borderline — see open-Q 4 below.
+  - **Borderline default (open-Q 4):** for groupings where track ≈ topic (S.A/S.B/S.C; coarse
+    G.*/D.* pipeline stages), the adjudicator recommendation is **preserve-under-topic-label** —
+    the coarse groupings map onto real mathematical families; only the fine-grained S.X.Y / G.X.Y
+    session IDs are pure residue and dissolve. This is surfaced to the human as open-Q 4 in
+    C-Findings; REFACTOR and CONSOLIDATE honor the human's answer.
 
 ### C-Layout *(compiler)* — **to be frozen at REFACTOR** *(SURVEY sketches only)*
 
 - **Defined-in:** REFACTOR (not SURVEY). A.2 produces the *layout-audit findings* that scope it.
 - **Consumed-by:** CONSOLIDATE, EXTEND.
-- **Sketch:** the final crate-peering/module structure. SURVEY records whether `rho` is overloaded and
-  whether `shared/*` carries dedup — it does **not** decide the new layout (REFACTOR does, at its own
-  opus juncture).
+- **Sketch (updated with A.2 findings):** the final crate-peering/module structure. SURVEY found:
+  - **`rho` overload (open-Q 1):** `rho/src/` contains 5 Track-ρ modules + 8 Track-E attack modules
+    (13 total). The `rho` crate description does not mention the Track-E attacks. The cohesion
+    argument (E.W cross-attack bench measures attacks against the rho baseline; they share
+    `rho::curve`/`rho::field` types) and the organisation argument (8 algebraically-distinct attack
+    modules under a "Pollard rho" crate name) are both real. REFACTOR owns the decision + its
+    compiler blast radius once the human answers open-Q 1.
+  - **`rho/src/field/` and `rho/src/util/` re-export wrappers (F-D5-02):** thin re-export wrappers
+    over `shared/field` and `shared/bigint` respectively; `batch_invert` tests duplicated. REFACTOR
+    dedup candidate: collapse wrappers or remove duplicated tests.
+  - **No other `shared/*` dedup (F-D5-03):** the six `shared/*` crates have distinct,
+    non-overlapping concerns. No cross-crate duplication was observed. REFACTOR inventing further
+    dedup is defocus.
+  SURVEY does **not** decide the new layout (REFACTOR does, at its own opus juncture).
 
 ### C-DocsLayer *(prose)* & C-MathSpine *(prose)* — **to be frozen at CONSOLIDATE** *(SURVEY sketches)*
 
 - **Defined-in:** CONSOLIDATE. A.4 produces the docs-layer + math-continuity findings that scope them.
 - **Consumed-by:** all future docs (C-DocsLayer); EXTEND chapters (C-MathSpine).
-- **Sketch:** the three-layer reference-direction discipline (C-DocsLayer); the textbook's
-  suggested-path spine, notation, voice, audience (C-MathSpine). SURVEY records where they cohere and
-  break today; CONSOLIDATE designs and freezes them.
+- **Sketch (updated with A.4 findings):**
+  - **C-DocsLayer:** the three-layer reference-direction discipline (inline / PEDAGOGY / MATHEMATICS)
+    is mostly sound. Three specific defects found: (1) `MATHEMATICS.md` embeds ~9 bare Rust module
+    paths in "Code realisation" lines (F-D3-01); (2) `shor/docs/PEDAGOGY.md` has stale "to be
+    written in S.D.2" annotations for ch. 11, which now exists (F-D3-02); (3)
+    `shared/numfield/docs/PEDAGOGY.md` lacks the standard maths-first citation header (F-D3-03).
+    PEDAGOGY → MATHEMATICS reference direction is consistently honored across all five PEDAGOGY
+    files (positive finding). CONSOLIDATE fixes the three defects and freezes the discipline.
+  - **C-MathSpine:** `MATHEMATICS.md` has 12 chapters (4592 lines). Voice, notation, audience, and
+    through-line are consistent across all 12 chapters (positive finding). The ToC is complete — no
+    "to be appended" labels (positive finding). The chapter-pairing table Track-E row is correct
+    (positive finding). Two structural defects: (1) chapters 8 and 9 use `#` (top-level) headings
+    while all others use `##` — breaks the document outline (F-D4-01); (2) one citation-style
+    inconsistency (`§§52–62` vs plain numbered headings in `gnfs/docs/PEDAGOGY.md`) (F-D4-06). One
+    design gap: no explicit suggested-reading-path section (F-D4-05 — CONSOLIDATE decides whether
+    to add one). CONSOLIDATE normalizes the heading levels and citation style, then freezes the
+    spine.
 
 ### C-Oracle *(test)* — **to be frozen at ORACLE** *(SURVEY sketches only)*
 
 - **Defined-in:** ORACLE. A.5 produces the build-design findings that scope it.
 - **Consumed-by:** the regression/comparison suite.
-- **Sketch:** the CADO-NFS sidecar build + invocation interface (automatic + on-demand). SURVEY
-  recommends the design (trigger model, pinning, gated comparisons); ORACLE builds and freezes it.
+- **Sketch (updated with A.5 findings):** the CADO-NFS sidecar build + invocation interface.
+  SURVEY found and recommends:
+  - **Trigger model (F-D6-01):** lazy/on-demand + opt-in CI flag. The `#[ignore]`-gated oracle
+    tests remain gated; the sidecar is never on the mandatory green path. A separate opt-in CI job
+    (e.g., `CADO_ORACLE=1` environment variable or a separate GitHub Actions job) provides the
+    regression/comparison signal.
+  - **Version pin (F-D6-02):** git tag on the GitHub mirror (`github.com/cado-nfs/cado-nfs`), tag
+    + commit hash recorded. Minimum pin: `git-2.0.1` (commit `88c4751`). ORACLE should prefer the
+    most recent accessible tag at ORACLE build time.
+  - **Gated comparisons (F-D6-03):** exactly four tolerance-bounded consistency checks — the
+    existing `#[ignore]`-gated stubs in `gnfs/tests/`: relation count ≥ CADO/3.0; matrix dims
+    ±10%; N=35 factor; 80–100-bit factor. ORACLE fills the stubs; it does not add new oracle tests.
+  - **Policy fidelity (F-D6-04):** sidecar is validation-only, never on green path, never a
+    `Cargo.toml` dependency; comparison direction is always rGNFS-first.
+  ORACLE builds and freezes the precise interface.
 
 ### C-TemplateSeed *(prose)* — informational, recorded at A.1
 
@@ -469,7 +544,7 @@ contract(s) each session froze).
 | A.4 | Audit docs-layer discipline + math-continuity + prose provenance       | done    | a99b61e | C-DocsLayer sketch; C-MathSpine sketch; C-Coherence prose-half (S.A/S.B/S.C borderline open-Q at A.7) |
 | A.5 | Audit CADO-NFS sidecar build/trigger design needs                      | done    | ab62f21 | C-Oracle sketch (trigger=lazy/on-demand; pin=git-2.0.1; 4 tolerance-bounded comparisons) |
 | A.6 | Audit spectrum completeness + distil 4 quantum-DLP references          | done    | 61ef5ff | F-D7-01 (hyperelliptic Jacobian DLP gap — F-EXTEND candidate); arxiv IDs resolved (risk flag not triggered) |
-| A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | pending | —      | —     |
+| A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | done    | —      | C-Findings (frozen); C-Testing-Philosophy (ratified); C-Coherence (frozen); C-Layout/C-DocsLayer/C-MathSpine/C-Oracle sketches updated |
 
 ---
 

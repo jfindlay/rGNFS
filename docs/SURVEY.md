@@ -2324,3 +2324,266 @@ CONSOLIDATE notes; they are not falsifiable F-EXTEND findings.
 
 *Feeds F-EXTEND (F-D7-01 only); feeds CONSOLIDATE (F-D8-02, F-D8-03, F-D8-04 citation notes);
 seeds C-Findings.*
+
+---
+
+## A.7 — Findings Ledger (authoritative scope source for all five campaigns) ◆
+
+**Charge:** consolidate all findings from A.1–A.6 into the authoritative findings ledger; freeze
+C-Findings, C-Testing-Philosophy, and C-Coherence; record sketches of C-Layout, C-DocsLayer,
+C-MathSpine, and C-Oracle; surface the four human open-Qs with adjudicator recommendations.
+
+**Governing rule — scope-routing invariant (load-bearing).** SURVEY split execution by artifact
+register, and the routing is binding for all five campaigns:
+
+> **Inline `//!`/`///`/`//` doc-comments + identifier/file/dir/bench/test renames → REFACTOR
+> (compiler blast radius); human prose (PEDAGOGY/MATHEMATICS/README) → CONSOLIDATE; config/
+> manifest/CI → ALIGN; CADO sidecar build → ORACLE; new algorithm/chapter → EXTEND.**
+
+A finding routed to the wrong campaign is the primary cross-campaign defocus mode. The ledger
+below enforces this routing for every entry.
+
+**Falsifiability law (binds the ledger).** Every entry below states a checkable boundary. A
+campaign that acts beyond its findings is defocus; a campaign that ignores a finding is rigidity.
+The boundary is the falsifiable contract: a downstream session is checked against it.
+
+---
+
+### Ledger by consuming campaign
+
+#### ALIGN (B) — formalities reconciliation (A.1, F-D1-01…12)
+
+*In scope:* add the 8 absent root formalities items as backports and seed the 3 rGNFS→template
+forward-seeds.
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D1-01 | A.1 | Add `deny.toml` at workspace root | Do not redesign the formalities set |
+| F-D1-02 | A.1 | Add `rustfmt.toml` at workspace root | — |
+| F-D1-03 | A.1 | Resolve `rho/rust-toolchain.toml` mis-scoping: promote to root or remove | ALIGN decides; A.1 records only the gap |
+| F-D1-04 | A.1 | Add GPL-3.0 `LICENSE` at workspace root; add `license` field to crate manifests | — |
+| F-D1-05 | A.1 | Promote `[lints]` to `[workspace.lints]`; add `[lints] workspace = true` to all 9 crates | — |
+| F-D1-06 | A.1 | Add coverage gate honoring C-Testing-Philosophy doctrine (gate value: open-Q below) | Gate value calibrated against measured baseline; doctrine shape is frozen |
+| F-D1-07 | A.1 | Add `docs/development.md` adapted for the workspace | — |
+| F-D1-08 | A.1 | Add `.cargo/config.toml` with workspace-scoped aliases | — |
+| F-D1-09 | A.1 | Add `AGENTS.md` at workspace root | — |
+| F-D1-10 | A.1 | Seed three-tier docs layering into `rust-template` | — |
+| F-D1-11 | A.1 | Seed dev-oracle policy into `rust-template` | — |
+| F-D1-12 | A.1 | Seed docs-register contracts into `rust-template` | — |
+
+*Defocus boundary:* ALIGN implements the recorded gap only — it does not redesign the formalities
+set, and it does not set the coverage doctrine (that is C-Testing-Philosophy, frozen). The
+coverage gate value is an open-Q (below); ALIGN calibrates the number against a measured
+`cargo llvm-cov` baseline, honoring the frozen doctrine shape.
+
+---
+
+#### ORACLE (C) — CADO-NFS sidecar (A.5, F-D6-01…04)
+
+*In scope:* build the sidecar to the recorded design.
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D6-01 | A.5 | Lazy/on-demand + opt-in CI flag trigger; `#[ignore]` gate preserved | Must NOT promote oracle tests to the green path |
+| F-D6-02 | A.5 | Pin to git tag on GitHub mirror, tag + commit hash recorded; minimum `git-2.0.1` (`88c4751`) | Must clone/download pinned tag, not `master` or `HEAD` |
+| F-D6-03 | A.5 | Implement the four existing `#[ignore]`-gated stubs as tolerance-bounded consistency checks (relation count ≥ CADO/3.0; matrix dims ±10%; N=35 factor; 80–100-bit factor) | Must not add new oracle tests beyond the four stubs; must not change tolerances without documented rationale |
+| F-D6-04 | A.5 | Sidecar is validation-only, never on green path, never a `Cargo.toml` dependency | Must not add CADO to any `[dev-dependencies]`; must not remove `#[ignore]`; comparison direction is always rGNFS-first |
+
+*Defocus boundary:* ORACLE must NOT promote any oracle test to the green path, add CADO to any
+`Cargo.toml`, reverse the rGNFS-first comparison direction, or add new oracle tests beyond the
+four stubs. Build-automation-intricacy (opus-ORACLE) is an ORACLE-internal call.
+
+---
+
+#### REFACTOR (D) — layout + code-depth de-provenancing (A.2, F-D5-01…03, F-D9-01…06)
+
+*In scope:* collapse/dedup the re-export wrappers and scrub code-adjacent provenance.
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D5-01 | A.2 | `rho` overload: peer Track-E attacks out or keep co-located — **gated on human open-Q below** | Must not pre-empt the human decision; owns the decision + compiler blast radius once answered |
+| F-D5-02 | A.2 | Collapse `rho/src/field/` and `rho/src/util/` re-export wrappers; remove duplicated `batch_invert` tests | Wrapper collapse is the dedup target; the `L = 4` fixation may warrant keeping the wrapper — REFACTOR decides |
+| F-D5-03 | A.2 | No action — `shared/*` carries no dedup beyond the two `rho` wrappers | Inventing further dedup is defocus |
+| F-D9-01 | A.2 | Re-anchor `Phase 4`–`Phase 8` tokens in `rho/src/ecdlp/`, `rho/benches/`, `rho/tests/ecdlp_kat.rs`, `rho/src/curve/`, `rho/src/field/monty.rs` on optimization-layer names | Algorithmic phase labels within a single function (not planning-frame) are NOT in scope |
+| F-D9-02 | A.2 | Replace `Track D` tokens in `gnfs/src/dl/mod.rs` and descent sub-modules with topic-native language | — |
+| F-D9-03 | A.2 | Replace sub-track IDs (`E.X.Y`, `G.X.Y`, `D.X.Y`, `S.X.Y`) in `///`/`//!`/`//` comments across `rho/src/`, `gnfs/src/`, `shared/*/src/` | Human prose is CONSOLIDATE's |
+| F-D9-04 | A.2 | Rename `sub_track_close_curve_axioms_intact` (the single planning-frame token in a code identifier) to a topic-native name; replace `sub-track` in doc-comments | — |
+| F-D9-05 | A.2 | Replace `PLAN.md E.D.2` and `G.A.1a session contract` references in test doc-comments; replace `◆ sub-track close` milestone labels | — |
+| F-D9-06 | A.2 | Replace `E.W.1` bench label in `rho/benches/attacks.rs`; replace `Phase E.A.2` section header in `rho/tests/ecdlp_kat.rs` | — |
+
+**Headline sizing signal (load-bearing for REFACTOR):** the de-provenancing blast radius is
+**doc-comment-heavy, identifier-light** — exactly one planning-frame token in a code identifier
+(`sub_track_close_curve_axioms_intact`); all other tokens are in `//!`/`///`/`//` comments.
+Identifier renames are cheap (compiler-checked); the bulk of REFACTOR's de-provenancing work is
+doc-comment scrubbing.
+
+*Defocus boundary:* REFACTOR touches code-adjacent artifacts only — human prose is CONSOLIDATE's.
+The `rho`-overload layout decision is gated on the human open-Q (below). `shared/*` carries no
+dedup beyond the two `rho` wrappers — REFACTOR inventing further dedup is defocus.
+
+---
+
+#### CONSOLIDATE (E) — docs-layer + math-spine + prose de-provenancing + citation updates
+(A.4, F-D3-01…04, F-D4-01…06, F-D9-07…14; A.6, F-D8-02/03/04)
+
+*In scope:* fix the 3 docs-layer defects, normalize the math-spine, re-anchor ~185 prose
+provenance tokens, update 3 citation annotations.
+
+**Docs-layer defects (3):**
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D3-01 | A.4 | Replace ~9 bare Rust module paths in `MATHEMATICS.md` "Code realisation" lines with PEDAGOGY-section citations | Mathematical prose is clean; only the cross-reference lines need fixing |
+| F-D3-02 | A.4 | Remove stale "to be written in S.D.2" annotations in `shor/docs/PEDAGOGY.md` lines 4 and 480 | — |
+| F-D3-03 | A.4 | Add standard `> **Maths-first treatment.**` header blockquote to `shared/numfield/docs/PEDAGOGY.md` | — |
+
+**Math-spine defects:**
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D4-01 | A.4 | Normalize chapters 8 and 9 from `#` to `##` headings; adjust internal sub-headings accordingly | — |
+| F-D4-05 | A.4 | May add a brief "How to read this textbook" note to the ToC section (one paragraph) | CONSOLIDATE design decision, not mandated |
+| F-D4-06 | A.4 | Normalize citation style: `§§52–62` vs plain numbered headings in `gnfs/docs/PEDAGOGY.md` | — |
+
+**Prose de-provenancing (~185 tokens across 6 files):**
+
+| Finding | Source | Token type | Count | Classification | Action |
+|---------|--------|-----------|-------|----------------|--------|
+| F-D9-07 | A.4 | `Track X` in `docs/MATHEMATICS.md` | ~25 | Grouping-coincides-with-topic | Re-anchor label (e.g., "Track ρ" → "Pollard rho") |
+| F-D9-08 | A.4 | `Track X` in `docs/PEDAGOGY.md` | ~40 | Grouping-coincides-with-topic | Re-anchor label |
+| F-D9-09 | A.4 | `Track X` in `README.md` | ~20 | Grouping-coincides-with-topic | Re-anchor label |
+| F-D9-10 | A.4 | `Phase N` (N=0–8) in `docs/PEDAGOGY.md` | ~30 | Pure residue | Re-anchor on optimization-technique names |
+| F-D9-11 | A.4 | Session/sub-track IDs (T.G, D.W.2, etc.) in `docs/MATHEMATICS.md` | ~15 | Pure residue | Replace with chapter titles or topic-native references |
+| F-D9-12 | A.4 | S.A/S.B/S.C (coarse) and S.A.1/S.B.2 etc. (fine) in `shor/docs/PEDAGOGY.md` | ~50 | Borderline (open-Q below) / Pure residue | Fine-grained IDs dissolved; coarse IDs per open-Q |
+| F-D9-13 | A.4 | G.B–G.W, D.A–D.W (coarse) and G.B.1 etc. (fine) in `gnfs/docs/PEDAGOGY.md` | many | Grouping-coincides-with-topic / Pure residue | Fine-grained IDs dissolved; coarse IDs survive as pipeline-stage labels |
+| F-D9-14 | A.4 | `◆` boundary marks in `shor/docs/PEDAGOGY.md` | ~7 | Pure residue | Replace "frozen S.X.Y ◆" with "frozen" or "stable interface" |
+
+**Citation updates (3 CONSOLIDATE notes from A.6):**
+
+| Finding | Source | In-scope action |
+|---------|--------|-----------------|
+| F-D8-02 | A.6 | Update §11.4.4 qubit estimate to cite Google QuantumAI whitepaper (2026) alongside Proos–Zalka |
+| F-D8-03 | A.6 | Add citation to Cain et al. (2026) in §11.5.1 migration-timeline narrative |
+| F-D8-04 | A.6 | Add citation to Schrottenloher (2026) in §11.4.4 alongside Proos–Zalka |
+
+*Defocus boundary:* CONSOLIDATE re-anchors and reconciles existing prose — it does NOT author new
+mathematical content (that is EXTEND), and it does not restructure beyond the recorded defects.
+The C-Coherence borderline-aggressiveness default is a human open-Q (below) that sets the cut
+depth. Code-adjacent artifacts (inline `//!`/`///`/`//` doc-comments) are REFACTOR's.
+
+---
+
+#### EXTEND (F) — spectrum completion (A.6, F-D7-01; bounded by F-D7-02, F-D8-01…05)
+
+*In scope (if the human admits it to arc-2 — see scope-ceiling open-Q):* exactly one genuine gap.
+
+| Finding | Source | In-scope action | Defocus boundary |
+|---------|--------|-----------------|------------------|
+| F-D7-01 | A.6 | Hyperelliptic Jacobian DLP (Gaudry index calculus): add mathematical treatment in `MATHEMATICS.md`; implement index calculus layer in `rho/src/hyperelliptic/` or a new module; add KATs | Gated on scope-ceiling open-Q below; substrate exists (`rho/src/hyperelliptic/`: Mumford divisors, Cantor group law) |
+| F-D7-02 | A.6 | No action — trial division, QS, BSGS, classical index calculus for 𝔽ₚ* are deliberate non-extensions | Adding any of these is defocus |
+| F-D8-01…05 | A.6 | No action — all four references add no new mathematical algorithm to the spectrum | The 2026 papers are citation updates for CONSOLIDATE, not F-EXTEND algorithmic scope |
+
+*Defocus boundary (sharp):* the spectrum is otherwise complete for the discriminant. EXTEND
+adding anything beyond the one Gaudry gap is defocus; a deliberate non-extension is a successful
+finding, not a gap to fill.
+
+---
+
+### Four human open-Qs (resolved by preference/scope, not by audit)
+
+These ride to the step-3 review as flagged recommendations; they do not block the freeze. The
+audit resolved every factual/doctrinal question; these four are preference/scope calls.
+
+**Open-Q 1 — `rho`-overload split (D5, feeds REFACTOR).**
+Peer Track-E's 8 attack modules into a separate crate, or keep them co-located with the
+Pollard-rho baseline they are benchmarked against?
+
+*Cohesion argument for keeping:* the E.W cross-attack bench measures the attacks against the rho
+baseline; they share `rho::curve`/`rho::field` types directly; the pedagogical "attacks live with
+the baseline they're measured against" framing is load-bearing.
+*Organisation argument for splitting:* 8 algebraically-distinct attack modules under a "Pollard
+rho" crate name; a reader encounters a much larger surface than the crate name suggests.
+*Adjudicator recommendation: keep-with-baseline.* The measured-against cohesion is load-bearing;
+a split buys crate-name honesty at the cost of that cohesion. *(Worse at: a reader still meets a
+larger surface than "Pollard rho" advertises.)*
+
+**Open-Q 2 — Coverage gate value (D2, feeds ALIGN).**
+The doctrine shape is frozen (math-behavior KAT primary; line coverage a secondary dead-code
+floor). The number (80% recommended) is unmeasured. ALIGN calibrates against a real `cargo
+llvm-cov` baseline; the human's lean (80 / 90 / 100-with-`#[ignore]`-exclusions) sets the target.
+*Adjudicator recommendation: 80% floor, ALIGN re-tunes to the measured baseline.* *(Worse at:
+80% is a reasoned guess, not a measurement — a baseline far from 80% should move it.)*
+
+**Open-Q 3 — F-EXTEND scope ceiling (D7, feeds EXTEND).**
+Is arc-2 the place to fill the one genuine gap (hyperelliptic Jacobian DLP), or does it become
+an arc-3 roadmap, keeping arc-2 consolidation-focused?
+*Adjudicator recommendation: defer to arc-3.* The gap is real but self-contained; arc-2's stated
+spine is consolidation/alignment; EXTEND is the one campaign with no upstream pressure; filling
+it in arc-2 widens scope against the survey-first/consolidate-first discipline. *(Worse at:
+leaves the GHS chapter a "dangling transfer" one cycle longer.)*
+
+**Open-Q 4 — C-Coherence borderline default (D9, feeds REFACTOR + CONSOLIDATE).**
+For groupings where track ≈ topic (the S.A/S.B/S.C Shor sub-tracks; coarse G.*/D.* pipeline
+stages), preserve the grouping under a topic-native label, or dissolve into a purer topical
+organization?
+*Adjudicator recommendation: preserve-under-topic-label.* The coarse groupings map onto real
+mathematical families (the ROADMAP's own D9 example), so dissolving them discards real structure;
+only the fine-grained S.X.Y / G.X.Y session IDs are pure residue and dissolve. *(Worse at: keeps
+a faint planning-shaped silhouette in the section structure.)*
+
+---
+
+### Findings ledger summary table
+
+| Finding | Source | Consuming campaign | Classification |
+|---------|--------|--------------------|----------------|
+| F-D1-01 | A.1 | ALIGN | `deny.toml` absent |
+| F-D1-02 | A.1 | ALIGN | `rustfmt.toml` absent |
+| F-D1-03 | A.1 | ALIGN | `rho/rust-toolchain.toml` mis-scoped |
+| F-D1-04 | A.1 | ALIGN | `LICENSE` absent |
+| F-D1-05 | A.1 | ALIGN | `[lints]` in 3/9 crates only |
+| F-D1-06 | A.1 | ALIGN | coverage gate absent (gate value open-Q 2) |
+| F-D1-07 | A.1 | ALIGN | `development.md` absent |
+| F-D1-08 | A.1 | ALIGN | `.cargo/config.toml` absent |
+| F-D1-09 | A.1 | ALIGN | `AGENTS.md` absent |
+| F-D1-10 | A.1 | ALIGN | multisession docs layering (rGNFS → template) |
+| F-D1-11 | A.1 | ALIGN | dev-oracle policy (rGNFS → template) |
+| F-D1-12 | A.1 | ALIGN | docs-register contracts (rGNFS → template) |
+| F-D5-01 | A.2 | REFACTOR | `rho` hosts 8 Track-E modules (open-Q 1) |
+| F-D5-02 | A.2 | REFACTOR | `rho/src/field/` + `rho/src/util/` re-export wrappers; `batch_invert` tests duplicated |
+| F-D5-03 | A.2 | — | No dedup needed in `shared/*` |
+| F-D9-01 | A.2 | REFACTOR | `Phase N` tokens in `rho/src/ecdlp/`, benches, tests — pure residue |
+| F-D9-02 | A.2 | REFACTOR | `Track D` tokens in `gnfs/src/dl/` — pure residue |
+| F-D9-03 | A.2 | REFACTOR | Sub-track IDs (`E.X.Y`, `G.X.Y`, `D.X.Y`) in doc-comments — pure residue |
+| F-D9-04 | A.2 | REFACTOR | `sub_track_close_curve_axioms_intact` test name (single identifier hit); `sub-track` in doc-comments — pure residue |
+| F-D9-05 | A.2 | REFACTOR | `PLAN.md E.D.2`, `G.A.1a session contract`, `◆ sub-track close` in test doc-comments — pure residue |
+| F-D9-06 | A.2 | REFACTOR | `E.W.1` bench label; `Phase E.A.2` section header — pure residue |
+| F-D2-01 | A.3 | CONSOLIDATE | `shared/numth` has no `tests/` dir; all 34 tests inline |
+| F-D2-06 | A.3 | ALIGN, CONSOLIDATE, F-EXTEND | Coverage doctrine resolved: math-behavior KAT; 80% line gate |
+| F-D3-01 | A.4 | CONSOLIDATE | `MATHEMATICS.md` ~9 bare Rust paths in "Code realisation" lines |
+| F-D3-02 | A.4 | CONSOLIDATE | `shor/docs/PEDAGOGY.md` stale "to be written in S.D.2" |
+| F-D3-03 | A.4 | CONSOLIDATE | `shared/numfield/docs/PEDAGOGY.md` missing maths-first header |
+| F-D4-01 | A.4 | CONSOLIDATE | Chapters 8 and 9 use `#` heading; all others use `##` |
+| F-D4-05 | A.4 | CONSOLIDATE | No explicit suggested-reading-path section (optional add) |
+| F-D4-06 | A.4 | CONSOLIDATE | Citation-style inconsistency (`§§52–62` vs plain numbered headings) |
+| F-D9-07 | A.4 | CONSOLIDATE | ~25 `Track X` tokens in `docs/MATHEMATICS.md` — grouping-coincides-with-topic |
+| F-D9-08 | A.4 | CONSOLIDATE | ~40 `Track X` tokens in `docs/PEDAGOGY.md` — grouping-coincides-with-topic |
+| F-D9-09 | A.4 | CONSOLIDATE | ~20 `Track X` tokens in `README.md` — grouping-coincides-with-topic |
+| F-D9-10 | A.4 | CONSOLIDATE | ~30 `Phase N` tokens in `docs/PEDAGOGY.md` — pure residue |
+| F-D9-11 | A.4 | CONSOLIDATE | ~15 session/sub-track IDs in `docs/MATHEMATICS.md` — pure residue |
+| F-D9-12 | A.4 | CONSOLIDATE | ~50 S.A/S.B/S.C tokens in `shor/docs/PEDAGOGY.md` — borderline (open-Q 4) |
+| F-D9-13 | A.4 | CONSOLIDATE | G.B–G.W, D.A–D.W tokens in `gnfs/docs/PEDAGOGY.md` — mixed |
+| F-D9-14 | A.4 | CONSOLIDATE | ~7 `◆` marks in `shor/docs/PEDAGOGY.md` — pure residue |
+| F-D6-01 | A.5 | ORACLE | Sidecar trigger = lazy/on-demand + opt-in CI flag |
+| F-D6-02 | A.5 | ORACLE | Version pin = git tag + commit hash; minimum `git-2.0.1` (`88c4751`) |
+| F-D6-03 | A.5 | ORACLE | Four tolerance-bounded consistency comparisons (existing stubs) |
+| F-D6-04 | A.5 | ORACLE | Dev-oracle policy fidelity: validation-only, never on green path |
+| F-D7-01 | A.6 | F-EXTEND | Hyperelliptic Jacobian DLP (Gaudry index calculus) — genuine gap |
+| F-D7-02 | A.6 | — | Trial division, QS, BSGS, classical index calculus — deliberate non-extensions |
+| F-D8-01 | A.6 | — | Shor (1994/1997) — already fully covered; no new scope |
+| F-D8-02 | A.6 | CONSOLIDATE | Google QuantumAI whitepaper — update §11.4.4 qubit estimate |
+| F-D8-03 | A.6 | CONSOLIDATE | Cain et al. (2026) — update §11.5.1 migration narrative |
+| F-D8-04 | A.6 | CONSOLIDATE | Schrottenloher (2026) — update §11.4.4 circuit reference |
+| F-D8-05 | A.6 | — | ecdsafail-challenge — outside discriminant; no scope |
+
+*This table is the authoritative scope source for all five campaigns. C-Findings is frozen.*

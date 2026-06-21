@@ -277,12 +277,12 @@ All not-started at construction. `/plan-shard` marks in-progress; the reconcile 
 
 | Sub-track | Status |
 |-----------|--------|
-| A. SURVEY | in progress (sharded 2026-06-20 → docs/PLAN.md; 7 sessions) |
+| A. SURVEY | **done** (A.7 ◆ closed 2026-06-21; findings ledger frozen in docs/SURVEY.md; contracts frozen in docs/PLAN.md) |
 | B. ALIGN | not-started |
 | C. ORACLE | not-started |
 | D. REFACTOR | not-started |
 | E. CONSOLIDATE | not-started |
-| F. EXTEND | not-started (content gated on SURVEY) |
+| F. EXTEND | not-started (content gated on SURVEY; scope-ceiling open-Q for human) |
 
 ---
 
@@ -310,3 +310,47 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
   finding; the ◆ findings-ledger review is the only correctness gate). No prior arc-2 sub-track to
   mark done; no discoveries folded up (arc-1's completion already recorded at construction). The
   stale arc-1 *terminus* PLAN.md (Z.1+T.Z, done at `201df39`) is superseded by the SURVEY PLAN.
+- **2026-06-21 — A. SURVEY closed at A.7 ◆ (findings ledger frozen).** All nine audit dimensions
+  confirmed audited across A.1–A.6. Key findings folded up from `docs/SURVEY.md` and `docs/PLAN.md`:
+  - **D1 (ALIGN scope):** 8 absent root formalities items confirmed (F-D1-01…09); 3 rGNFS→template
+    forward-seeds recorded (F-D1-10…12). All 12 findings feed ALIGN.
+  - **D2 (C-Testing-Philosophy frozen):** math-behavior KAT coverage is the primary correctness
+    target; 80% line gate as a dead-code floor (gate value open-Q for human); two-tier test pattern
+    (inline substrate + external KAT); test-length norm (one file per algorithm family, however
+    long); oracle-gate norm (`#[ignore]` for external-tool and compute-heavy tests).
+  - **D5 (REFACTOR scope):** `rho` hosts 8 Track-E attack modules alongside 5 Track-ρ modules —
+    layout overload, open-Q for human (peer out vs keep-with-baseline; adjudicator recommendation:
+    keep-with-baseline). `rho/src/field/` and `rho/src/util/` are thin re-export wrappers with
+    duplicated `batch_invert` tests — dedup candidate. No other `shared/*` dedup found.
+  - **D6 (ORACLE scope):** sidecar trigger = lazy/on-demand + opt-in CI flag; pin = `git-2.0.1`
+    (`88c4751`) on GitHub mirror; 4 tolerance-bounded comparisons (existing stubs); policy fidelity
+    confirmed (validation-only, never on green path).
+  - **D3/D4 (CONSOLIDATE scope):** 3 docs-layer defects found (bare Rust paths in MATHEMATICS.md;
+    stale forward-ref in shor/PEDAGOGY.md; missing maths-first header in numfield/PEDAGOGY.md).
+    Math-spine: chapters 8+9 heading inconsistency (`#` vs `##`); ToC complete; voice/notation
+    consistent. One citation-style inconsistency.
+  - **D7 (F-EXTEND scope):** exactly one genuine spectrum gap — **hyperelliptic Jacobian DLP
+    (Gaudry index calculus)**, the deferred downstream solve of the GHS transfer (Ch. 10.3).
+    Substrate exists (`rho/src/hyperelliptic/`: Mumford divisors, Cantor group law); missing layer
+    is the index calculus on the Jacobian + KATs + MATHEMATICS.md treatment. All other absent
+    algorithms (trial division, QS, BSGS, classical index calculus for 𝔽ₚ*) are deliberate
+    non-extensions. EXTEND scope-ceiling is an open-Q for human (adjudicator recommendation:
+    defer to arc-3).
+  - **D8 (CONSOLIDATE citation updates):** all 4 ROADMAP-listed references resolve (risk flag not
+    triggered). None adds a new mathematical algorithm. Three 2026 papers (Google QuantumAI
+    whitepaper, Cain et al., Schrottenloher) feed CONSOLIDATE citation updates in §11.4.4 and
+    §11.5.1; they do not scope F-EXTEND algorithmic work.
+  - **D9 (C-Coherence frozen):** code-half: doc-comment-heavy, identifier-light (exactly 1
+    identifier hit: `sub_track_close_curve_axioms_intact`). Prose-half: ~185 tokens; ~110
+    grouping-coincides-with-topic (Track X labels); ~75 pure residue (Phase N, session IDs, ◆
+    marks). S.A/S.B/S.C borderline — adjudicator recommendation: preserve-under-topic-label.
+  - **Four human open-Qs surfaced:** (1) `rho`-overload split (adjudicator: keep-with-baseline);
+    (2) coverage gate value (adjudicator: 80% floor, ALIGN re-tunes to measured baseline);
+    (3) F-EXTEND scope ceiling (adjudicator: defer to arc-3); (4) C-Coherence borderline default
+    (adjudicator: preserve-under-topic-label). These ride to human review; they do not block the
+    freeze.
+  - **Scope-routing invariant (load-bearing):** inline doc-comments + identifier/file/dir/bench/
+    test renames → REFACTOR; human prose → CONSOLIDATE; config/manifest/CI → ALIGN; CADO sidecar
+    → ORACLE; new algorithm/chapter → EXTEND. A finding routed to the wrong campaign is the
+    primary cross-campaign defocus mode.
+  A. SURVEY status: **done**. B–F campaigns: not-started (gated on SURVEY findings now frozen).
