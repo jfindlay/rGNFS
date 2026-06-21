@@ -916,3 +916,638 @@ assessment.
 `#[ignore]` exclusions making it achievable). A.7 surfaces this as an open-Q. The doctrine's
 *shape* (math-behavior KAT primary, line coverage secondary) is frozen here; the *gate value* is
 an A.7 open-Q if the human disagrees with 80%.
+
+---
+
+## A.4 — Docs-layer discipline + math-exposition continuity + prose provenance (D3 + D4 + D9-prose)
+
+**Charge:** (a) audit the three-layer docs discipline (D3) — do inline `//!`/`///` docs, per-crate
+`PEDAGOGY.md` code-tours, and `docs/MATHEMATICS.md` honor their prescribed reference directions?
+(b) audit math-exposition continuity (D4) — does `MATHEMATICS.md` (12 chapters, 4592 lines) read
+as a continuous textbook or a stitched companion reference? (c) catalog every planning-frame token
+in `PEDAGOGY.md`, `MATHEMATICS.md`, and `README.md` prose (D9-prose), classified as pure residue
+or grouping-coincides-with-topic.
+
+**Read surface:** `docs/MATHEMATICS.md` (4592 lines), `docs/PEDAGOGY.md` (1401 lines),
+`gnfs/docs/PEDAGOGY.md` (5240 lines), `shared/numth/docs/PEDAGOGY.md` (446 lines),
+`shared/numfield/docs/PEDAGOGY.md` (747 lines), `shor/docs/PEDAGOGY.md` (509 lines),
+`README.md` (297 lines). Total ~13 232 lines sampled by ToC, chapter openings, and targeted
+grep passes.
+
+---
+
+### Part (a) — Docs-layer discipline (D3)
+
+#### The three-layer model (as observed)
+
+The three-layer discipline, as it exists in the corpus:
+
+1. **Inline `//!`/`///` docs** — code-adjacent; reference code identifiers and module surfaces.
+   Consumed by REFACTOR (A.2 cataloged these).
+2. **Per-crate `PEDAGOGY.md` code-tours** — human-facing; reference code identifiers and cite
+   `docs/MATHEMATICS.md` chapters for the mathematics. Do NOT reference MATHEMATICS.md as a
+   prerequisite — they are complementary lenses.
+3. **`docs/MATHEMATICS.md`** — the maths-first textbook; references PEDAGOGY.md files for the
+   code realisation. The C-Textbook contract (lines 8–130) states it is "maths-first, code-second,
+   learnable on its own."
+
+The prescribed reference directions are: PEDAGOGY → MATHEMATICS (for math foundations) and
+MATHEMATICS → PEDAGOGY (for code realisation). Neither is a prerequisite for the other.
+
+---
+
+### F-D3-01 · `MATHEMATICS.md` references specific Rust code identifiers — partial layer violation
+
+**Observed state:** `MATHEMATICS.md` contains 9 occurrences of Rust module paths as inline
+citations within the mathematical text. Examples (sampled):
+
+- Line 117–118 (chapter-pairing note): "`rho::ecdlp`, `rho::pairing`, `rho::ssa`, `rho::ghs`,
+  `rho::semaev`, `rho::index_calculus`"
+- Line 2899 (§10.1 Pohlig–Hellman): "Code realisation: `docs/PEDAGOGY.md` §9 (Pohlig–Hellman
+  code-tour, `rho::ecdlp::pohlig`)."
+- Line 2962 (§10.2 SSA): "Code realisation: `docs/PEDAGOGY.md` §11 (SSA code-tour, `rho::ssa`)."
+- Line 3017 (§10.3 GHS): "Code realisation: `docs/PEDAGOGY.md` §12 (GHS code-tour, `rho::ghs`)."
+- Line 3081 (§10.4 index calculus): "`rho::semaev` and `rho::index_calculus`"
+- Line 3180 (§10.5 MOV): "the frozen `gnfs::dl::solve_dl` entry point, Track D"
+- Line 3230 (§10.5 MOV): "Code realisation: `docs/PEDAGOGY.md` §10 (MOV code-tour,
+  `rho::pairing::mov`)."
+- Line 3283 (§10.5 cross-references): "The MOV reduction (§10.5) calls `gnfs::dl::solve_dl`"
+
+**Pattern:** The code-identifier citations appear consistently in the "Code realisation" lines at
+the end of each §10.x sub-section, and in the chapter-pairing note. They are not scattered through
+the mathematical exposition itself — the mathematical prose is clean. The identifiers appear as
+cross-reference pointers, not as mathematical content.
+
+**Classification:** **Partial layer violation.** The C-Textbook contract states MATHEMATICS.md is
+"maths-first, code-second, learnable on its own" and that "the code-tour cites the textbook
+chapter for the mathematics; the textbook chapter cites the code-tour for the realisation." The
+cross-reference direction (MATHEMATICS → PEDAGOGY) is correct and prescribed. However, the
+inclusion of bare Rust module paths (`rho::ecdlp::pohlig`, `gnfs::dl::solve_dl`) inside the
+textbook body goes one step further than citing the PEDAGOGY file — it names the implementation
+artifact directly. This is a mild violation: the textbook can point to the code-tour without
+naming the Rust path. The PEDAGOGY file is the correct indirection layer.
+
+**Finding:** `MATHEMATICS.md` contains ~9 Rust module-path citations (`rho::*`, `gnfs::dl::*`)
+embedded in "Code realisation" lines within §10 (Algebraic ECDLP Attacks) and the chapter-pairing
+note. The mathematical prose is clean; the violation is in the cross-reference lines only. →
+CONSOLIDATE replaces bare Rust paths with PEDAGOGY-section citations (e.g., "Code realisation:
+`docs/PEDAGOGY.md` §9" without the trailing `rho::ecdlp::pohlig`). *Feeds C-DocsLayer (sketch).*
+
+---
+
+### F-D3-02 · `shor/docs/PEDAGOGY.md` references MATHEMATICS.md as a forward reference to a chapter that now exists
+
+**Observed state:** `shor/docs/PEDAGOGY.md` lines 3–4:
+
+> "This chapter is the code-tour sibling of `docs/MATHEMATICS.md` ch. 11 (T.S, to be written in
+> S.D.2)."
+
+And lines 480–485:
+
+> "**T.S — the maths-first sibling.** `docs/MATHEMATICS.md` ch. 11 (to be written in S.D.2) is
+> the maths-first sibling of this chapter. … The 'see T.S' pointer in this document is a forward
+> reference that S.D.2 resolves."
+
+**Observed state of MATHEMATICS.md:** Chapter 11 ("Shor's Algorithm and Post-Quantum Context")
+exists at line 3371, is complete (4592 − 3371 = ~1221 lines), and is the designated payoff proof
+chapter for Track S.
+
+**Classification:** **Stale forward reference.** The chapter was written in session T.S (arc 1);
+the PEDAGOGY file was written earlier and its forward-reference text was never updated. The
+reference direction (PEDAGOGY → MATHEMATICS) is correct; only the "to be written in S.D.2"
+annotation is stale.
+
+**Finding:** `shor/docs/PEDAGOGY.md` lines 4 and 480 contain stale "to be written in S.D.2"
+annotations for `docs/MATHEMATICS.md` ch. 11, which now exists and is complete. → CONSOLIDATE
+removes the forward-reference annotation and replaces with a direct citation. *Feeds C-DocsLayer
+(sketch).*
+
+---
+
+### F-D3-03 · `shared/numfield/docs/PEDAGOGY.md` has no maths-first citation header
+
+**Observed state:** `shared/numfield/docs/PEDAGOGY.md` opens (lines 1–13) with a plain
+introduction to the `shared/numfield` crate, with no blockquote citing `docs/MATHEMATICS.md` for
+the mathematical foundations. Compare: `shared/numth/docs/PEDAGOGY.md` (lines 3–9) has a
+`> **Maths-first treatment.**` blockquote citing `docs/MATHEMATICS.md §The α-Substrate`; and
+`shor/docs/PEDAGOGY.md` (lines 3–8) has a `> **Code-first treatment.**` blockquote citing
+`docs/MATHEMATICS.md` ch. 11.
+
+`shared/numfield/docs/PEDAGOGY.md` does reference the mathematical content inline (e.g., line 642
+references "contracts frozen in G.A"), but lacks the standard header blockquote that establishes
+the layer relationship.
+
+**Classification:** **Layer-discipline gap (minor).** The reference direction is implicitly
+correct (the file is a code-tour), but the standard header citation is absent. The PEDAGOGY
+discipline requires each code-tour to declare its maths-first sibling at the top.
+
+**Finding:** `shared/numfield/docs/PEDAGOGY.md` lacks the standard `> **Maths-first treatment.**`
+header blockquote citing `docs/MATHEMATICS.md §GNFS §3 "The Number-Field Bridge"` (the relevant
+chapter). → CONSOLIDATE adds the header. *Feeds C-DocsLayer (sketch).*
+
+---
+
+### F-D3-04 · `docs/PEDAGOGY.md` references `MATHEMATICS.md` chapters correctly; `README.md` references implementation details at the crate-map level
+
+**Observed state (PEDAGOGY → MATHEMATICS, correct):** `docs/PEDAGOGY.md` consistently cites
+`docs/MATHEMATICS.md` for mathematical foundations (lines 47, 58, 68, 112–113, 122, 141, 149,
+192, 240, 746, 754, 842, 910, 971, 1046, 1084, 1172, 1340, 1346, 1350, 1399). All citations are
+in the correct direction (code-tour → textbook). No PEDAGOGY file references MATHEMATICS.md
+chapters as prerequisites — they are cited as complementary lenses.
+
+**Observed state (README):** `README.md` references `Track ρ`, `Track E`, `Track G`, `Track D`,
+`Track S` as section headings (lines 19, 34, 49, 63, 83) and references implementation details
+(crate names, module paths in the crate-map section, lines 122–131). The README is a
+workspace-level orientation document; its reference to implementation details is appropriate for
+its role. It does not reference MATHEMATICS.md chapters or PEDAGOGY section numbers in a way that
+violates layer discipline.
+
+**Classification:** **Layer discipline coheres** for PEDAGOGY → MATHEMATICS and README. The
+README's implementation-detail references are appropriate for a workspace orientation document.
+
+**Finding:** No violation. PEDAGOGY → MATHEMATICS reference direction is consistently honored
+across all five PEDAGOGY files (with the gap noted in F-D3-03). README references implementation
+details appropriately for its role. *Feeds C-DocsLayer (sketch) as a positive finding.*
+
+---
+
+### Summary table — docs-layer discipline findings
+
+| # | Finding | Location | Action | Consuming campaign |
+|---|---------|----------|--------|--------------------|
+| F-D3-01 | `MATHEMATICS.md` embeds ~9 Rust module paths in "Code realisation" lines | `docs/MATHEMATICS.md` §10, chapter-pairing note | CONSOLIDATE replaces with PEDAGOGY-section citations | CONSOLIDATE |
+| F-D3-02 | `shor/docs/PEDAGOGY.md` has stale "to be written in S.D.2" for ch. 11 (now exists) | `shor/docs/PEDAGOGY.md` lines 4, 480 | CONSOLIDATE removes stale annotation | CONSOLIDATE |
+| F-D3-03 | `shared/numfield/docs/PEDAGOGY.md` lacks standard maths-first citation header | `shared/numfield/docs/PEDAGOGY.md` lines 1–13 | CONSOLIDATE adds header blockquote | CONSOLIDATE |
+| F-D3-04 | PEDAGOGY → MATHEMATICS direction coheres; README references appropriate | All PEDAGOGY files; `README.md` | No action | — |
+
+---
+
+### Part (b) — Math-exposition continuity (D4)
+
+#### Chapter inventory
+
+`MATHEMATICS.md` has 12 chapters (4592 lines), assembled chapter-by-chapter at arc-1 track
+boundaries (T.0, T.G, T.D, T.E, T.S, T.Z):
+
+| Ch. | Title | Heading level | Lines (approx.) | Session |
+|-----|-------|---------------|-----------------|---------|
+| 1 | C-Textbook: Documentation-Register Contract | `##` | 1–131 | T.0 |
+| 2 | Table of Contents | `##` | 133–189 | T.0 |
+| 3 | Escape from Search: The Through-Line | `##` | 191–321 | T.0 |
+| 4 | Prerequisites | `##` | 323–668 | T.0 |
+| 5 | On Scale: A Natural-Philosophy Interlude | `##` | 670–823 | T.0 |
+| 6 | Pollard Rho for ECDLP | `##` | 825–1025 | T.0 |
+| 7 | The α-Substrate: Primality, Smoothness, and ECM | `##` | 1026–1359 | T.0 |
+| 8 | The General Number Field Sieve | **`#`** | 1361–2026 | T.G |
+| 9 | NFS-DL: Discrete Logarithm via the Number Field Sieve | **`#`** | 2028–2801 | T.D |
+| 10 | Algebraic ECDLP Attacks | `##` | 2803–3369 | T.E |
+| 11 | Shor's Algorithm and Post-Quantum Context | `##` | 3371–4135 | T.S |
+| 12 | Chapter 12 — Modularity and the Arithmetic of Elliptic Curves | `##` | 4137–4592 | T.Z |
+
+---
+
+### F-D4-01 · Heading-level inconsistency: chapters 8 and 9 use top-level `#` while all others use `##`
+
+**Observed state:** Chapters 8 (GNFS, line 1361) and 9 (NFS-DL, line 2028) open with a top-level
+`#` heading:
+
+```
+# The General Number Field Sieve: Structure-Based Escape from Search
+# NFS-DL: Discrete Logarithm via the Number Field Sieve
+```
+
+All other chapters (1–7, 10–12) open with a second-level `##` heading:
+
+```
+## Escape from Search: The Through-Line
+## Prerequisites
+## Pollard Rho for ECDLP
+## Algebraic ECDLP Attacks
+## Shor's Algorithm and Post-Quantum Context
+## Chapter 12 — Modularity and the Arithmetic of Elliptic Curves: A Speculation
+```
+
+**Cause:** Chapters 8 and 9 were written as standalone documents (T.G and T.D sessions) and
+appended to the single file without normalizing the heading level. The `#` heading makes them
+appear as separate documents within the file rather than chapters of the same textbook.
+
+**Impact on continuity:** In a Markdown renderer that builds a document outline from headings,
+chapters 8 and 9 appear at the document root level while all other chapters appear as subsections
+of the root. This breaks the visual and structural continuity of the textbook.
+
+**Finding:** Chapters 8 and 9 use `#` (top-level) headings; all other chapters use `##`
+(second-level). → CONSOLIDATE normalizes chapters 8 and 9 to `##` and adjusts their internal
+sub-headings accordingly (their internal `##` sub-headings become `###`, etc.). *Feeds C-MathSpine
+(sketch).*
+
+---
+
+### F-D4-02 · ToC has no "to be appended" labels — all 12 chapters exist
+
+**Observed state:** The ToC (lines 133–189) lists all 12 chapters with complete scope statements.
+No entry is marked "to be appended," "forthcoming," or "TBD." The single occurrence of "TBD" in
+MATHEMATICS.md (line 75) is in the C-Textbook markup section, referring to a superseded "rST or
+Markdown TBD" decision — not a chapter placeholder.
+
+**Finding:** No stale "to be appended" ToC labels. The ToC is complete and accurate. *Positive
+finding for C-MathSpine (sketch).*
+
+---
+
+### F-D4-03 · Chapter-pairing table Track-E row is correct; historical mis-pairing documented
+
+**Observed state:** The chapter-pairing table (lines 106–125) contains:
+
+```
+| Ch. 10 — Algebraic ECDLP Attacks | `docs/PEDAGOGY.md` §§8–18 (E.W integrative chapter) |
+```
+
+And the note (lines 116–121):
+
+> "**Note on Ch. 10 (Track E).** The E.W integrative chapter lives in the master
+> `docs/PEDAGOGY.md` §§8–18 — not in `gnfs/docs/PEDAGOGY.md`. … The pairing table previously
+> pointed at `gnfs/docs/PEDAGOGY.md (Track E chapter)`; that was a structural mis-pairing
+> corrected here at T.Z."
+
+**Verification:** `docs/PEDAGOGY.md` §§8–18 (lines 731–1401) is confirmed as the Track-E
+integrative chapter ("Chapter E — Algebraic ECDLP Attacks: An Integrative Chapter", line 731).
+The Track-E code lives in the `rho` crate (confirmed in A.2). The pairing is now correct.
+
+**Finding:** The chapter-pairing table Track-E row correctly points to `docs/PEDAGOGY.md` §§8–18.
+The historical mis-pairing (pointing at `gnfs/docs/PEDAGOGY.md`) was corrected at T.Z and is
+documented in the note. No action needed. *Positive finding for C-MathSpine (sketch).*
+
+---
+
+### F-D4-04 · Voice, notation, and audience are consistent across chapters; through-line is threaded
+
+**Observed state (sampled):** Each chapter opening was sampled (first 20–40 lines). Observations:
+
+- **Voice:** All chapters use the same academic-and-clinical register: "intuition leads, rigour
+  follows." Each chapter opens with a through-line paragraph ("The through-line for this chapter")
+  that connects to the §"Escape from Search" spine. The register is consistent.
+- **Notation:** MathJax (`$…$`, `$$…$$`) is used uniformly. The $L$-notation
+  ($L_N[\alpha, c]$) is introduced in §3 and used consistently in all subsequent chapters. The
+  $\mathbb{Z}$, $\mathbb{F}_p$, $\mathbb{Q}(\alpha)$ notation is consistent.
+- **Audience floor:** The C-Textbook contract (undergraduate background) is honored. Each chapter
+  cites §Prerequisites for background results rather than re-deriving them.
+- **Through-line:** The "structure-based escape from search" through-line is stated in §3 and
+  revisited at the opening of every subsequent chapter (confirmed in chapters 6, 7, 8, 9, 10, 11,
+  12 openings).
+
+**Finding:** Voice, notation, and audience are consistent across all 12 chapters. The through-line
+is threaded as specified by C-Textbook. *Positive finding for C-MathSpine (sketch).*
+
+---
+
+### F-D4-05 · No explicit "suggested reading path" section; the ToC and Prerequisites chapter serve this role
+
+**Observed state:** There is no section titled "Suggested reading path" or "How to read this
+textbook." The Prerequisites chapter (§4, lines 323–668) contains (lines 329–330): "A reader who
+is comfortable with all of these results can proceed directly to any chapter. A reader who needs to
+review specific topics should consult the cited references." The C-Textbook contract (§"Audience
+floor") states the background assumption but does not prescribe a reading order.
+
+**Assessment:** The textbook is designed for non-linear reading (each chapter is self-contained
+with citations to §Prerequisites). The absence of a suggested-path section is consistent with the
+"complementary lenses" design philosophy. However, the ROADMAP D4 charge asks whether the file
+reads as "a continuous textbook with a suggested path" — the path is implicit (linear chapter
+order) but not stated.
+
+**Finding:** No explicit suggested-reading-path section. The textbook is navigable via the ToC and
+the Prerequisites chapter, but a reader unfamiliar with the project has no explicit guidance on
+reading order. → CONSOLIDATE may add a brief "How to read this textbook" note to the ToC section
+(one paragraph, not a new chapter). This is a CONSOLIDATE design decision, not a SURVEY fix.
+*Feeds C-MathSpine (sketch) as an open design question.*
+
+---
+
+### F-D4-06 · Cross-reference health: chapter references resolve; one internal section-name mismatch
+
+**Observed state:** Cross-references within MATHEMATICS.md use the pattern "§Pollard Rho chapter",
+"§Prerequisites", "§GNFS §3", "§10.5", etc. Sampled references:
+
+- `docs/PEDAGOGY.md` §0.2 L-notation table (line 273) cites "§6 for ρ, §7 for GNFS, §9.7 for
+  NFS-DL, §10.6 for algebraic ECDLP, §11.3.4 and §11.4.4 for Shor" — these section numbers
+  resolve correctly in MATHEMATICS.md.
+- The chapter-pairing table (lines 108–113) cites `gnfs/docs/PEDAGOGY.md §§52–62` and `§§63–71`
+  — these resolve to the G.W and D.W chapters in `gnfs/docs/PEDAGOGY.md`.
+- The Shor chapter (line 3373) cites "`shor/docs/PEDAGOGY.md` (Track S code-tour)" — resolves.
+- The NFS-DL chapter (line 2030) cites "`gnfs/docs/PEDAGOGY.md` §63–§71 (the D.W.1 NFS-DL
+  code-tour)" — resolves.
+
+**One mismatch observed:** The chapter-pairing table (line 110) cites
+"`gnfs/docs/PEDAGOGY.md` §§52–62 (G.W integrative chapter)" but `gnfs/docs/PEDAGOGY.md` does not
+use numbered sections in the §52–§62 range in its heading structure — it uses numbered headings
+(e.g., "## 52. …"). This is a section-numbering convention difference, not a broken reference, but
+it means the citation style is inconsistent with how the PEDAGOGY file is actually organized.
+
+**Finding:** Cross-references are substantively correct and resolve. One citation-style
+inconsistency: the chapter-pairing table cites `gnfs/docs/PEDAGOGY.md §§52–62` using `§` notation
+while the GNFS PEDAGOGY file uses plain numbered headings. → CONSOLIDATE normalizes the citation
+style. *Feeds C-MathSpine (sketch).*
+
+---
+
+### Summary table — math-exposition continuity findings
+
+| # | Finding | Location | Action | Consuming campaign |
+|---|---------|----------|--------|--------------------|
+| F-D4-01 | Chapters 8 and 9 use `#` heading; all others use `##` — structural discontinuity | `docs/MATHEMATICS.md` lines 1361, 2028 | CONSOLIDATE normalizes to `##` | CONSOLIDATE |
+| F-D4-02 | ToC is complete; no "to be appended" labels | `docs/MATHEMATICS.md` lines 133–189 | No action | — |
+| F-D4-03 | Chapter-pairing table Track-E row is correct; historical mis-pairing documented | `docs/MATHEMATICS.md` lines 106–121 | No action | — |
+| F-D4-04 | Voice, notation, audience, and through-line are consistent across all 12 chapters | All chapters | No action | — |
+| F-D4-05 | No explicit suggested-reading-path section; implicit linear order | `docs/MATHEMATICS.md` §ToC | CONSOLIDATE may add one-paragraph reading note | CONSOLIDATE |
+| F-D4-06 | Cross-references resolve; one citation-style inconsistency (`§§52–62` vs plain numbered headings) | `docs/MATHEMATICS.md` line 110 | CONSOLIDATE normalizes citation style | CONSOLIDATE |
+
+---
+
+### Part (c) — Prose-depth provenance catalog (D9-prose)
+
+**Scope:** Planning-frame tokens in `docs/PEDAGOGY.md`, `docs/MATHEMATICS.md`, `README.md`,
+`shor/docs/PEDAGOGY.md`, `gnfs/docs/PEDAGOGY.md`, `shared/numth/docs/PEDAGOGY.md`,
+`shared/numfield/docs/PEDAGOGY.md`. Excludes inline `//!`/`///` doc-comments (cataloged in A.2).
+
+---
+
+### F-D9-07 · `Track ρ / G / D / E / S` tokens in MATHEMATICS.md prose — grouping-coincides-with-topic
+
+**Observed state:** "Track ρ", "Track E", "Track G", "Track D", "Track S" appear in
+`docs/MATHEMATICS.md` in the following locations (sampled):
+
+- Line 108: chapter-pairing table column header "Track ρ code-tour"
+- Line 113: chapter-pairing table "Track S code-tour"
+- Lines 116, 120: chapter-pairing note "Track E", "Track E chapter"
+- Lines 289, 291, 295: L-notation table reading note "Track ρ", "Track E", "Track S"
+- Lines 2448, 2457: NFS-DL design-statement section "Track E", "Track D, D.A → D.B → D.C → D.W"
+- Lines 3089, 3180, 3221–3222: MOV section "Track E", "Track D"
+- Lines 3373, 3507: Shor chapter header and body "Track S"
+- Lines 4032–4060: Shor chapter summary "Track ρ", "Track G", "Track D", "Track E", "Track S"
+- Lines 4076–4077: Shor cross-reference table "Sub-Track S.B", "Sub-Track S.C"
+
+**Total occurrences in MATHEMATICS.md prose:** approximately 25 "Track X" tokens; 2 "Sub-Track"
+tokens.
+
+**Classification:** **Grouping-coincides-with-topic.** The five tracks map onto five real
+mathematical families: Track ρ = Pollard rho (birthday-paradox baseline); Track G = GNFS (number-
+field sieve for factoring); Track D = NFS-DL (number-field sieve for discrete log); Track E =
+algebraic ECDLP attacks (five structure-specific escapes); Track S = Shor's algorithm (quantum
+period-finding). The grouping is mathematically sound; only the planning label changes. The
+ROADMAP D9 charge explicitly names this case: "Track ρ → Pollard rho, the birthday-paradox
+baseline."
+
+**Finding:** ~25 "Track X" tokens in `docs/MATHEMATICS.md` prose. Classification:
+**grouping-coincides-with-topic** — the grouping survives; CONSOLIDATE re-anchors the label (e.g.,
+"Track ρ" → "Pollard rho" or "the rho family"). The sub-track IDs in the cross-reference table
+(lines 4076–4077: "Sub-Track S.B", "Sub-Track S.C") are borderline: they are used as section
+labels in `shor/docs/PEDAGOGY.md` and may survive as section references. Open-Q for A.7.
+*Feeds C-Coherence (prose half).*
+
+---
+
+### F-D9-08 · `Track ρ / E / G / D / S` tokens in `docs/PEDAGOGY.md` prose — grouping-coincides-with-topic
+
+**Observed state:** "Track ρ", "Track E", "Track G", "Track D", "Track S" appear extensively in
+`docs/PEDAGOGY.md`. Selected occurrences:
+
+- Line 51: "GLV, Koblitz (Track ρ, Phase 8)" — in the five-family list
+- Lines 52, 54: "Track E, §10", "Track S" — in the five-family list
+- Lines 133–134: "a factor (Track G) or a discrete logarithm (Track D)"
+- Lines 136, 143: "**Track G — GNFS**", "**Track D — NFS-DL**" — section headings
+- Line 157: "### §0.5 Track S: Shor's Algorithm" — section heading
+- Lines 198, 201, 209, 218, 222: "Track E", "Track D", "Track E", "Track E", "Track S" — in
+  synthesis paragraphs
+- Lines 734, 740, 752, 754, 858, 920, 1249, 1273, 1298, 1351: "Track E" — throughout the E.W
+  integrative chapter
+
+**Total occurrences in `docs/PEDAGOGY.md` prose:** approximately 40 "Track X" tokens.
+
+**Classification:** **Grouping-coincides-with-topic** (same reasoning as F-D9-07). The track
+labels are used as section headings and cross-references throughout the master tour. The grouping
+is mathematically sound; CONSOLIDATE re-anchors the labels.
+
+**Finding:** ~40 "Track X" tokens in `docs/PEDAGOGY.md` prose. Classification:
+**grouping-coincides-with-topic**. → CONSOLIDATE re-anchors (e.g., "Track E — Algebraic ECDLP
+Attacks" → "Algebraic ECDLP Attacks"). *Feeds C-Coherence (prose half).*
+
+---
+
+### F-D9-09 · `Track ρ / E / G / D / S` tokens in `README.md` prose — grouping-coincides-with-topic
+
+**Observed state:** `README.md` uses "Track ρ", "Track G", "Track D", "Track E", "Track S" as
+section headings and in-prose labels throughout:
+
+- Lines 19, 34, 49, 63, 83: section headings "### Track ρ — Pollard rho: …", "### Track G — GNFS:
+  …", "### Track D — NFS-DL: …", "### Track E — Algebraic ECDLP attacks: …", "### Track S —
+  Shor's algorithm: …"
+- Lines 108–109: shared-crate table "used by the SSA attack in Track E", "used by the GHS attack
+  in Track E"
+- Lines 122–124: crate-map code block "Track G (GNFS) + Track D (NFS-DL)", "Track ρ (Pollard rho)
+  + Track E (algebraic ECDLP attacks)", "Track S (Shor's algorithm)"
+- Lines 175, 182, 206, 208: CLI section "Track ρ", "Track ρ", "Track ρ", "Track E"
+- Lines 237–245: crate-layout listing "(Track E)" annotations on module directories
+
+**Total occurrences in `README.md`:** approximately 20 "Track X" tokens.
+
+**Classification:** **Grouping-coincides-with-topic.** The README section headings already include
+the topic name alongside the track label (e.g., "Track ρ — Pollard rho: the birthday-paradox
+baseline"). The grouping is mathematically sound; CONSOLIDATE can simplify to the topic name alone
+or keep the "Track X — Topic" format as a navigation aid.
+
+**Finding:** ~20 "Track X" tokens in `README.md`. Classification: **grouping-coincides-with-topic**.
+→ CONSOLIDATE re-anchors (simplest form: drop "Track X —" prefix from section headings, or keep
+as "Pollard rho (Track ρ)" for backward compatibility). *Feeds C-Coherence (prose half).*
+
+---
+
+### F-D9-10 · `Phase N` tokens in `docs/PEDAGOGY.md` prose — mixed: pure residue and grouping-coincides-with-topic
+
+**Observed state:** "Phase 0" through "Phase 8" appear extensively in `docs/PEDAGOGY.md` as
+section headings and in-prose labels for the Pollard rho optimization sequence (lines 287–727):
+
+- Lines 287, 302, 324, 347, 371, 406, 440, 472, 511: section headings "### Phase 0 — Crate
+  skeleton", "### Phase 1 — FpMonty", "### Phase 2 — Integer factorization rho", "### Phase 3 —
+  Curve arithmetic", "### Phase 4 — ECDLP rho baseline", "### Phase 5 — Distinguished points",
+  "### Phase 6 — Negation map", "### Phase 7 — Batched field inversion", "### Phase 8 — GLV
+  endomorphism"
+- Lines 360, 367, 466, 477, 511, 544, 548, 553–554, 563, 567, 573, 577, 581–582, 584, 595,
+  597–600: "Phase N" in-prose references throughout the optimization narrative
+
+Also: line 51: "GLV, Koblitz (Track ρ, Phase 8)" — in the five-family list.
+
+**Classification:** **Mixed.**
+
+- The "Phase N" section headings (Phase 0–8) in the Pollard rho chapter are **pure residue**: the
+  phases are construction-history labels for the optimization layers (Phase 1 = field arithmetic,
+  Phase 2 = factorization, etc.). The mathematical content is the optimization technique, not the
+  phase number. CONSOLIDATE re-anchors as topic-native section headings (e.g., "### Montgomery
+  form and the FpMonty speedup" instead of "### Phase 1 — FpMonty").
+- The in-prose "Phase N" references that describe the optimization sequence (e.g., "Phase 7
+  reduces per-step cost rather than walk length") are also **pure residue** — they are
+  cross-references to the planning-frame section headings.
+- The cumulative speedup table (lines 567–573) uses "Phase" as a column label — **pure residue**;
+  CONSOLIDATE replaces with the optimization name.
+
+**Finding:** ~30 "Phase N" tokens in `docs/PEDAGOGY.md` prose (section headings + in-prose
+references). Classification: **pure residue** (the phase numbers are construction-history labels;
+the mathematical content is the optimization technique). → CONSOLIDATE re-anchors section headings
+to topic-native names and updates in-prose cross-references. *Feeds C-Coherence (prose half).*
+
+---
+
+### F-D9-11 · Sub-track IDs in `docs/MATHEMATICS.md` prose — pure residue
+
+**Observed state:** Sub-track IDs appear in `docs/MATHEMATICS.md` in the following locations:
+
+- Line 11: "T.G, T.D, T.E, T.S, T.Z" — in the C-Textbook contract, describing which sessions
+  appended which chapters
+- Line 45: "T.G chapter", "T.E chapter" — in the C-Textbook depth section
+- Line 75: "ROADMAP Phase τ scope contract" — in the markup section
+- Line 88: "T.G appends the GNFS chapter; T.D, T.E, T.S append their chapters at their respective
+  ◆ boundaries" — in the artifact-location section
+- Line 91: "T.Z promotion decision" — in the artifact-location section
+- Line 551: "The MOV reduction (T.E chapter)" — in the Prerequisites chapter
+- Line 1015: "These are the subjects of the T.E chapter." — in the Prerequisites chapter
+- Line 1756: "This is the designated payoff proof for the T.G chapter (C-Textbook contract)."
+- Line 2448: "to the E.C-prep session (Track E)"
+- Line 2456–2457: "This section is the D.W.2 analogue of G.W §59 — the design-statement
+  verification for the whole NFS-DL arc (Track D, D.A → D.B → D.C → D.W)"
+- Line 2519: "This is the designated payoff proof for the T.D chapter (C-Textbook contract)."
+- Lines 4076–4077: "Sub-Track S.B", "Sub-Track S.C" in the Shor cross-reference table
+
+**Classification:** **Pure residue.** The session IDs (T.G, T.D, T.E, T.S, T.Z, D.W.2, G.W §59,
+D.A → D.B → D.C → D.W, E.C-prep) are construction-history labels. A reader of the textbook has
+no use for the session that appended a chapter; the mathematical content is the chapter itself.
+The "T.G chapter" / "T.E chapter" references are particularly residual — they name the chapter by
+its construction session rather than its title.
+
+**Finding:** ~15 session/sub-track ID tokens in `docs/MATHEMATICS.md` prose (T.G, T.D, T.E, T.S,
+T.Z, D.W.2, G.W §59, D.A → D.B → D.C → D.W, E.C-prep, Sub-Track S.B/S.C). Classification:
+**pure residue**. → CONSOLIDATE replaces with chapter titles or topic-native references (e.g.,
+"T.G chapter" → "the GNFS chapter"; "D.A → D.B → D.C → D.W" → "the NFS-DL pipeline"). *Feeds
+C-Coherence (prose half).*
+
+---
+
+### F-D9-12 · Sub-track IDs in `shor/docs/PEDAGOGY.md` prose — mixed
+
+**Observed state:** `shor/docs/PEDAGOGY.md` uses sub-track IDs extensively as section labels and
+cross-references:
+
+- Lines 18–22: table column "Sub-track" with values "S.A", "S.B", "S.C" — structural labels
+- Lines 20–22, 24–26, 30, 42, 47, 52, 65, 75, 82, 84, 87, 95, 121–122, 126, 130–131, 133, 138,
+  140, 166, 177, 188, 213–214, 218, 222–225, 230, 254, 264–265, 275, 302, 312, 346–347, 353,
+  356–388, 432–443, 454, 480, 485, 489, 500, 508: "S.A", "S.B", "S.C", "S.A.1", "S.A.2",
+  "S.B.1", "S.B.2", "S.C.1", "S.C.2" throughout
+
+**Classification:** **Borderline — open-Q for A.7.** The sub-track IDs S.A/S.B/S.C map onto
+three real algorithmic components: S.A = the state-vector simulator substrate; S.B = Shor's
+factoring algorithm; S.C = Shor's ECDLP algorithm. The grouping is mathematically sound (three
+distinct deliverables). However, the fine-grained IDs (S.A.1, S.A.2, S.B.1, S.B.2, S.C.1, S.C.2)
+are construction-history labels for individual sessions within each sub-track — these are pure
+residue. The coarse IDs (S.A, S.B, S.C) are borderline.
+
+**Finding:** Sub-track IDs in `shor/docs/PEDAGOGY.md` are **borderline** (S.A/S.B/S.C:
+grouping-coincides-with-topic; S.A.1/S.B.2/S.C.2 etc.: pure residue). The fine-grained IDs
+appear ~40 times. → Open-Q for A.7: does the grouping survive as "simulator / factoring / ECDLP"
+or does CONSOLIDATE dissolve the S.X.Y labels entirely? *Feeds C-Coherence (prose half) as an
+open-Q.*
+
+---
+
+### F-D9-13 · Sub-track IDs in `gnfs/docs/PEDAGOGY.md` prose — pure residue (fine-grained) and grouping-coincides-with-topic (coarse)
+
+**Observed state:** `gnfs/docs/PEDAGOGY.md` uses sub-track IDs G.A–G.W and D.A–D.W as section
+labels and cross-references throughout its 5240 lines. Sampled occurrences:
+
+- Line 57: "None until Murphy-E scoring (G.B.2) computes it" — in struct field doc-comment
+- Lines 79, 101, 317, 575–607, 619–632, 676, 683, 691, 732, 782, 854, 885, 888–889, 900, 934,
+  939, 1216–1267, 1272–1310, 1355–1394, 1407, 1415, 1467, 1473, 1481, 1577, 1591, 1622, 1766,
+  1771, 1776, 1799–1830, 1835–1893, 1921–1932, 1939, 1959: G.B, G.C, G.D, G.E, G.F, G.W, D.A
+  throughout
+
+**Classification:** **Mixed.** The coarse labels (G.B = polynomial selection, G.C = sieving, G.D
+= filtering, G.E = linear algebra, G.F = square root, G.W = integrative; D.A = NFS-DL relation
+collection) map onto real algorithmic pipeline stages — **grouping-coincides-with-topic**. The
+fine-grained IDs (G.B.1, G.B.2, G.B.3, G.B.4, G.C.3, G.D.2, G.E.3, G.F.3, G.F.4, D.A) are
+construction-history session labels — **pure residue**.
+
+**Finding:** Coarse sub-track IDs (G.B–G.W, D.A–D.W) in `gnfs/docs/PEDAGOGY.md` are
+**grouping-coincides-with-topic** (the pipeline stages are real); fine-grained IDs (G.B.1,
+G.C.3, etc.) are **pure residue**. → CONSOLIDATE replaces fine-grained IDs with stage names
+(e.g., "G.B.2 Murphy-E scoring" → "Murphy-E scoring"); coarse IDs may survive as section labels
+with topic-native names. *Feeds C-Coherence (prose half).*
+
+---
+
+### F-D9-14 · `◆` boundary marks in `shor/docs/PEDAGOGY.md` prose — pure residue
+
+**Observed state:** `shor/docs/PEDAGOGY.md` uses `◆` boundary marks as part of sub-track-close
+labels: "frozen S.A.2 ◆" (lines 65, 75, 82), "S.B.2 ◆" (lines 133, 166), "S.C.2 ◆" (lines 225,
+275). These appear in the module-surface descriptions as "frozen at S.X.Y ◆" annotations.
+
+**Classification:** **Pure residue.** The `◆` mark is a planning-frame milestone marker. A reader
+of the code-tour has no use for the sub-track-close milestone; the relevant information is that
+the contract is frozen (i.e., the interface is stable). The "frozen" annotation is useful; the
+`◆` and the session ID are residue.
+
+**Finding:** ~7 `◆` boundary marks in `shor/docs/PEDAGOGY.md` prose, embedded in "frozen S.X.Y ◆"
+annotations. Classification: **pure residue**. → CONSOLIDATE replaces "frozen S.A.2 ◆" with
+"frozen" or "stable interface". *Feeds C-Coherence (prose half).*
+
+---
+
+### Summary table — prose-depth provenance catalog (D9-prose)
+
+| # | Token type | Location | Count (approx.) | Classification | Consuming campaign |
+|---|-----------|----------|-----------------|----------------|--------------------|
+| F-D9-07 | `Track X` tokens | `docs/MATHEMATICS.md` | ~25 | Grouping-coincides-with-topic | CONSOLIDATE |
+| F-D9-08 | `Track X` tokens | `docs/PEDAGOGY.md` | ~40 | Grouping-coincides-with-topic | CONSOLIDATE |
+| F-D9-09 | `Track X` tokens | `README.md` | ~20 | Grouping-coincides-with-topic | CONSOLIDATE |
+| F-D9-10 | `Phase N` tokens (N=0–8) | `docs/PEDAGOGY.md` | ~30 | Pure residue | CONSOLIDATE |
+| F-D9-11 | Session/sub-track IDs (T.G, D.W.2, etc.) | `docs/MATHEMATICS.md` | ~15 | Pure residue | CONSOLIDATE |
+| F-D9-12 | Sub-track IDs S.A/S.B/S.C (coarse) and S.A.1/S.B.2 etc. (fine) | `shor/docs/PEDAGOGY.md` | ~50 | Borderline (open-Q A.7) / Pure residue | CONSOLIDATE |
+| F-D9-13 | Sub-track IDs G.B–G.W, D.A–D.W (coarse) and G.B.1 etc. (fine) | `gnfs/docs/PEDAGOGY.md` | many | Grouping-coincides-with-topic / Pure residue | CONSOLIDATE |
+| F-D9-14 | `◆` boundary marks | `shor/docs/PEDAGOGY.md` | ~7 | Pure residue | CONSOLIDATE |
+
+**Total prose planning-frame tokens (estimated):** ~185 across the six prose files. The bulk
+(~110) are "Track X" tokens classified as grouping-coincides-with-topic; the remainder (~75) are
+pure residue (Phase N, session IDs, ◆ marks, fine-grained sub-track IDs).
+
+---
+
+### Subtleties and deferrals
+
+**D3 — Layer discipline is mostly sound; violations are at the cross-reference level.** The three-
+layer model (inline / PEDAGOGY / MATHEMATICS) is honored in its reference directions. The
+violations are at the cross-reference granularity: MATHEMATICS.md names Rust module paths where it
+should cite PEDAGOGY sections; `shor/docs/PEDAGOGY.md` has a stale forward reference;
+`shared/numfield/docs/PEDAGOGY.md` lacks the standard header. None of these are structural
+violations — they are citation-style and staleness issues that CONSOLIDATE can fix in a single
+pass.
+
+**D4 — The textbook reads as a continuous textbook; the heading inconsistency is the main
+structural defect.** The voice, notation, audience, and through-line are consistent. The heading-
+level inconsistency (chapters 8 and 9 at `#` vs `##`) is the single structural defect that breaks
+the document outline. The absence of an explicit suggested-reading-path section is a design gap,
+not a defect — CONSOLIDATE decides whether to add one.
+
+**D9-prose — Track labels are the dominant token class; they are grouping-coincides-with-topic.**
+The ~110 "Track X" tokens are the largest class and are all grouping-coincides-with-topic: the
+five tracks map onto five real mathematical families. CONSOLIDATE's re-anchoring work is label
+replacement (e.g., "Track E" → "algebraic ECDLP attacks"), not structural reorganization. The
+~75 pure-residue tokens (Phase N, session IDs, ◆ marks) require more surgical replacement but are
+confined to specific sections (the Pollard rho optimization narrative in PEDAGOGY, the C-Textbook
+contract and design-statement sections in MATHEMATICS).
+
+**Borderline groupings (open-Q for A.7):** The S.A/S.B/S.C sub-track IDs in
+`shor/docs/PEDAGOGY.md` are the primary borderline case: the grouping (simulator / factoring /
+ECDLP) is mathematically sound, but the labels are planning-frame. A.7 decides whether to
+preserve the grouping under topic-native labels or dissolve the S.X structure entirely.
+
+**CONSOLIDATE blast radius for D9-prose:** ~185 prose tokens across 6 files. The bulk are label
+replacements (no structural reorganization). The `gnfs/docs/PEDAGOGY.md` file (5240 lines) has the
+highest density of sub-track IDs (G.B–G.W, D.A–D.W) but these are mostly grouping-coincides-with-
+topic and survive as pipeline-stage labels under topic-native names.
+
+*Feeds C-DocsLayer (sketch), C-MathSpine (sketch), and the prose half of C-Coherence.*
