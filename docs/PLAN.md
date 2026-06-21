@@ -381,7 +381,7 @@ contract(s) each session froze).
 |-----|---------------------------------------------------------------------|---------|--------|-------|
 | D.1 | Collapse `rho` re-export wrappers + freeze final crate layout       | done    | 42e2356 | C-Layout (compiler, pending D.6 ratification); extras: `shor/Cargo.toml` (dev-dep forced by collapse), `shor/tests/ecdlp_kat.rs`, `Cargo.lock` |
 | D.2 | Re-anchor `rho` baseline doc-comment provenance                     | done    | 89f1e22 |       |
-| D.3 | Re-anchor `rho` attack-module provenance + rename the one test id   | pending |        |       |
+| D.3 | Re-anchor `rho` attack-module provenance + rename the one test id   | done    | 84b993c |       |
 | D.4 | Re-anchor `gnfs` doc-comment provenance                             | pending |        |       |
 | D.5 | Re-anchor `shor` + `shared/*` doc-comment provenance                | pending |        |       |
 | D.6 | ◆ Freeze C-Layout + C-Coherence code-half; fold up                  | pending |        |       |
