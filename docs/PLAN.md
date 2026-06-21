@@ -298,13 +298,112 @@ SURVEY freezes the three **prose** contracts it owns at the A.7 ◆; the others 
 frozen later** at the named campaign (marked *"to be frozen at …"*). These are carried down from the
 ROADMAP's coarse cross-track contract table and sharpened to SURVEY grain.
 
-### C-Findings *(prose)* — **to be frozen at A.7**
+### C-Findings *(prose)* — **FROZEN at A.7 ◆**
 
-- **Defined-in:** A.7 ◆ (the consolidated findings ledger in `docs/SURVEY.md`).
-- **Consumed-by:** all five campaigns (B/C/D/E/F).
-- **Statement:** The survey findings ledger is the authoritative scope source for every campaign. A
-  campaign that exceeds its findings is defocus; one that ignores a finding is rigidity. Each entry
-  names the finding, its consuming campaign, and the in-scope/defocus boundary.
+- **Defined-in:** A.7 ◆ (the consolidated findings ledger in `docs/SURVEY.md`, sessions A.1–A.6).
+- **Consumed-by:** all five campaigns (B. ALIGN / C. ORACLE / D. REFACTOR / E. CONSOLIDATE /
+  F. EXTEND).
+- **Governing rule (the falsifiability law).** `docs/SURVEY.md` is the authoritative scope source for
+  every campaign. **A campaign that acts beyond its findings is defocus; a campaign that ignores a
+  finding is rigidity.** Each finding below names its consuming campaign and its in-scope/defocus
+  boundary. The boundary is the falsifiable contract: a downstream session is checked against it.
+- **Scope-routing invariant (load-bearing).** SURVEY split execution by artifact register, and the
+  routing is binding: **inline `//!`/`///`/`//` doc-comments + identifier/file/dir/bench/test
+  renames → REFACTOR (compiler blast radius); human prose (PEDAGOGY/MATHEMATICS/README) → CONSOLIDATE;
+  config/manifest/CI → ALIGN; CADO sidecar build → ORACLE; new algorithm/chapter → EXTEND.** A
+  finding routed to the wrong campaign is the primary cross-campaign defocus mode.
+
+**The ledger, by consuming campaign:**
+
+- **ALIGN (B) — formalities reconciliation (A.1, F-D1-01…12).** *In scope:* add the 8 absent root
+  formalities items as backports (`deny.toml`, `rustfmt.toml`, `LICENSE`, `[workspace.lints]`,
+  coverage gate, `development.md`, `.cargo/config.toml`, `AGENTS.md`) and seed the 3 rGNFS→template
+  forward-seeds (docs layering, dev-oracle policy, docs-register contracts); resolve the
+  `rho/rust-toolchain.toml` mis-scoping (promote-or-remove). *Defocus boundary:* ALIGN implements the
+  recorded gap only — it does not redesign the formalities set, and it does not set the coverage
+  *doctrine* (that is C-Testing-Philosophy, frozen). The coverage *gate value* is an open-Q (below);
+  ALIGN calibrates the number against a measured `cargo llvm-cov` baseline, honoring the frozen
+  doctrine shape.
+
+- **ORACLE (C) — CADO-NFS sidecar (A.5, F-D6-01…04).** *In scope:* build the sidecar to the recorded
+  design — lazy/on-demand + opt-in CI trigger; git-tag pin on the GitHub mirror (min `git-2.0.1` /
+  `88c4751`, tag + 40-hex commit hash); implement the **four** existing `#[ignore]`-gated stubs as
+  tolerance-bounded consistency checks (relation count ≥ CADO/3.0; matrix dims ±10%; N=35 factor;
+  80–100-bit factor). *Defocus boundary:* ORACLE must NOT promote any oracle test to the green path,
+  add CADO to any `Cargo.toml`, reverse the rGNFS-first comparison direction, or add new oracle tests
+  beyond the four stubs. Build-automation-intricacy (opus-ORACLE) is an ORACLE-internal call, not an
+  A.7 open-Q (ROADMAP-confirmed).
+
+- **REFACTOR (D) — layout + code-depth de-provenancing (A.2, F-D5-01…03, F-D9-01…06).** *In scope:*
+  collapse/dedup the `rho/src/field/` + `rho/src/util/` re-export wrappers and the duplicated
+  `batch_invert` tests; scrub code-adjacent provenance — the headline being **doc-comment-heavy,
+  identifier-light** (exactly one identifier hit: the `sub_track_close_curve_axioms_intact` test
+  name; all else in `//!`/`///`/`//`). Re-anchor `Phase N`, `Track D`, sub-track IDs, `PLAN.md`/
+  contract-name references, and `◆`/bench labels on topic-native names. *Defocus boundary:* REFACTOR
+  touches code-adjacent artifacts only — human prose is CONSOLIDATE's. The `rho`-overload *layout
+  decision* is gated on the human open-Q (below); REFACTOR owns the decision + its compiler blast
+  radius once the human answers, but must not pre-empt it. `shared/*` carries no dedup beyond the two
+  `rho` wrappers (F-D5-03) — REFACTOR inventing further dedup is defocus.
+
+- **CONSOLIDATE (E) — docs-layer + math-spine + prose de-provenancing (A.4, F-D3-01…04, F-D4-01…06,
+  F-D9-07…14) + citation updates (A.6, F-D8-02/03/04).** *In scope:* fix the 3 docs-layer defects
+  (MATHEMATICS.md bare Rust paths → PEDAGOGY citations; `shor` stale "S.D.2" forward-ref;
+  `shared/numfield` missing maths-first header); normalize the math-spine (chapters 8+9 `#`→`##`
+  heading; citation-style `§§52–62`; optional reading-path note); re-anchor ~185 prose provenance
+  tokens (~110 `Track X` grouping-coincides-with-topic → topic labels; ~75 pure residue — `Phase N`,
+  session IDs, `◆` — surgically removed); update §11.4.4/§11.5.1 qubit/migration citations from the 3
+  in-discriminant-excluded 2026 papers; decide the `shared/numth` inline-test migration. *Defocus
+  boundary:* CONSOLIDATE re-anchors and reconciles existing prose — it does NOT author new
+  mathematical content (that is EXTEND), and it does not restructure beyond the recorded defects. The
+  C-Coherence borderline-aggressiveness default is a human open-Q (below) that sets the cut depth.
+
+- **EXTEND (F) — spectrum completion (A.6, F-D7-01; bounded by F-D7-02, F-D8-01…05).** *In scope (if
+  the human admits it to arc-2 — see scope-ceiling open-Q):* exactly one genuine gap — **hyperelliptic
+  Jacobian DLP via Gaudry index calculus**, the deferred downstream solve of the GHS transfer
+  (Ch. 10.3). Substrate exists (`rho/src/hyperelliptic/`: Mumford divisors, Cantor group law); the
+  missing layer is the index calculus on the Jacobian + its KATs + a MATHEMATICS.md treatment.
+  *Defocus boundary (sharp):* the spectrum is otherwise complete for the discriminant — trial
+  division, QS, BSGS, classical-index-calculus-for-𝔽ₚ* are **deliberate non-extensions** (subsumed or
+  same-complexity-class), and the four distilled references add **no** new mathematical algorithm.
+  EXTEND adding anything beyond the one Gaudry gap is defocus; a deliberate non-extension is a
+  *successful* finding, not a gap to fill.
+
+**Falsifiability self-test (binds the ledger).** Every entry above states a checkable boundary: e.g.
+"ALIGN sets gate to 100%" → doctrine violation (frozen at 80%-shape); "ORACLE removes `#[ignore]`" →
+policy violation; "EXTEND adds Quadratic Sieve" → defocus (F-D7-02 deliberate non-extension);
+"CONSOLIDATE renames a Rust identifier" → mis-routed (that is REFACTOR). A finding that cannot be
+stated as such a boundary has an undefined contract — none in this ledger does.
+
+**Four open questions surfaced to the human (resolved by *preference/scope*, not by audit — the audit
+resolved every *factual/doctrinal* question).** These ride to the step-3 review as flagged
+recommendations; they do not block the freeze:
+
+1. **`rho`-overload split** (D5): peer Track-E's 8 attack modules into a separate crate, or keep them
+   co-located with the Pollard-rho baseline they are benchmarked against? *Cohesion-vs-organisation
+   values call; REFACTOR-gating. Adjudicator recommendation: keep-with-baseline* — the E.W cross-attack
+   bench measures the attacks against the rho baseline and they share `rho::curve`/`rho::field` types
+   directly, so the pedagogical "attacks live with the baseline they're measured against" framing is
+   load-bearing; a split buys crate-name honesty at the cost of that measured-against cohesion. *(Worse
+   at: a reader still meets a larger surface than "Pollard rho" advertises.)*
+2. **Coverage gate value** (D2): the doctrine *shape* is frozen (math-behavior KAT primary; line
+   coverage a secondary dead-code floor); the *number* (80% recommended) is unmeasured. *ALIGN
+   calibrates against a real llvm-cov baseline; the human's lean (80 / 90 / 100-with-`#[ignore]`-
+   exclusions) sets the target. Adjudicator recommendation: 80% floor, ALIGN re-tunes to the measured
+   baseline.* *(Worse at: 80% is a reasoned guess, not a measurement — a baseline far from 80% should
+   move it.)*
+3. **F-EXTEND scope ceiling** (D7): is arc-2 the place to fill the one genuine gap (hyperelliptic
+   Jacobian DLP), or does it become an arc-3 roadmap, keeping arc-2 consolidation-focused? *Roadmap-
+   scope call. Adjudicator recommendation: defer to arc-3* — the gap is real but self-contained, arc-2's
+   stated spine is consolidation/alignment, and EXTEND is the one campaign with no upstream pressure;
+   filling it in arc-2 widens scope against the survey-first/consolidate-first discipline. *(Worse at:
+   leaves the GHS chapter a "dangling transfer" one cycle longer.)*
+4. **C-Coherence borderline default** (D9): for groupings where track ≈ topic (the S.A/S.B/S.C Shor
+   sub-tracks; coarse G.*/D.* pipeline stages), preserve the grouping under a topic-native label, or
+   dissolve into a purer topical organization? *Sets how aggressively REFACTOR/CONSOLIDATE cut.
+   Adjudicator recommendation: preserve-under-topic-label* — the coarse groupings map onto real
+   mathematical families (the ROADMAP's own D9 example), so dissolving them discards real structure;
+   only the fine-grained S.X.Y / G.X.Y session IDs are pure residue and dissolve. *(Worse at: keeps a
+   faint planning-shaped silhouette in the section structure.)*
 
 ### C-Testing-Philosophy *(prose)* — **to be frozen at A.3, ratified at A.7**
 
@@ -385,6 +484,12 @@ Discovery/flex: Genuine spectrum gap found: hyperelliptic Jacobian DLP (Gaudry i
 Affected: F-EXTEND scope (C-Findings will name this as the only F-EXTEND algorithmic candidate)
 Deferred: yes — EXTEND scope-ceiling (arc-2 vs arc-3) is a human open-Q at A.7
 Texture: All 4 arxiv IDs resolved (risk flag not triggered); 3 x 2026 hardware/circuit papers are outside the discriminant but feed CONSOLIDATE citation updates (§11.4.4, §11.5.1). F-EXTEND scope is narrow: one genuine gap, not a broad expansion.
+
+### A.7 inflection-design — 2026-06-21
+Discovery/flex: @plan-juncture (Opus) returned design-confident — C-Findings contract written into PLAN's ## Cross-session contracts; all 9 dimensions confirmed audited; no additive reshard needed.
+Affected: C-Findings (now frozen in PLAN); four human open-Qs surfaced (rho-overload split, coverage gate value, F-EXTEND scope ceiling, C-Coherence borderline default)
+Deferred: yes — four open-Qs ride to human review at A.7 step-3; adjudicator recommendations provided for each
+Texture: Juncture fork noted stale "11 chapters" text in PLAN (should be 12 per A.4 finding); scope-routing invariant elevated to first-class in C-Findings as the primary cross-campaign defocus mode.
 
 ---
 
