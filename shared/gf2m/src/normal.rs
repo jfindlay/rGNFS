@@ -33,7 +33,7 @@
 //! Multiplication in a normal basis uses the λ-matrix (the Massey–Omura
 //! multiplication table).  For demonstration fidelity, this implementation
 //! converts both operands to polynomial basis, multiplies there, and converts
-//! back.  The λ-matrix optimisation is a principle-2 scale-only concern (E.F.4).
+//! back.  The λ-matrix optimisation is a principle-2 scale-only concern (deferred).
 //!
 //! # Storage contract
 //!
@@ -262,7 +262,7 @@ macro_rules! impl_f2m_normal {
             {
                 // Convert both operands to polynomial basis, multiply there,
                 // convert back.  This is the correct approach for a pedagogical
-                // implementation; the λ-matrix optimisation is E.F.4.
+                // implementation; the λ-matrix optimisation is deferred.
                 let a_poly = normal_to_poly(&self.c, &self.beta, poly);
                 let b_poly = normal_to_poly(&rhs.c, &self.beta, poly);
                 let a_naive = F2mNaive::<$L>::from_uint(a_poly, poly);

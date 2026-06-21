@@ -2,7 +2,7 @@
 //!
 //! Implements the controlled `|P⟩ → |P + cG⟩` operation for a classically-fixed point
 //! `cG`, controlled on a qubit. This is the quantum heart of the ECDLP period-finding
-//! circuit (S.C.2).
+//! circuit in [`crate::ecdlp`].
 //!
 //! # Construction choice: constant-point addition via permutation synthesis
 //!
@@ -13,7 +13,7 @@
 //! classical permutation on the `(x, y)` coordinate register.
 //!
 //! The permutation is synthesized directly using the same ancilla-free approach as
-//! the S.B.1 `arith` module (`apply_controlled_permutation`): the map
+//! the `arith` module (`apply_controlled_permutation`): the map
 //! `(x_P, y_P) → (x_{P+cG}, y_{P+cG})` is computed classically for all 13 group
 //! elements (including `∞`), then synthesized as a product of transpositions on the
 //! combined `(x, y)` register. No λ scratch register is consumed at runtime — the
@@ -23,8 +23,8 @@
 //! - Is correct: the permutation exactly implements the group law.
 //! - Is reversible: every permutation is its own inverse composed with itself.
 //! - Is ancilla-free: no scratch register is borrowed or left entangled.
-//! - Uses only the frozen S.A gate set (via `arith::apply_controlled_permutation`).
-//! - Mirrors the S.B.1 precedent exactly.
+//! - Uses only the gate set in [`crate::gates`] (via `arith::apply_controlled_permutation`).
+//!   - Mirrors the `arith` permutation-synthesis precedent exactly.
 //!
 //! # Register layout (C-PointAdd freeze)
 //!
@@ -122,7 +122,7 @@ fn build_point_add_permutation(cg: Point, coord_bits: usize) -> Vec<usize> {
 /// The operation is a controlled permutation on the combined `(x, y)` register:
 /// each basis state `|x_P, y_P⟩` encoding a group element `P` is mapped to
 /// `|x_{P+cG}, y_{P+cG}⟩`. The permutation is synthesized ancilla-free using the
-/// same transposition-based approach as the S.B.1 `arith` module.
+/// same transposition-based approach as the `arith` module.
 ///
 /// # Arguments
 ///
@@ -162,7 +162,7 @@ pub fn controlled_point_add(sv: &mut StateVec, cg: Point, layout: &PointAddLayou
 /// Apply the inverse controlled point-addition circuit: `|P⟩ → |P − cG⟩` when `ctrl` is |1⟩.
 ///
 /// This is the inverse of [`controlled_point_add`]: adds `−cG` instead of `cG`.
-/// Used for reversibility verification and for the inverse circuit in S.C.2.
+/// Used for reversibility verification and for the inverse circuit in [`crate::ecdlp`].
 ///
 /// # Panics
 ///

@@ -1,8 +1,8 @@
 //! Reversible modular-arithmetic quantum circuit builders.
 //!
 //! Implements the controlled modular-exponentiation circuit
-//! `|x⟩|y⟩ → |x⟩|y · aˣ mod N⟩` from the frozen S.A gate set, for use by S.B.2's
-//! order-finding circuit.
+//! `|x⟩|y⟩ → |x⟩|y · aˣ mod N⟩` from the gate set in [`crate::gates`], for use by the
+//! order-finding circuit in [`crate::shor`].
 //!
 //! # Circuit hierarchy
 //!
@@ -16,7 +16,7 @@
 //! # Register layout (C-ModExp — frozen)
 //!
 //! The full mod-exp circuit uses the following qubit layout (little-endian throughout,
-//! matching the frozen S.A.1 convention):
+//! matching the C-StateVec convention):
 //!
 //! ```text
 //! qubits [0, t)         — exponent register (t bits, controls the exponentiation)
@@ -46,8 +46,8 @@
 //! all work qubits EXCEPT the target bit (plus the external control qubit). This is correct
 //! for all inputs (basis states and superpositions), reversible, and ancilla-free.
 //!
-//! This is a demonstration-fidelity circuit (not gate-count-optimized) per the S.B scoping
-//! discipline.
+//! This is a demonstration-fidelity circuit (not gate-count-optimized) per the principle-4
+//! scoping discipline.
 //!
 //! # References
 //!
@@ -452,7 +452,7 @@ fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
 
 /// Register layout descriptor for the controlled modular-exponentiation circuit.
 ///
-/// Documents the qubit layout (C-ModExp freeze) consumed by S.B.2's order-finding circuit.
+/// Documents the qubit layout (C-ModExp) consumed by the order-finding circuit in [`crate::shor`].
 ///
 /// # Layout
 ///

@@ -298,7 +298,8 @@ where
 /// where `α` is the root of `poly_m` (the primitive element of GF(2^m)).  The basis has
 /// `l` elements.
 ///
-/// This basis is over-specified for E.H.1 and carried for E.K's index calculus over GF(2^l).
+/// This basis is over-specified for the GHS/Weil descent and carried for index calculus over
+/// GF(2^l) (see `rho::index_calculus`).
 ///
 /// # Panics
 ///

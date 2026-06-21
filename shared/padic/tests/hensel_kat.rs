@@ -3,7 +3,7 @@
 //! All KATs use `f(x) = x² − 2` with `p = 7` and `r_0 = 3` (since `3² = 9 ≡ 2 mod 7`) unless
 //! otherwise noted.
 //!
-//! Hand-computed Newton iteration (from PLAN.md E.D.2):
+//! Hand-computed Newton iteration for `f(x)=x²−2`, `p=7`:
 //!
 //! - `r_0 = 3`: `3² = 9 ≡ 2 mod 7` ✓
 //! - `r_1 = 10`: Newton step mod 49.

@@ -2,7 +2,7 @@
 //!
 //! [`Zp`] represents an element of Z/p^k — a residue in [0, p^k) together with the prime `p`
 //! and precision `k`. This is the arithmetic substrate for the p-adic tower: Hensel lifting
-//! (E.D.2) and the p-adic logarithm (E.D.3) both iterate over this type.
+//! ([`crate::hensel`]) and the p-adic logarithm ([`crate::log`]) both iterate over this type.
 //!
 //! # Non-field guard
 //!

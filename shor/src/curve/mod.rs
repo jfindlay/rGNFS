@@ -40,7 +40,7 @@
 //!   uses 3-qubit x/y registers — well within the ~25-qubit ceiling.
 //! - The 4-bit exponent register (for `r = 13`) + 3-bit x + 3-bit y + 3-bit λ scratch
 //!   = 13 qubits for the point-addition sub-circuit (plus the exponent register for
-//!   the full ECDLP circuit in S.C.2).
+//!   the full ECDLP circuit in [`crate::ecdlp`]).
 //!
 //! # Identity encoding
 //!
@@ -305,7 +305,7 @@ pub fn all_affine_points() -> Vec<Point> {
 ///
 /// Documents the qubit layout consumed by `shor::ecc::controlled_point_add`.
 ///
-/// # Layout (little-endian throughout — frozen S.A.1 convention)
+/// # Layout (little-endian throughout — C-StateVec convention)
 ///
 /// ```text
 /// qubit  ctrl_qubit                    — control qubit (1 = apply addition, 0 = no-op)
@@ -323,10 +323,11 @@ pub fn all_affine_points() -> Vec<Point> {
 ///
 /// # λ scratch register
 ///
-/// The λ scratch register is part of the layout for documentation and S.C.2 compatibility.
-/// In the current permutation-synthesis implementation (see `shor::ecc`), the λ register
-/// is not used — the permutation synthesis is ancilla-free. The register is allocated in
-/// the layout so S.C.2 can extend to a formula-based implementation if needed.
+/// The λ scratch register is part of the layout for documentation and ECDLP circuit
+/// compatibility. In the current permutation-synthesis implementation (see `shor::ecc`), the
+/// λ register is not used — the permutation synthesis is ancilla-free. The register is
+/// allocated in the layout so the ECDLP circuit can extend to a formula-based implementation
+/// if needed.
 #[derive(Clone, Debug)]
 pub struct PointAddLayout {
     /// Control qubit index.

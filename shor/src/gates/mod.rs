@@ -14,8 +14,8 @@
 //!
 //! # Basis-indexing convention
 //!
-//! Little-endian (qubit 0 = LSB), fixed at S.A.1. See [`crate::statevec`] for the full
-//! convention description.
+//! Little-endian (qubit 0 = LSB), fixed in [`crate::statevec`]. See [`crate::statevec`] for the
+//! full convention description.
 //!
 //! # Gate set (C-StateVec — frozen)
 //!
@@ -23,9 +23,9 @@
 //! - **Two-qubit:** CNOT, controlled-phase(θ), SWAP
 //! - **Multi-qubit:** Toffoli (CCX), multi-controlled-X (generalized Toffoli)
 //!
-//! The multi-controlled surface is over-specified for S.A.1's own KATs (which only exercise
-//! single- and two-qubit gates) but is carried for S.B (modular exponentiation) and S.C
-//! (Proos–Zalka ECDLP circuit) per the Category-A rule.
+//! The multi-controlled surface is over-specified for the gate-set KATs (which only exercise
+//! single- and two-qubit gates) but is carried for modular exponentiation ([`crate::arith`]) and
+//! the Proos–Zalka ECDLP circuit ([`crate::ecdlp`]) per the Category-A rule.
 
 use std::f64::consts::PI;
 
@@ -287,7 +287,8 @@ pub fn toffoli(sv: &mut StateVec, c0: usize, c1: usize, target: usize) {
 /// Apply a multi-controlled-X gate: flip `target` when all `controls` are |1⟩.
 ///
 /// Generalizes Toffoli to an arbitrary number of control qubits. This is the over-specified
-/// surface carried for S.B (modular exponentiation) and S.C (Proos–Zalka circuit).
+/// surface carried for modular exponentiation ([`crate::arith`]) and the Proos–Zalka ECDLP
+/// circuit ([`crate::ecdlp`]).
 ///
 /// # Panics
 ///

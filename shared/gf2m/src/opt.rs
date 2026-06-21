@@ -50,11 +50,10 @@
 //!
 //! # López–Dahab comb note
 //!
-//! The E.F.1 `F2mNaive` schoolbook comb **is** the comb method (López–Dahab
-//! without windowing).  A windowed-comb variant would be a within-baseline
-//! micro-optimization at toy scale — algorithmically the same speed-up story
-//! as Karatsuba but without an additional equivalence contract.  It is
-//! deliberately not separately implemented here; see the PLAN C-F2mOpt note.
+//! The `F2mNaive` schoolbook comb **is** the comb method (López–Dahab without windowing).
+//! A windowed-comb variant would be a within-baseline micro-optimization at toy scale —
+//! algorithmically the same speed-up story as Karatsuba but without an additional equivalence
+//! contract.  It is deliberately not separately implemented here.
 
 use crypto_bigint::Uint;
 

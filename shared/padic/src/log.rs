@@ -39,14 +39,14 @@
 //! ```
 //!
 //! This is the property that makes the Smart–Satoh–Araki reduction work: the ECDLP `Q = k·G`
-//! becomes additive division after applying the log. (E.E supplies the elliptic-curve
-//! specialisation; this module ships the general series.)
+//! becomes additive division after applying the log. (The SSA reduction layer supplies the
+//! elliptic-curve specialisation; this module ships the general series.)
 //!
 //! # Scope (principle-4 boundary)
 //!
-//! Toy precision only: `k` is small. The elliptic formal-group parametrisation (needed by E.E's
-//! SSA reduction) is out of scope here — E.E specialises this general series to the elliptic
-//! formal group.
+//! Toy precision only: `k` is small. The elliptic formal-group parametrisation (needed by the
+//! SSA reduction) is out of scope here — the SSA layer specialises this general series to the
+//! elliptic formal group.
 
 use num_bigint::BigInt;
 use num_integer::Integer;

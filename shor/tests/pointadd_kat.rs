@@ -13,7 +13,7 @@
 //!
 //! 4. **Scratch-clean** — the λ scratch register returns to |0⟩ after the circuit. Since the
 //!    permutation synthesis is ancilla-free, this is verified by the full-state
-//!    forward+inverse=identity check (per S.B.1 precedent).
+//!    forward+inverse=identity check (per the ancilla-free permutation-synthesis precedent).
 //!
 //! 5. **Control-off no-op** — with the control qubit |0⟩, the circuit is the identity.
 //!
@@ -46,7 +46,7 @@
 //!
 //! # Basis-indexing convention
 //!
-//! Little-endian (qubit 0 = LSB), matching the frozen S.A.1 C-StateVec convention.
+//! Little-endian (qubit 0 = LSB), matching the C-StateVec convention.
 //! Register layout: qubit 0 = control, qubits [1,4) = x, qubits [4,7) = y, qubits [7,10) = λ.
 
 use shor::arith::find_basis_index;
@@ -450,7 +450,7 @@ fn reversibility_sweep_cg_5g() {
 // Since the permutation synthesis is ancilla-free, the λ register is never touched.
 // The scratch-clean invariant is verified by:
 // (a) Directly reading the λ register after the forward circuit (should be 0).
-// (b) The full-state forward+inverse=identity check (subsumes scratch-clean per S.B.1).
+// (b) The full-state forward+inverse=identity check (subsumes scratch-clean).
 
 /// Scratch-clean: λ register is 0 after the forward circuit (P = G, cG = G).
 #[test]
@@ -477,7 +477,7 @@ fn scratch_clean_sweep() {
 
 /// Scratch-clean (full-state): forward + inverse = identity, verifying all qubits clean.
 ///
-/// This subsumes the scratch-clean invariant per S.B.1 precedent: if the full state
+/// This subsumes the scratch-clean invariant: if the full state
 /// vector is restored after forward + inverse, no qubit (including λ) is left entangled.
 #[test]
 fn scratch_clean_full_state_sweep() {

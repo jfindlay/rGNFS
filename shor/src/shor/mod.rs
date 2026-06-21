@@ -1,7 +1,7 @@
 //! Order-finding circuit, continued-fraction period extraction, and `factor(N)` driver.
 //!
-//! This module implements the S.B.2 deliverable: the order-finding circuit orchestration,
-//! the classical continued-fraction post-processing, and the end-to-end `factor(N)` driver.
+//! This module implements the order-finding circuit orchestration, the classical
+//! continued-fraction post-processing, and the end-to-end `factor(N)` driver.
 //!
 //! # Algorithm outline
 //!
@@ -24,7 +24,7 @@
 //!
 //! Total qubits: `exp_len + n`, where `N < 2^n` and `exp_len = n_bits(N)`.
 //!
-//! # Qubit budgets (confirmed S.B.1 ancilla-free implementation)
+//! # Qubit budgets (ancilla-free permutation-synthesis implementation)
 //!
 //! | N  | n_bits(N) | exp_len (t) | work (n) | total qubits |
 //! |----|-----------|-------------|----------|--------------|
@@ -34,13 +34,12 @@
 //! | 91 | 7         | 7           | 7        | 14           |
 //!
 //! All within the ~25-qubit simulator ceiling (principle 4).
-//! These match the S.B.1 action-frame digest qubit budgets.
 //!
 //! # Contracts produced
 //!
 //! - **C-OrderFind**: [`find_order`] + [`order_from_phase`] (the order-finding + period-extraction
-//!   interface, frozen at S.B.2 ◆).
-//! - **C-Factor**: [`factor`] (the end-to-end factoring driver, frozen at S.B.2 ◆).
+//!   interface).
+//! - **C-Factor**: [`factor`] (the end-to-end factoring driver).
 //!
 //! # References
 //!
@@ -74,7 +73,7 @@ pub fn gcd(mut a: u64, mut b: u64) -> u64 {
 /// Compute the exponent register size `t = n_bits(N)` for order-finding.
 ///
 /// Uses `t = n_bits(N) = ⌈log₂(N)⌉` bits for the exponent register. This matches the
-/// ancilla-free S.B.1 qubit budget (confirmed in the S.B.1 action-frame digest):
+/// ancilla-free permutation-synthesis qubit budget:
 /// - N=15: t=4, total=8 qubits
 /// - N=21: t=5, total=10 qubits
 /// - N=35: t=6, total=12 qubits

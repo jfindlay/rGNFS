@@ -1,8 +1,8 @@
 //! Number-theoretic primitives for the rGNFS project.
 //!
-//! This crate provides three families of primitives consumed by the NFS sieving
-//! (G.C), NFS-DL relation collection (D.A), and ECDLP index calculus (E.K)
-//! tracks:
+//! This crate provides three families of primitives consumed by NFS sieving
+//! (`gnfs::sieve`), NFS-DL relation collection (`gnfs::dl`), and ECDLP index calculus
+//! (`rho::index_calculus`):
 //!
 //! - **Primality testing** ([`prime`]): Miller–Rabin with deterministic witness
 //!   sets for ``n < 3,317,044,064,679,887,385,961,981``, falling back to a
@@ -15,8 +15,8 @@
 //!
 //! - **Elliptic Curve Method** ([`ecm`]): Lenstra's ECM for integer
 //!   factorization using Montgomery-form curves (Suyama parameterization).
-//!   Used as a sub-step inside NFS large-prime variations (G.C) and as a
-//!   fallback for factoring composite group orders in Pohlig–Hellman (E.A).
+//!   Used as a sub-step inside NFS large-prime variations (`gnfs::sieve`) and as a
+//!   fallback for factoring composite group orders in Pohlig–Hellman (`rho::ssa`).
 //!
 //! # Re-exports
 //!

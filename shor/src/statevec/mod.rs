@@ -6,8 +6,9 @@
 //! For an n-qubit register the basis state |q_{n-1} … q_1 q_0⟩ maps to index
 //! `i = q_0 + 2·q_1 + 4·q_2 + … + 2^{n-1}·q_{n-1}`.
 //!
-//! This convention is **frozen at S.A.1** and consumed by S.A.2 (QFT), S.B (modular
-//! exponentiation), and S.C (Proos–Zalka ECDLP circuit). A silent flip is a wrong-answer bug.
+//! This convention is fixed in this module and consumed by the QFT ([`crate::qft`]), modular
+//! exponentiation ([`crate::arith`]), and Proos–Zalka ECDLP circuit ([`crate::ecdlp`]).
+//! A silent flip is a wrong-answer bug.
 //!
 //! # Resource-scale ceiling (~25 qubits)
 //!

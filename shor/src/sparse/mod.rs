@@ -8,7 +8,7 @@
 //! register degenerates to the same cost as the dense register (O(2^n) entries). This is a
 //! **principle-4 annotation**: sparsity is a state-dependent property, not a universal speedup.
 //!
-//! # Gate semantics (C-Sparse — frozen at S.A.2 ◆)
+//! # Gate semantics (C-Sparse)
 //!
 //! Gate application iterates only the nonzero entries in the map, applying the same unitary
 //! transformations as the dense gate set. The sparse path is a no-regression mirror of the dense

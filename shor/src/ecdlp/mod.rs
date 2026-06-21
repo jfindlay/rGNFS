@@ -1,7 +1,7 @@
 //! Two-register ECDLP period-finding, 2D-lattice discrete-log extraction, and `solve_ecdlp`.
 //!
-//! This module implements the S.C.2 deliverable: Shor's quantum algorithm for the elliptic-curve
-//! discrete logarithm problem (ECDLP) `Q = k·G` on the toy curve (C-PointAdd, frozen S.C.1).
+//! This module implements Shor's quantum algorithm for the elliptic-curve discrete logarithm
+//! problem (ECDLP) `Q = k·G` on the toy curve (C-PointAdd).
 //!
 //! # Algorithm outline
 //!
@@ -13,7 +13,8 @@
 //!
 //! # Two-register circuit (NOT single-register order-finding)
 //!
-//! The S.B pattern (single-register order-finding for factoring) is the wrong template here.
+//! The single-register order-finding pattern (used for factoring in [`crate::shor`]) is the wrong
+//! template here.
 //! The ECDLP circuit uses TWO exponent registers:
 //!
 //! 1. Prepare `|a⟩|b⟩` in uniform superposition: H on every qubit of both registers.
@@ -52,7 +53,7 @@
 //! (`b'^{r-2} mod r`). If `b' = 0`, the measurement is uninformative (retry with a new seed).
 //! Brute-force verification (`k·G == Q`) confirms the recovered `k`.
 //!
-//! # Contracts produced (C-ECDLPSolve, frozen S.C.2 ◆)
+//! # Contracts produced (C-ECDLPSolve)
 //!
 //! - [`solve_ecdlp`]: run the two-register period-finding, recover `k`, verify `k·G == Q`,
 //!   retry on failure, return `k`. Handles trivial cases (`Q = ∞ → k = 0`, `Q = G → k = 1`).
@@ -326,7 +327,7 @@ pub fn extract_k_from_measurement(a_prime: u64, b_prime: u64, r: u64) -> Option<
 /// 5. If the lattice extraction fails verification, fall back to brute-force over `k ∈ 0..r`.
 ///    At toy scale (`r = 13`), brute-force is honest: the quantum circuit still performs the
 ///    period-finding; the classical extraction is just exhaustive search. This is documented
-///    as the toy-scale fallback (see PLAN S.C.2 note 4).
+///    as the toy-scale fallback (see module-level documentation).
 /// 6. If all candidates fail, retry with `seed + 1`.
 /// 7. Return `None` after `max_retries` failed attempts.
 ///
@@ -396,8 +397,9 @@ pub fn solve_ecdlp_with_retries(g: Point, q: Point, seed: u64, max_retries: usiz
         // the search toward the correct k (the high-probability outcomes cluster near the
         // true period), but at r=13 the brute-force is fast enough to be honest.
         //
-        // This is the documented toy-scale fallback from PLAN S.C.2 note 4:
-        // "At toy scale, brute-force over k ∈ 0..r is also honest — document the choice."
+        // This is the documented toy-scale fallback: at r=13, brute-force over k ∈ 0..r is
+        // honest — the quantum circuit still performs the period-finding; the classical
+        // extraction is just exhaustive search.
         for k in 0..r {
             let kg = curve::scalar_mul(k, g);
             if kg == q {

@@ -1,4 +1,4 @@
-//! Known-answer tests for Shor's factoring algorithm (S.B.2 ◆).
+//! Known-answer tests for Shor's factoring algorithm (C-Factor + C-OrderFind).
 //!
 //! # What is tested
 //!
@@ -20,7 +20,7 @@
 //!    work=7), well within the ~25-qubit simulator ceiling. This is the principle-4
 //!    ceiling-stress case: the algorithm is correct; the qubit budget fits.
 //!
-//! # Qubit budgets (confirmed ancilla-free S.B.1 implementation)
+//! # Qubit budgets (ancilla-free permutation-synthesis implementation)
 //!
 //! | N  | n_bits(N) | exp_len (t) | work (n) | total qubits |
 //! |----|-----------|-------------|----------|--------------|
@@ -30,7 +30,6 @@
 //! | 91 | 7         | 7           | 7        | 14           |
 //!
 //! All within the ~25-qubit ceiling.
-//! These match the S.B.1 action-frame digest qubit budgets.
 //!
 //! # Published reference values
 //!
@@ -166,7 +165,7 @@ fn n_bits_for_factoring_targets() {
 
 /// exp_len_for: correct exponent register sizes.
 ///
-/// Uses t = n_bits(N) (matching the S.B.1 action-frame digest qubit budgets).
+/// Uses t = n_bits(N) (the ancilla-free permutation-synthesis qubit budget).
 #[test]
 fn exp_len_for_factoring_targets() {
     assert_eq!(exp_len_for(15), 4, "exp_len for N=15 should be 4 (n_bits(15))");
@@ -357,7 +356,8 @@ fn factor_35_seed8() {
 //
 // N=91 = 7×13. Uses 14 qubits (exp_len=7, work=7), well within the ~25-qubit ceiling.
 // This is the principle-4 ceiling-stress case: the algorithm is correct and the qubit
-// budget fits. The S.B.1 ancilla-free implementation keeps the budget at exp_len+n=14.
+// budget fits. The ancilla-free permutation-synthesis implementation keeps the budget at
+// exp_len+n=14.
 
 /// Seed finder for N=91 (run once in release mode to find the right seed).
 ///
@@ -406,7 +406,7 @@ fn factor_91_seed1() {
 /// (exp_len=7, work=7), which fits within the ~25-qubit simulator ceiling. The algorithm is
 /// correct at this scale; larger N would require more qubits than the simulator supports.
 ///
-/// Qubit budget matches the S.B.1 action-frame digest: N=91 (7-bit, t=7): 14 qubits.
+/// Qubit budget for N=91 (7-bit, t=7): 14 qubits total.
 #[test]
 fn qubit_budget_91_within_ceiling() {
     use shor::arith::ModExpLayout;
@@ -424,7 +424,7 @@ fn qubit_budget_91_within_ceiling() {
 
 /// Qubit budgets for all factoring targets are within the ~25-qubit ceiling.
 ///
-/// Matches the S.B.1 action-frame digest qubit budgets.
+/// Verifies the ancilla-free permutation-synthesis qubit budgets for all factoring targets.
 #[test]
 fn qubit_budgets_all_targets() {
     use shor::arith::ModExpLayout;

@@ -113,7 +113,7 @@ pub trait F2m<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send +
     /// Return the canonical coefficient bit-vector in `[0, 2^m)`.
     fn to_uint(&self) -> Uint<L>;
 
-    // ── Char-2 arithmetic (implemented in E.F.1) ──────────────────────────────
+    // ── Char-2 arithmetic (implemented in `F2mNaive`) ────────────────────────
 
     /// Addition: `a + b` in GF(2^m) = XOR of coefficient bit-vectors.
     ///
@@ -157,10 +157,10 @@ pub trait F2m<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send +
     #[must_use]
     fn square(&self, poly: &Uint<L>) -> Self;
 
-    /// Frobenius endomorphism: `a → a²` (first-class name for E.G/E.H consumers).
+    /// Frobenius endomorphism: `a → a²` (first-class name for binary-curve and GHS consumers).
     ///
-    /// Delegates to `square`.  Declared as a distinct method because E.G/E.H
-    /// reach for it by this name and may iterate it as the Frobenius map.
+    /// Delegates to `square`.  Declared as a distinct method because binary-curve and GHS
+    /// code reaches for it by this name and may iterate it as the Frobenius map.
     #[must_use]
     fn frobenius(&self, poly: &Uint<L>) -> Self;
 
@@ -170,38 +170,37 @@ pub trait F2m<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send +
     #[must_use]
     fn pow(&self, exp: &Uint<L>, poly: &Uint<L>) -> Self;
 
-    // ── Curve-facing over-specification (declared-and-stubbed; filled in E.G) ─
+    // ── Curve-facing over-specification (declared-and-stubbed; filled in binary-curve layer) ──
 
     /// Absolute trace: `Tr(a) = Σ_{i=0}^{m-1} a^(2^i)` in GF(2^m).
     ///
-    /// Returns 0 or 1 (as a field element).  Used by E.G binary-curve point
-    /// operations.
+    /// Returns 0 or 1 (as a field element).  Used by binary-curve point operations.
     ///
     /// # Panics
     ///
-    /// Not yet implemented — filled in E.G.
+    /// Not yet implemented — filled in the binary-curve layer.
     #[must_use]
     fn trace(&self, poly: &Uint<L>) -> Self;
 
     /// Half-trace / solve quadratic: find `x` such that `x² + x = c` in GF(2^m).
     ///
-    /// Solves the Artin–Schreier equation `x² + x = c`.  Used by E.G binary-curve
-    /// point operations (point decompression over GF(2^m)).
+    /// Solves the Artin–Schreier equation `x² + x = c`.  Used by binary-curve point operations
+    /// (point decompression over GF(2^m)).
     ///
     /// # Panics
     ///
-    /// Not yet implemented — filled in E.G.
+    /// Not yet implemented — filled in the binary-curve layer.
     #[must_use]
     fn solve_quadratic(c: &Self, poly: &Uint<L>) -> Self;
 
-    // ── Deferred to E.F.2 (declared-and-stubbed) ─────────────────────────────
+    // ── Deferred (declared-and-stubbed) ──────────────────────────────────────
 
     /// Multiplicative inverse: `a⁻¹` such that `a · a⁻¹ = 1`.
     ///
     /// # Panics
     ///
     /// Panics if `self` is zero (no inverse exists).
-    /// Not yet implemented — filled in E.F.2.
+    /// Not yet implemented — deferred to a future extension.
     #[must_use]
     fn inv(&self, poly: &Uint<L>) -> Self;
 
@@ -210,7 +209,7 @@ pub trait F2m<const L: usize>: Clone + PartialEq + Eq + std::fmt::Debug + Send +
     /// # Panics
     ///
     /// Panics if `rhs` is zero.
-    /// Not yet implemented — filled in E.F.2.
+    /// Not yet implemented — deferred to a future extension.
     #[must_use]
     fn div(&self, rhs: &Self, poly: &Uint<L>) -> Self;
 

@@ -19,7 +19,7 @@
 //!
 //! # Basis-indexing convention
 //!
-//! Little-endian (qubit 0 = LSB), matching the frozen S.A.1 C-StateVec convention.
+//! Little-endian (qubit 0 = LSB), matching the C-StateVec convention.
 //! The work register occupies qubits `[t, t+n)` in the full state vector.
 //!
 //! # Published reference values

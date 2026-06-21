@@ -3,7 +3,7 @@
 //! # Algorithm
 //!
 //! The QFT is implemented as the standard Hadamard + controlled-phase ladder, O(n²) gates,
-//! built entirely from the frozen S.A.1 gate set ([`crate::gates::h`] and
+//! built entirely from the gate set in [`crate::gates`] ([`crate::gates::h`] and
 //! [`crate::gates::controlled_phase`]).
 //!
 //! For an n-qubit register the QFT maps basis state |j⟩ to
@@ -12,12 +12,12 @@
 //! QFT|j⟩ = (1/√N) Σ_{k=0}^{N-1} ω^{jk} |k⟩,   N = 2^n,  ω = e^{2πi/N}
 //! ```
 //!
-//! # Bit-reversal convention (LOAD-BEARING — read before consuming in S.B/S.C)
+//! # Bit-reversal convention (LOAD-BEARING — read before consuming in order-finding/ECDLP)
 //!
 //! **The standard QFT circuit (Nielsen & Chuang) is designed for big-endian qubit ordering.**
 //! In the little-endian convention (qubit 0 = LSB), the H + controlled-phase ladder (processing
 //! qubits 0 to n-1) maps |j⟩ → QFT|j_reversed⟩ instead of QFT|j⟩. This is a silent
-//! wrong-answer bug for S.B/S.C's period extraction.
+//! wrong-answer bug for the order-finding and ECDLP period extraction.
 //!
 //! The fix: **one input bit-reversal step** (swap qubit i with qubit n-1-i) before the ladder.
 //! After the bit-reversal, the circuit sees |j_reversed⟩ and outputs QFT|j⟩ directly in
@@ -30,8 +30,8 @@
 //! - `iqft(qft(sv)) == sv` (the identity KAT).
 //!
 //! **If you remove the bit-reversal step**, the circuit computes QFT|j_reversed⟩ instead of
-//! QFT|j⟩ — S.B/S.C will read the period out of the wrong qubit order. The bit-reversal is
-//! the silent-wrong-answer guard.
+//! QFT|j⟩ — the order-finding and ECDLP circuits will read the period out of the wrong qubit
+//! order. The bit-reversal is the silent-wrong-answer guard.
 //!
 //! # Inverse QFT
 //!
@@ -55,7 +55,7 @@ use crate::statevec::StateVec;
 /// After this call, the register holds the QFT of the input state in natural little-endian
 /// order. See the module-level documentation for the bit-reversal convention.
 ///
-/// Built from the frozen S.A.1 gate set: H + controlled-phase ladder + SWAP for bit-reversal.
+/// Built from the gate set in [`crate::gates`]: H + controlled-phase ladder + SWAP for bit-reversal.
 ///
 /// # Circuit structure
 ///
@@ -79,7 +79,7 @@ pub fn qft(sv: &mut StateVec) {
     // bit-reverse the input so the circuit sees |j_reversed⟩ and outputs QFT|j⟩.
     //
     // Without this step, the circuit computes QFT|j_reversed⟩ instead of QFT|j⟩ — a silent
-    // wrong-answer bug for S.B/S.C's period extraction.
+    // wrong-answer bug for the order-finding and ECDLP period extraction.
     for i in 0..(n / 2) {
         swap(sv, i, n - 1 - i);
     }

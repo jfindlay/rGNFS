@@ -14,37 +14,36 @@
 //!   the register. Single-qubit and full-register measurement. Deterministic seeded sampler
 //!   (`rand_chacha::ChaCha8Rng`) for reproducible KATs.
 //! - [`qft`] — Quantum Fourier Transform over the dense register: Hadamard + controlled-phase
-//!   ladder (O(n²) gates), built from the frozen S.A.1 gate set. Inverse QFT. Bit-reversal
+//!   ladder (O(n²) gates), built from the gate set in [`gates`]. Inverse QFT. Bit-reversal
 //!   convention documented and included (see [`qft`] module for the load-bearing note).
-//! - [`arith`] — Reversible modular-arithmetic quantum circuit builders (C-ModExp, frozen S.B.1):
+//! - [`arith`] — Reversible modular-arithmetic quantum circuit builders (C-ModExp):
 //!   controlled-add-mod (`|x⟩ → |x + c mod N⟩`), controlled-mult-mod (`|x⟩ → |c·x mod N⟩`),
 //!   and controlled modular-exponentiation (`|x⟩|y⟩ → |x⟩|y·aˣ mod N⟩`). Assembled from the
-//!   frozen S.A gate set; no new gate added to the simulator. Every ancilla is returned to |0⟩
+//!   gate set in [`gates`]; no new gate added to the simulator. Every ancilla is returned to |0⟩
 //!   (ancilla-clean invariant). Register layout: exponent qubits `[0, t)`, work qubits `[t, t+n)`,
 //!   where `N < 2^n` and `t` is the exponent register size. See [`arith::ModExpLayout`] for the
-//!   frozen C-ModExp interface consumed by S.B.2's order-finding circuit.
-//! - [`curve`] — Toy short-Weierstrass elliptic curve `y² = x³ + 3 mod 7` (C-PointAdd, frozen
-//!   S.C.1): plain `u64` affine group law (add, double, negate, scalar-mul), generator `G = (1,2)`,
+//!   C-ModExp interface consumed by the order-finding circuit.
+//! - [`curve`] — Toy short-Weierstrass elliptic curve `y² = x³ + 3 mod 7` (C-PointAdd):
+//!   plain `u64` affine group law (add, double, negate, scalar-mul), generator `G = (1,2)`,
 //!   prime order `r = 13`. The classical reference for the point-addition circuit's KATs. See
-//!   [`curve::PointAddLayout`] for the frozen register-layout map.
-//! - [`ecc`] — Reversible controlled point-addition quantum circuit (C-PointAdd, frozen S.C.1):
+//!   [`curve::PointAddLayout`] for the register-layout map.
+//! - [`ecc`] — Reversible controlled point-addition quantum circuit (C-PointAdd):
 //!   `|P⟩ → |P + cG⟩` for a classically-fixed point `cG`, controlled on a qubit. Assembled from
-//!   the frozen S.A gate set + S.B.1 permutation-synthesis primitive; no new gate added. Every
-//!   scratch register returns to |0⟩ (ancilla-clean invariant). Consumed by S.C.2's two-register
-//!   ECDLP period-finding circuit.
+//!   the gate set in [`gates`] + the permutation-synthesis primitive in [`arith`]; no new gate
+//!   added. Every scratch register returns to |0⟩ (ancilla-clean invariant). Consumed by the
+//!   two-register ECDLP period-finding circuit in [`ecdlp`].
 //! - [`shor`] — Order-finding circuit orchestration, continued-fraction period extraction, and
-//!   `factor(N)` driver (C-OrderFind + C-Factor, frozen S.B.2 ◆). Consumes C-ModExp and the
-//!   frozen S.A.2 QFT/measure surfaces. Implements the complete Shor-factoring algorithm:
-//!   exponent-register superposition → controlled-mod-exp → iQFT → measure → continued-fraction
-//!   recovery of the order `r` → even-order factor extraction via `gcd(a^(r/2) ± 1, N)`.
+//!   `factor(N)` driver (C-OrderFind + C-Factor). Consumes C-ModExp and the QFT/measure surfaces.
+//!   Implements the complete Shor-factoring algorithm: exponent-register superposition →
+//!   controlled-mod-exp → iQFT → measure → continued-fraction recovery of the order `r` →
+//!   even-order factor extraction via `gcd(a^(r/2) ± 1, N)`.
 //!   Factors 15 → {3,5}, 21 → {3,7}, 35 → {5,7}, 91 → {7,13} (the canonical toy targets).
 //! - [`ecdlp`] — Two-register ECDLP period-finding, 2D-lattice discrete-log extraction, and
-//!   `solve_ecdlp` driver (C-ECDLPSolve, frozen S.C.2 ◆). Consumes C-PointAdd (controlled
-//!   point-addition circuit) and the frozen S.A.2 QFT/measure surfaces. Implements Shor's
-//!   ECDLP algorithm: two-register superposition → controlled-point-add (a·G + b·Q) → iQFT
-//!   on both registers → measure → 2D-lattice extraction `b'·k ≡ −a' (mod r)` → verify
-//!   `k·G = Q`. Solves the ECDLP on the toy curve (r=13, 17 qubits, within the ~25-qubit
-//!   ceiling).
+//!   `solve_ecdlp` driver (C-ECDLPSolve). Consumes C-PointAdd (controlled point-addition circuit)
+//!   and the QFT/measure surfaces. Implements Shor's ECDLP algorithm: two-register superposition
+//!   → controlled-point-add (a·G + b·Q) → iQFT on both registers → measure → 2D-lattice
+//!   extraction `b'·k ≡ −a' (mod r)` → verify `k·G = Q`. Solves the ECDLP on the toy curve
+//!   (r=13, 17 qubits, within the ~25-qubit ceiling).
 //!
 //! # Basis-indexing convention (FIXED — C-StateVec)
 //!
@@ -52,14 +51,16 @@
 //! register the basis state |q_{n-1} … q_1 q_0⟩ maps to index
 //! `i = q_0 + 2·q_1 + 4·q_2 + … + 2^{n-1}·q_{n-1}`.
 //!
-//! This convention is fixed at S.A.1 and consumed by S.A.2 (QFT), S.B (modular exponentiation),
-//! and S.C (Proos–Zalka ECDLP circuit). A silent flip is a wrong-answer bug.
+//! This convention is fixed in [`statevec`] and consumed by the QFT ([`qft`]), modular
+//! exponentiation ([`arith`]), and Proos–Zalka ECDLP circuit ([`ecdlp`]). A silent flip is a
+//! wrong-answer bug.
 //!
 //! # QFT bit-reversal convention (FIXED — C-QFT)
 //!
 //! The standard QFT circuit (N&C) is designed for big-endian. [`qft::qft`] adapts it for
 //! little-endian with **two bit-reversal steps** (input + output), so the output is in natural
-//! little-endian order. Without both steps, S.B/S.C read the period from the wrong qubit order.
+//! little-endian order. Without both steps, the order-finding and ECDLP circuits read the period
+//! from the wrong qubit order.
 //! See [`qft`] module documentation for the full load-bearing note.
 //!
 //! # Resource-scale ceiling (~25 qubits)

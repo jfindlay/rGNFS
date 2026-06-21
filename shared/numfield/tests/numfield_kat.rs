@@ -1,6 +1,6 @@
 //! Known-answer tests (KATs) for the `shared-numfield` crate.
 //!
-//! Three required KATs from the G.A.1a session contract (C-NF):
+//! KATs for number-field arithmetic over ℤ[α] (C-NF):
 //!
 //! 1. ℤ[α] arithmetic for f = x² − 2: (1+α)(1−α) = −1 in ℚ(√2).
 //! 2. Norm for β = 1+α in ℚ(√2): Norm(1+α) = −1.

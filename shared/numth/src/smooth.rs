@@ -1,26 +1,24 @@
 //! B-smoothness detection via trial division over a prime factor base.
 //!
-//! # Design for three consumers (Contract C1)
+//! # Design for three consumers
 //!
 //! This module is designed with three downstream consumers in mind:
 //!
-//! - **G.C** (NFS sieving): tests whether sieve values — integers of the form
-//!   ``f(a, b)`` for a polynomial ``f`` — are smooth over a prime factor base
-//!   of size ``B``.  The [`SmoothWitness`] carries the complete factorisation
-//!   needed to build the exponent vector for the linear-algebra step.
-//! - **D.A** (NFS-DL relation collection): structurally identical to G.C but
-//!   operating over a different polynomial and factor base.  The same
-//!   [`trial_smooth`] function and [`SmoothWitness`] type serve both.
-//! - **E.K** (ECDLP index calculus via Semaev polynomials): evaluates a Semaev
-//!   summation polynomial at candidate points to obtain an integer; tests that
-//!   integer for smoothness over a factor base of small primes.  The
-//!   [`SmoothWitness`] is then used to build a row in the relation matrix, with
-//!   each ``(prime, exponent)`` pair mapping to a column in the matrix.  The
-//!   interface is structurally identical to G.C/D.A: call [`trial_smooth`] with
-//!   the evaluated integer and the factor base, inspect ``cofactor`` to decide
-//!   whether to accept the relation (full smoothness) or discard it (partial
-//!   smoothness with a large prime cofactor).  No extension to the
-//!   [`SmoothWitness`] type is required for E.K; the curve-point provenance is
+//! - **NFS sieving** (`gnfs::sieve`): tests whether sieve values — integers of the form
+//!   ``f(a, b)`` for a polynomial ``f`` — are smooth over a prime factor base of size ``B``.
+//!   The [`SmoothWitness`] carries the complete factorisation needed to build the exponent
+//!   vector for the linear-algebra step.
+//! - **NFS-DL relation collection** (`gnfs::dl`): structurally identical to NFS sieving but
+//!   operating over a different polynomial and factor base.  The same [`trial_smooth`] function
+//!   and [`SmoothWitness`] type serve both.
+//! - **ECDLP index calculus** (`rho::index_calculus`): evaluates a Semaev summation polynomial
+//!   at candidate points to obtain an integer; tests that integer for smoothness over a factor
+//!   base of small primes.  The [`SmoothWitness`] is then used to build a row in the relation
+//!   matrix, with each ``(prime, exponent)`` pair mapping to a column in the matrix.  The
+//!   interface is structurally identical to the NFS consumers: call [`trial_smooth`] with the
+//!   evaluated integer and the factor base, inspect ``cofactor`` to decide whether to accept the
+//!   relation (full smoothness) or discard it (partial smoothness with a large prime cofactor).
+//!   No extension to the [`SmoothWitness`] type is required; the curve-point provenance is
 //!   tracked by the caller, not the witness.
 //!
 //! # Sieve for ``factor_base_up_to``

@@ -1,4 +1,4 @@
-//! Known-answer tests for Shor's ECDLP algorithm (S.C.2 ◆).
+//! Known-answer tests for Shor's ECDLP algorithm (C-ECDLPSolve).
 //!
 //! # What is tested
 //!

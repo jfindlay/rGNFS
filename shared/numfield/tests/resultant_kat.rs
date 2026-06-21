@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for resultant and subresultant GCD — session G.A.2.
+//! Known-answer tests (KATs) for resultant and subresultant GCD.
 //!
 //! Contract C-Res: verifies `resultant`, `subresultant_gcd`, and `IntPoly::pseudo_div_rem`.
 
@@ -88,7 +88,7 @@ fn kat_resultant_2_coprime_quadratics() {
 //
 // For f = x² − 2 (minimal polynomial of √2) and g = x + 1:
 //   Res_x(f, x+1) = f(−1) = (−1)² − 2 = −1.
-// This cross-checks G.A.1a: Norm_{ℚ(√2)/ℚ}(1 + α) = Res(f, x+1) = −1.
+// This cross-checks the numfield_kat: Norm_{ℚ(√2)/ℚ}(1 + α) = Res(f, x+1) = −1.
 
 #[test]
 fn kat_resultant_3_norm_consistency() {
