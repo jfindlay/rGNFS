@@ -34,7 +34,7 @@
 //!
 //! # Cat-C baseline rule
 //!
-//! This module **reads** the E.G.2 baseline walk (`rho::binary_ecdlp`) and
+//! This module **reads** the baseline walk in [`crate::binary_ecdlp`] and
 //! provides a **new** `solve_koblitz` variant.  It does NOT modify the baseline
 //! `solve` / `solve_brent` functions.
 
@@ -346,8 +346,9 @@ pub fn compute_tau_eigenvalues<F: F2m<1>>(
 
 /// Solve `Q = k·G` on a binary Koblitz curve via τ-orbit Pollard rho.
 ///
-/// This is the **new** variant that reads the E.G.2 baseline walk and adds
-/// τ-orbit canonical collapse.  It does NOT modify `solve` / `solve_brent`.
+/// This is the **new** variant that reads the baseline walk in
+/// [`crate::binary_ecdlp`] and adds τ-orbit canonical collapse.  It does NOT
+/// modify `solve` / `solve_brent`.
 ///
 /// The τ-orbit collapse reduces the effective group size by up to 2m (the orbit
 /// size), speeding up collision detection by a factor of √(2m) vs the baseline.
@@ -355,8 +356,8 @@ pub fn compute_tau_eigenvalues<F: F2m<1>>(
 /// # Algorithm
 ///
 /// 1. Precompute the τ eigenvalues `λ_k` such that `τ^k(G) = λ_k · G`.
-/// 2. Run the r-adding walk (from C-BinaryRho), but after each step, collapse
-///    the current point to the canonical representative of its τ-orbit.
+/// 2. Run the r-adding walk (from [`crate::binary_ecdlp`]), but after each step,
+///    collapse the current point to the canonical representative of its τ-orbit.
 /// 3. When a collision is detected, recover `k` from the tracked scalars.
 ///
 /// # Walk-state invariant

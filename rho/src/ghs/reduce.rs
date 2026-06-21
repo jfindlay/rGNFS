@@ -13,22 +13,22 @@
 //!
 //! The correctness property (logarithm preservation): if `h = k·g` on `E`, then
 //! `D_h = k·D_g` on `Jac(C)`.  This follows from the transfer map being a group
-//! homomorphism (C-DescentMap, frozen E.H.4).
+//! homomorphism ([`transfer_point`] from [`crate::ghs::transfer`]).
 //!
 //! # Scope boundary
 //!
 //! This module produces `(C, D_g, D_h)` and verifies `D_h = k·D_g` for known `k`.
-//! It does **not** solve for `k` via index calculus — that is E.K.
+//! It does **not** solve for `k` via index calculus — that is [`crate::index_calculus`].
 //!
-//! # Contracts
+//! # Dependencies
 //!
 //! **Consumes:**
-//! - C-DescentMap (frozen E.H.4): [`transfer_point`] from [`crate::ghs::transfer`].
-//! - C-GHSCurve (frozen E.H.3): [`extract_ghs_curve`] from [`crate::ghs::curve`].
-//! - C-Jacobian (frozen E.I, read): [`cantor::scalar_mul`] from [`crate::hyperelliptic::cantor`].
-//! - C-BinaryCurve (frozen E.G, read): [`BinaryAffinePoint`] from [`crate::binary_curve`].
+//! - [`transfer_point`] from [`crate::ghs::transfer`].
+//! - [`extract_ghs_curve`] from [`crate::ghs::curve`].
+//! - [`cantor::scalar_mul`] from [`crate::hyperelliptic::cantor`].
+//! - [`BinaryAffinePoint`] from [`crate::binary_curve`].
 //!
-//! **Freezes:** C-GHSDescent — [`GhsDescentResult`], [`ghs_descend`].
+//! **Provides:** [`GhsDescentResult`], [`ghs_descend`].
 
 use shared_gf2m::F2mNaive;
 
@@ -81,7 +81,7 @@ pub struct GhsDescentResult {
 /// # Logarithm-preservation invariant
 ///
 /// If `h = k·g` on `E`, then `D_h = k·D_g` on `Jac(C)`.  This follows from the
-/// transfer map being a group homomorphism (C-DescentMap):
+    /// transfer map being a group homomorphism ([`transfer_point`]):
 /// ```text
 /// D_h = transfer(h) = transfer(k·g) = k·transfer(g) = k·D_g
 /// ```

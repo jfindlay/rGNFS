@@ -1,4 +1,4 @@
-//! Affine F_p point → Z_p lift via Hensel (C-AnomalousLift, E.E.1).
+//! Affine F_p point → Z_p lift via Hensel for the SSA anomalous-curve attack.
 //!
 //! Given an affine point `P = (x₀, y₀) ∈ E(F_p)` and a target precision `k`, this module
 //! lifts `P` to a pair `(x̃, ỹ) ∈ Z/p^k × Z/p^k` satisfying `ỹ² ≡ x̃³ + ax̃ + b (mod p^k)`.
@@ -16,7 +16,7 @@
 //! A 2-torsion base point (`y₀ = 0`) or `p = 2` is a degenerate case; `hensel_lift` returns
 //! `HenselError::NonSimpleRoot` in that case, which propagates as `SsaError::LiftFailed`.
 //!
-//! # Lift-correctness invariant (C-AnomalousLift)
+//! # Lift-correctness invariant
 //!
 //! The returned `(x̃, ỹ)` satisfies `ỹ² ≡ x̃³ + ax̃ + b (mod p^k)`.
 //!
@@ -115,8 +115,8 @@ pub fn lift_point<F: Fp<4>>(
 /// Verify the lift-correctness invariant: `ỹ² ≡ x̃³ + ax̃ + b (mod p^k)`.
 ///
 /// Returns `true` iff the lifted point satisfies the curve equation mod `p^k`.
-/// This is the C-AnomalousLift correctness defense.
-#[allow(dead_code)] // consumed by E.E.2 and KATs
+/// This is the Hensel lift-correctness defense.
+#[allow(dead_code)] // consumed by the SSA reduction and KATs
 pub fn check_lift_on_curve(x_tilde: &Zp, y_tilde: &Zp, curve: &Curve) -> Result<bool, SsaError> {
     let p_big = uint4_to_bigint(&curve.p);
     let a_big = uint4_to_bigint(&curve.a);

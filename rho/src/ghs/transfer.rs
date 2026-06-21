@@ -56,9 +56,11 @@
 //!
 //! # Contracts
 //!
-//! **Consumes:** C-GHSCurve (frozen E.H.3), C-Jacobian (frozen E.I, read),
-//! C-BinaryCurve (frozen E.G, read), C-Subfield (frozen E.H.1).
-//! **Freezes:** C-DescentMap.
+//! **Consumes:** [`extract_ghs_curve`] from [`crate::ghs::curve`];
+//! [`cantor`] from [`crate::hyperelliptic::cantor`];
+//! [`BinaryAffinePoint`] from [`crate::binary_curve`];
+//! subfield arithmetic from `shared_gf2m`.
+//! **Provides:** [`transfer_point`], [`verify_homomorphism`].
 
 use crypto_bigint::Uint;
 use shared_gf2m::{F2m, F2mNaive};

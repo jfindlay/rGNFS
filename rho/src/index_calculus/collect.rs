@@ -1,10 +1,10 @@
-//! Relation collection for the index-calculus ECDLP solver (C-RelationCollect, E.K.3).
+//! Relation collection for the index-calculus ECDLP solver.
 //!
 //! This module implements the relation-collection loop: generate random multiples
-//! `R = a·G + b·Q`, attempt to decompose each over the factor base via the frozen
-//! `decompose` function (C-PointDecomp), and record successful decompositions as
-//! `Relation` rows (C-EKRelation). The loop continues until the system is
-//! over-determined (≥ `strategy.fb_size() + 1` relations).
+//! `R = a·G + b·Q`, attempt to decompose each over the factor base via
+//! [`crate::index_calculus::decompose::decompose`], and record successful decompositions
+//! as `Relation` rows. The loop continues until the system is over-determined
+//! (≥ `strategy.fb_size() + 1` relations).
 //!
 //! # Algorithm
 //!

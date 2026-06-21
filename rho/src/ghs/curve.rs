@@ -2,8 +2,8 @@
 //!
 //! This module implements the curve-extraction step of the GHS Weil-descent
 //! construction: given the Artin–Schreier data and Weil-restriction parameters
-//! from E.H.2, it produces the descended hyperelliptic curve `C/GF(2^l)` as a
-//! frozen [`HyperellipticCurve`].
+//! from [`crate::ghs::descent`], it produces the descended hyperelliptic curve
+//! `C/GF(2^l)` as a frozen [`HyperellipticCurve`].
 //!
 //! # Mathematical background
 //!
@@ -62,8 +62,8 @@
 //!
 //! # Contracts
 //!
-//! **Consumes:** C-DescentAlgebra (frozen E.H.2) — [`GhsParams`], [`ArtinSchreierData`].
-//! **Freezes:** C-GHSCurve — [`extract_ghs_curve`], [`ghs_genus`].
+//! **Consumes:** [`GhsParams`], [`ArtinSchreierData`] from [`crate::ghs::descent`].
+//! **Provides:** [`extract_ghs_curve`], [`ghs_genus`].
 
 use crypto_bigint::Uint;
 use shared_gf2m::{F2m, is_in_subfield};
@@ -84,7 +84,7 @@ use crate::hyperelliptic::HyperellipticCurve;
 ///
 /// This formula holds for the imaginary (ramified) hyperelliptic model, which
 /// requires odd `n`.  Even `n` yields the real/split model (not handled by the
-/// frozen C-HyperCurve).
+/// frozen [`crate::hyperelliptic::HyperellipticCurve`]).
 ///
 /// # Arguments
 ///

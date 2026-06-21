@@ -9,7 +9,7 @@
 //!   recovers the original y-coordinate.
 //! - Char-2 negation trap: `−(x,y) = (x, x+y)`, NOT `(x, −y)`.
 //! - Koblitz τ-automorphism: `τ^m(P) = P` (order divides m); the characteristic
-//!   relation `τ²(P) − t·τ(P) + 2·P = ∞`; sub-track-close suite.
+//!   relation `τ²(P) − t·τ(P) + 2·P = ∞`; full axiom suite.
 //!
 //! # Toy curve
 //!
@@ -421,7 +421,7 @@ fn decompress_two_distinct_y_values() {
 
 // ── Koblitz τ-automorphism KATs ───────────────────────────────────────────────
 //
-// These tests verify the C-Koblitz contract:
+// These tests verify the Koblitz τ-automorphism correctness contract:
 //   - τ(x,y) = (x², y²) applies the field Frobenius to BOTH coordinates.
 //   - τ^m(P) = P for all P (automorphism order divides m=4).
 //   - The characteristic relation τ²(P) − t·τ(P) + 2·P = ∞ holds.
@@ -490,7 +490,7 @@ fn tau_image_on_curve() {
 
 /// τ^m(P) = P for all P: the Frobenius automorphism has order dividing m=4.
 ///
-/// This is the primary C-Koblitz correctness signal.  For GF(2^m), the
+/// This is the primary Koblitz τ-automorphism correctness signal.  For GF(2^m), the
 /// Frobenius `a → a²` has order m (since `a^(2^m) = a` for all `a ∈ GF(2^m)`).
 /// Applied to both coordinates: `τ^m(x, y) = (x^(2^m), y^(2^m)) = (x, y)`.
 #[test]
@@ -574,12 +574,12 @@ fn tau_characteristic_relation() {
     }
 }
 
-/// Sub-track-close: the full binary-curve axiom suite stays green after adding τ.
+/// Binary-curve axioms intact: the full axiom suite stays green after adding τ.
 ///
 /// This test re-runs the core group axioms to confirm the τ implementation
 /// does not disturb the underlying curve group law.
 #[test]
-fn sub_track_close_curve_axioms_intact() {
+fn binary_curve_axioms_intact() {
     let c = toy_curve();
     let poly = poly4();
     let g = c.generator::<F2mNaive<1>>();

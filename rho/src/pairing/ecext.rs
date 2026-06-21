@@ -11,11 +11,11 @@
 //! This is the **deliberate option-B duplication** of the `rho::curve` group
 //! law over the extension field `FpExt`.  The frozen `rho::curve` module uses
 //! an `F: Fp<4>` bound that cannot represent extension-field points; rather
-//! than amending that frozen contract (option A — declined at the E.B shard
-//! adjudication), E.B builds a *separate* `E(F_{p^k})` arithmetic layer here,
-//! composing the frozen `Curve` params (read-only) and the C-FpExt interface.
-//! The cost is some group-law code duplication; the win is a bounded blast
-//! radius on a widely-consumed frozen contract.
+//! than amending that frozen contract (option A — declined at the pairing
+//! adjudication), this module builds a *separate* `E(F_{p^k})` arithmetic
+//! layer here, composing the frozen `Curve` params (read-only) and the
+//! `FpExt` interface.  The cost is some group-law code duplication; the win
+//! is a bounded blast radius on a widely-consumed frozen contract.
 //!
 //! # Coordinate representation
 //!

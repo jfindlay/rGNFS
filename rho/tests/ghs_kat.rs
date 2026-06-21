@@ -1,9 +1,9 @@
-//! Known-answer tests for the GHS descent algebra (E.H.2), curve extraction (E.H.3),
-//! transfer map (E.H.4), and ECDLP → Jacobian-DLP reduction (E.H.5).
+//! Known-answer tests for the GHS Weil-descent construction: descent algebra,
+//! hyperelliptic-curve extraction, transfer map, and ECDLP → Jacobian-DLP reduction.
 //!
 //! # Coverage
 //!
-//! ## E.H.5 — GHS reduction `(E, g, h) → (C, D_g, D_h)` + logarithm preservation
+//! ## GHS reduction `(E, g, h) → (C, D_g, D_h)` + logarithm preservation
 //!
 //! ### Logarithm preservation (decisive)
 //! - For known `k=3`: compute `h = 3·g` on `E`, call `ghs_descend`, verify
@@ -24,7 +24,7 @@
 //! ### Optional PARI sidecar
 //! - `#[ignore]`-gated cross-check of `#Jac(C)(GF(2^2))` via PARI `hyperellcharpoly`.
 //!
-//! ## E.H.4 — GHS transfer map `E(GF(2^m)) → Jac(C)(GF(2^l))`
+//! ## GHS transfer map `E(GF(2^m)) → Jac(C)(GF(2^l))`
 //!
 //! ### Identity maps to identity
 //! - `transfer_point(∞, ...) == [1, 0]` (zero divisor).
@@ -42,7 +42,7 @@
 //! - Known-answer: `D_G = [X, 1]`, `D_P = [X+1, 3]`, `D_{G+P} = [X+1, 2]`.
 //! - `D_G + D_G (Cantor) == D_{2G}` — doubling case.
 //!
-//! ## E.H.3 — GHS hyperelliptic-curve extraction `C/GF(2^l)` (imaginary model)
+//! ## GHS hyperelliptic-curve extraction `C/GF(2^l)` (imaginary model)
 //!
 //! ### Genus formula
 //! - `ghs_genus(6, 2) == 1` — toy fixture (m=6, l=2, n=3, g=(3-1)/2=1).
@@ -69,7 +69,7 @@
 //! ### Even m/l rejection
 //! - `extract_ghs_curve` returns `Err(NonDescendable)` for even `m/l`.
 //!
-//! ## E.H.2 — Artin–Schreier / function-field Weil-restriction algebra
+//! ## Artin–Schreier / function-field Weil-restriction algebra
 //!
 //! ### Precondition verifier
 //! - `check_ghs_params(6, 2)` returns `Ok(())` — `l=2` divides `m=6`.
@@ -681,7 +681,7 @@ fn relative_norm_lands_in_subfield() {
     }
 }
 
-// ── E.H.3 — GHS hyperelliptic-curve extraction KATs ──────────────────────────
+// ── GHS hyperelliptic-curve extraction KATs ───────────────────────────────────
 
 // ── Genus formula KATs ───────────────────────────────────────────────────────
 
@@ -930,7 +930,7 @@ fn extracted_curve_zero_divisor_is_valid() {
 /// Even `m/l` is rejected with `NonDescendable`.
 ///
 /// The imaginary model requires odd `m/l`.  Even `m/l` yields the real/split
-/// model, which the frozen C-HyperCurve does not handle.
+/// model, which the frozen [`rho::hyperelliptic::HyperellipticCurve`] does not handle.
 ///
 /// We test with m=4, l=2, n=2 (even).
 #[test]
@@ -953,7 +953,7 @@ fn extract_ghs_curve_rejects_even_extension_degree() {
     );
 }
 
-// ── E.H.4 — GHS transfer map KATs ────────────────────────────────────────────
+// ── GHS transfer map KATs ─────────────────────────────────────────────────────
 
 // ── Identity maps to identity ─────────────────────────────────────────────────
 
@@ -1365,7 +1365,7 @@ fn transfer_homomorphism_multiple_pairs() {
     }
 }
 
-// ── E.H.5 — GHS reduction + logarithm-preservation KATs ──────────────────────
+// ── GHS reduction + logarithm-preservation KATs ───────────────────────────────
 
 // ── ghs_descend API KATs ──────────────────────────────────────────────────────
 
@@ -1484,7 +1484,7 @@ fn ghs_descend_identity_gives_zero_d_h() {
 /// # Mathematical justification
 ///
 /// The transfer map `φ: E(GF(2^m)) → Jac(C)(GF(2^l))` is a group homomorphism
-/// (C-DescentMap, frozen E.H.4).  For `h = k·g`:
+/// ([`rho::ghs::transfer_point`]).  For `h = k·g`:
 /// ```text
 /// D_h = φ(h) = φ(k·g) = k·φ(g) = k·D_g
 /// ```

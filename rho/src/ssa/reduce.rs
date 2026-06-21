@@ -3,7 +3,7 @@
 //! This module implements the core of the Smart–Satoh–Araki reduction:
 //!
 //! 1. Verify the curve is anomalous.
-//! 2. Lift G and Q to Z_p via Hensel (C-AnomalousLift).
+//! 2. Lift G and Q to Z_p via Hensel ([`crate::ssa::lift::lift_point`]).
 //! 3. Multiply both lifts by p using projective-coordinate point addition over Z/p^k.
 //! 4. Apply the elliptic formal-group log to both results.
 //! 5. Divide in F_p to recover k.

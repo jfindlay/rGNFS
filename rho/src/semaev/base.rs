@@ -1,7 +1,6 @@
 //! Semaev base summation polynomials `S_2`, `S_3` and the vanishing predicate.
 //!
-//! This module provides the explicit low-order Semaev summation polynomials
-//! (C-SemaevBase, frozen at E.J.2):
+//! This module provides the explicit low-order Semaev summation polynomials:
 //!
 //! - [`s2`] — `S_2(X_1, X_2) = X_1 − X_2` (two points sum to `∞` iff `P_2 = −P_1`,
 //!   i.e. `x_1 = x_2`).

@@ -3,7 +3,7 @@
 //! Miller's algorithm accumulates the rational function `f_{ℓ,P}` on the curve
 //! associated to the divisor `ℓ·(P) − ℓ·(∞)`, evaluated at a point `Q`.  The
 //! result is an element of `F_{p^k}*` and is the core building block for both
-//! the Weil pairing (E.B.3) and the Tate pairing (E.B.4).
+//! the Weil pairing ([`crate::pairing::weil`]) and the Tate pairing ([`crate::pairing::tate`]).
 //!
 //! # Algorithm
 //!

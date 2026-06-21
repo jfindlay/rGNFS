@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the Semaev module (E.J.1 + E.J.2 + E.J.3).
+//! Known-answer tests (KATs) for the Semaev summation polynomial construction.
 //!
 //! # Fixture
 //!
@@ -19,7 +19,7 @@
 //! - `6G = (19, 7)`,  `−6G = (19, 40)`
 //! - `8G = (25, 28)`, `−8G = (25, 19)`
 //!
-//! # KAT coverage (E.J.1 — `F_p[x]` resultant)
+//! # KAT coverage — `F_p[x]` resultant
 //!
 //! 1. **Resultant zero-iff-common-factor**: `Res(f, g) = 0 ⟺ gcd(f, g) ≠ 1`.
 //!    - `Res(x-2, x-3) ≠ 0` (coprime linear factors).
@@ -34,7 +34,7 @@
 //! 4. **Resultant of zero polynomial is zero**: `Res(0, g) = 0`.
 //! 5. **Resultant value spot-check**: `Res(x-2, x-3) = 1` over `F_47`.
 //!
-//! # KAT coverage (E.J.1 — multivariate/symmetric round-trip)
+//! # KAT coverage — multivariate/symmetric round-trip
 //!
 //! 6. **Symmetric polynomial round-trip**: a symmetric polynomial round-trips through the
 //!    `MultiPoly` representation (build → evaluate → same value).
@@ -45,7 +45,7 @@
 //! 9. **`is_symmetric` correctly identifies symmetric polynomials**.
 //! 10. **`symmetrize` produces a symmetric polynomial**.
 //!
-//! # KAT coverage (E.J.2 — `S_2`, `S_3` base cases + vanishing relation)
+//! # KAT coverage — `S_2`, `S_3` base cases + vanishing relation
 //!
 //! 11. **`S_2` vanishing**: `S_2(x_1, x_2) = 0 ⟺ P_2 = −P_1`.
 //!     - `S_2(10, 10) = 0` and `G + (−G) = ∞` ✓.
@@ -58,7 +58,7 @@
 //! 13. **`S_3` symmetry**: `S_3` is invariant under all permutations of its arguments.
 //! 14. **`S_3` degree**: degree ≤ 2 in each variable.
 //!
-//! # KAT coverage (E.J.3 — `S_m` resultant recursion + sub-track close)
+//! # KAT coverage — `S_m` resultant recursion
 //!
 //! 15. **Recursion base cases**: `semaev_poly(2)` = `s2`, `semaev_poly(3)` = `s3`.
 //! 16. **`S_4` structure**: 4 variables, non-zero, symmetric.
@@ -538,7 +538,7 @@ fn univariate_in_var_extraction() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// E.J.2 — Base cases S_2, S_3 + the vanishing relation (C-SemaevBase)
+// Base cases S_2, S_3 + the vanishing relation
 // ═══════════════════════════════════════════════════════════════════════════════
 //
 // Known multiples of G on the toy curve y² = x³ + x + 33 over F_47:
@@ -550,7 +550,7 @@ fn univariate_in_var_extraction() {
 //
 // Verified: each point satisfies y² = x³ + x + 33 mod 47.
 
-// ─── helpers (E.J.2) ─────────────────────────────────────────────────────────
+// ─── helpers (S_2, S_3 base cases) ───────────────────────────────────────────
 
 /// Construct a finite affine point over `F_47`.
 fn pt(x: u64, y: u64) -> AffinePoint<FpNaive> {
@@ -768,7 +768,7 @@ fn s3_degree_exactly_2_in_each_var() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// E.J.3 — Resultant recursion `S_m` + sub-track close (C-Semaev)
+// Resultant recursion `S_m`
 // ═══════════════════════════════════════════════════════════════════════════════
 //
 // Known multiples of G on the toy curve y² = x³ + x + 33 over F_47:
@@ -798,7 +798,7 @@ fn s3_degree_exactly_2_in_each_var() {
 //   Check: 25^3 + 25 + 33 = 15683 mod 47. 333*47 = 15651, 15683 - 15651 = 32. 28^2 = 784 mod 47.
 //   16*47 = 752, 784 - 752 = 32. ✓
 
-// ─── helpers (E.J.3) ─────────────────────────────────────────────────────────
+// ─── helpers (S_m resultant recursion) ───────────────────────────────────────
 
 /// Check whether any combination of y-values for 4 x-coordinates makes
 /// `P_1 + P_2 + P_3 + P_4 = ∞` via the group law.
@@ -1091,11 +1091,11 @@ fn s4_symmetric_eval_at_permutations_of_nonzero_quad() {
     }
 }
 
-// ─── KAT 20: S_4 vanishing predicate agreement (sub-track close) ─────────────
+// ─── KAT 20: S_4 vanishing predicate agreement ───────────────────────────────
 
-/// Sub-track close: `S_4` vanishing agrees with the group law for multiple quadruples.
+/// `S_4` vanishing agrees with the group law for multiple quadruples.
 ///
-/// This is the decisive sub-track-close KAT: the polynomial vanishing condition and
+/// This is the decisive correctness KAT: the polynomial vanishing condition and
 /// the group-law existence condition agree for a range of x-coordinate quadruples.
 #[test]
 fn s4_vanishing_predicate_agrees_with_group_law() {

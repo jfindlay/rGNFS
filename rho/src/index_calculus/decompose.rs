@@ -1,4 +1,4 @@
-//! Point decomposition via the Semaev polynomial (C-PointDecomp, frozen at E.K.2).
+//! Point decomposition via the Semaev polynomial for the index-calculus ECDLP solver.
 //!
 //! This module implements the Semaev-based point-decomposition step: given a point `Q`,
 //! find a sum of `m` factor-base points equal to `Q` by finding roots of the Semaev

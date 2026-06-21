@@ -1,4 +1,4 @@
-//! DLP recovery for the index-calculus ECDLP solver (C-IndexCalc, E.K.5 ◆).
+//! DLP recovery for the index-calculus ECDLP solver: the full pipeline assembler.
 //!
 //! This module assembles the full index-calculus pipeline and recovers `log_G(Q) mod ℓ`
 //! from the collected relations via a two-phase recovery strategy.
@@ -7,7 +7,7 @@
 //!
 //! 1. **Relation collection** (`collect_relations`) — enumerate `a·G + b·Q` multiples,
 //!    decompose over the factor base (via the frozen Semaev `decompose`), record each
-//!    successful decomposition as a `Relation` row (C-EKRelation).
+//!    successful decomposition as a `Relation` row.
 //! 2. **Linear algebra** (`solve_ek_linalg`) — find the kernel of the relation matrix
 //!    over `F_ℓ` (block Wiedemann / Gaussian elimination, reusing the frozen
 //!    `gnfs::dl::linalg` engine). Confirms the system is over-determined.
@@ -52,8 +52,8 @@ use crate::index_calculus::IndexCalcError;
 
 /// Solve the ECDLP `log_G(Q)` using index calculus over E(F_p).
 ///
-/// Full pipeline: enumerate factor base (E.K.1), collect relations (E.K.3 via E.K.2),
-/// solve the Z/ℓZ system (E.K.4), and recover log_G(Q) from the kernel + relation provenance.
+/// Full pipeline: enumerate factor base, collect relations (via point decomposition),
+/// solve the Z/ℓZ system, and recover log_G(Q) from the kernel + relation provenance.
 ///
 /// Returns `Ok(Some(k))` where `k·G_ℓ = Q_ℓ` (i.e., `k ≡ log_G(Q) mod ℓ`), or
 /// `Ok(None)` if the pipeline fails to recover the log (e.g., the augmented system has

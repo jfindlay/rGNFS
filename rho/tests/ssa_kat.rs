@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the SSA module (E.E.1 and E.E.2).
+//! Known-answer tests (KATs) for the SSA (Smart–Satoh–Araki) p-adic attack.
 //!
 //! # Fixture
 //!
@@ -6,7 +6,7 @@
 //! This curve has exactly 7 points (including the point at infinity), so `#E(F_7) = 7 = p` and
 //! the trace of Frobenius is 1. The base point `G = (3, 2)` has `y ≠ 0`.
 //!
-//! # KAT coverage (E.E.1 — lift)
+//! # KAT coverage — Hensel lift
 //!
 //! 1. `verify_anomalous` returns `true` on the fixture curve.
 //! 2. `verify_anomalous` returns `false` on a non-anomalous control curve.
@@ -14,7 +14,7 @@
 //! 4. The lifted point satisfies the curve equation mod `7^4` (lift-correctness check).
 //! 5. A 2-torsion point (`y = 0`) on a test curve errors via `HenselError::NonSimpleRoot`.
 //!
-//! # KAT coverage (E.E.2 — SSA reduction)
+//! # KAT coverage — SSA reduction
 //!
 //! 9.  `ssa_solve` recovers k=3 from Q = 3·G on the anomalous fixture.
 //! 10. `solve_brent` (independent rho solver) also recovers k=3 — cross-check.
@@ -152,8 +152,8 @@ fn kat_lift_base_point_coordinates() {
 
 /// The lifted point `(x̃, ỹ)` satisfies `ỹ² ≡ x̃³ + ax̃ + b (mod 7^4)`.
 ///
-/// This is the C-AnomalousLift lift-correctness invariant. A lift that does not satisfy
-/// the curve equation would cause the formal-group log (E.E.2) to read a garbage value.
+/// This is the Hensel lift-correctness invariant. A lift that does not satisfy
+/// the curve equation would cause the formal-group log to read a garbage value.
 #[test]
 fn kat_lift_on_curve_mod_pk() {
     let curve = anomalous_toy();
@@ -351,7 +351,7 @@ fn kat_lift_pari_cross_check() {
     );
 }
 
-// ─── E.E.2 KATs: SSA reduction ────────────────────────────────────────────────
+// ─── SSA reduction KATs ───────────────────────────────────────────────────────
 
 /// `ssa_solve` recovers k=3 from Q = 3·G on the anomalous fixture.
 ///

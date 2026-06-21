@@ -1,23 +1,23 @@
 //! MOV bridge and MOV/Frey–Rück reduction.
 //!
-//! # Contract C-MovBridge (E.C.1)
+//! # MOV bridge: `F_{p^k}` element → base-p `BigInt` encoding
 //!
-//! This module is the rho-side half of the E.C MOV bridge. It converts a pairing output
+//! This module is the rho-side half of the MOV bridge. It converts a pairing output
 //! [`FpExt<F>`] into the base-p [`BigInt`] encoding that [`gnfs::dl::solve_dl`] consumes
 //! at k=2.
 //!
-//! The encoding convention belongs to gnfs (C2-ext, frozen D.E.3). The rho side produces
-//! only the coefficient `Vec<BigInt>` and delegates the encoding to the gnfs-side helper
+//! The encoding convention belongs to gnfs. The rho side produces only the coefficient
+//! `Vec<BigInt>` and delegates the encoding to the gnfs-side helper
 //! [`gnfs::dl::ext::target::fpext_coeffs_to_dl_target`]. The rho side does NOT re-derive
 //! the base-p encoding itself.
 //!
-//! # Contract C-Mov (E.C.2)
+//! # MOV/Frey–Rück reduction: `mov_reduce`
 //!
 //! [`mov_reduce`] is the MOV/Frey–Rück reduction entry. Given an ECDLP instance
 //! `(curve, G, Q, R, ell)` — where `Q = k·G` in the order-ℓ subgroup and `R` is a
 //! μ_ℓ-generator with `e(G, R) ≠ 1` — it transports the ECDLP into a discrete log in
-//! `F_{p^k}*` via the pairing's bilinearity, encodes both pairing outputs through
-//! C-MovBridge, and calls `gnfs::dl::solve_dl` to recover `k mod ℓ`.
+//! `F_{p^k}*` via the pairing's bilinearity, encodes both pairing outputs through the
+//! MOV bridge, and calls `gnfs::dl::solve_dl` to recover `k mod ℓ`.
 //!
 //! The mathematical shape: `e(Q, R) = e(k·G, R) = e(G, R)^k`. Writing `g := e(G, R)` and
 //! `h := e(Q, R)`, both in `μ_ℓ ⊂ F_{p^k}*`, the ECDLP scalar `k` is exactly `log_g(h)`.
@@ -120,7 +120,7 @@ pub fn fpext_to_bigint<F: Fp<4>>(
 /// 2. Computes `h_pair = reduced_tate(R, Q, ell)` — the pairing `e(Q, R) ∈ μ_ℓ`.
 /// 3. Asserts `g_pair ≠ 1` (if `g_pair = 1`, the DL is undefined — R is not a μ_ℓ-generator
 ///    with respect to G).
-/// 4. Encodes both pairing outputs as base-p `BigInt` via [`fpext_to_bigint`] (C-MovBridge).
+/// 4. Encodes both pairing outputs as base-p `BigInt` via [`fpext_to_bigint`] (the MOV bridge).
 /// 5. Calls `gnfs::dl::solve_dl(&g_big, &h_big, &p_big, 2, &ell_big)` to recover `k mod ℓ`.
 /// 6. Returns `Ok(k_mod_ell)` as `u64`.
 ///
@@ -169,7 +169,7 @@ pub fn mov_reduce<F: Fp<4>>(
 
     // Step 1: compute g_pair = e(G, R) = reduced_tate(R, G, ell).
     // Argument order: R first (extension-field point), G second (base-field point).
-    // This is the non-degenerate direction for the toy fixture (see C-Pairing contract).
+    // This is the non-degenerate direction for the toy fixture (see `test_curves` module).
     let g_pair: FpExt<F> = reduced_tate(curve, modulus, r_point, g_point, ell);
 
     // Step 2: compute h_pair = e(Q, R) = reduced_tate(R, Q, ell).
@@ -185,7 +185,7 @@ pub fn mov_reduce<F: Fp<4>>(
     // Principle-4 boundary: at crypto scale, the full limb vector would be needed.
     let p_u64: u64 = p_uint.as_words()[0];
 
-    // Step 5: encode both pairing outputs as base-p BigInt via C-MovBridge.
+    // Step 5: encode both pairing outputs as base-p BigInt via the MOV bridge.
     // The modulus-consistency guard in fpext_to_bigint ensures the pairing's modulus
     // matches what solve_dl_ext uses internally — the silent-wrong-field defense.
     let g_big: BigInt = fpext_to_bigint(&g_pair, modulus, p_u64);
@@ -195,7 +195,7 @@ pub fn mov_reduce<F: Fp<4>>(
     let ell_big = BigInt::from(ell);
 
     // Step 6: call solve_dl to recover log_{g_pair}(h_pair) = k mod ell.
-    // k=2 path: the extension-field brute-force solver (D.E.3, principle-4 toy scale).
+    // k=2 path: the extension-field brute-force solver (principle-4 toy scale).
     // This is a real solver — not a stub (ROADMAP anti-stub constraint).
     let k_big = gnfs::dl::solve_dl(&g_big, &h_big, &p_big, 2, &ell_big)?;
 

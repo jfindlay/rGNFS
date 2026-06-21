@@ -25,7 +25,7 @@
 //! 2. **Curve extraction** (`curve`): extract the hyperelliptic curve `C/GF(2^l)`
 //!    from the descent algebra via [`extract_ghs_curve`].  The genus is
 //!    `g = (m/l − 1)/2` for odd `m/l` (imaginary model).
-//! 3. **Transfer map** (E.H.4): carry a point on `E` to a divisor on `Jac(C)`.
+//! 3. **Transfer map** ([`transfer`]): carry a point on `E` to a divisor on `Jac(C)`.
 //! 4. **Reduction** (`reduce`): combine steps 2–3 into the top-level reduction
 //!    `(E, g, h) → (C, D_g, D_h)` with logarithm-preservation guarantee.
 //!
@@ -37,7 +37,7 @@
 //! - Binary curve `E/GF(2^6)`: `y²+xy = x³+x²+1` (a=1, b=1 over GF(2^6)).
 //!
 //! Odd `m/l` keeps the descent in the imaginary/ramified hyperelliptic model
-//! that the frozen C-HyperCurve handles.
+//! that the frozen [`crate::hyperelliptic::HyperellipticCurve`] handles.
 //!
 //! # Principle-4 boundary
 //!
@@ -71,8 +71,8 @@ pub enum GhsError {
     /// The curve does not admit a GHS descent.
     ///
     /// For example, the extension degree `m/l` is even for the imaginary model
-    /// (even `m/l` yields the real/split model, which the frozen C-HyperCurve
-    /// does not handle).
+    /// (even `m/l` yields the real/split model, which the frozen
+    /// [`crate::hyperelliptic::HyperellipticCurve`] does not handle).
     NonDescendable,
     /// The point is the point at infinity.
     ///
@@ -147,7 +147,7 @@ pub const GHS_POLY2: u64 = 0x7; // x^2 + x + 1
 /// # Principle-4 annotation
 ///
 /// The group order `n` and base point `(gx, gy)` are placeholders — the descent
-/// algebra (E.H.2) does not require them. The transfer map (E.H.4) will supply
+/// algebra does not require them. The transfer map ([`transfer_point`]) will supply
 /// a concrete point. The curve parameters `a` and `b` are the load-bearing data.
 pub fn ghs_toy_curve() -> BinaryCurve {
     BinaryCurve {

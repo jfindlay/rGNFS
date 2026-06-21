@@ -5,11 +5,11 @@
 //! 1. **End-to-end `k·G = Q` recovery** — the solver finds a scalar `k` such
 //!    that `k·G = Q` for planted scalars on the toy binary curve.
 //! 2. **Walk-state invariant** — `W = a·G + b·Q` holds after construction and
-//!    after a sequence of steps (the C-BinaryRho prose contract).
+//!    after a sequence of steps (the walk-state correctness contract).
 //! 3. **Degenerate-collision handling** — the solver retries on degenerate
 //!    collisions and eventually finds a valid `k`.
-//! 4. **τ-orbit rho** — `solve_koblitz` recovers the same `k` as the E.G.2
-//!    baseline `solve` on the same inputs (C-Koblitz contract).
+//! 4. **τ-orbit rho** — `solve_koblitz` recovers the same `k` as the baseline
+//!    `solve` on the same inputs (Koblitz τ-automorphism correctness contract).
 //!
 //! # Toy curve
 //!
@@ -26,7 +26,7 @@
 //!
 //! # Walk-state invariant
 //!
-//! The invariant `W = a·G + b·Q` is the C-BinaryRho prose contract.  A wrong
+//! The invariant `W = a·G + b·Q` is the walk-state correctness contract.  A wrong
 //! addend table or group-law bug shows up as a recovered `k` with `k·G ≠ Q`,
 //! which the end-to-end KAT catches.
 
@@ -235,16 +235,16 @@ fn solve_brent_multiple_seeds() {
     }
 }
 
-// ── τ-orbit rho KATs (C-Koblitz) ─────────────────────────────────────────────
+// ── τ-orbit rho KATs ──────────────────────────────────────────────────────────
 //
 // These tests verify that `solve_koblitz` (the τ-orbit rho variant) recovers
-// the same `k` as the E.G.2 baseline `solve` on the same inputs.
+// the same `k` as the baseline `solve` on the same inputs.
 //
 // Toy curve parameters:
 //   - GF(2^4) with x⁴+x+1, group order n=4, field degree m=4.
 //   - Frobenius trace t = 2^4 + 1 − 4 = 13.
 //
-// The Cat-C baseline rule: `solve` and `solve_brent` are NOT modified.
+// Baseline rule: `solve` and `solve_brent` are NOT modified.
 // `solve_koblitz` is a NEW function that reads the baseline walk.
 
 /// τ-orbit rho recovers a valid k for k=1 (Q = G).
@@ -325,11 +325,11 @@ fn koblitz_dlog_k0_identity() {
     );
 }
 
-/// τ-orbit rho agrees with the E.G.2 baseline on all non-trivial k values.
+/// τ-orbit rho agrees with the baseline on all non-trivial k values.
 ///
-/// This is the primary C-Koblitz correctness signal: the τ-orbit variant
-/// recovers the same `k` (up to group equivalence: k·G = Q) as the baseline.
-/// Both solvers must return a valid k satisfying k·G = Q.
+/// This is the primary Koblitz τ-automorphism correctness signal: the τ-orbit
+/// variant recovers the same `k` (up to group equivalence: k·G = Q) as the
+/// baseline. Both solvers must return a valid k satisfying k·G = Q.
 #[test]
 fn koblitz_agrees_with_baseline() {
     let curve = toy_curve();

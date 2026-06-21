@@ -12,7 +12,7 @@
 //!   points as roots of `u` with `y = v(xᵢ)`.
 //! - Genus: `g = ⌊(deg f − 1)/2⌋ = 2` for the toy curve.
 //!
-//! ## E.I.3 — Cantor group law (C-Jacobian sub-track close)
+//! ## Cantor group law (Jacobian group law for hyperelliptic curves)
 //! - Identity axiom: `D + 0 = D` and `0 + D = D`.
 //! - Negation: `D + (−D) = 0` with `−D = [u, (h+v) mod u]`.
 //! - Associativity: `(D₁+D₂)+D₃ = D₁+(D₂+D₃)` on a sample.
@@ -460,7 +460,7 @@ fn conjugate_pair_sum_equals_h() {
     }
 }
 
-// ── Cantor group-law KATs (E.I.3 sub-track close) ────────────────────────────
+// ── Cantor group-law KATs ─────────────────────────────────────────────────────
 
 /// Helper: build the primary test divisor D₁ = [(x+2)(x+3), v] from (2,8) and (3,12).
 fn cantor_d1() -> MumfordDivisor<F2mNaive<1>, 1> {

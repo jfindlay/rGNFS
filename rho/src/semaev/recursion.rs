@@ -1,7 +1,7 @@
 //! Semaev summation polynomials `S_m` via the resultant recursion.
 //!
 //! This module provides the resultant-ladder construction of the Semaev summation
-//! polynomials (C-Semaev, frozen at E.J.3):
+//! polynomials:
 //!
 //! - [`semaev_poly`] — compute `S_m(X_1, …, X_m)` for any `m ≥ 2` via the recursion
 //!   `S_m = Res_X(S_{m-1}(X_1, …, X_{m-2}, X), S_3(X_{m-1}, X_m, X))`.
@@ -16,7 +16,7 @@
 //!
 //! This eliminates the shared variable `X` between `S_{m-1}` (with its last argument
 //! replaced by `X`) and `S_3` (with arguments `X_{m-1}`, `X_m`, `X`). The base cases
-//! are `S_2` and `S_3` from C-SemaevBase.
+//!   are `S_2` and `S_3` from [`crate::semaev::base`].
 //!
 //! # Variable embedding
 //!
@@ -30,7 +30,7 @@
 //!
 //! Eliminating variable `m` (the shared `X`) yields `S_m` in `m` variables.
 //!
-//! # Frozen invariant (C-Semaev)
+//! # Vanishing invariant
 //!
 //! `S_m(x_1, …, x_m) = 0 ⟺ ∃ y_i: P_i = (x_i, y_i) ∈ E ∧ Σ P_i = ∞`.
 //! The recursion agrees with the direct construction; `S_m` is symmetric.
@@ -89,8 +89,8 @@ fn embed_poly(poly: &MultiPoly, var_map: &[usize], new_num_vars: usize) -> Multi
 ///
 /// # Algorithm
 ///
-/// - `m = 2`: returns `S_2 = X_1 − X_2` (from C-SemaevBase).
-/// - `m = 3`: returns `S_3(X_1, X_2, X_3)` (from C-SemaevBase).
+/// - `m = 2`: returns `S_2 = X_1 − X_2` (from [`crate::semaev::base::s2`]).
+/// - `m = 3`: returns `S_3(X_1, X_2, X_3)` (from [`crate::semaev::base::s3`]).
 /// - `m ≥ 4`: computes `S_m = Res_X(S_{m-1}(X_1, …, X_{m-2}, X), S_3(X_{m-1}, X_m, X))`
 ///   by embedding both polynomials into a common `(m+1)`-variable space and eliminating
 ///   the shared variable `X` (index `m`).

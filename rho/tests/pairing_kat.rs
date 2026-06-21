@@ -1,8 +1,8 @@
-//! Known-answer tests for the Weil pairing (E.B.3) and Tate pairing (E.B.4).
+//! Known-answer tests for the Weil pairing and reduced Tate pairing.
 //!
 //! # What is tested
 //!
-//! ## Weil pairing (E.B.3)
+//! ## Weil pairing
 //!
 //! 1. **Non-degeneracy** — `w(P, Q) ≠ 1` for the independent torsion pair `(P, Q)`.
 //! 2. **Left bilinearity** — `w(aP, Q) = w(P, Q)^a` for `a = 2`.
@@ -10,7 +10,7 @@
 //! 4. **Full bilinearity** — `w(aP, bQ) = w(P, Q)^{ab}` for `a = 2, b = 2`.
 //! 5. **Alternation** — `w(P, P) = 1` (antisymmetry of the Weil pairing).
 //!
-//! ## Reduced Tate pairing (E.B.4)
+//! ## Reduced Tate pairing
 //!
 //! 6. **Non-degeneracy** — `τ(Q, P) ≠ 1` (Q as first argument, P as second;
 //!    see `test_curves` module for the group-theoretic reason).

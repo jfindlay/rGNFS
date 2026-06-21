@@ -21,9 +21,10 @@
 //! evaluations.  It lands in `μ_ℓ ⊂ F_{p^k}*` directly — **no final
 //! exponentiation** is needed.
 //!
-//! The **Tate pairing** (E.B.4) uses a single Miller evaluation followed by a
-//! final exponentiation `^{(p^k − 1)/ℓ}` to land in `μ_ℓ`.  The final
-//! exponentiation is the Tate-specific step; it is absent here.
+//! The **Tate pairing** ([`crate::pairing::tate`]) uses a single Miller
+//! evaluation followed by a final exponentiation `^{(p^k − 1)/ℓ}` to land
+//! in `μ_ℓ`.  The final exponentiation is the Tate-specific step; it is
+//! absent here.
 //!
 //! # Sign convention
 //!

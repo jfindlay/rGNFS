@@ -1,4 +1,4 @@
-//! Cross-attack ECDLP benchmark harness (E.W.1).
+//! Cross-attack ECDLP benchmark harness: Pohlig–Hellman, MOV, SSA, GHS, index calculus.
 //!
 //! Measures the wall-clock cost of each algebraic ECDLP attack on its respective toy fixture.
 //! Each bench body asserts the solver returns the known correct answer BEFORE timing, so the
@@ -185,7 +185,7 @@ fn bench_ghs_transfer(c: &mut Criterion) {
 /// The bench asserts `index_calculus_dlp` returns `Some(k)` with `k·G_ℓ = Q_ℓ` before timing.
 ///
 /// Relation/decomposition counts are derived from `collect_relations(...).len()` and
-/// `decompose(...)` (the public re-exports — C-IndexCalc unamended).
+/// `decompose(...)` (the public re-exports — `index_calculus_dlp` unamended).
 fn bench_index_calculus(c: &mut Criterion) {
     let strategy = IndexCalcStrategy::toy()
         .expect("index calculus pre-check: toy strategy must build");
@@ -210,7 +210,7 @@ fn bench_index_calculus(c: &mut Criterion) {
         "index calculus pre-check: k·G_ℓ ≠ Q_ℓ (k = {k})"
     );
 
-    // Derive relation and decomposition counts from the public re-exports (C-IndexCalc unamended).
+    // Derive relation and decomposition counts from the public re-exports (`index_calculus_dlp` unamended).
     // These counts are the pedagogical signal: how many relations the collection loop found,
     // and how many points were decomposable over the factor base.
     let relations = collect_relations(g.clone(), q.clone(), &strategy)
@@ -236,7 +236,7 @@ fn bench_index_calculus(c: &mut Criterion) {
     group.finish();
 
     // Print counts for the E.W table (not timed — informational only).
-    // These are derived from the public re-exports as required by C-IndexCalc.
+    // These are derived from the public re-exports as required by the index-calculus API.
     let _ = (relation_count, decomp_count);
 }
 

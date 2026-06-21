@@ -1,16 +1,16 @@
-//! Z/ℓZ linear algebra for the index-calculus ECDLP solver (C-EKLinAlg, E.K.4).
+//! Z/ℓZ linear algebra for the index-calculus ECDLP solver.
 //!
 //! This module provides the relation→`FlSparseMatrix` adapter and the Z/ℓZ solve wrapper
-//! that form the linear-algebra step of the index-calculus pipeline. It reuses the frozen
-//! `gnfs::dl::linalg` engine (block Lanczos / Wiedemann over F_ℓ) with an E.K-specific
-//! adapter in place of the NFS-bound `build_fl_matrix(DLMatrix)`.
+//! that form the linear-algebra step of the index-calculus pipeline. It reuses the
+//! `gnfs::dl::linalg` engine (block Lanczos / Wiedemann over F_ℓ) with an index-calculus-
+//! specific adapter in place of the NFS-bound `build_fl_matrix(DLMatrix)`.
 //!
 //! # Adapter design
 //!
 //! Each `Relation.exponents` is already in the `Vec<(usize, FpNaive)>` shape that maps
 //! directly to `FlSparseRow { entries: Vec<(usize, F)> }` — the adapter is a near-identity
-//! copy (no re-encoding). This shape was ratified at the E.K.1 ◆-start inflection fork
-//! specifically so E.K.4 would not need a scalar adapter.
+//! copy (no re-encoding). This shape was chosen specifically so the linear-algebra step
+//! would not need a scalar adapter.
 //!
 //! # Solver choice
 //!

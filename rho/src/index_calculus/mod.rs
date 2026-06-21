@@ -1,18 +1,16 @@
 //! Index-calculus ECDLP solver over a prime-field Weierstrass curve.
 //!
 //! This module implements the Gaudry–Diem–Joux–Vitse index-calculus algorithm over
-//! `E(F_p)`: the "solve" step in the project's transfer/structure/solve triad (E.H
-//! transfers via GHS descent, E.J builds the Semaev structure, **E.K solves** via
-//! index calculus). It consumes the frozen `rho::semaev` Semaev polynomial surface
-//! (C-Semaev) and the frozen `rho::curve::Curve`/`AffinePoint` group law.
+//! `E(F_p)`: the "solve" step in the project's transfer/structure/solve triad
+//! (`rho::ghs` transfers via Weil descent, `rho::semaev` builds the Semaev structure,
+//! this module solves via index calculus). It consumes the Semaev polynomial surface
+//! from [`crate::semaev`] and the [`crate::curve::Curve`]/`AffinePoint` group law.
 //!
 //! # Structure
 //!
 //! - [`mod`] (this file) — `IndexCalcError` enum, module skeleton.
-//! - [`strategy`] — `FbPoint`, `IndexCalcStrategy`, `Relation` (C-IndexCalcStrategy,
-//!   C-EKRelation, frozen at E.K.1).
-//! - [`solve`] — `index_calculus_dlp` — the full pipeline assembler (C-IndexCalc,
-//!   frozen at E.K.5 ◆).
+//! - [`strategy`] — `FbPoint`, `IndexCalcStrategy`, `Relation`.
+//! - [`solve`] — `index_calculus_dlp` — the full pipeline assembler.
 //!
 //! # Toy fixture
 //!
@@ -23,11 +21,11 @@
 //!
 //! # Principle-4 boundary
 //!
-//! E.K demonstrates the index-calculus *mechanism* over `E(F_p)` at toy scale. Over
-//! `E(F_p)` index calculus is **not** faster than Pollard-rho — the asymptotic speed-up
-//! needs the extension-field structure of `E(F_{p^n})` (the genuine Gaudry–Diem setting,
-//! a deferred re-shard). The toy `F_p`/`m`/`ℓ` are a principle-4 boundary: mechanism-
-//! correct, asymptotic win NOT observable.
+//! This module demonstrates the index-calculus *mechanism* over `E(F_p)` at toy scale.
+//! Over `E(F_p)` index calculus is **not** faster than Pollard-rho — the asymptotic
+//! speed-up needs the extension-field structure of `E(F_{p^n})` (the genuine Gaudry–Diem
+//! setting). The toy `F_p`/`m`/`ℓ` are a principle-4 boundary: mechanism-correct,
+//! asymptotic win NOT observable.
 
 pub mod collect;
 pub mod decompose;
@@ -47,8 +45,8 @@ pub use strategy::{FbPoint, IndexCalcStrategy, Relation, TOY_ELL, TOY_FB_SIZE, T
 ///
 /// Mirrors the attack-module idiom (`rho::ssa::SsaError`, `rho::ghs::GhsError`,
 /// `rho::semaev::SemaevError`): a small `Debug + Clone + PartialEq + Eq` enum with
-/// `Display` + `std::error::Error` impls. E.K.2–E.K.5 extend additively as their
-/// steps need additional variants.
+/// `Display` + `std::error::Error` impls. The collection, decomposition, linalg, and
+/// recovery steps extend this additively as they need additional variants.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IndexCalcError {
     /// The chosen subgroup modulus ℓ does not divide the group order n, or is not prime.
@@ -76,7 +74,7 @@ pub enum IndexCalcError {
     },
     /// A Semaev or curve operation surfaced an arity or variable error.
     ///
-    /// Wraps `SemaevError` for propagation from the point-decomposition step (E.K.2+).
+    /// Wraps `SemaevError` for propagation from the point-decomposition step.
     Semaev(crate::semaev::SemaevError),
     /// The collection loop exhausted all `(a, b)` pairs without finding enough relations.
     ///

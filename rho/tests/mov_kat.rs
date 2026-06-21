@@ -1,4 +1,4 @@
-//! End-to-end MOV/Frey–Rück reduction KATs (E.C.2 ◆).
+//! End-to-end MOV/Frey–Rück reduction KATs.
 //!
 //! # What is tested
 //!
@@ -37,9 +37,8 @@
 //!
 //! # No-regression gate
 //!
-//! The D.E k=2 KATs (`gnfs/tests/dl_ext_kat.rs`) and the E.B pairing KATs
-//! (`rho/tests/pairing_kat.rs`) must stay green. This file does NOT re-test those — it only
-//! tests the end-to-end MOV reduction.
+//! The `gnfs/tests/dl_ext_kat.rs` and `rho/tests/pairing_kat.rs` KATs must stay green.
+//! This file does NOT re-test those — it only tests the end-to-end MOV reduction.
 
 use crypto_bigint::Uint;
 use rho::pairing::ecext::PairingPoint;

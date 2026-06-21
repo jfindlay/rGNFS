@@ -46,15 +46,16 @@
 //!
 //! # Walk-state invariant
 //!
-//! **The invariant `W = a·G + b·Q` is the prose contract of C-BinaryRho.**
+//! **The invariant `W = a·G + b·Q` is the load-bearing correctness contract.**
 //! It must hold at every step.  A wrong addend table or group-law bug shows
 //! up as a recovered `k` with `k·G ≠ Q`, which the end-to-end KAT catches.
 //!
-//! # Cat-C baseline rule
+//! # Baseline rule
 //!
-//! This module is the **baseline** that E.G.3's Koblitz τ-orbit variant reads.
-//! It must never be altered by E.G.3 — the Koblitz variant adds a new function,
-//! not a replacement.  The baseline stays intact for E.H benchmark comparison.
+//! This module is the **baseline** that the Koblitz τ-orbit variant in
+//! [`koblitz`] reads.  It must never be altered by the Koblitz variant — the
+//! Koblitz variant adds a new function, not a replacement.  The baseline stays
+//! intact for benchmark comparison.
 
 pub mod koblitz;
 
@@ -231,8 +232,8 @@ impl<F: F2m<1>> BinaryAddendTable<F> {
 ///
 /// **Invariant**: `point = a·G + b·Q` at all times.
 ///
-/// This invariant is the C-BinaryRho prose contract.  A violation shows up
-/// as a recovered `k` with `k·G ≠ Q` in the end-to-end KAT.
+/// This invariant is the load-bearing correctness contract.  A violation shows
+/// up as a recovered `k` with `k·G ≠ Q` in the end-to-end KAT.
 #[derive(Clone, Debug)]
 pub struct BinaryWalkState<F> {
     /// Current walk point in affine coordinates.
@@ -320,8 +321,8 @@ fn recover_k(a1: u64, b1: u64, a2: u64, b2: u64, n: u64) -> Option<u64> {
 /// # Walk-state invariant
 ///
 /// At every step, `walk.point = walk.a · G + walk.b · Q`.  This invariant is
-/// the C-BinaryRho prose contract.  A violation shows up as a recovered `k`
-/// with `k·G ≠ Q` in the end-to-end KAT.
+/// the load-bearing correctness contract.  A violation shows up as a recovered
+/// `k` with `k·G ≠ Q` in the end-to-end KAT.
 ///
 /// # Arguments
 ///

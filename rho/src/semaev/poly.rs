@@ -1,7 +1,6 @@
 //! `F_p[x]` univariate resultant and the multivariate/symmetric-polynomial type `S_m`.
 //!
-//! This module provides the polynomial substrate the Semaev construction stands on
-//! (C-SemaevPoly, frozen at E.J.1):
+//! This module provides the polynomial substrate the Semaev construction stands on:
 //!
 //! - [`FpPoly`] — a univariate polynomial over `F_p` (coefficients in `F_p`, stored
 //!   least-significant first: `coeffs[i]` is the coefficient of `x^i`).
@@ -21,9 +20,9 @@
 //! - Makes evaluation and partial-assignment evaluation `O(terms)` — cheap for the small
 //!   `m` and small degrees of the Semaev polynomials.
 //! - Makes symmetric-reduction straightforward: sort the exponent vector and accumulate.
-//! - Makes one-variable resultant-elimination (the E.J.3 recursion step) implementable
-//!   by extracting the univariate polynomial in the eliminated variable and computing its
-//!   resultant with the other polynomial.
+//! - Makes one-variable resultant-elimination (the `semaev_poly` recursion step)
+//!   implementable by extracting the univariate polynomial in the eliminated variable
+//!   and computing its resultant with the other polynomial.
 //!
 //! The elementary-symmetric-basis alternative would be more compact for large `m` but
 //! harder to evaluate and eliminate; the dense representation is the right choice for
@@ -624,7 +623,7 @@ impl MultiPoly {
     /// Both `self` and `other` must have the same `num_vars` and `p`. The result is a
     /// polynomial in `num_vars - 1` variables (variable `var` eliminated).
     ///
-    /// This is the key operation for the E.J.3 resultant recursion:
+    /// This is the key operation for the Semaev resultant recursion:
     /// `S_m = Res_X(S_{m-1}(X_1, …, X_{m-2}, X), S_3(X_{m-1}, X_m, X))`.
     ///
     /// # Errors
@@ -834,7 +833,7 @@ fn permutations(n: usize) -> Vec<Vec<usize>> {
 /// # Principle-4 annotation
 ///
 /// SCALE: toy-scale only — cofactor expansion is `O(n!)` in the worst case. For the
-/// Sylvester matrix of `S_3` and `S_3` (the E.J.3 recursion step), the matrix is
+/// Sylvester matrix of `S_3` and `S_3` (the `semaev_poly` recursion step), the matrix is
 /// small (degree ≤ 4 in the eliminated variable → matrix size ≤ 8). For larger `m`,
 /// a more efficient algorithm (e.g., Bareiss over the polynomial ring) would be needed.
 fn sylvester_det(

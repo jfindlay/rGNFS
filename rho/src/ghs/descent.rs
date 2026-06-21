@@ -23,7 +23,7 @@
 //! This is the Artin–Schreier equation `℘(λ) = f(x)` where `℘(t) = t² + t` is the
 //! Artin–Schreier operator and `f(x) = x + a + b/x²` is a rational function.
 //!
-//! For the polynomial algebra (E.H.2), we represent `f` as a polynomial in `GF(2^m)[x]`
+//! For the polynomial algebra, we represent `f` as a polynomial in `GF(2^m)[x]`
 //! by clearing denominators: multiply through by `x²` to get `x³ + ax² + b`, which is
 //! the right-hand side of the original Weierstrass equation. The Artin–Schreier data
 //! stores this polynomial.
@@ -37,7 +37,7 @@
 //! (where `β = α^((2^m−1)/(2^l−1))` is a primitive element of `GF(2^l)` inside
 //! `GF(2^m)`), yielding `m/l` coefficients in `GF(2^l)`.
 //!
-//! The implementation uses the `frobenius_subfield_orbit` from C-Subfield to compute
+//! The implementation uses the `frobenius_subfield_orbit` from `shared_gf2m` to compute
 //! the conjugates of each coefficient, then uses the elementary symmetric polynomials
 //! (norm, trace, and intermediate symmetric functions) to express the result over
 //! `GF(2^l)`.
@@ -404,7 +404,7 @@ pub fn weil_restrict_poly(
             // GF(2^2). We use the `restrict` function which solves this system
             // via Gaussian elimination.
             //
-            // SIMPLIFICATION for E.H.2: Since the Frobenius orbit elements are
+            // SIMPLIFICATION: Since the Frobenius orbit elements are
             // in GF(2^m) and the subfield basis coordinates are in GF(2^l), we
             // use `restrict` to project each orbit element to GF(2^l). This is
             // correct when the orbit elements happen to lie in GF(2^l) (e.g.,

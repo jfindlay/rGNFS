@@ -8,7 +8,7 @@
 //!
 //! - [`mod`] (this file) — `SsaError` enum, the hardcoded anomalous toy curve fixture, and
 //!   `verify_anomalous` (O(p) point-count via Legendre symbol).
-//! - [`lift`] — affine F_p point → Z_p lift via Hensel (C-AnomalousLift, E.E.1).
+//! - [`lift`] — affine F_p point → Z_p lift via Hensel for the SSA reduction.
 //!
 //! # Anomalous curve fixture
 //!

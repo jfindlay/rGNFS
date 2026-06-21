@@ -1,4 +1,4 @@
-//! Pairing-friendly toy fixture for E.B sub-track KATs.
+//! Pairing-friendly toy fixture for the bilinear-pairing KATs.
 //!
 //! # Fixture: `pairing_toy`
 //!

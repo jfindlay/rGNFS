@@ -23,7 +23,7 @@
 //! # Frobenius endomorphism
 //!
 //! [`FpExt::frobenius`] computes `x ↦ x^p` (the **p-power Frobenius**), NOT
-//! `x^{p^k}` (which is the identity).  This is the load-bearing map for E.C's
+//! `x^{p^k}` (which is the identity).  This is the load-bearing map for the
 //! MOV reduction: the Frobenius generates the Galois group `Gal(F_{p^k}/F_p)`,
 //! and applying it `k` times returns the identity.
 
@@ -274,7 +274,7 @@ impl<F: Fp<4>> FpExt<F> {
     /// Computes the `p`-power Frobenius map, which generates the Galois group
     /// `Gal(F_{p^k}/F_p)`.  Applying it `k` times returns the identity.
     ///
-    /// This is the load-bearing map for E.C's MOV reduction.  Note: this is
+    /// This is the load-bearing map for the MOV reduction.  Note: this is
     /// `x^p`, NOT `x^{p^k}` (which is the identity by Fermat in `F_{p^k}*`).
     pub fn frobenius(&self, modulus: &IrreducibleModulus<F>, p: &Uint<4>) -> Self {
         // x^p = (∑ c_i · u^i)^p = ∑ c_i^p · u^{i·p}  (freshman's dream in char p)
@@ -303,7 +303,7 @@ impl<F: Fp<4>> FpExt<F> {
     /// Canonicalise to a vector of `Uint<4>` residues.
     ///
     /// Returns `[c_0.to_uint(), c_1.to_uint(), …, c_{k-1}.to_uint()]`.
-    /// This is the bridge to `solve_dl`'s `BigInt` encoding (C-FpExt contract).
+    /// This is the bridge to `solve_dl`'s `BigInt` encoding (the MOV bridge convention).
     pub fn to_uint_vec(&self) -> Vec<Uint<4>> {
         self.coeffs.iter().map(|c| c.to_uint()).collect()
     }

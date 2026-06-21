@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the index-calculus module (E.K.1–E.K.5).
+//! Known-answer tests (KATs) for the index-calculus ECDLP solver over `E(F_p)`.
 //!
 //! # Fixture
 //!
@@ -7,19 +7,19 @@
 //! The prime-order subgroup uses `ℓ = 5` (the largest prime factor of n); the ℓ-order
 //! subgroup generator is `G_ℓ = (n/ℓ)·G = 12·G`.
 //!
-//! # KAT coverage (E.K.1 — C-IndexCalcStrategy + C-EKRelation)
+//! # KAT coverage — factor base and relation types
 //!
 //! 1. **factor-base-on-curve**: every enumerated factor-base point satisfies `is_on_curve`
 //!    via the frozen `Curve`. Guards the QR-test + canonical-root-lift enumeration.
 //! 2. **subgroup-validity**: `ℓ | n` (i.e., `n % ℓ == 0`); the subgroup generator
 //!    `G_ℓ = 12·G` satisfies `ℓ·G_ℓ = ∞` (the identity). Guards the prime-order-subgroup
 //!    precondition for the `Z/ℓℤ` linear algebra.
-//! 3. **C-EKRelation round-trip**: construct a `Relation` from a known decomposition
+//! 3. **relation-round-trip**: construct a `Relation` from a known decomposition
 //!    (factor-base points 0 and 1), then verify that `Σ e_i·P_i` (using the frozen group
 //!    law) equals the expected point sum. Guards the exponent-vector encoding and the
 //!    `from_decomposition` / `exponent` API.
 //!
-//! # KAT coverage (E.K.2 — C-PointDecomp)
+//! # KAT coverage — point decomposition via Semaev polynomial
 //!
 //! 4. **decomposition-correctness**: `decompose(Q)` returns `Some(pts)` for a point `Q`
 //!    that is a sum of two factor-base points; the returned decomposition sums to `Q` via
@@ -30,7 +30,7 @@
 //! 6. **decomposition-sum-check**: for any returned decomposition `[P_i, P_j]`, verify
 //!    `P_i + P_j = Q` using the group law (the primary correctness signal).
 //!
-//! # KAT coverage (E.K.3 — C-RelationCollect)
+//! # KAT coverage — relation collection
 //!
 //! 7. **relation-validity**: for every relation returned by `collect_relations`, verify
 //!    that `Σ e_i·P_i = a·G + b·Q` via the frozen group law. Guards the provenance
@@ -38,7 +38,7 @@
 //! 8. **over-determination**: the returned collection has at least `fb_size + 1` relations.
 //!    Guards the loop termination condition.
 //!
-//! # KAT coverage (E.K.4 — C-EKLinAlg)
+//! # KAT coverage — Z/ℓZ linear algebra
 //!
 //! 9. **adapter-fidelity**: `build_ek_matrix` produces a matrix whose row `i` matches
 //!    `relations[i].exponents` exactly (same (index, value) pairs). Guards the near-identity
@@ -47,7 +47,7 @@
 //!    `M·v = 0` over F_ℓ (i.e., for each relation row, the dot product of the exponent
 //!    vector with `v` is 0 mod ℓ). Guards the Z/ℓZ linear algebra step.
 //!
-//! # KAT coverage (E.K.5 ◆ — C-IndexCalc, sub-track close)
+//! # KAT coverage — DLP recovery and end-to-end pipeline
 //!
 //! 11. **ecdlp_agreement** (decisive): `index_calculus_dlp(G, Q)` returns `x = log_G(Q) mod ℓ`
 //!    that agrees with the frozen `rho::ecdlp::pohlig::solve_ecdlp_composite` oracle: `k % ℓ == x`.
@@ -57,15 +57,15 @@
 //!    projection check). Guards the DLP recovery step independently of the rho cross-check.
 //! 13. **end_to_end**: the full pipeline solves a non-trivial toy ECDLP instance end-to-end
 //!    (factor base → decomposition → collection → linalg → recovery → verification).
-//! 14. **principle4_annotation**: records the principle-4 boundary — E.K-over-F_p is the
-//!    index-calculus MECHANISM; the asymptotic win requires the extension-field setting
-//!    E(F_{p^n}); at toy scale index calculus is NOT faster than Pollard-rho.
+//! 14. **principle4_annotation**: records the principle-4 boundary — index calculus over
+//!    `E(F_p)` is the mechanism; the asymptotic win requires the extension-field setting
+//!    `E(F_{p^n})`; at toy scale index calculus is NOT faster than Pollard-rho.
 //!
-//! # Principle-4 boundary
+//! # Principle-4 boundary: index calculus over `E(F_p)` at toy scale
 //!
 //! The fixture is toy-scale (`p = 47`, `n = 60`). The algorithms are mechanism-correct;
 //! the asymptotic index-calculus win (which needs `E(F_{p^n})`) is not observable at
-//! this scale — a deferred re-shard.
+//! this scale.
 
 use crypto_bigint::Uint;
 use rho::curve::{AffinePoint, JacobianPoint};
@@ -183,9 +183,9 @@ fn subgroup_validity() {
     );
 }
 
-// ─── KAT 3: C-EKRelation round-trip ──────────────────────────────────────────
+// ─── KAT 3: Relation round-trip ──────────────────────────────────────────────
 
-/// C-EKRelation round-trip: `Σ e_i·P_i` reconstructed from the relation equals the
+/// Relation round-trip: `Σ e_i·P_i` reconstructed from the relation equals the
 /// expected point sum.
 ///
 /// Constructs a `Relation` from a known decomposition (factor-base points 0 and 1,
@@ -200,7 +200,7 @@ fn subgroup_validity() {
 ///   the whole pipeline relies on: a relation's exponent vector reconstructs its recorded
 ///   factor-base-point sum).
 #[test]
-fn c_ek_relation_round_trip() {
+fn relation_round_trip() {
     let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
     let curve = &strategy.curve;
     let ell = ell();
@@ -258,16 +258,16 @@ fn c_ek_relation_round_trip() {
     );
 }
 
-// ─── KAT 3b: C-EKRelation round-trip with repeated indices ───────────────────
+// ─── KAT 3b: Relation round-trip with repeated indices ───────────────────────
 
-/// C-EKRelation round-trip with a repeated factor-base index.
+/// Relation round-trip with a repeated factor-base index.
 ///
 /// Constructs a `Relation` from the decomposition [P_0, P_0] (factor-base point 0
 /// appearing twice), then verifies that `Σ e_i·P_i = 2·P_0`.
 ///
 /// Guards the accumulation logic in `from_decomposition` (repeated indices → exponent 2).
 #[test]
-fn c_ek_relation_round_trip_repeated() {
+fn relation_round_trip_repeated() {
     let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
     let curve = &strategy.curve;
     let ell = ell();
@@ -309,7 +309,7 @@ fn c_ek_relation_round_trip_repeated() {
     );
 }
 
-// ─── KAT 4: decomposition-correctness (C-PointDecomp) ────────────────────────
+// ─── KAT 4: decomposition-correctness ───────────────────────────────────────
 
 /// Decomposition correctness: `decompose(Q)` returns `Some(pts)` for a point `Q` that
 /// is a sum of two factor-base points; the returned decomposition sums to `Q` via the
@@ -321,7 +321,7 @@ fn c_ek_relation_round_trip_repeated() {
 /// - The returned decomposition has exactly `m = 2` points.
 /// - The sum of the returned points equals `Q` via the frozen group law.
 ///
-/// Guards the Semaev root-finding step (the primary correctness signal for C-PointDecomp).
+/// Guards the Semaev root-finding step (the primary correctness signal for point decomposition).
 #[test]
 fn decomposition_correctness() {
     let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
@@ -376,7 +376,7 @@ fn decomposition_correctness() {
     );
 }
 
-// ─── KAT 5: decomposition-none-for-non-decomposable (C-PointDecomp) ──────────
+// ─── KAT 5: decomposition-none-for-non-decomposable ─────────────────────────
 
 /// Decomposition returns `None` for a point that is not a sum of any two factor-base
 /// points.
@@ -435,7 +435,7 @@ fn decomposition_none_for_non_decomposable() {
     );
 }
 
-// ─── KAT 6: decomposition-sum-check (C-PointDecomp) ─────────────────────────
+// ─── KAT 6: decomposition-sum-check ─────────────────────────────────────────
 
 /// For every returned decomposition `[P_i, P_j]`, verify `P_i + P_j = Q` using the
 /// frozen group law.
@@ -502,7 +502,7 @@ fn decomposition_sum_check() {
     );
 }
 
-// ─── KAT 7: relation-validity (C-RelationCollect) ────────────────────────────
+// ─── KAT 7: relation-validity ────────────────────────────────────────────────
 
 /// For every relation returned by `collect_relations`, verify `Σ e_i·P_i = a·G + b·Q`.
 ///
@@ -566,14 +566,14 @@ fn relation_validity() {
     }
 }
 
-// ─── KAT 8: over-determination (C-RelationCollect) ───────────────────────────
+// ─── KAT 8: over-determination ───────────────────────────────────────────────
 
 /// The returned collection has at least `fb_size + 1` relations.
 ///
 /// Calls `collect_relations(G, Q, &strategy)` for the toy fixture and verifies that
 /// the returned `Vec<Relation>` has at least `strategy.fb_size() + 1` entries. This
 /// is the over-determination condition required for the index-calculus linear algebra
-/// (E.K.4) to have a non-trivial kernel.
+/// the linear-algebra step to have a non-trivial kernel.
 ///
 /// Guards the loop termination condition in `collect_relations`.
 #[test]
@@ -597,7 +597,7 @@ fn over_determination() {
     );
 }
 
-// ─── KAT 9: adapter-fidelity (C-EKLinAlg) ────────────────────────────────────
+// ─── KAT 9: adapter-fidelity ─────────────────────────────────────────────────
 
 /// Adapter fidelity: `build_ek_matrix` row `i` matches `relations[i].exponents` exactly.
 ///
@@ -609,6 +609,7 @@ fn over_determination() {
 /// The adapter is a near-identity copy: `Relation.exponents` is already in the
 /// `Vec<(usize, FpNaive)>` shape that `FlSparseRow` expects (sorted by index, no zeros,
 /// no duplicates — invariants enforced by `Relation::from_decomposition`).
+/// Guards the near-identity adapter from `Relation.exponents` to `FlSparseRow`.
 #[test]
 fn adapter_fidelity() {
     let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");
@@ -656,14 +657,14 @@ fn adapter_fidelity() {
     }
 }
 
-// ─── KAT 10: kernel-correctness (C-EKLinAlg) ─────────────────────────────────
+// ─── KAT 10: kernel-correctness ──────────────────────────────────────────────
 
 /// Kernel correctness: the kernel vector `v` returned by `solve_ek_linalg` satisfies
 /// `M·v = 0` over F_ℓ.
 ///
 /// Calls `collect_relations` then `solve_ek_linalg`. For each relation row (exponent
 /// vector), computes the dot product with `v` over F_ℓ and verifies it is zero. This
-/// is the primary correctness signal for the Z/ℓZ linear algebra step (C-EKLinAlg).
+/// is the primary correctness signal for the Z/ℓZ linear algebra step.
 ///
 /// Guards:
 /// - `build_ek_matrix` correctly encodes the relation system.
@@ -718,23 +719,22 @@ fn kernel_correctness() {
     }
 }
 
-// ─── KAT 11: ecdlp_agreement (C-IndexCalc, E.K.5 ◆ — decisive cross-check) ──
+// ─── KAT 11: ecdlp_agreement (decisive cross-check) ─────────────────────────
 
 /// Decisive cross-check: `index_calculus_dlp(G, Q)` agrees with `rho::ecdlp` on the
 /// same toy instance.
 ///
-/// This is the green-path correctness signal for C-IndexCalc (E.K.5 ◆): the index-
-/// calculus recovered `x = log_G(Q) mod ℓ` must satisfy `k % ℓ == x` where `k` is
-/// the full discrete log returned by the frozen `rho::ecdlp::pohlig::solve_ecdlp_composite`
-/// oracle. Also verifies the ℓ-subgroup projection: `x·G_ℓ = Q_ℓ`.
+/// The index-calculus recovered `x = log_G(Q) mod ℓ` must satisfy `k % ℓ == x` where
+/// `k` is the full discrete log returned by the frozen
+/// `rho::ecdlp::pohlig::solve_ecdlp_composite` oracle. Also verifies the ℓ-subgroup
+/// projection: `x·G_ℓ = Q_ℓ`.
 ///
-/// # Principle-4 annotation
+/// # Principle-4 annotation: index calculus over `E(F_p)` at toy scale
 ///
-/// E.K-over-F_p is the index-calculus MECHANISM. The asymptotic win (index calculus
-/// faster than Pollard-rho) requires the extension-field setting E(F_{p^n}) — the
-/// genuine Gaudry–Diem setting, a deferred re-shard. Over E(F_p) at toy scale, index
-/// calculus is NOT faster than Pollard-rho. The mechanism is demonstrated, not the
-/// asymptotic advantage.
+/// Index calculus over `E(F_p)` is the mechanism. The asymptotic win (index calculus
+/// faster than Pollard-rho) requires the extension-field setting `E(F_{p^n})` — the
+/// genuine Gaudry–Diem setting. Over `E(F_p)` at toy scale, index calculus is NOT
+/// faster than Pollard-rho. The mechanism is demonstrated, not the asymptotic advantage.
 ///
 /// # Cross-check design
 ///
@@ -804,7 +804,7 @@ fn ecdlp_agreement() {
     );
 }
 
-// ─── KAT 12: recovery_soundness (C-IndexCalc, E.K.5 ◆) ──────────────────────
+// ─── KAT 12: recovery_soundness ──────────────────────────────────────────────
 
 /// Recovery soundness: `x·G_ℓ = Q_ℓ` via the frozen `scalar_mul`.
 ///
@@ -856,7 +856,7 @@ fn recovery_soundness() {
     );
 }
 
-// ─── KAT 13: end_to_end (C-IndexCalc, E.K.5 ◆) ──────────────────────────────
+// ─── KAT 13: end_to_end ──────────────────────────────────────────────────────
 
 /// End-to-end: the full index-calculus pipeline solves a non-trivial toy ECDLP.
 ///
@@ -866,7 +866,7 @@ fn recovery_soundness() {
 /// - `x` is in `[0, ℓ)` (a valid F_ℓ element).
 /// - `x·G_ℓ = Q_ℓ` (the ℓ-subgroup projection check — the primary soundness signal).
 ///
-/// This is the sub-track-close KAT: the index-calculus solver is complete and
+/// This is the decisive pipeline KAT: the index-calculus solver is complete and
 /// mechanism-correct at toy scale.
 #[test]
 fn end_to_end() {
@@ -908,21 +908,21 @@ fn end_to_end() {
     );
 }
 
-// ─── KAT 14: principle4_annotation (E.K.5 ◆ — sub-track close) ──────────────
+// ─── KAT 14: principle4_annotation ──────────────────────────────────────────
 
-/// Principle-4 annotation: records the E.K mechanism boundary.
+/// Principle-4 annotation: records the index-calculus mechanism boundary.
 ///
 /// This test is a load-bearing annotation, not a computation. It records the
-/// principle-4 boundary for the E.K sub-track close:
+/// principle-4 boundary for the index-calculus solver over `E(F_p)`:
 ///
-/// - E.K-over-F_p is the index-calculus MECHANISM over E(F_p).
+/// - Index calculus over `E(F_p)` is the mechanism.
 /// - The asymptotic win (index calculus faster than Pollard-rho) requires the
-///   extension-field setting E(F_{p^n}) — the genuine Gaudry–Diem setting.
-/// - Over E(F_p) at toy scale, index calculus is NOT faster than Pollard-rho.
-/// - The toy F_p/m/ℓ are a principle-4 boundary: mechanism-correct, asymptotic
-///   win NOT observable.
-/// - The F_{p^n} asymptotic-win case and the GHS-coupled end-to-end attack are
-///   deferred to later, separately-sharded sub-tracks (re-shards, not exclusions).
+///   extension-field setting `E(F_{p^n})` — the genuine Gaudry–Diem setting.
+/// - Over `E(F_p)` at toy scale, index calculus is NOT faster than Pollard-rho.
+/// - The toy `F_p`/`m`/`ℓ` are a principle-4 boundary: mechanism-correct,
+///   asymptotic win NOT observable.
+/// - The `E(F_{p^n})` asymptotic-win case and the GHS-coupled end-to-end attack
+///   are deferred to later sub-tracks.
 ///
 /// The assertion verifies the toy fixture constants that define the boundary:
 /// - ℓ = 5 (prime-order subgroup modulus, the linear-algebra field).
@@ -931,9 +931,9 @@ fn end_to_end() {
 /// - p = 47 (the toy prime field — crypto-scale would need p >> 2^128).
 #[test]
 fn principle4_annotation() {
-    // PRINCIPLE-4 BOUNDARY: E.K-over-F_p is the index-calculus MECHANISM.
+    // PRINCIPLE-4 BOUNDARY: index calculus over E(F_p) is the mechanism.
     // The asymptotic win requires E(F_{p^n}); at toy scale index calculus is NOT
-    // faster than Pollard-rho. This is mechanism-correct, asymptotic win NOT observable.
+    // faster than Pollard-rho. Mechanism-correct, asymptotic win NOT observable.
     //
     // The toy fixture constants that define the boundary:
     let strategy = IndexCalcStrategy::toy().expect("toy strategy should build");

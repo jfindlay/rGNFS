@@ -1,7 +1,7 @@
 //! Semaev summation polynomials over a prime-field Weierstrass curve.
 //!
 //! This module implements the Semaev summation-polynomial machinery — the combinatorial
-//! primitive at the heart of the Gaudry–Diem–Joux–Vitse index calculus (E.K). The
+//! primitive at the heart of the Gaudry–Diem–Joux–Vitse index calculus. The
 //! summation polynomial `S_m(X_1, …, X_m)` is a symmetric multivariate polynomial over
 //! `F_p` that vanishes on `(x_1, …, x_m)` precisely when there exist `y_i` such that
 //! `P_i = (x_i, y_i)` are points on the curve `E/F_p` with `P_1 + ⋯ + P_m = ∞`.
@@ -11,9 +11,8 @@
 //! - [`mod`] (this file) — `SemaevError` enum, the toy `F_p`/Weierstrass curve fixture,
 //!   and the `semaev_toy` constructor.
 //! - [`poly`] — the `F_p[x]` univariate resultant and the multivariate/symmetric-polynomial
-//!   type `S_m` (C-SemaevPoly, frozen at E.J.1).
-//! - [`recursion`] — `semaev_poly(m)` via the resultant ladder `S_m = Res_X(S_{m-1}, S_3)`
-//!   (C-Semaev, frozen at E.J.3).
+//!   type `S_m`.
+//! - [`recursion`] — `semaev_poly(m)` via the resultant ladder `S_m = Res_X(S_{m-1}, S_3)`.
 //!
 //! # Toy fixture
 //!
@@ -25,7 +24,8 @@
 //!
 //! The fixture is toy-scale. The algorithms are crypto-scale-correct; only the parameters
 //! are small for auditability. The `Uint<4>` ceiling is the C1 boundary the ROADMAP flags
-//! for E.K; if E.K needs a wider field, that is the C1-widening discovery at E.K, not E.J's
+//! for the index-calculus solver; if the solver needs a wider field, that is a C1-widening
+//! discovery at the index-calculus layer, not the Semaev polynomial layer's
 //! concern.
 
 pub mod base;

@@ -1,11 +1,11 @@
 //! Index-calculus strategy substrate: factor base, prime-order subgroup, relation type.
 //!
-//! This module defines the three core types frozen at E.K.1:
+//! This module defines the three core types for the index-calculus pipeline:
 //! - [`FbPoint`] — a curve point with its stable factor-base index.
 //! - [`IndexCalcStrategy`] — the factor base + prime-order subgroup + decomposition arity,
-//!   bound to a curve (C-IndexCalcStrategy).
+//!   bound to a curve.
 //! - [`Relation`] — one index-calculus relation: a decomposition of `R = a·G + b·Q` over
-//!   the factor base as a sparse exponent vector over `F_ℓ` (C-EKRelation).
+//!   the factor base as a sparse exponent vector over `F_ℓ`.
 //!
 //! # Factor-base enumeration
 //!
@@ -71,8 +71,8 @@ pub struct FbPoint {
 /// The index-calculus strategy substrate: factor base + prime-order subgroup + arity.
 ///
 /// Bound to a specific curve. The toy instance uses `semaev_toy()` with `ℓ = 5`,
-/// `FB_SIZE = 6`, `m = 2`. Downstream sessions (E.K.2–E.K.5) consume this as the
-/// fixed strategy for decomposition, collection, linear algebra, and recovery.
+/// `FB_SIZE = 6`, `m = 2`. The decomposition, collection, linear algebra, and recovery
+/// steps all consume this as the fixed strategy.
 #[derive(Clone, Debug)]
 pub struct IndexCalcStrategy {
     /// The curve (the frozen `semaev_toy()` fixture for the toy instance).
@@ -194,8 +194,8 @@ impl IndexCalcStrategy {
 /// One index-calculus relation: a decomposition of `R = a·G + b·Q` over the factor base.
 ///
 /// The exponent vector is **sparse over `F_ℓ`** — `Vec<(fb_index, exp mod ℓ)>` — exactly
-/// the row shape E.K.4's `build_ek_matrix` pushes into `FlSparseRow`, so the adapter is a
-/// near-identity copy (no re-encoding). Provenance `(a, b)` is load-bearing for E.K.5
+/// the row shape `build_ek_matrix` pushes into `FlSparseRow`, so the adapter is a
+/// near-identity copy (no re-encoding). Provenance `(a, b)` is load-bearing for DLP
 /// recovery; never dropped.
 ///
 /// **Invariants:**
@@ -206,7 +206,7 @@ impl IndexCalcStrategy {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Relation {
     /// Provenance: the multiple `R = a·G + b·Q` this relation decomposes.
-    /// Recovery (E.K.5) reads it to reconstruct `log_G(Q) mod ℓ`.
+    /// The DLP recovery step reads it to reconstruct `log_G(Q) mod ℓ`.
     pub a: u64,
     /// Provenance: the multiple `R = a·G + b·Q` this relation decomposes.
     pub b: u64,
@@ -245,7 +245,7 @@ impl Relation {
     /// The exponent of factor-base point `i` in this relation (zero `F_ℓ` element if absent).
     ///
     /// Performs a linear scan over the sparse `exponents` vector (small factor bases make
-    /// this acceptable; E.K.4's adapter uses the sorted structure directly).
+    /// this acceptable; the linear-algebra adapter uses the sorted structure directly).
     pub fn exponent(&self, i: usize, ell: &Uint<4>) -> FpNaive {
         self.exponents
             .iter()
