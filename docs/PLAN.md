@@ -383,7 +383,7 @@ contract(s) each session froze).
 | D.2 | Re-anchor `rho` baseline doc-comment provenance                     | done    | 89f1e22 |       |
 | D.3 | Re-anchor `rho` attack-module provenance + rename the one test id   | done    | 84b993c |       |
 | D.4 | Re-anchor `gnfs` doc-comment provenance                             | done    | f2302a4 |       |
-| D.5 | Re-anchor `shor` + `shared/*` doc-comment provenance                | pending |        |       |
+| D.5 | Re-anchor `shor` + `shared/*` doc-comment provenance                | done    | 3ef9aca |       |
 | D.6 | ◆ Freeze C-Layout + C-Coherence code-half; fold up                  | pending |        |       |
 
 ---
