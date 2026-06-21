@@ -277,7 +277,7 @@ All not-started at construction. `/plan-shard` marks in-progress; the reconcile 
 
 | Sub-track | Status |
 |-----------|--------|
-| A. SURVEY | not-started |
+| A. SURVEY | in progress (sharded 2026-06-20 → docs/PLAN.md; 7 sessions) |
 | B. ALIGN | not-started |
 | C. ORACLE | not-started |
 | D. REFACTOR | not-started |
@@ -302,3 +302,11 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
   mathematics' own terms rather than as the realization of an executed plan. Split execution across
   REFACTOR (identifiers/files/benches) and CONSOLIDATE (prose); no new sub-track. Design intent
   amended to state the standalone-artifact principle.
+- **2026-06-20 — A. SURVEY sharded (sub-track-boundary reconciliation).** First arc-2 sub-track
+  opened. `/plan-shard` from `@architect` decomposed the survey substrate into 7 findings-only
+  sessions (6 dimension audits + 1 integrative ◆ ledger-freeze), the nine audit dimensions D1–D9
+  grouped by shared substrate (D3/D4/D9-prose → the doc corpus; D5/D9-code → the crate tree).
+  `juncture-tier: opus`, opt-down unavailable (lever-5 weak: no test inner-loop catches a wrong
+  finding; the ◆ findings-ledger review is the only correctness gate). No prior arc-2 sub-track to
+  mark done; no discoveries folded up (arc-1's completion already recorded at construction). The
+  stale arc-1 *terminus* PLAN.md (Z.1+T.Z, done at `201df39`) is superseded by the SURVEY PLAN.
