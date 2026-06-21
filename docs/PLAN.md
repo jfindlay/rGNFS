@@ -368,7 +368,7 @@ contract(s) each session froze).
 | A.2 | Audit crate layout/dedup + catalog code-depth provenance               | done    | 8be4edd | C-Layout sketch (rho overload open-Q); C-Coherence code-half (all pure residue) |
 | A.3 | Audit testing balance + resolve the coverage-doctrine question         | done    | be31c37 | C-Testing-Philosophy (frozen: math-behavior KAT coverage; 80% line gate; gate value open-Q at A.7) |
 | A.4 | Audit docs-layer discipline + math-continuity + prose provenance       | done    | a99b61e | C-DocsLayer sketch; C-MathSpine sketch; C-Coherence prose-half (S.A/S.B/S.C borderline open-Q at A.7) |
-| A.5 | Audit CADO-NFS sidecar build/trigger design needs                      | pending | —      | —     |
+| A.5 | Audit CADO-NFS sidecar build/trigger design needs                      | done    | ab62f21 | C-Oracle sketch (trigger=lazy/on-demand; pin=git-2.0.1; 4 tolerance-bounded comparisons) |
 | A.6 | Audit spectrum completeness + distil 4 quantum-DLP references          | pending | —      | —     |
 | A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | pending | —      | —     |
 
