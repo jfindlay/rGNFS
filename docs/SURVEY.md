@@ -1881,3 +1881,446 @@ msieve as a fallback oracle for the end-to-end test if CADO proves difficult to 
 the option; ORACLE decides.
 
 *Feeds ORACLE; seeds C-Oracle (sketch).*
+
+---
+
+## A.6 — Spectrum completeness + 4-reference distillation (D7 + D8) — **Opus**
+
+**Charge:** (a) **Spectrum-completeness audit (D7)** — map the current matrix
+(`MATHEMATICS.md`'s 12 chapters + the 5 tracks) against the intent's discriminant (full spectrum
+of mathematically-necessary algorithms for integer factorization and DLP, classical and quantum,
+excluding hardware/distributed specifics); identify omitted subject areas and classify each as a
+genuine gap or a deliberate non-extension. (b) **4-reference distillation (D8)** — verify that
+the four external quantum-DLP references resolve, then distil what each adds to the spectrum.
+Feeds F-EXTEND; consumed by F.
+
+**Discriminant (from ROADMAP D7):** full spectrum from integer DLP → finite-field DLP →
+EC-over-finite-field DLP, classical and quantum, constrained to mathematically-necessary
+algorithms (excluding hardware/distributed specifics). The discriminant is about the
+*mathematical* algorithm families, not about engineering optimizations (hardware-specific gate
+sets, distributed sieving, etc.).
+
+---
+
+### Part (a) — Spectrum-completeness audit (D7)
+
+#### The algorithm matrix
+
+The matrix axes are:
+
+- **Problem type:** integer factorization, finite-field DLP (in $\mathbb{F}_p^*$ or
+  $\mathbb{F}_{p^n}^*$), elliptic-curve DLP (generic and structured), quantum DLP.
+- **Algorithm family:** the mathematically-necessary algorithms at each cell.
+
+The current library covers 5 tracks across 12 chapters of `MATHEMATICS.md` and 9 workspace
+crates. The chapter inventory (from A.4):
+
+| Ch. | Title | Problem type covered |
+|-----|-------|---------------------|
+| 6 | Pollard Rho for ECDLP | EC-DLP (generic), integer factorization (Pollard rho factor) |
+| 7 | The α-Substrate: Primality, Smoothness, ECM | Integer factorization (ECM, Miller–Rabin) |
+| 8 | GNFS | Integer factorization (NFS) |
+| 9 | NFS-DL | Finite-field DLP (NFS-DL) |
+| 10 | Algebraic ECDLP Attacks | EC-DLP (structured: Pohlig–Hellman, SSA, GHS, index calculus, MOV) |
+| 11 | Shor's Algorithm | Integer factorization (quantum), EC-DLP (quantum), finite-field DLP (quantum) |
+| 12 | Modularity (speculation) | No algorithm — mathematical survey only |
+
+#### Cell-by-cell matrix
+
+**Integer factorization:**
+
+| Algorithm | Present? | Classification |
+|-----------|----------|----------------|
+| Trial division | No | **Deliberate non-extension.** Trial division is a preprocessing step subsumed by ECM and Pollard rho at any scale the library targets. It is not a "mathematically necessary" algorithm at the level of the discriminant — it is a trivial special case of smooth-number detection. |
+| Pollard rho (factoring) | **Yes** | Ch. 6 (theory), `rho/src/factor/` (code). Floyd's cycle detection, Brent's improvement, batched-GCD variant. |
+| ECM (Lenstra) | **Yes** | Ch. 7 (theory), `shared/numth/src/ecm.rs` (code). Stage-1 and stage-2 ECM. |
+| Quadratic sieve (QS) | No | **Deliberate non-extension.** QS is the historically important predecessor to GNFS, but GNFS strictly dominates QS for $N > 10^{100}$ (the crossover point). The library's stated scope is the best-known classical algorithms; QS adds historical context but not a new mathematical family. The discriminant ("mathematically-necessary algorithms") does not require QS if GNFS is present. |
+| GNFS | **Yes** | Ch. 8 (theory, full payoff proof), `gnfs/` (code, complete pipeline). |
+| Shor's algorithm (quantum) | **Yes** | Ch. 11.3 (full proof), `shor/src/shor.rs` (code). |
+
+**Finite-field DLP (in $\mathbb{F}_p^*$):**
+
+| Algorithm | Present? | Classification |
+|-----------|----------|----------------|
+| Baby-step giant-step (BSGS) | No | **Deliberate non-extension.** BSGS is the deterministic $O(\sqrt{n})$ generic DLP algorithm. The library uses Pollard rho as the generic baseline throughout (Ch. 6 establishes the $\sqrt{n}$ bound via Pollard rho; the same bound applies to BSGS). BSGS is mentioned in the prerequisites but not separately developed. Since Pollard rho and BSGS are in the same complexity class ($O(\sqrt{n})$, same L-notation cell), BSGS does not add a new mathematical family — it is the deterministic variant of the same generic birthday-paradox algorithm. Not a gap under the discriminant. |
+| Pohlig–Hellman | **Yes** | Ch. 10.1 (theory), `rho/src/ecdlp/pohlig.rs` (code). Applies to $\mathbb{F}_p^*$ and EC groups. |
+| Index calculus (classical, $\mathbb{F}_p^*$) | Partial | The classical index calculus for $\mathbb{F}_p^*$ (smooth-number sieving, linear algebra) is the mathematical predecessor to NFS-DL. The library covers NFS-DL (Ch. 9), which is the best-known algorithm and subsumes classical index calculus. The classical index calculus is not separately developed as a chapter or crate. **Classification: deliberate non-extension** — NFS-DL subsumes it; a separate classical-index-calculus chapter would be redundant. |
+| NFS-DL | **Yes** | Ch. 9 (theory), `gnfs/src/dl/` (code, complete pipeline including Schirokauer maps and individual-log descent). |
+| Shor's algorithm (quantum, DLP) | **Yes** | Ch. 11 (theory — the factoring reduction implies DLP via the order-finding reduction; the ECDLP variant in §11.4 applies to any group). |
+
+**Elliptic-curve DLP (generic):**
+
+| Algorithm | Present? | Classification |
+|-----------|----------|----------------|
+| Pollard rho (ECDLP) | **Yes** | Ch. 6 (theory, full treatment), `rho/src/ecdlp/` (code, all optimizations: r-adding walk, DPs, negmap, batched inversion, GLV). |
+| Baby-step giant-step (BSGS, ECDLP) | No | **Deliberate non-extension.** Same reasoning as for finite-field BSGS: same $O(\sqrt{n})$ complexity class as Pollard rho; the library uses Pollard rho as the generic baseline. Not a gap under the discriminant. |
+| Pohlig–Hellman (ECDLP) | **Yes** | Ch. 10.1 (theory), `rho/src/ecdlp/pohlig.rs` (code). |
+
+**Elliptic-curve DLP (structured attacks):**
+
+| Algorithm | Present? | Classification |
+|-----------|----------|----------------|
+| MOV/Frey–Rück (small embedding degree) | **Yes** | Ch. 10.5 (theory, full payoff proof), `rho/src/pairing/mov.rs` (code). |
+| Smart–Satoh–Araki (anomalous curves) | **Yes** | Ch. 10.2 (theory), `rho/src/ssa/` (code). |
+| GHS/Weil descent (binary field tower) | **Yes** (transfer only) | Ch. 10.3 (theory, descent reduction), `rho/src/ghs/` (code). The transfer from ECDLP to hyperelliptic Jacobian DLP is present; the downstream solve is explicitly deferred (see below). |
+| Index calculus over $E(\mathbb{F}_{p^n})$ (Gaudry–Diem–Joux–Vitse) | **Yes** | Ch. 10.4 (theory), `rho/src/index_calculus/` + `rho/src/semaev/` (code). |
+| Hyperelliptic Jacobian DLP (downstream of GHS) | **No** | **Genuine gap — see F-D7-01 below.** |
+| Shor's algorithm (quantum, ECDLP) | **Yes** | Ch. 11.4 (full proof, two-register hidden-subgroup), `shor/src/ecdlp.rs` (code). |
+
+---
+
+### F-D7-01 · Hyperelliptic Jacobian DLP: genuine gap within the discriminant
+
+**Observed state:** Chapter 10.3 (GHS/Weil descent) explicitly states:
+
+> "**This section represents GHS honestly as a transfer.** The GHS construction reduces the ECDLP
+> on $E/\mathbb{F}_{2^m}$ to a DLP on the Jacobian $\mathrm{Jac}(C)/\mathbb{F}_{2^l}$. The
+> downstream solve — index calculus on the hyperelliptic Jacobian — is a separate step (a deferred
+> re-shard in this project). The chapter covers the descent reduction and log-preservation
+> verification; the downstream solve is not developed here."
+
+The downstream solve — index calculus on the Jacobian of a hyperelliptic curve — is the
+algorithm that actually extracts the discrete logarithm after the GHS transfer. Without it, the
+GHS chapter demonstrates the transfer mechanism but leaves the DLP unsolved. The downstream
+algorithm is Gaudry's index calculus for hyperelliptic Jacobians (2000), which achieves
+subexponential complexity for genus $g \geq 3$ curves.
+
+**Why this is within the discriminant:** The discriminant requires the "full spectrum" of
+mathematically-necessary algorithms for DLP. The GHS descent is only half of the attack: the
+transfer reduces ECDLP to hyperelliptic Jacobian DLP, but the hyperelliptic Jacobian DLP is
+itself a distinct problem requiring its own algorithm. The library currently has a "dangling
+transfer" — the GHS chapter reduces to a problem it does not solve. A complete treatment of the
+GHS attack requires the downstream solve.
+
+**The algorithm:** Gaudry's index calculus for hyperelliptic Jacobians (Gaudry 2000, "An
+algorithm for solving the discrete log problem on hyperelliptic curves"). For a genus-$g$
+hyperelliptic curve $C/\mathbb{F}_q$, the algorithm achieves complexity
+$O(q^{2-2/g})$ — subexponential for $g \geq 3$. The factor base consists of degree-1 divisors
+(points on $C$); the relation collection uses the Mumford representation of divisors. The linear
+algebra step is the same block-Lanczos/Wiedemann infrastructure already present in `gnfs/`.
+
+**Matrix cell:** EC-DLP (via GHS transfer) → hyperelliptic Jacobian DLP → Gaudry index calculus.
+The cell is: *hyperelliptic Jacobian DLP, index calculus, classical*.
+
+**Finding:**
+
+> **F-D7-01 (genuine gap): Hyperelliptic Jacobian DLP (Gaudry index calculus) is absent from the
+> spectrum.** The GHS chapter (Ch. 10.3) reduces ECDLP to hyperelliptic Jacobian DLP but does not
+> develop the downstream solve. The downstream algorithm (Gaudry 2000) is within the discriminant:
+> it is a mathematically-necessary algorithm for completing the GHS attack, and it is a distinct
+> mathematical family (index calculus on a Jacobian variety, not on $\mathbb{F}_p^*$ or an
+> elliptic curve). → **F-EXTEND candidate.** EXTEND adds a treatment of Gaudry's index calculus
+> for hyperelliptic Jacobians, completing the GHS attack chain. The `rho/src/hyperelliptic/`
+> module (which implements the Mumford divisor group law and Cantor's algorithm) is the substrate
+> for this extension — the group law is already present; the index calculus layer is what is
+> missing.
+
+*Feeds F-EXTEND. The EXTEND scope-ceiling question (arc-2 vs arc-3) is a human open-Q at A.7.*
+
+---
+
+### F-D7-02 · Spectrum otherwise complete for the stated discriminant
+
+**Observed state:** Every other cell in the algorithm matrix is either present or a deliberate
+non-extension justified by the discriminant:
+
+- **Trial division:** subsumed by ECM/Pollard rho; not a distinct mathematical family at the
+  library's level.
+- **Quadratic sieve:** GNFS strictly dominates; QS is a historical predecessor, not a
+  mathematically-necessary algorithm if GNFS is present.
+- **Baby-step giant-step (BSGS):** same $O(\sqrt{n})$ complexity class as Pollard rho; the
+  library uses Pollard rho as the generic baseline. Not a distinct mathematical family.
+- **Classical index calculus for $\mathbb{F}_p^*$:** subsumed by NFS-DL; the library covers the
+  best-known algorithm.
+
+**Finding:**
+
+> **F-D7-02 (deliberate non-extension): The spectrum is complete for the stated discriminant
+> except for the hyperelliptic Jacobian DLP gap (F-D7-01).** The absent algorithms (trial
+> division, QS, BSGS, classical index calculus for $\mathbb{F}_p^*$) are all deliberate
+> non-extensions: each is either subsumed by a present algorithm in the same complexity class, or
+> is a historical predecessor to a present algorithm. The discriminant ("mathematically-necessary
+> algorithms, excluding hardware/distributed specifics") does not require them. F-EXTEND's scope
+> is therefore narrow: one genuine gap (hyperelliptic Jacobian DLP) plus any additions the
+> reference distillation (D8) justifies.
+
+*Feeds F-EXTEND; seeds C-Findings.*
+
+---
+
+### Summary table — spectrum-completeness findings
+
+| # | Algorithm | Problem type | Present? | Classification | Consuming campaign |
+|---|-----------|-------------|----------|----------------|--------------------|
+| F-D7-01 | Hyperelliptic Jacobian DLP (Gaudry index calculus) | EC-DLP (via GHS) | No | **Genuine gap** — downstream of GHS transfer; within discriminant | F-EXTEND |
+| F-D7-02 | Trial division | Integer factorization | No | Deliberate non-extension (subsumed by ECM/Pollard rho) | — |
+| F-D7-02 | Quadratic sieve | Integer factorization | No | Deliberate non-extension (GNFS dominates) | — |
+| F-D7-02 | Baby-step giant-step | Generic DLP / EC-DLP | No | Deliberate non-extension (same class as Pollard rho) | — |
+| F-D7-02 | Classical index calculus ($\mathbb{F}_p^*$) | Finite-field DLP | Partial | Deliberate non-extension (NFS-DL subsumes) | — |
+
+---
+
+### Part (b) — 4-reference distillation (D8)
+
+**Reference resolution status (verified at audit time, 2026-06-21):**
+
+The ROADMAP D8 charge lists four references. The PLAN flags that arxiv IDs `2603.28627` and
+`2606.02235` are dated beyond construction time (2026-06) and may not resolve. All four were
+fetched and verified:
+
+| # | Reference | Resolved? |
+|---|-----------|-----------|
+| 1 | Google QuantumAI cryptocurrency whitepaper — `quantumai.google/static/site-assets/downloads/cryptocurrency-whitepaper.pdf` | **Yes** (PDF binary; content readable) |
+| 2 | `arxiv.org/abs/2603.28627` (Cain et al. 2026) | **Yes** — resolves |
+| 3 | `arxiv.org/abs/2606.02235` (Schrottenloher 2026) | **Yes** — resolves |
+| 4 | `github.com/ecdsafail/ecdsafail-challenge` | **Yes** — resolves |
+
+**Note on Shor's original paper:** The PLAN's A.6 session detail lists "Shor's original paper
+(1994/1997)" as a reference to distil. `arXiv:quant-ph/9508027` (Shor 1995/1996, journal
+version 1997) was also fetched and verified as resolving. It is distilled below as F-D8-01.
+
+---
+
+### F-D8-01 · Shor (1994/1995/1997) — `arXiv:quant-ph/9508027`
+
+**Resolved:** Yes. Peter W. Shor, "Polynomial-Time Algorithms for Prime Factorization and
+Discrete Logarithms on a Quantum Computer," arXiv:quant-ph/9508027 (submitted 1995, revised
+1996). Journal reference: SIAM J. Sci. Statist. Comput. 26 (1997) 1484.
+
+**What it covers:** The original paper giving polynomial-time quantum algorithms for both integer
+factorization and discrete logarithms. The factoring algorithm uses quantum order-finding (QFT +
+modular exponentiation) and the continued-fraction period extraction. The DLP algorithm is a
+direct adaptation: the function $f(x) = g^x \bmod p$ is periodic with period equal to the
+multiplicative order of $g$, and the same QFT machinery finds the period.
+
+**What it adds to the spectrum:**
+- The foundational reference for Shor's algorithm in both the factoring and DLP settings.
+- The DLP variant in the original paper is for $\mathbb{F}_p^*$ (multiplicative group), not for
+  elliptic curves. The ECDLP variant (Proos–Zalka 2003) is a later extension.
+- The complexity result: $O((\log N)^3)$ for factoring, $O((\log p)^3)$ for DLP in
+  $\mathbb{F}_p^*$.
+
+**Relationship to current library:** The library (Ch. 11) cites Shor's 1994 conference paper
+(ref. 49 in §11.9: "Shor, P. W. (1994). Algorithms for quantum computation: discrete logarithms
+and factoring. FOCS 1994.") and the Proos–Zalka ECDLP extension (ref. 43). The arXiv version
+`quant-ph/9508027` is the expanded journal version (28 pages, LaTeX) — the same work, more
+complete. The library already covers the mathematical content of this reference fully in Ch. 11.
+
+**Distillation for F-EXTEND:** No new algorithmic content for F-EXTEND. The library's Ch. 11
+treatment is complete and cites the original paper. The arXiv version adds no new algorithm
+beyond what is already present. **This reference confirms the library's Shor coverage is
+correct and complete; it does not scope new F-EXTEND work.**
+
+---
+
+### F-D8-02 · Google QuantumAI cryptocurrency whitepaper (2026)
+
+**Resolved:** Yes. "Securing Elliptic Curve Cryptocurrencies against Quantum Vulnerabilities:
+Resource Estimates and Mitigations," Google QuantumAI (2026). PDF available at
+`quantumai.google/static/site-assets/downloads/cryptocurrency-whitepaper.pdf`.
+
+**What it covers (from the ecdsafail-challenge README, which credits this paper):** Resource
+estimates for running Shor's algorithm on elliptic-curve cryptography at cryptographically
+relevant scales. The paper provides Pareto-frontier estimates for the Toffoli count and qubit
+count needed to break secp256k1 (the Bitcoin/Ethereum curve) using Shor's ECDLP algorithm. The
+paper is the source of the "Google's private low-qubit Pareto point" and "Google's private
+low-gate Pareto point" benchmarks cited in the ecdsafail-challenge README (2,700,000 Toffoli ×
+1,175 qubits and 2,100,000 Toffoli × 1,425 qubits respectively).
+
+**What it adds to the spectrum:**
+- Concrete resource estimates for Shor's ECDLP algorithm on secp256k1 at cryptographic scale.
+- The paper's focus is on the *quantum circuit cost* of point addition (the inner primitive of
+  Shor's ECDLP algorithm), not on the mathematical algorithm itself.
+- The resource estimates are hardware-specific (fault-tolerant quantum computer with a specific
+  gate set) and therefore **outside the discriminant** (the discriminant excludes
+  hardware/distributed specifics).
+
+**Relationship to current library:** The library's Ch. 11 (§11.4.4) cites Proos–Zalka [PZ03]
+for the qubit-budget analysis ("approximately 768 qubits for secp256k1"). The Google whitepaper
+provides more recent and lower estimates (1,175–1,425 qubits with optimized circuits). The
+mathematical algorithm (Shor's two-register ECDLP) is the same; the improvement is in the
+quantum circuit implementation.
+
+**Distillation for F-EXTEND:** The resource-estimate improvement (768 → ~1,175 qubits) is a
+hardware/circuit-optimization result, not a new mathematical algorithm. It is outside the
+discriminant. **This reference does not scope new F-EXTEND algorithmic work.** However, it is
+relevant to the §11.4.4 "Principle-4 annotation" in Ch. 11: the library currently cites the
+Proos–Zalka estimate of ~768 qubits; CONSOLIDATE may update this annotation to cite the more
+recent Google estimate (~1,175 qubits at the low-qubit Pareto point). This is a CONSOLIDATE
+citation-update, not an F-EXTEND algorithmic addition.
+
+**Finding (CONSOLIDATE note):** The library's §11.4.4 Principle-4 annotation cites Proos–Zalka
+[PZ03] for the ~768-qubit estimate for secp256k1. The Google QuantumAI whitepaper (2026)
+provides a more recent estimate of ~1,175 qubits (low-qubit Pareto point). → CONSOLIDATE may
+update the citation in §11.4.4 to reference the Google whitepaper alongside Proos–Zalka.
+*Feeds CONSOLIDATE (citation update); does not feed F-EXTEND.*
+
+---
+
+### F-D8-03 · Cain et al. (2026) — `arXiv:2603.28627`
+
+**Resolved:** Yes. Madelyn Cain, Qian Xu, Robbie King, Lewis R. B. Picard, Harry Levine,
+Manuel Endres, John Preskill, Hsin-Yuan Huang, Dolev Bluvstein, "Shor's algorithm is possible
+with as few as 10,000 reconfigurable atomic qubits," arXiv:2603.28627 (submitted 30 March 2026).
+
+**What it covers:** A resource-estimate paper showing that Shor's algorithm for integer
+factorization and discrete logarithms can be executed at cryptographically relevant scales with
+as few as 10,000 physical qubits (using high-rate quantum error-correcting codes and a
+neutral-atom architecture). Key results:
+- RSA-2048 factoring: feasible with ~10,000 physical qubits (runtime: one to two orders of
+  magnitude longer than the ECDLP case).
+- P-256 ECDLP (discrete logarithm on the NIST P-256 elliptic curve): feasible with ~26,000
+  physical qubits, runtime of a few days under plausible assumptions.
+- The improvement over prior estimates (millions of physical qubits) comes from high-rate
+  quantum error-correcting codes (not the surface code), efficient logical instruction sets,
+  and optimized circuit design.
+
+**What it adds to the spectrum:**
+- A significantly lower physical-qubit estimate for cryptographically relevant Shor's algorithm
+  runs. Prior estimates (e.g., Proos–Zalka 2003, Roetteler et al. 2017) required millions of
+  physical qubits; this paper reduces the estimate to tens of thousands.
+- The mathematical algorithm (Shor's) is unchanged; the improvement is in the fault-tolerant
+  implementation (error-correcting codes, physical architecture).
+- The paper is hardware-specific (neutral-atom architecture) and therefore **outside the
+  discriminant** for the algorithmic spectrum.
+
+**Relationship to current library:** The library's §11.3.4 and §11.4.4 Principle-4 annotations
+state that factoring RSA-2048 requires "approximately 4100 qubits" (logical qubits) and that
+secp256k1 ECDLP requires "approximately 768 qubits" (logical qubits, Proos–Zalka). The Cain
+et al. paper works in *physical* qubits (a different unit), so the comparison is not direct.
+However, the paper's headline result (10,000 physical qubits for RSA-2048) is a significant
+update to the migration-timeline narrative in §11.5.
+
+**Distillation for F-EXTEND:** No new mathematical algorithm. The paper is a hardware/circuit
+resource-estimate paper. **Outside the discriminant; does not scope F-EXTEND algorithmic work.**
+However, it is relevant to the §11.5 post-quantum migration narrative: the library's §11.5.1
+states "the question is when, and the answer is uncertain" — the Cain et al. result (10,000
+physical qubits, potentially achievable with near-term neutral-atom hardware) updates the
+urgency of the migration timeline. → CONSOLIDATE may add a citation to Cain et al. in §11.5.1
+to update the migration-timeline narrative.
+
+**Finding (CONSOLIDATE note):** The library's §11.5.1 migration narrative does not cite recent
+resource-estimate results. Cain et al. (2026) provides a significantly lower physical-qubit
+estimate (10,000 qubits for RSA-2048) than prior work. → CONSOLIDATE may add a citation in
+§11.5.1. *Feeds CONSOLIDATE (citation update); does not feed F-EXTEND.*
+
+---
+
+### F-D8-04 · Schrottenloher (2026) — `arXiv:2606.02235`
+
+**Resolved:** Yes. André Schrottenloher, "Optimized Point Addition Circuits for Elliptic Curve
+Discrete Logarithms," arXiv:2606.02235 (submitted 1 June 2026).
+
+**What it covers:** A quantum circuit optimization paper for the point-addition primitive in
+Shor's ECDLP algorithm. Key results:
+- Provides explicit quantum logical circuit architecture for point addition on elliptic curves
+  over prime fields, achieving similar results to Babbush et al. (arXiv 2026) with a slightly
+  higher qubit count (~1.5% increase) and a slightly smaller Toffoli gate count (6.5–10%
+  reduction) for secp256k1.
+- The paper fills a gap left by Babbush et al., who improved the cost of computing elliptic
+  curve discrete logarithms but "did not reveal their logical quantum circuits, relying instead
+  on a zero-knowledge proof."
+- The circuit is valid for any prime field (not just secp256k1).
+- The paper builds on prior work by Chevignard et al. (CRYPTO 2024) and Gidney (arXiv 2025)
+  for RSA factoring, and Litinski (arXiv 2023) for ECDLP.
+
+**What it adds to the spectrum:**
+- Explicit quantum circuit architecture for elliptic-curve point addition, the inner primitive
+  of Shor's ECDLP algorithm.
+- The mathematical algorithm (Shor's two-register ECDLP) is unchanged; the improvement is in
+  the circuit implementation of the point-addition subroutine.
+- The paper is a circuit-optimization paper, not a new algorithm. It is **outside the
+  discriminant** (hardware/circuit specifics).
+
+**Relationship to current library:** The library's `shor/src/` implements the point-addition
+circuit for Shor's ECDLP algorithm at toy scale (17 qubits for a curve with $r = 13$). The
+Schrottenloher paper provides an optimized circuit for secp256k1 at cryptographic scale. The
+mathematical content (the two-register hidden-subgroup formulation, the QFT, the 2D-lattice
+extraction) is already fully covered in Ch. 11.4.
+
+**Distillation for F-EXTEND:** No new mathematical algorithm. The paper is a circuit-level
+optimization. **Outside the discriminant; does not scope F-EXTEND algorithmic work.** The paper
+is relevant to the §11.4.4 Principle-4 annotation as a more recent qubit-count reference.
+
+**Finding (CONSOLIDATE note):** Schrottenloher (2026) provides explicit circuit counts for
+secp256k1 ECDLP that are more recent than Proos–Zalka [PZ03]. → CONSOLIDATE may add a citation
+in §11.4.4 alongside Proos–Zalka. *Feeds CONSOLIDATE (citation update); does not feed F-EXTEND.*
+
+---
+
+### F-D8-05 · ecdsafail/ecdsafail-challenge (GitHub)
+
+**Resolved:** Yes. `github.com/ecdsafail/ecdsafail-challenge` — "A collaborative effort to build
+the leanest circuit that breaks ECDSA." A Rust benchmark harness for optimizing the reversible
+quantum circuit for secp256k1 point addition, scored by Toffoli count × peak qubit width.
+
+**What it covers:** A competitive benchmark for quantum circuit optimization of the secp256k1
+point-addition primitive. The harness validates circuits against 9024 random test points and
+scores by Toffoli × qubits. The README credits the Google QuantumAI whitepaper as the source
+of the benchmark harness. Reference numbers: the challenge initial circuit scores 1.07 × 10¹⁰
+(3,942,753 Toffoli × 2,715 qubits); Google's private Pareto points are ~3.0–3.2 × 10⁹.
+
+**What it adds to the spectrum:**
+- A practical benchmark for quantum circuit optimization of the ECDLP inner primitive.
+- The mathematical algorithm (Shor's ECDLP) is unchanged; this is a circuit-engineering
+  challenge.
+- **Outside the discriminant** (hardware/circuit specifics, not a mathematical algorithm).
+
+**Distillation for F-EXTEND:** No new mathematical algorithm. **Outside the discriminant; does
+not scope F-EXTEND algorithmic work.** The ecdsafail challenge is relevant as a pointer to the
+state of the art in quantum circuit optimization for ECDLP, but it does not add to the
+mathematical spectrum the library covers.
+
+---
+
+### Summary table — reference distillation findings
+
+| # | Reference | Resolves? | Adds to mathematical spectrum? | F-EXTEND scope? | CONSOLIDATE note? |
+|---|-----------|-----------|-------------------------------|-----------------|-------------------|
+| F-D8-01 | Shor (1994/1995/1997) `quant-ph/9508027` | Yes | No (already fully covered in Ch. 11) | No | No |
+| F-D8-02 | Google QuantumAI whitepaper (2026) | Yes | No (hardware/circuit resource estimates) | No | Yes — update §11.4.4 qubit estimate |
+| F-D8-03 | Cain et al. (2026) `2603.28627` | Yes | No (hardware/circuit resource estimates) | No | Yes — update §11.5.1 migration narrative |
+| F-D8-04 | Schrottenloher (2026) `2606.02235` | Yes | No (circuit-level optimization) | No | Yes — update §11.4.4 circuit reference |
+| F-D8-05 | ecdsafail/ecdsafail-challenge | Yes | No (circuit engineering benchmark) | No | No |
+
+**Headline finding (D8):** All four ROADMAP-listed references resolve (plus Shor's arXiv paper).
+None adds a new mathematical algorithm to the spectrum. All three 2026 references (Google
+whitepaper, Cain et al., Schrottenloher) are hardware/circuit resource-estimate papers that
+update the migration-timeline narrative and the qubit-count annotations in Ch. 11, but do not
+scope new F-EXTEND algorithmic work. The reference distillation confirms the library's
+quantum-DLP coverage is mathematically complete; the updates are citation-level and belong to
+CONSOLIDATE.
+
+---
+
+### Subtleties and deferrals
+
+**The hyperelliptic Jacobian DLP gap (F-D7-01) is the only genuine F-EXTEND candidate.** The
+gap is within the discriminant: the GHS chapter explicitly defers the downstream solve, and the
+downstream algorithm (Gaudry index calculus) is a distinct mathematical family. The
+`rho/src/hyperelliptic/` module (Mumford divisors, Cantor group law) is the substrate; the
+index calculus layer is what is missing. F-EXTEND's scope for this gap is: (a) a mathematical
+treatment of Gaudry's index calculus for hyperelliptic Jacobians in `MATHEMATICS.md`; (b) an
+implementation in `rho/src/hyperelliptic/` or a new module; (c) KATs. The EXTEND scope-ceiling
+question (arc-2 vs arc-3) is a human open-Q at A.7.
+
+**The 2026 references all resolve.** The PLAN's risk flag ("arxiv IDs `2603.28627` and
+`2606.02235` are dated beyond construction time — may not resolve") is resolved: both IDs
+resolve as of 2026-06-21. The internal-continue protocol (note as unverifiable if they 404) was
+not triggered.
+
+**The reference distillation does not scope new F-EXTEND algorithmic work.** All four references
+are either (a) already covered (Shor), or (b) hardware/circuit resource-estimate papers outside
+the discriminant. The discriminant ("mathematically-necessary algorithms, excluding
+hardware/distributed specifics") correctly excludes the qubit-count and circuit-optimization
+content of the 2026 papers. F-EXTEND's scope is therefore determined by the spectrum audit
+(F-D7-01), not by the reference distillation.
+
+**CONSOLIDATE citation updates (not F-EXTEND).** The three 2026 references (Google whitepaper,
+Cain et al., Schrottenloher) are relevant to the §11.4.4 and §11.5.1 annotations in Ch. 11.
+These are citation-level updates (adding references to more recent qubit-count estimates and
+migration-timeline data) that belong to CONSOLIDATE, not F-EXTEND. A.6 records them as
+CONSOLIDATE notes; they are not falsifiable F-EXTEND findings.
+
+*Feeds F-EXTEND (F-D7-01 only); feeds CONSOLIDATE (F-D8-02, F-D8-03, F-D8-04 citation notes);
+seeds C-Findings.*
