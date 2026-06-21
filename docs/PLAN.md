@@ -364,7 +364,7 @@ contract(s) each session froze).
 
 | #   | Session                                                                | Status  | Commit | Froze |
 |-----|------------------------------------------------------------------------|---------|--------|-------|
-| A.1 | Audit template-formalities gap, both flow directions                   | pending | —      | —     |
+| A.1 | Audit template-formalities gap, both flow directions                   | done    | b7bb139 | C-TemplateSeed (informational, recorded) |
 | A.2 | Audit crate layout/dedup + catalog code-depth provenance               | pending | —      | —     |
 | A.3 | Audit testing balance + resolve the coverage-doctrine question         | pending | —      | —     |
 | A.4 | Audit docs-layer discipline + math-continuity + prose provenance       | pending | —      | —     |
