@@ -369,18 +369,22 @@ contract(s) each session froze).
 | A.3 | Audit testing balance + resolve the coverage-doctrine question         | done    | be31c37 | C-Testing-Philosophy (frozen: math-behavior KAT coverage; 80% line gate; gate value open-Q at A.7) |
 | A.4 | Audit docs-layer discipline + math-continuity + prose provenance       | done    | a99b61e | C-DocsLayer sketch; C-MathSpine sketch; C-Coherence prose-half (S.A/S.B/S.C borderline open-Q at A.7) |
 | A.5 | Audit CADO-NFS sidecar build/trigger design needs                      | done    | ab62f21 | C-Oracle sketch (trigger=lazy/on-demand; pin=git-2.0.1; 4 tolerance-bounded comparisons) |
-| A.6 | Audit spectrum completeness + distil 4 quantum-DLP references          | pending | —      | —     |
+| A.6 | Audit spectrum completeness + distil 4 quantum-DLP references          | done    | 61ef5ff | F-D7-01 (hyperelliptic Jacobian DLP gap — F-EXTEND candidate); arxiv IDs resolved (risk flag not triggered) |
 | A.7 | ◆ Consolidate findings ledger + freeze SURVEY contracts                | pending | —      | —     |
 
 ---
 
 ## Action-frame digest
 
-*(none yet)*
-
 The externalized action frame `/plan-run` appends to on non-trivial iterations (a surprising finding,
 a dimension that audits larger than expected, a provenance token that resists residue/grouping
 classification, a non-resolving arxiv ID) and that the A.7 ◆ juncture fork consumes.
+
+### A.6 — 2026-06-21
+Discovery/flex: Genuine spectrum gap found: hyperelliptic Jacobian DLP (Gaudry index calculus) is absent — the GHS chapter reduces ECDLP to it but does not develop the solve; substrate already present in `rho/src/hyperelliptic/`.
+Affected: F-EXTEND scope (C-Findings will name this as the only F-EXTEND algorithmic candidate)
+Deferred: yes — EXTEND scope-ceiling (arc-2 vs arc-3) is a human open-Q at A.7
+Texture: All 4 arxiv IDs resolved (risk flag not triggered); 3 x 2026 hardware/circuit papers are outside the discriminant but feed CONSOLIDATE citation updates (§11.4.4, §11.5.1). F-EXTEND scope is narrow: one genuine gap, not a broad expansion.
 
 ---
 
