@@ -9,7 +9,8 @@
 //! - **Algebraic norm** ``N_alg(a, b) = b^d · f(a/b)``: the homogeneous form of ``f``
 //!   evaluated at ``(a, b)``. Computed directly as ``Σ f.coeffs[i] · a^i · b^{d−i}`` to
 //!   avoid rational arithmetic. This equals ``Res(f, a − b·x)`` up to sign and leading-
-//!   coefficient factors (the resultant relationship is the pedagogical hook for G.C.W).
+//!   coefficient factors (the resultant relationship is the pedagogical hook for the sieve
+//!   pedagogy section).
 //!
 //! Both norms are signed ``BigInt`` values. The smoothness predicate ``trial_smooth`` operates
 //! on ``Uint<4>`` (unsigned 256-bit integers). The **norm bridge** converts a signed norm to
@@ -60,7 +61,7 @@ pub fn rational_norm(a: &BigInt, b: &BigInt, m: &BigInt) -> BigInt {
 /// # Mathematical note
 ///
 /// This equals ``Res(f, a − b·x)`` up to sign and leading-coefficient factors. The resultant
-/// relationship is the pedagogical hook for G.C.W: the algebraic norm is the norm of the
+/// relationship is the pedagogical hook for the sieve pedagogy: the algebraic norm is the norm of the
 /// ideal ``(a − b·α)`` in ℤ[α], which equals the resultant of ``f`` and ``a − b·x``.
 ///
 /// # Why not f.eval(a/b)?
@@ -138,7 +139,7 @@ impl std::error::Error for NormBridgeError {}
 /// Convert a signed BigInt norm to ``Uint<4>`` for ``trial_smooth``.
 ///
 /// Returns the absolute value as ``Uint<4>``, or an error if ``|norm| ≥ 2^256``.
-/// The sign is tracked separately in the ``Relation`` (for the −1 column in G.E).
+/// The sign is tracked separately in the ``Relation`` (for the −1 column in the linear algebra step).
 ///
 /// # Design note (C1 resolution)
 ///

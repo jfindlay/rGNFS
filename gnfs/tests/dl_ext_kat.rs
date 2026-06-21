@@ -1,12 +1,12 @@
-//! Known-answer tests (KATs) for D.E.3 ◆: k>1 individual-log descent + `solve_dl` k>1 wiring.
+//! Known-answer tests (KATs) for k>1 individual-log descent + `solve_dl` k>1 wiring.
 //!
 //! # Purpose
 //!
-//! This file is the primary correctness gate for D.E.3 ◆ (C2-ext frozen). It verifies:
+//! This file is the primary correctness gate for the k>1 extension field path. It verifies:
 //!
 //! - **End-to-end k=2 KAT**: `solve_dl(g, h, 47, 2, 3)` returns `x` with `g^x = h` in
 //!   F_{47²}* for several (g, h) pairs.
-//! - **k>1 path no longer returns `Unsupported` for k=2**: the D.E.3 wiring is live.
+//! - **k>1 path no longer returns `Unsupported` for k=2**: the extension field wiring is live.
 //! - **k>2 still returns `Unsupported`**: the toy ceiling is respected.
 //! - **PARI `znlog`/`fflog` `#[ignore]` cross-check**: the established dev-only oracle pattern.
 //!
@@ -23,7 +23,7 @@
 //! # Encoding
 //!
 //! `g, h ∈ F_{47²}*` are encoded as base-47 `BigInt`: `c_0 + c_1 × 47` for the element
-//! `c_0 + c_1 × u` in F_{47²}. This is the C2-ext encoding agreed at D.E.1.
+//! `c_0 + c_1 × u` in F_{47²}. This is the base-p encoding for the k>1 `solve_dl` interface.
 //!
 //! - (1, 0) = 1 → BigInt(1)
 //! - (23, 6) = ζ → BigInt(23 + 6×47) = BigInt(305)
@@ -137,16 +137,16 @@ fn one_fp2() -> BigInt {
 
 /// KAT (a): `solve_dl` with k=2 does NOT return `SolveDlError::Unsupported`.
 ///
-/// D.E.3 wires the k=2 path. The result must be `Ok(x)` or a known `Err` variant
-/// (InitSmoothingFailed / DescentFailed), but must NOT be `Unsupported`.
+/// The k=2 extension field path is wired. The result must be `Ok(x)` or a known `Err`
+/// variant (InitSmoothingFailed / DescentFailed), but must NOT be `Unsupported`.
 ///
-/// This is the primary "wiring is live" gate for D.E.3.
+/// This is the primary "wiring is live" gate for the k=2 extension field path.
 #[test]
 fn kat_a_k2_not_unsupported() {
     let result = solve_dl(&zeta(), &zeta_sq(), &p47(), 2, &ell3());
     assert!(
         !matches!(result, Err(SolveDlError::Unsupported { .. })),
-        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        "k=2 must not return Unsupported (extension field path wired); got: {:?}",
         result
     );
 }
@@ -156,7 +156,7 @@ fn kat_a_k2_not_unsupported() {
 /// KAT (b): `solve_dl` with k=3 returns `SolveDlError::Unsupported { k: 3 }`.
 ///
 /// k=3 is beyond the toy ceiling (k>2). The `Unsupported` variant stays for k>2.
-/// This verifies the taxonomy is unchanged (frozen D.C.3).
+/// This verifies the taxonomy is unchanged (frozen at full-pipeline integration).
 #[test]
 fn kat_b_k3_returns_unsupported() {
     let result = solve_dl(&bi(2), &bi(3), &p47(), 3, &ell3());
@@ -312,7 +312,7 @@ fn kat_c4_solve_dl_k2_zeta_sq_generator() {
 
 /// KAT (d): `solve_dl` with k=1 still works (no-regression gate).
 ///
-/// The k=1 path must be behaviourally unchanged after D.E.3. This KAT verifies the
+/// The k=1 path must be behaviourally unchanged after the k=2 extension wiring. This KAT verifies the
 /// k=1 path returns a `Result` (not a panic) and does not return `Unsupported`.
 ///
 /// The full k=1 KATs are in `gnfs/tests/dl_descent_kat.rs` (the primary no-regression gate).
@@ -330,7 +330,7 @@ fn kat_d_k1_path_unchanged() {
 
 // ─── KAT (e): SolveDlError taxonomy is unchanged ──────────────────────────────
 
-/// KAT (e): The `SolveDlError` taxonomy is unchanged (frozen D.C.3).
+/// KAT (e): The `SolveDlError` taxonomy is unchanged (frozen at full-pipeline integration).
 ///
 /// Verifies that the three variants (Unsupported, InitSmoothingFailed, DescentFailed)
 /// are still the only variants, and their Display messages are correct.

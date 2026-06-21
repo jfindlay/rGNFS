@@ -12,12 +12,12 @@
 //! - [`sieve`] — sieving substrate: two-sided factor bases, rational/algebraic norms, the
 //!   norm bridge to `Uint<4>`, and the `Relation` type (C-Relation contract).
 //! - [`filter`] — filtering substrate: sparse GF(2) matrix construction, relation-provenance
-//!   map, and singleton removal (C-Matrix contract). Entry points: [`filter::build_matrix`],
+//!   map, and singleton removal. Entry points: [`filter::build_matrix`],
 //!   [`filter::remove_singletons`].
-//! - [`sqrt`] — square root stage: rational square root from a kernel vector (G.F.2);
-//!   Couveignes CRT algebraic square root — form γ, split-prime CRT lift, Garner reconstruction,
-//!   real-embedding sign resolution (G.F.3); final GCD assembly and top-level `factor` driver
-//!   (G.F.4). Entry points: [`sqrt::rational_sqrt`], [`sqrt::algebraic_sqrt`], [`sqrt::factor`].
+//! - [`sqrt`] — square root stage: rational square root from a kernel vector; Couveignes CRT
+//!   algebraic square root — form γ, split-prime CRT lift, Garner reconstruction, real-embedding
+//!   sign resolution; final GCD assembly and top-level `factor` driver. Entry points:
+//!   [`sqrt::rational_sqrt`], [`sqrt::algebraic_sqrt`], [`sqrt::factor`].
 //!
 //! # Pedagogical intent
 //!

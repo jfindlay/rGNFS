@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for the special-q sieve (G.C.3).
+//! Known-answer tests (KATs) for the special-q sieve.
 //!
-//! Three KATs are required by the G.C.3 session spec:
+//! Three KATs:
 //!
 //! (a) Relations collected per-``q`` all satisfy ``verify()`` and carry ``q`` in the
 //!     algebraic exponent vector.

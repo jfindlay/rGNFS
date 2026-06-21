@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for the line sieve (G.C.2).
+//! Known-answer tests (KATs) for the line sieve.
 //!
-//! Three KATs are required by the G.C.2 session spec:
+//! Three KATs:
 //!
 //! (a) On a toy ``N`` with small bounds, the sieve produces ≥ ``k`` relations and every
 //!     returned ``Relation::verify()`` holds (both norms fully smooth, gcd(a,b)=1).
@@ -100,7 +100,7 @@ fn kat_a_sieve_produces_relations_all_verify() {
         });
     }
 
-    // Spot-check: (a=5, b=1) should be present — it's the canonical KAT relation from G.C.1.
+    // Spot-check: (a=5, b=1) should be present — it's the canonical KAT relation.
     let has_5_1 = relations.iter().any(|r| r.a == bi(5) && r.b == bi(1));
     assert!(
         has_5_1,

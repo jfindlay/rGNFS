@@ -1,6 +1,6 @@
 //! F_{p^k} extension-target type and residue map for NFS-DL.
 //!
-//! # Contract C-ExtTarget (frozen D.E.1)
+//! # Extension-target contract
 //!
 //! This module defines the solver-target representation for the k>1 NFS-DL path and the
 //! residue map that bridges F_{p^k} (the char-p extension field where the DL target lives)
@@ -17,7 +17,8 @@
 //! The choice of `Vec<BigInt>` coefficients (rather than coupling to `rho`'s `FpExt<F>`)
 //! keeps `gnfs` free of a `rho` dependency. The `from_coeffs` constructor accepts the
 //! `Vec<BigInt>` form that `FpExt::to_uint_vec` already produces (after `Uint<4> → BigInt`
-//! conversion), over-specified for E.C even though D.E's own KATs build targets directly.
+//! conversion), over-specified for the MOV bridge even though the extension KATs build targets
+//! directly.
 //!
 //! ## Residue map
 //!
@@ -55,11 +56,11 @@ use shared_numfield::{NumberField, NumberFieldElement, RatPoly};
 /// Stores `[c_0, c_1, …, c_{k-1}]` with `c_i ∈ [0, p)`, representing
 /// `c_0 + c_1·u + … + c_{k-1}·u^{k-1}` in F_{p^k} = F_p[u]/(m(u))`.
 ///
-/// # Contract C-ExtTarget (frozen D.E.1)
+/// # Extension-target contract
 ///
-/// This is the type the k>1 `solve_dl` path reads. Consumed by D.E.2 (factor base),
-/// D.E.3 (descent), and E.C (MOV bridge). The `from_coeffs` constructor is over-specified
-/// for E.C: it accepts the `Vec<BigInt>` form `FpExt::to_uint_vec` produces.
+/// This is the type the k>1 `solve_dl` path reads. Consumed by the extension factor base,
+/// the k>1 descent, and the MOV bridge. The `from_coeffs` constructor is over-specified
+/// for the MOV bridge: it accepts the `Vec<BigInt>` form `FpExt::to_uint_vec` produces.
 ///
 /// # Invariants
 ///
@@ -85,9 +86,10 @@ pub struct ExtTarget {
 impl ExtTarget {
     /// Construct an `ExtTarget` from a coefficient vector, prime, and irreducible modulus.
     ///
-    /// This is the primary constructor, over-specified for E.C: it accepts the `Vec<BigInt>`
-    /// coefficient form that `FpExt::to_uint_vec` already produces (after `Uint<4> → BigInt`
-    /// conversion). E.C produces targets from pairing outputs via this path.
+    /// This is the primary constructor, over-specified for the MOV bridge: it accepts the
+    /// `Vec<BigInt>` coefficient form that `FpExt::to_uint_vec` already produces (after
+    /// `Uint<4> → BigInt` conversion). The MOV bridge produces targets from pairing outputs
+    /// via this path.
     ///
     /// # Arguments
     ///
@@ -619,7 +621,7 @@ fn scale_ext(a: &[BigInt], scalar: &BigInt, p: &BigInt) -> Vec<BigInt> {
 /// Encode a pairing output (as coefficient vector) into the base-p `BigInt` that `solve_dl`
 /// consumes.
 ///
-/// This is the gnfs-side half of the E.C MOV bridge (contract C-MovBridge). It accepts the
+/// This is the gnfs-side half of the MOV bridge. It accepts the
 /// `Vec<BigInt>` coefficient form that `FpExt::to_uint_vec` produces (after `Uint<4> → BigInt`
 /// conversion), asserts that the supplied modulus matches what `find_irreducible_degree2(p)`
 /// returns (the modulus-consistency guard), builds an [`ExtTarget`], and encodes it as a
@@ -745,8 +747,8 @@ mod tests {
 
     /// KAT: `ExtTarget::from_coeffs` accepts the Vec<BigInt> form FpExt::to_uint_vec produces.
     ///
-    /// E.C produces targets from pairing outputs via FpExt::to_uint_vec → Vec<Uint<4>> →
-    /// Vec<BigInt> → ExtTarget::from_coeffs. This KAT verifies the constructor accepts that form.
+    /// The MOV bridge produces targets from pairing outputs via FpExt::to_uint_vec → Vec<Uint<4>>
+    /// → Vec<BigInt> → ExtTarget::from_coeffs. This KAT verifies the constructor accepts that form.
     #[test]
     fn kat_ext_target_from_uint_vec_form() {
         // Simulate the FpExt::to_uint_vec → Vec<BigInt> conversion.

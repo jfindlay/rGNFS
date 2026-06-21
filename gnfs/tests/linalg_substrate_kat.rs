@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.E.1: linalg substrate.
+//! Known-answer tests (KATs) for the GF(2) linear-algebra substrate.
 //!
-//! Four KATs are required by the G.E.1 session spec:
+//! Four KATs:
 //!
 //! - **KAT 1 — Operator correctness**: for a small hand-built `SparseMatrix`, `A·V` and
 //!   `Aᵀ·V` match the hand-computed GF(2) products for several block vectors `V`.
@@ -11,8 +11,8 @@
 //!   matches the hand-computed Legendre-symbol parity for a toy relation set.
 //!
 //! - **KAT 3 — Round-trip with provenance**: a hand-built kernel vector expands through
-//!   the C-Matrix provenance map to the expected set of original relation indices (the G.F
-//!   seam exercised before G.F exists).
+//!   the filtering provenance map to the expected set of original relation indices (the
+//!   linear algebra → square root seam exercised early).
 //!
 //! - **KAT 4 — Determinism**: the operator products and QC columns are deterministic for
 //!   a fixed matrix.
@@ -360,7 +360,7 @@ fn kat_2_qc_column_construction() {
 // ─── KAT 3: Round-trip with provenance ───────────────────────────────────────
 
 /// KAT 3: A hand-built kernel vector expands through the provenance map to the expected
-/// set of original relation indices (the G.F seam).
+/// set of original relation indices (the linear algebra → square root seam).
 ///
 /// Setup: a matrix with merged rows (provenance sets of size > 1), and a kernel vector
 /// that selects a subset of rows. We verify that `expand_provenance` returns the correct

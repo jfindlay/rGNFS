@@ -24,12 +24,13 @@ use super::blockvec::{BlockVec, BLOCK_WIDTH};
 /// the *cache-blocking* that makes it fast at NFS scale is the engineering optimisation
 /// out of scope (scoping principle 3).
 ///
-/// # D.B generalisation note
+/// # F_ℓ generalisation note
 ///
 /// For F_ℓ, the operator needs the same shape but with scalar multiplication. The natural
 /// generalisation is a trait `LinearOperator<V>` with `apply(&self, v: &V) -> V` and
-/// `apply_transpose(&self, v: &V) -> V`. G.E implements the concrete GF(2) version; D.B
-/// may introduce the trait and have `MatrixOperator` implement it.
+/// `apply_transpose(&self, v: &V) -> V`. The GF(2) linear algebra step implements the
+/// concrete version; the F_ℓ extension may introduce the trait and have `MatrixOperator`
+/// implement it.
 pub struct MatrixOperator<'a> {
     matrix: &'a SparseMatrix,
 }

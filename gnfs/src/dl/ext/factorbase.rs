@@ -1,10 +1,10 @@
 //! Extension factor base for NFS-DL over F_{p^k}.
 //!
-//! # Contract C-ExtFactorBase (frozen D.E.2)
+//! # Extension factor-base contract
 //!
 //! This module defines the extension factor base: the standard NFS-DL factor base augmented
 //! with the degree-k prime ideal whose residue field is exactly F_{p^k}. It is consumed by
-//! D.E.3 (the k>1 descent + `solve_dl` wiring) and E.C (indirectly, via `solve_dl`).
+//! the k>1 descent + `solve_dl` wiring and the MOV bridge (indirectly, via `solve_dl`).
 //!
 //! ## Structure
 //!
@@ -56,9 +56,10 @@ use crate::sieve::FactorBase;
 /// (the degree-k prime ideal's parameters). The degree-k prime occupies a dedicated column
 /// in the extended DL matrix at index `rational_size + algebraic_size`.
 ///
-/// # Contract C-ExtFactorBase (frozen D.E.2)
+/// # Extension factor-base contract
 ///
-/// Consumed by D.E.3 (descent + solver) and E.C (indirectly, via `solve_dl`). Exposes:
+/// Consumed by the k>1 descent + solver and the MOV bridge (indirectly, via `solve_dl`).
+/// Exposes:
 /// - [`ExtFactorBase::new`] — constructor (asserts the inert-prime condition via `ExtResidueMap`).
 /// - [`ExtFactorBase::ext_prime_col`] — column index of the degree-k prime in the extended matrix.
 /// - [`ExtFactorBase::ext_matrix_algebraic_size`] — algebraic column count for the extended matrix.
@@ -201,7 +202,7 @@ mod tests {
     /// KAT: the extension factor base carries the degree-k prime with residue degree k=2.
     ///
     /// Verifies that the degree-k prime's residue field is exactly F_{47^2} (k=2), not a
-    /// smaller field. This is the primary correctness KAT for C-ExtFactorBase.
+    /// smaller field. This is the primary correctness KAT for the extension factor base.
     #[test]
     fn kat_ext_factor_base_residue_degree() {
         let fb = toy_ext_fb();
@@ -217,7 +218,7 @@ mod tests {
     /// KAT: the degree-k prime is inert (not split) — the inert-prime condition holds.
     ///
     /// Verifies that `ExtResidueMap::new` does not panic for the inert prime p=47 in
-    /// K = ℚ[α]/(α^2+1). This is the inert-prime assertion from C-ExtTarget.
+    /// K = ℚ[α]/(α^2+1). This is the inert-prime assertion from the extension-target contract.
     #[test]
     fn kat_ext_factor_base_inert_prime() {
         // Should not panic: p=47 is inert in ℚ[α]/(α^2+1).
@@ -328,7 +329,7 @@ mod tests {
 
     /// KAT: the F_ℓ matrix assembles via the unchanged index-agnostic `build_fl_matrix`.
     ///
-    /// Verifies that `build_fl_matrix` (C-LinAlgFl, frozen D.B.1) handles the extended
+    /// Verifies that `build_fl_matrix` (F_ℓ linear-algebra substrate) handles the extended
     /// DLMatrix transparently — the degree-k prime column is just another algebraic column.
     /// This is the load-bearing KAT for the "reuse build_fl_matrix unchanged" requirement.
     #[test]
@@ -365,7 +366,7 @@ mod tests {
         ];
         let matrix = fb.build_dl_matrix(relations);
 
-        // Call the unchanged build_fl_matrix from C-LinAlgFl.
+        // Call the unchanged build_fl_matrix from the F_ℓ linear-algebra substrate.
         let fl_matrix = build_fl_matrix::<FpNaive4, 4>(&matrix, &ell);
 
         // The F_ℓ matrix should have the right number of columns.

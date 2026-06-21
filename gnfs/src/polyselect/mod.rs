@@ -120,7 +120,7 @@ impl std::error::Error for PolyPairError {}
 /// [`monic_f`](PolyPair::monic_f) to obtain the monic form required by `NumberField::new`.
 ///
 /// The `skew` and `factor_base_bounds` fields are `None` at construction and populated by
-/// later pipeline stages (Murphy-E scoring at G.B.2, sieving at G.C).
+/// later pipeline stages (Murphy-E scoring, sieving).
 #[derive(Debug, Clone)]
 pub struct PolyPair {
     /// Algebraic-side polynomial `f ∈ ℤ[x]`. Generally non-monic for base-m; stored as-is.
@@ -135,11 +135,11 @@ pub struct PolyPair {
     pub degree: usize,
     /// Skew parameter `s`: the ratio that balances algebraic and rational norm sizes.
     ///
-    /// `None` until Murphy-E scoring (G.B.2) computes it.
+    /// `None` until Murphy-E scoring computes it.
     pub skew: Option<f64>,
     /// Factor-base bounds `(rational_bound, algebraic_bound)`.
     ///
-    /// `None` until sieving (G.C) sets them.
+    /// `None` until sieving sets them.
     pub factor_base_bounds: Option<(u64, u64)>,
 }
 
@@ -267,7 +267,7 @@ impl PolyPair {
 ///
 /// All generators (base-m, root sieve, Coppersmith) implement this trait, feeding a common
 /// score-and-rank pipeline. The generator is responsible for producing candidates; the
-/// scorer (C-Score, G.B.2) ranks them.
+/// Murphy-E scorer ranks them.
 pub trait PolyGenerator {
     /// Generate polynomial-pair candidates.
     ///

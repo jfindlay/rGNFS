@@ -1,6 +1,7 @@
 //! Clique/excess pruning and column merging for the sparse GF(2) matrix.
 //!
-//! This module implements the two post-singleton-removal reduction steps for G.D.2:
+//! This module implements the two post-singleton-removal reduction steps (clique pruning
+//! and column merging):
 //!
 //! 1. **Clique/excess pruning** ([`prune_cliques`]): greedily removes the heaviest rows
 //!    (relations) while the matrix excess exceeds [`EXCESS_FLOOR`]. In the graph view,
@@ -12,7 +13,8 @@
 //!    by XOR-merging the rows that contain them. A weight-2 column appears in exactly two
 //!    rows; XOR-merging those rows eliminates the column (symmetric difference cancels it)
 //!    and unions their provenance. After the weight-2 pass, a weight-3 pass is performed.
-//!    Higher-weight columns are left for G.E (demonstration fidelity — Cavallar's full
+//!    Higher-weight columns are left for the linear algebra step (demonstration fidelity —
+//!    Cavallar's full
 //!    heuristic would continue to higher k, but at toy scale k=2 and k=3 are sufficient).
 //!
 //! # Cavallar weight-cost ordering (principle-4 annotation)
@@ -30,7 +32,8 @@
 //! Every merge operation unions the provenance sets of the merged rows. After the full
 //! pipeline (build_matrix → remove_singletons → prune_cliques → merge_columns), each
 //! surviving row's provenance is the set of original relation indices whose GF(2) XOR
-//! equals that row's column set. G.F uses this to recover the original (a, b) pairs.
+//! equals that row's column set. The square root step uses this to recover the original
+//! (a, b) pairs.
 
 use crate::filter::matrix::{SparseMatrix, EXCESS_FLOOR};
 

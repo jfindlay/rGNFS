@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the Coppersmith multi-poly method (G.B.4).
+//! Known-answer tests (KATs) for the Coppersmith multi-poly method.
 //!
 //! Coppersmith's method generates multiple algebraic-side polynomials sharing the same
 //! rational-side polynomial `g = x − m`. Each variant is produced by a Kleinjung rotation

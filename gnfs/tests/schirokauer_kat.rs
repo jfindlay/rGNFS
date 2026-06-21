@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for the Schirokauer map (D.A.1).
+//! Known-answer tests (KATs) for the Schirokauer map.
 //!
-//! Three KATs are required by the D.A.1 session spec:
+//! Three KATs:
 //!
 //! (a) **Known-value KAT**: evaluate the Schirokauer map on hand-computed toy number-field
 //!     elements with known ℓ-adic coordinates.
@@ -159,7 +159,7 @@ fn kat_b_homomorphism() {
 
 /// KAT (c): Toy-scale NFS-DL norm bound fits `Uint<4>` (256 bits).
 ///
-/// Confirm-record obligation per ROADMAP C1 width policy: D.A.1 asserts toy F_p norms
+/// Confirm-record obligation per ROADMAP C1 width policy: asserts toy F_p norms
 /// fit 256 bits and consumes C1 as-is. No widening — the const-generic widening stays
 /// behind the ROADMAP's prescriptive trigger.
 ///
@@ -178,7 +178,8 @@ fn kat_b_homomorphism() {
 /// # Width verdict
 ///
 /// CONFIRMED: toy F_p norms (p ≈ 2^35, f = x²+1, sieve bound B ≈ p^(1/3)) fit comfortably
-/// in Uint<4> (256 bits). The C1 width policy is satisfied. No widening required for D.A.
+/// in Uint<4> (256 bits). The C1 width policy is satisfied. No widening required for the
+/// Schirokauer map scope.
 #[test]
 fn kat_c_width_uint4() {
     // Toy prime p ≈ 2^35. We use p = 34_359_738_421 which is prime and ≡ 1 (mod 5).

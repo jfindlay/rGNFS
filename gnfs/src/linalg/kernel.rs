@@ -1,8 +1,8 @@
-//! Nullspace vector representation: the G.F seam.
+//! Nullspace vector representation: the linear algebra → square root seam.
 //!
 //! `KernelVector` represents a vector in the left nullspace of the filtered matrix as a
-//! sorted, deduplicated list of row indices. G.F expands this to original relation indices
-//! via the provenance map.
+//! sorted, deduplicated list of row indices. The square root step expands this to original
+//! relation indices via the provenance map.
 
 use crate::filter::SparseMatrix;
 
@@ -11,23 +11,24 @@ use crate::filter::SparseMatrix;
 /// A vector in the left nullspace of the matrix: a subset of rows whose GF(2) sum is zero.
 ///
 /// Representation: a sorted, deduplicated `Vec<usize>` of **filtered-matrix row indices**
-/// (indices into `SparseMatrix::rows`). G.F expands this to original relation indices by
-/// collecting `matrix.rows[i].provenance` for each `i` in `row_indices` and taking the
-/// symmetric difference (XOR union).
+/// (indices into `SparseMatrix::rows`). The square root step expands this to original
+/// relation indices by collecting `matrix.rows[i].provenance` for each `i` in `row_indices`
+/// and taking the symmetric difference (XOR union).
 ///
 /// # Why row indices, not a bit-mask
 ///
-/// - G.F needs row indices to look up provenance; a bit-mask would require a scan.
+/// - The square root step needs row indices to look up provenance; a bit-mask would require a scan.
 /// - Kernel vectors are sparse (typically a small fraction of rows); a bit-mask wastes space.
 /// - Solvers (Lanczos, Wiedemann) internally work with bit-packed block vectors, but they
 ///   convert to `KernelVector` on output — the conversion is O(rows) and happens once per
 ///   kernel vector, not in the inner loop.
 ///
-/// # D.B generalisation note
+/// # F_ℓ generalisation note
 ///
 /// For F_ℓ, a kernel vector is still a subset of rows (those with nonzero coefficient in
-/// the nullspace vector). The representation is identical; D.B may add a `coefficients`
-/// field (`Vec<Scalar>`) for the non-GF(2) case, but the row-index spine is stable.
+/// the nullspace vector). The representation is identical; the F_ℓ extension may add a
+/// `coefficients` field (`Vec<Scalar>`) for the non-GF(2) case, but the row-index spine
+/// is stable.
 ///
 /// # Invariants
 ///

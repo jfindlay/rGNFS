@@ -26,9 +26,8 @@
 //! # Science↔engineering note
 //!
 //! Base-m is the *starting point* for polynomial selection, not the end. Murphy-E scoring
-//! (G.B.2) and root sieving (G.B.3) improve upon the base-m polynomial. At toy scale
-//! (N < 2^100), the improvement from root sieving is small; at cryptographic scale
-//! (RSA-768+), it is essential.
+//! and root sieving improve upon the base-m polynomial. At toy scale (N < 2^100), the
+//! improvement from root sieving is small; at cryptographic scale (RSA-768+), it is essential.
 
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
@@ -195,7 +194,7 @@ fn base_m_digits(n: &BigInt, m: &BigInt, d: usize) -> Vec<BigInt> {
 /// yielding `f(x) = Σ a_i x^i` with `f(m) = n`. The rational side is `g(x) = x − m`.
 ///
 /// The resulting `f` is generally non-monic (`a_d < m`). This is the simplest polynomial
-/// generator; Murphy-E scoring (G.B.2) and root sieving (G.B.3) improve upon it.
+/// generator; Murphy-E scoring and root sieving improve upon it.
 ///
 /// :param n: The integer to factor. Must be > 1.
 /// :param degree: The polynomial degree `d`. Typically 3–6; use [`optimal_degree`] to choose.
@@ -228,7 +227,7 @@ pub fn select_base_m_with_m(n: &BigInt, m: &BigInt, degree: usize) -> PolyPair {
 /// Base-m generator: produces a single polynomial pair via base-m expansion.
 ///
 /// Implements [`PolyGenerator`] so that base-m fits into the common score-and-rank pipeline
-/// alongside root sieve (G.B.3) and Coppersmith (G.B.4) generators.
+/// alongside root sieve and Coppersmith generators.
 ///
 /// The generator produces exactly one candidate per `(n, degree)` pair. Use
 /// `.take(1)` or collect the single element.

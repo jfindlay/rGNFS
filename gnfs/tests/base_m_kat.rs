@@ -1,6 +1,6 @@
 //! Known-answer tests (KATs) for base-m polynomial selection.
 //!
-//! Three KATs are required by the G.B.1 session spec:
+//! Three KATs:
 //!
 //! 1. **Base-m round-trip** (toy N): for `N = 1009 * 1013`, `d = 3`, the generated `f`
 //!    satisfies `f(m) == N` exactly and `g(m) == 0`, and `PolyPair::verify()` returns `Ok(())`.

@@ -4,25 +4,24 @@
 //! This module is the entry point for the ``gnfs::filter`` sub-crate. It provides:
 //!
 //! - [`matrix`] — the sparse GF(2) matrix type (``SparseMatrix``, ``MatrixRow``) and
-//!   the ``EXCESS_FLOOR`` constant (C-Matrix contract).
+//!   the ``EXCESS_FLOOR`` constant.
 //! - [`singleton`] — singleton removal to fixpoint (``remove_singletons``).
 //! - [`merge`] — clique/excess pruning (``prune_cliques``) and column merging
-//!   (``merge_columns``) over the singleton-removed matrix (G.D.2).
+//!   (``merge_columns``) over the singleton-removed matrix (clique pruning and merging step).
 //! - [`build_matrix`] — constructs the initial ``SparseMatrix`` from a relation corpus.
 //!
 //! # Background
 //!
-//! The filtering step (G.D) takes the relation corpus from sieving (G.C) and reduces it
-//! to a well-overdetermined sparse GF(2) matrix suitable for linear algebra (G.E). The
-//! two main operations are:
+//! The filtering step takes the relation corpus from sieving and reduces it to a
+//! well-overdetermined sparse GF(2) matrix suitable for linear algebra. The two main
+//! operations are:
 //!
-//! 1. **Singleton removal** (G.D.1): primes/ideals appearing in only one surviving
-//!    relation cannot contribute to a GF(2) dependency; remove their rows and iterate
-//!    to a fixpoint.
+//! 1. **Singleton removal**: primes/ideals appearing in only one surviving relation cannot
+//!    contribute to a GF(2) dependency; remove their rows and iterate to a fixpoint.
 //!
-//! 2. **Clique pruning and merging** (G.D.2): reduce matrix weight while preserving
-//!    excess >= ``EXCESS_FLOOR`` (pruning), then eliminate low-weight columns by
-//!    XOR-merging the rows that contain them (merging).
+//! 2. **Clique pruning and merging**: reduce matrix weight while preserving excess >=
+//!    ``EXCESS_FLOOR`` (pruning), then eliminate low-weight columns by XOR-merging the
+//!    rows that contain them (merging).
 //!
 //! # Column layout
 //!
@@ -33,12 +32,13 @@
 //!   algebraic exponents).
 //! - ``[rational_size + algebraic_size, matrix_width)``: obstruction columns. The sign bit
 //!   (``rational_sign``) occupies the first obstruction column; quadratic-character columns
-//!   follow and are filled by G.E (carried as zeros here).
+//!   follow and are filled by the linear algebra step (carried as zeros here).
 //!
-//! # C-Matrix contract
+//! # Filtering contract
 //!
-//! The types and functions in this module implement the C-Matrix contract frozen at the G.D.1
-//! inflection point. G.D.2, G.E, and G.F consume this interface directly.
+//! The types and functions in this module implement the sparse GF(2) matrix substrate.
+//! The clique pruning and merging step, the linear algebra step, and the square root step
+//! consume this interface directly.
 
 pub mod matrix;
 pub mod merge;
@@ -61,7 +61,8 @@ use crate::sieve::{FactorBase, Relation};
 ///   GF(2) parities of algebraic exponents.
 /// - Obstruction columns ``[fb.rational_size() + fb.algebraic_size(), fb.matrix_width())``:
 ///   sign bit at ``fb.rational_size() + fb.algebraic_size()`` (from ``relation.rational_sign``);
-///   remaining obstruction columns (quadratic characters) set to 0 — G.E fills them.
+///   remaining obstruction columns (quadratic characters) set to 0 — the linear algebra step
+///   fills them.
 ///
 /// Note: ``Relation::rational_row_gf2`` places the sign at local index 0 of its return
 /// value; ``build_matrix`` re-maps it to the global obstruction column index.
@@ -114,7 +115,7 @@ pub fn build_matrix(relations: &[Relation], fb: &FactorBase) -> SparseMatrix {
         }
 
         // Remaining obstruction columns (quadratic chars): carried as zeros, nothing to push.
-        // (obstruction_col_start + 1 .. num_cols are all zero for G.D.)
+        // (obstruction_col_start + 1 .. num_cols are all zero for the filtering step.)
 
         // cols is already sorted because we pushed in ascending global-column order:
         // rational (0..rat_size) < algebraic (rat_size..obstruction_col_start) < obstruction.

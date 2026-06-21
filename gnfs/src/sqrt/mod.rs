@@ -13,18 +13,19 @@
 //! # Background
 //!
 //! The square root stage is the terminal stage of the GNFS factoring pipeline. A `KernelVector`
-//! from the linear algebra step (G.E) encodes a subset S of relations whose combined rational
+//! from the linear algebra step encodes a subset S of relations whose combined rational
 //! and algebraic norms are each perfect squares. This module recovers the original (a, b) pairs
-//! through the C-Matrix provenance map and computes:
+//! through the filtering provenance map and computes:
 //!
 //! 1. **Rational square root X**: X² ≡ ∏_{i ∈ S}(a_i − b_i·m) (mod N).
 //! 2. **Algebraic square root Y**: Y = |Norm(β)| mod N where β² = ∏_{i ∈ S}(a_i − b_i·α).
-//! 3. **Assembly** (G.F.4): gcd(X − Y, N) is a non-trivial factor of N when X ≢ ±Y (mod N).
+//! 3. **Assembly**: gcd(X − Y, N) is a non-trivial factor of N when X ≢ ±Y (mod N).
 //!
-//! # C-LinAlg seam
+//! # Linear algebra → square root seam
 //!
-//! `KernelVector::expand_provenance` is the G.E → G.F seam, over-specified at G.E.1 precisely
-//! for this consumer. G.F.2 is its first real client.
+//! `KernelVector::expand_provenance` is the linear algebra → square root seam, over-specified
+//! at the linear algebra substrate precisely for this consumer. The rational square root step
+//! is its first real client.
 
 pub mod algebraic;
 pub mod assembly;

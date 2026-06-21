@@ -1,6 +1,6 @@
 //! Known-answer tests (KATs) for the sieve substrate: factor bases, norms, and relations.
 //!
-//! Three KATs are required by the G.C.1 session spec:
+//! Three KATs:
 //!
 //! 1. **Factor-base construction KAT**: for ``f(x) = x³ − x − 1`` and ``B_alg = 30``, the
 //!    algebraic factor base lists exactly the ``(p, r)`` pairs with ``f(r) ≡ 0 (mod p)``,
@@ -171,7 +171,7 @@ fn kat1_algebraic_factor_base_matches_brute_force() {
         fb.rational_size() + fb.algebraic_size() + fb.obstruction_count,
         "matrix_width should equal rational + algebraic + obstruction"
     );
-    assert_eq!(fb.obstruction_count, 1, "obstruction_count should be 1 at G.C.1");
+    assert_eq!(fb.obstruction_count, 1, "obstruction_count should be 1 (sign column)");
 }
 
 /// KAT 1b: algebraic_index and rational_index lookups are consistent with the factor base.

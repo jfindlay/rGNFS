@@ -1,4 +1,4 @@
-//! End-to-end individual-log KAT (D.C.3 ◆ vehicle).
+//! End-to-end individual-log KAT (full pipeline integration vehicle).
 //!
 //! Recovers a known discrete log end-to-end through the full path:
 //! VirtualLogTable construction → initialization-smoothing → descent → assembly.
@@ -14,7 +14,8 @@
 //!
 //! ℓ = 5 is a proper prime factor of p − 1 = 10. The recovered log is mod 5 only.
 //! For the full log mod 10, Pohlig–Hellman / CRT across the order's factors would be needed
-//! (out of D.C scope). The toy KAT uses ℓ = 5 to match the existing toy DL setup.
+//! (out of scope for the individual-log descent). The toy KAT uses ℓ = 5 to match the
+//! existing toy DL setup.
 //!
 //! To sidestep Pohlig–Hellman entirely, one would pick ℓ = p − 1 = 10 (the full group order).
 //! However, 10 is not prime, so the F_ℓ linear algebra would need to work over ℤ/10ℤ (not a
@@ -372,8 +373,8 @@ fn kat_individual_log_full_pipeline() {
 
 /// End-to-end individual-log KAT: verify `solve_dl_full` with k=2 is no longer `Unsupported`.
 ///
-/// D.E.3 wires the k=2 path. `solve_dl_full` with k=2 delegates to `solve_dl` (which builds
-/// the extension context internally). The result must NOT be `Unsupported`.
+/// The k=2 extension field path is wired. `solve_dl_full` with k=2 delegates to `solve_dl`
+/// (which builds the extension context internally). The result must NOT be `Unsupported`.
 #[test]
 fn kat_individual_log_k2_not_unsupported() {
     let poly = toy_poly_pair();
@@ -394,12 +395,12 @@ fn kat_individual_log_k2_not_unsupported() {
         to_bigint: Box::new(fp_to_bigint),
     };
 
-    // k=2 is now wired (D.E.3); must NOT return Unsupported.
+    // k=2 is wired (extension field path); must NOT return Unsupported.
     // Note: p=11, k=2 — the k=2 path will try to find an irreducible poly of degree 2 over F_11.
     let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 2, &ell, &ctx);
     assert!(
         !matches!(result, Err(SolveDlError::Unsupported { .. })),
-        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        "k=2 must not return Unsupported (extension field path wired); got: {:?}",
         result
     );
 }

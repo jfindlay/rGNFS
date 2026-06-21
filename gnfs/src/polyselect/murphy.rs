@@ -25,9 +25,8 @@
 //! are dominated by the factor-base bounds rather than the polynomial shape.
 //! At toy scale, Murphy-E is a *ranking heuristic* whose payoff is
 //! under-exposed: the ordering it induces is correct in expectation, but the
-//! absolute values are not meaningful. Downstream consumers (G.B.3 root sieve,
-//! G.B.4 Coppersmith, D.A NFS-DL poly selection) should treat the score as an
-//! ordinal, not a cardinal.
+//! absolute values are not meaningful. Downstream consumers (root sieve, Coppersmith,
+//! NFS-DL polynomial selection) should treat the score as an ordinal, not a cardinal.
 //!
 //! # References
 //!
@@ -245,8 +244,8 @@ fn rat_norm_f64(a: f64, b: f64, m: f64) -> f64 {
 /// **Science↔engineering disconnect:** Murphy-E's predictive value only
 /// manifests at sieve scale (N ≳ 2^100). At toy scale it is a ranking
 /// heuristic: the ordering is correct in expectation, but the absolute values
-/// are not meaningful. Downstream consumers (G.B.3 root sieve, G.B.4
-/// Coppersmith, D.A NFS-DL) should treat the score as an ordinal.
+/// are not meaningful. Downstream consumers (root sieve, Coppersmith, NFS-DL polynomial
+/// selection) should treat the score as an ordinal.
 ///
 /// **Skew:** The optimal skew `s` balances algebraic and rational norm sizes.
 /// This implementation uses the skew stored in `pair.skew` if present, or

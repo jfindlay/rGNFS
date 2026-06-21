@@ -14,10 +14,10 @@
 //! step strictly reduces the largest prime, the descent terminates when all frontier elements
 //! are factor-base leaves.
 //!
-//! # Contract C-Descent (frozen D.C.1)
+//! # Descent substrate contract
 //!
-//! These types are the frozen internal substrate consumed by D.C.2 (recursion) and D.C.3
-//! (assembly). They are sub-track-internal — not consumed outside Track D.
+//! These types are the internal substrate consumed by the special-q recursion and log
+//! assembly. They are internal to `gnfs::dl` — not consumed outside `gnfs::dl`.
 
 use std::collections::BinaryHeap;
 
@@ -119,7 +119,7 @@ impl DescentTarget {
 ///
 /// `F` is the field element type for virtual logs (e.g., `FpNaive4`). Leaf nodes store
 /// `known_log: Some(F)` from the `VirtualLogTable`; interior nodes store `None` until
-/// D.C.3's assembly fills them in.
+    /// Log assembly fills them in.
 #[derive(Debug, Clone)]
 pub struct DescentNode<F> {
     /// The prime/ideal being descended.
@@ -140,7 +140,7 @@ pub struct DescentNode<F> {
     /// The known virtual log of this target, if it is a factor-base element.
     ///
     /// `Some(log)` for leaves (looked up from `VirtualLogTable`).
-    /// `None` for interior nodes (computed during assembly by combining children's logs).
+    /// `None` for interior nodes (computed during log assembly by combining children's logs).
     pub known_log: Option<F>,
 }
 

@@ -10,19 +10,20 @@
 //!   ``f mod p``. An algebraic norm ``N_alg(a, b)`` is divisible by the ideal ``(p, α − r)`` iff
 //!   ``a ≡ r·b (mod p)``.
 //!
-//! # Column indexing (for G.D/G.E)
+//! # Column indexing (for filtering and linear algebra)
 //!
 //! The exponent vectors in ``Relation`` use indices into these factor bases:
 //!
 //! - Rational side: ``rational_primes[i]`` is the prime at column ``i``.
 //! - Algebraic side: ``algebraic_ideals[j].index == j`` gives the column.
 //!
-//! # Obstruction columns (over-specified for G.E)
+//! # Obstruction columns (over-specified for the linear algebra step)
 //!
-//! G.E's linear algebra over GF(2) requires additional columns beyond the factor-base primes:
-//! the sign column (−1) and quadratic-character columns for ensuring the algebraic square root
-//! exists. The ``obstruction_count`` field reserves column indices for these; G.C.2 does not
-//! populate them, but the slot exists so G.E can extend without resharding.
+//! The linear algebra step over GF(2) requires additional columns beyond the factor-base
+//! primes: the sign column (−1) and quadratic-character columns for ensuring the algebraic
+//! square root exists. The ``obstruction_count`` field reserves column indices for these;
+//! the line sieve does not populate them, but the slot exists so the linear algebra step
+//! can extend without resharding.
 //!
 //! # Bad primes (principle-4 annotation)
 //!
@@ -77,19 +78,20 @@ pub struct AlgebraicPrime {
 /// The algebraic factor base is the set of degree-1 prime ideals ``(p, r)`` with
 /// ``p ≤ B_alg`` and ``f(r) ≡ 0 (mod p)``.
 ///
-/// # Column indexing (for G.D/G.E)
+/// # Column indexing (for filtering and linear algebra)
 ///
 /// The exponent vectors in ``Relation`` use indices into these factor bases:
 ///
 /// - Rational side: ``rational_primes[i]`` is the prime at column ``i``.
 /// - Algebraic side: ``algebraic_ideals[j].index == j`` gives the column.
 ///
-/// # Obstruction columns (over-specified for G.E)
+/// # Obstruction columns (over-specified for the linear algebra step)
 ///
-/// G.E's linear algebra over GF(2) requires additional columns beyond the factor-base primes:
-/// the sign column (−1) and quadratic-character columns for ensuring the algebraic square root
-/// exists. The ``obstruction_count`` field reserves column indices for these; G.C.2 does not
-/// populate them, but the slot exists so G.E can extend without resharding.
+/// The linear algebra step over GF(2) requires additional columns beyond the factor-base
+/// primes: the sign column (−1) and quadratic-character columns for ensuring the algebraic
+/// square root exists. The ``obstruction_count`` field reserves column indices for these;
+/// the line sieve does not populate them, but the slot exists so the linear algebra step
+/// can extend without resharding.
 #[derive(Debug, Clone)]
 pub struct FactorBase {
     /// Rational factor base: primes p ≤ B_rat, sorted ascending.
@@ -100,9 +102,9 @@ pub struct FactorBase {
     pub b_rat: u64,
     /// Algebraic smoothness bound B_alg.
     pub b_alg: u64,
-    /// Number of obstruction columns reserved for G.E (sign + quadratic chars).
+    /// Number of obstruction columns reserved for the linear algebra step (sign + quadratic chars).
     ///
-    /// G.C.1 sets this to 1 (the sign column); G.E may increase it.
+    /// Initialised to 1 (the sign column); the linear algebra step may increase it.
     pub obstruction_count: usize,
 }
 
@@ -114,7 +116,7 @@ impl FactorBase {
     /// for each ``r ∈ 0..p``). Bad primes (p | disc(f)) are included with the ``is_bad_prime``
     /// flag set.
     ///
-    /// The ``obstruction_count`` is initialised to 1 (the sign/−1 column for G.E).
+    /// The ``obstruction_count`` is initialised to 1 (the sign/−1 column for the linear algebra step).
     ///
     /// :param f: The algebraic polynomial (from PolyPair).
     /// :param b_rat: Rational smoothness bound.
@@ -152,7 +154,7 @@ impl FactorBase {
             algebraic_ideals,
             b_rat,
             b_alg,
-            // 1 obstruction column: the sign/−1 column for G.E.
+            // 1 obstruction column: the sign/−1 column for the linear algebra step.
             obstruction_count: 1,
         }
     }
@@ -167,7 +169,7 @@ impl FactorBase {
         self.algebraic_ideals.len()
     }
 
-    /// Total matrix width for G.E: rational + algebraic + obstruction columns.
+    /// Total matrix width for the linear algebra step: rational + algebraic + obstruction columns.
     pub fn matrix_width(&self) -> usize {
         self.rational_size() + self.algebraic_size() + self.obstruction_count
     }

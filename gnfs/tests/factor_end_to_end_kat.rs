@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.F.4: assembly + end-to-end factor driver.
+//! Known-answer tests (KATs) for the assembly step + end-to-end factor driver.
 //!
-//! Three KATs are required by the G.F.4 session spec:
+//! Three KATs:
 //!
 //! - **KAT (a) — Deterministic end-to-end**: for a small hand-prepared N with a known matrix
 //!   + kernel vector, the driver recovers a known non-trivial factor of N. No external oracle
@@ -274,7 +274,7 @@ fn kat_b_all_trivial_returns_none() {
 fn kat_c_oracle_80_100_bit_challenge() {
     // Placeholder: factor a published 80–100-bit semiprime using the full GNFS pipeline.
     // The pipeline stages (polyselect → sieve → filter → linalg → sqrt) must all be
-    // wired end-to-end. This KAT is the ROADMAP G.F oracle KAT.
+    // wired end-to-end. This KAT is the ROADMAP square root oracle KAT.
     //
     // Example target: RSA-100 (330 bits) is too large for toy scale; use a hand-chosen
     // 80-bit semiprime such as N = p × q where p and q are 40-bit primes.

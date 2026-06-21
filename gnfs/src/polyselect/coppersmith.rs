@@ -1,4 +1,4 @@
-//! Coppersmith multiple-polynomial method for NFS polynomial selection (G.B.4).
+//! Coppersmith multiple-polynomial method for NFS polynomial selection.
 //!
 //! Coppersmith's method generates several algebraic-side polynomials `f_1, f_2, ..., f_k`
 //! that all share the same rational-side polynomial `g = x − m`. The key insight is that

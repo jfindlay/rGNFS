@@ -15,7 +15,7 @@
 //! The map is a group homomorphism: λ(βγ) = λ(β) + λ(γ) mod ℓ. This is the defining
 //! algebraic property verified by the KAT.
 //!
-//! # Contract C-Schirokauer (frozen D.A.1)
+//! # Schirokauer map contract
 //!
 //! Public interface:
 //! - [`schirokauer`] — the map function.
@@ -23,7 +23,7 @@
 //! - [`PrimeIdeal`] — re-exported from `shared-numfield` for caller convenience.
 //!
 //! The r > 1 multi-coordinate shape is carried even when toy instances use r = 1, since
-//! D.C's descent and E.C's solver will need it.
+//! individual-log descent and the MOV bridge will need it.
 
 use num_bigint::BigInt;
 use num_integer::Integer;
@@ -66,7 +66,7 @@ pub enum SchirokauerError {
     ///
     /// For toy instances ε is small; for production instances a BigInt pow is needed.
     /// This error signals that the caller should use a larger-exponent variant.
-    /// (D.A.1 scope: toy instances only; BigInt pow is implemented internally.)
+    /// (Toy-scale scope: BigInt pow is implemented internally.)
     ///
     /// :param p: The rational prime of the ideal.
     /// :param ell: The target subgroup order ℓ.
@@ -112,7 +112,7 @@ impl std::error::Error for SchirokauerError {}
 ///
 /// Returns the r ℓ-adic virtual-log coordinates [λ_1(β), ..., λ_r(β)] ∈ (ℤ/ℓ)^r,
 /// one coordinate per ideal in `ideals`. The multi-coordinate shape (r > 1) is carried
-/// even when toy instances use r = 1 (required by C-Schirokauer for D.C/E.C consumers).
+/// even when toy instances use r = 1 (required for individual-log descent and the MOV bridge).
 ///
 /// # Algorithm
 ///

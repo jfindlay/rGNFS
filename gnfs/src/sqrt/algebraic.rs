@@ -141,7 +141,7 @@ pub fn algebraic_sqrt(
         None => {
             // Fallback: norm-sign convention. Norm(β) for the correct β should be positive
             // (or at least consistent). We use the sign of the raw CRT result.
-            // This is a best-effort fallback; the G.F.4 retry loop is the safety net.
+            // This is a best-effort fallback; the assembly retry loop is the safety net.
             true
         }
     };

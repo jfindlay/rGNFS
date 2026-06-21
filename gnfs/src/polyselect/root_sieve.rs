@@ -1,4 +1,4 @@
-//! Kleinjung-style rotation and translation search for NFS polynomial selection (G.B.3).
+//! Kleinjung-style rotation and translation search for NFS polynomial selection (root sieve).
 //!
 //! Given a seed polynomial pair `(f, g)` from base-m selection, this module searches over
 //! a grid of rotation parameters `(j, k)` to find a better-scoring pair. The rotation is:
@@ -15,7 +15,7 @@
 //! ```
 //!
 //! so `PolyPair::verify()` holds for every rotated pair. The search scores each candidate
-//! with Murphy-E (C-Score, G.B.2) and returns the best-scoring one.
+//! with Murphy-E scoring and returns the best-scoring one.
 //!
 //! # Rotation arithmetic
 //!

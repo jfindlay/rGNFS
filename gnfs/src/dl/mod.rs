@@ -2,54 +2,55 @@
 //! F_ℓ linear-algebra substrate, individual-logarithm descent, and F_{p^k} extension
 //! substrate.
 //!
-//! This module is the entry point for the NFS-DL bridge sub-track (Track D). It provides:
+//! This module is the entry point for the NFS-DL substrate. It provides:
 //!
 //! - [`schirokauer`] — the Schirokauer map λ: K* → (ℤ/ℓ)^r (virtual-log coordinates).
 //! - [`DLRelation`] — the DL relation format: the factoring [`Relation`] augmented with
-//!   Schirokauer columns (C-DLRelation contract).
+//!   Schirokauer columns (DL relation contract).
 //! - [`linalg`] — F_ℓ linear-algebra substrate: block vectors, sparse matrix, operator,
 //!   block Lanczos solver, scalar Wiedemann solver, and virtual-log recovery
-//!   (C-LinAlgFl contract, frozen D.B.1, extended D.B.2).
+//!   (F_ℓ linear-algebra contract, frozen at initial implementation, extended with block Wiedemann).
 //! - [`descent`] — individual-logarithm descent substrate: descent-tree node/frontier types
-//!   (C-Descent contract, frozen D.C.1) and the cross-track C2 `solve_dl` interface
-//!   (shape frozen D.C.1, finalized D.C.3).
+//!   (descent substrate contract) and the cross-track `solve_dl` interface
+//!   (shape frozen at initial implementation, finalized at integration).
 //! - [`ext`] — F_{p^k} extension-field substrate: extension-target type and residue map
-//!   (C-ExtTarget contract, frozen D.E.1).
+//!   (extension-target contract, frozen at initial implementation).
 //!
 //! # Two-number-field setup
 //!
 //! NFS-DL uses the same polynomial pair (f, g) as NFS-factoring (the existing [`PolyPair`]).
 //! The DL target is log_g(h) in F_p. No `DLPolyPair` is needed — `PolyPair` as-is suffices
-//! for D.A.1's scope. The Schirokauer map is applied to elements of the algebraic number
-//! field K = ℚ[α]/(f(α)).
+//! for the Schirokauer map scope. The Schirokauer map is applied to elements of the algebraic
+//! number field K = ℚ[α]/(f(α)).
 //!
-//! # Contract C-DLRelation (frozen D.A.1)
+//! # DL relation contract
 //!
 //! The DL relation reuses the factoring [`Relation`] (u32 exponent vectors, DL-ready by design)
 //! augmented with Schirokauer columns. The augmentation is a wrapper, not a re-typed relation.
-//! Re-narrowing C-Relation would be a destructive reshard (per `sieve/mod.rs` doc).
+//! Re-narrowing the relation type would break the sieve contract (per `sieve/mod.rs` doc).
 //!
-//! # Contract C-Schirokauer (frozen D.A.1)
+//! # Schirokauer map contract
 //!
 //! See [`schirokauer`] module for the map interface. The r > 1 multi-coordinate shape is
-//! carried even when toy instances use r = 1 (required for D.C descent and E.C solver).
+//! carried even when toy instances use r = 1 (required for individual-log descent and the
+//! MOV bridge).
 //!
-//! # Contract C-LinAlgFl (frozen D.B.1; extended D.B.2)
+//! # F_ℓ linear-algebra contract
 //!
-//! See [`linalg`] module for the F_ℓ block-solver substrate interface. D.B.2 adds
-//! `block_wiedemann_fl` (scalar Wiedemann over F_ℓ) and `recover_virtual_logs` (virtual-log
-//! table extraction). D.C (individual-log descent) consumes this interface directly.
+//! See [`linalg`] module for the F_ℓ block-solver substrate interface. The block Wiedemann
+//! extension adds `block_wiedemann_fl` (scalar Wiedemann over F_ℓ) and `recover_virtual_logs`
+//! (virtual-log table extraction). Individual-log descent consumes this interface directly.
 //!
-//! # Contract C-Descent (frozen D.C.1) + C2 (shape frozen D.C.1, finalized D.C.3)
+//! # Descent substrate contract + `solve_dl` interface
 //!
 //! See [`descent`] module for the descent substrate and the cross-track `solve_dl` interface.
-//! C-Descent is sub-track-internal; C2 is consumed by E.C (the MOV bridge).
+//! The descent substrate is internal to `gnfs::dl`; `solve_dl` is consumed by the MOV bridge.
 //!
-//! # Contract C-ExtTarget (frozen D.E.1)
+//! # Extension-target contract
 //!
 //! See [`ext::target`] module for the F_{p^k} extension-target type and residue map.
-//! C-ExtTarget is consumed by D.E.2 (factor base), D.E.3 (descent + solver), and E.C
-//! (the MOV bridge).
+//! The extension-target contract is consumed by the extension factor base, the k>1 descent
+//! + solver, and the MOV bridge.
 
 pub mod schirokauer;
 pub mod relation;
@@ -99,12 +100,13 @@ use crate::sieve::Relation;
 
 /// A DL relation: a factoring [`Relation`] augmented with Schirokauer virtual-log columns.
 ///
-/// # Contract C-DLRelation (frozen D.A.1)
+/// # DL relation contract
 ///
-/// This is the unit D.A.2 produces and D.B consumes. The shape is:
+/// This is the unit DL relation collection produces and the F_ℓ linear-algebra step consumes.
+/// The shape is:
 /// - `relation`: the factoring [`Relation`] (u32 exponent vectors, rational + algebraic sides).
 ///   Reused directly — not re-typed. The integer exponents are read mod ℓ for GF(ℓ) linear
-///   algebra (D.B), just as they are read mod 2 for GF(2) linear algebra (G.E).
+///   algebra, just as they are read mod 2 for GF(2) linear algebra (the factoring path).
 /// - `schirokauer_cols`: the virtual-log coordinates from the Schirokauer map, one `BigInt`
 ///   per prime ideal in the Schirokauer ideal set. These are the extra columns that make the
 ///   DL linear system solvable over F_ℓ.
@@ -117,18 +119,18 @@ use crate::sieve::Relation;
 ///
 /// # Usage
 ///
-/// D.A.2 constructs `DLRelation` values by:
+/// DL relation collection constructs `DLRelation` values by:
 /// 1. Collecting a smooth relation (a, b) via the sieve (reusing `line_sieve` / `special_q_sieve`).
 /// 2. Evaluating the Schirokauer map on the algebraic element a + b·α.
 /// 3. Wrapping the result: `DLRelation { relation, schirokauer_cols }`.
 ///
-/// D.B assembles the DL matrix from a collection of `DLRelation` values.
+/// The F_ℓ linear-algebra step assembles the DL matrix from a collection of `DLRelation` values.
 #[derive(Debug, Clone)]
 pub struct DLRelation {
     /// The factoring relation (u32 exponent vectors, rational + algebraic sides).
     ///
     /// Reused directly from the NFS-factoring pipeline. Integer exponents are read
-    /// mod ℓ for GF(ℓ) linear algebra (D.B).
+    /// mod ℓ for GF(ℓ) linear algebra.
     pub relation: Relation,
 
     /// Schirokauer virtual-log columns: one `BigInt` per prime ideal in the Schirokauer set.

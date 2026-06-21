@@ -1,6 +1,6 @@
 //! Special-q strategy for GNFS relation collection.
 //!
-//! The special-q strategy is an optimization layer over the line sieve (G.C.2). For each
+//! The special-q strategy is an optimization layer over the line sieve. For each
 //! **special prime** ``q`` in a chosen range ``[q_min, q_max]``, the sieve is restricted to
 //! pairs ``(a, b)`` for which ``q | N_alg(a, b)``. This restriction is enforced by the sieve
 //! condition: ``q | N_alg(a, b)`` iff ``a ≡ r_q·b (mod q)`` for some root ``r_q`` of ``f mod q``.
@@ -34,17 +34,17 @@
 //! the algebraic norm ``N_alg(a, b)`` is large and the probability of smoothness is low
 //! without the pre-guaranteed factor ``q``. At toy scale, the norms are already small and
 //! smooth, so the advantage is marginal. This is annotated in the KATs and in
-//! ``gnfs/docs/PEDAGOGY.md`` (G.C.W) per ROADMAP principle 4.
+//! ``gnfs/docs/PEDAGOGY.md`` per ROADMAP principle 4.
 //!
-//! # Relation to the line sieve (G.C.2)
+//! # Relation to the line sieve
 //!
 //! The special-q sieve is a variant of the line sieve with an additional constraint on ``a``.
 //! It reuses the same log-sieve + trial-divide pattern, the same ``FactorBase``, and the same
 //! ``Relation`` type. The ``q``-restriction is implemented by stepping ``a`` in increments of
 //! ``q`` rather than 1, and by pre-guaranteeing ``q`` in the algebraic exponent vector.
 //!
-//! The plain line sieve (G.C.2) remains available for benchmarking (Category-C rule: the
-//! baseline is not altered by the optimization layer).
+//! The plain line sieve remains available for benchmarking (Category-C rule: the baseline is
+//! not altered by the optimization layer).
 //!
 //! # Entry surface
 //!

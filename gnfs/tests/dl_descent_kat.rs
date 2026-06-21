@@ -1,5 +1,6 @@
-//! Known-answer tests (KATs) for D.C.1–D.C.3: descent substrate, initialization-smoothing,
-//! C2 shape, special-q descent recursion, log assembly, and end-to-end shape.
+//! Known-answer tests (KATs) for the NFS-DL individual-log descent: descent substrate,
+//! initialization-smoothing, `solve_dl` interface shape, special-q descent recursion, log
+//! assembly, and end-to-end shape.
 //!
 //! # KAT (a) — Frontier ordering invariant
 //!
@@ -13,13 +14,13 @@
 //! - g^0 * h = 50 = 2 * 5^2; smooth over primes ≤ 20 (medium_bound = 20).
 //! - Expected: e = 0, frontier non-empty (contains primes 2, 5, 5).
 //!
-//! # KAT (c) — C2 interface shape
+//! # KAT (c) — `solve_dl` interface shape
 //!
 //! Verifies the `solve_dl` interface shape:
 //! - k > 1 returns `SolveDlError::Unsupported { k }` immediately.
 //! - k = 1 path is wired: returns a `Result`, not a panic; if `Err`, must be a known variant.
 //!
-//! # KAT (d) — Single-node descent (D.C.2)
+//! # KAT (d) — Single-node descent
 //!
 //! One medium prime `q = 17` descends to a relation over smaller primes via the special-q sieve.
 //! Uses `f(x) = x³ − x − 1`, `m = 2`. The relation `(a=5, b=1)` has:
@@ -27,25 +28,25 @@
 //! - Algebraic norm: `119 = 7 × 17` (primes 7 and 17; 7 < 17).
 //! All children have `prime() < 17` (strict reduction).
 //!
-//! # KAT (e) — Multi-level descent (D.C.2)
+//! # KAT (e) — Multi-level descent
 //!
 //! A frontier with two medium primes `{17, 7}` descends through the full tree:
 //! - `q=17` descends to `{3, (7,5)}` via `(a=5, b=1)`.
 //! - `q=7` descends to `{2, 2}` via `(a=-2, b=1)` (rational norm `4=2²`, algebraic norm `7`).
 //! The final tree has depth ≥ 2 (17 → 7 → 2).
 //!
-//! # KAT (f) — Termination: undescendable input (D.C.2)
+//! # KAT (f) — Termination: undescendable input
 //!
 //! A prime `q` that the sieve cannot find a relation for surfaces
 //! `SolveDlError::DescentFailed { stuck_prime: q }` rather than looping.
 //! Uses a very restrictive sieve config (a_bound=0, b_bound=0) to guarantee no relations.
 //!
-//! # KAT (g) — Assembly KAT (D.C.3)
+//! # KAT (g) — Assembly KAT
 //!
 //! A small hand-built descent tree assembles to the correct `log_g(h) mod ell`.
 //! Verifies the sign/exponent bookkeeping in `assemble_log`.
 //!
-//! # KAT (h) — End-to-end shape KAT (D.C.3)
+//! # KAT (h) — End-to-end shape KAT
 //!
 //! Calls `solve_dl_full` with the toy F_p setup (p=11, g=2, h=4, ell=5).
 //! Asserts the result is `Ok(2)` (since log_2(4) = 2 mod 5) or a clean `Err`.
@@ -252,11 +253,11 @@ fn kat_init_descent_frontier_h12() {
     assert!(!frontier.is_empty(), "frontier should be non-empty (12 = 2^2 * 3)");
 }
 
-// ─── KAT (c): C2 interface shape ──────────────────────────────────────────────
+// ─── KAT (c): `solve_dl` interface shape ─────────────────────────────────────
 
 /// KAT (c): `solve_dl` with k = 2 no longer returns `SolveDlError::Unsupported`.
 ///
-/// D.E.3 wires the k=2 path. `solve_dl` with k=2 must NOT return `Unsupported`.
+/// The k=2 extension field path is wired. `solve_dl` with k=2 must NOT return `Unsupported`.
 /// The result may be `Ok(x)` or a known `Err` variant (InitSmoothingFailed / DescentFailed),
 /// but must not be `Unsupported`.
 #[test]
@@ -265,12 +266,12 @@ fn kat_solve_dl_k2_not_unsupported() {
         &bi(2),
         &bi(3),
         &bi(11),
-        2, // k = 2: extension field — D.E.3 wired, must NOT return Unsupported.
+        2, // k = 2: extension field path wired, must NOT return Unsupported.
         &bi(10),
     );
     assert!(
         !matches!(result, Err(SolveDlError::Unsupported { .. })),
-        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        "k=2 must not return Unsupported (extension field path wired); got: {:?}",
         result
     );
 }
@@ -290,9 +291,9 @@ fn kat_solve_dl_unsupported_k3() {
 
 /// KAT (c3): `solve_dl` with k = 1 returns a `Result`, not a panic.
 ///
-/// The k = 1 path is wired through initialization-smoothing. At D.C.1, the result may be
-/// `Ok` (if the frontier is empty after smoothing) or a known `Err` variant. The KAT
-/// verifies the *shape* of the result, not the final answer.
+/// The k = 1 path is wired through initialization-smoothing. The result may be `Ok` (if the
+/// frontier is empty after smoothing) or a known `Err` variant. The KAT verifies the *shape*
+/// of the result, not the final answer.
 #[test]
 fn kat_solve_dl_k1_returns_result() {
     // k = 1 path is wired; result may be Ok or a specific Err variant, but must not panic.
@@ -343,7 +344,7 @@ fn kat_solve_dl_error_display() {
 /// KAT (c5): `SolveDlError` implements `std::error::Error`.
 ///
 /// Verifies that `SolveDlError` satisfies the `std::error::Error` trait bound, which is
-/// required for the C2 interface to be usable in standard error-handling idioms.
+/// required for the `solve_dl` interface to be usable in standard error-handling idioms.
 #[test]
 fn kat_solve_dl_error_is_std_error() {
     fn assert_std_error<E: std::error::Error>(_: &E) {}
@@ -914,7 +915,7 @@ fn fp_to_bigint(f: &FpNaive4) -> BigInt {
 /// # Toy KAT note
 ///
 /// ell = 5 is a prime factor of p − 1 = 10. The log is recovered mod 5 only. For the full
-/// log mod 10, Pohlig–Hellman / CRT would be needed (out of D.C scope).
+/// log mod 10, Pohlig–Hellman / CRT would be needed (out of scope for the individual-log descent).
 #[test]
 fn kat_h_solve_dl_full_toy_fp() {
     let ell5 = Uint::<4>::from(5u64);
@@ -1022,8 +1023,8 @@ fn kat_h2_solve_dl_full_h8() {
 
 /// KAT (h3): `solve_dl_full` with k = 2 no longer returns `Unsupported`.
 ///
-/// D.E.3 wires the k=2 path. `solve_dl_full` with k=2 delegates to `solve_dl` (which
-/// builds the extension context internally). The result must NOT be `Unsupported`.
+/// The k=2 extension field path is wired. `solve_dl_full` with k=2 delegates to `solve_dl`
+/// (which builds the extension context internally). The result must NOT be `Unsupported`.
 #[test]
 fn kat_h3_solve_dl_full_k2_not_unsupported() {
     let ell5 = Uint::<4>::from(5u64);
@@ -1045,13 +1046,13 @@ fn kat_h3_solve_dl_full_k2_not_unsupported() {
         to_bigint: Box::new(fp_to_bigint),
     };
 
-    // k=2 is now wired (D.E.3); must NOT return Unsupported.
+    // k=2 is wired (extension field path); must NOT return Unsupported.
     // Note: p=11, k=2 — the k=2 path will try to find an irreducible poly of degree 2 over F_11.
     // The result may be Ok or a known Err, but must not be Unsupported.
     let result = solve_dl_full(&bi(2), &bi(4), &bi(11), 2, &ell, &ctx);
     assert!(
         !matches!(result, Err(SolveDlError::Unsupported { .. })),
-        "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+        "k=2 must not return Unsupported (extension field path wired); got: {:?}",
         result
     );
 }

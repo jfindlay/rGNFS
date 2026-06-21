@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.D.2: clique/excess pruning and column merging.
+//! Known-answer tests (KATs) for clique/excess pruning and column merging.
 //!
-//! Four KATs are required by the G.D.2 session spec:
+//! Four KATs:
 //!
 //! - **KAT (a) — 2-way merge correctness**: a weight-2 column is eliminated; the merged
 //!   row has the correct cols (symmetric difference) and provenance (union).

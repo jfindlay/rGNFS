@@ -34,10 +34,11 @@
 //! if the sieve produces a relation whose largest prime is ≥ the target prime, it returns
 //! `Err(DescentStepError::NoStrictReduction { target })` rather than accepting the relation.
 //!
-//! # Contract C-Descent (frozen D.C.1)
+//! # Descent substrate contract
 //!
-//! This module implements the body of `descend_node` (signature frozen D.C.1) and adds
-//! `run_descent` (the full descent loop). Both are re-exported from `gnfs::dl::descent`.
+//! This module implements the body of `descend_node` (signature frozen at initial
+//! implementation) and adds `run_descent` (the full descent loop). Both are re-exported
+//! from `gnfs::dl::descent`.
 
 use crate::{
     dl::{

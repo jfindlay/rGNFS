@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.E.3: block Wiedemann GF(2) nullspace solver.
+//! Known-answer tests (KATs) for the block Wiedemann GF(2) nullspace solver.
 //!
-//! Three KATs are required by the G.E.3 session spec:
+//! Three KATs:
 //!
 //! - **KAT (a) — Cross-validation with block Lanczos**: for a shared small matrix, both
 //!   solvers find valid kernel vectors. Every vector returned by Wiedemann passes

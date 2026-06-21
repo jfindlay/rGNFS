@@ -13,15 +13,15 @@
 //! A **relation** in GNFS is a coprime pair ``(a, b)`` for which both the rational norm
 //! ``N_rat(a, b) = a − b·m`` and the algebraic norm ``N_alg(a, b) = b^d · f(a/b)`` are smooth
 //! over their respective factor bases. Each relation yields one row of the relation matrix that
-//! the filtering step (G.D) and linear algebra step (G.E) consume.
+//! the filtering step and linear algebra step consume.
 //!
-//! # Cross-track design (C-Relation contract)
+//! # Cross-track design
 //!
 //! The ``Relation`` type stores full integer exponents (``u32``), not pre-reduced GF(2) parities.
-//! G.E reduces to parities via ``rational_row_gf2`` / ``algebraic_row_gf2``; D.A reads the
-//! integer exponents directly for GF(ℓ) linear algebra. This over-specification for D.A is the
-//! load-bearing cross-track call: re-narrowing C-Relation after G.E or D.A consumes it would be
-//! a destructive reshard.
+//! The linear algebra step reduces to parities via ``rational_row_gf2`` / ``algebraic_row_gf2``;
+//! the NFS-DL relation collection reads the integer exponents directly for GF(ℓ) linear algebra.
+//! This over-specification for NFS-DL is the load-bearing cross-track design: re-narrowing the
+//! relation type after either consumer uses it would be a destructive reshard.
 
 pub mod factor_base;
 pub mod lattice;
@@ -45,21 +45,22 @@ use crate::polyselect::PolyPair;
 
 /// Exponent vector for one side of a relation (rational or algebraic).
 ///
-/// Stores full integer exponents, not GF(2) parities. G.E reduces to parities for the
-/// nullspace computation; D.A reads the integer exponents directly for GF(ℓ) linear algebra.
+/// Stores full integer exponents, not GF(2) parities. The linear algebra step reduces to
+/// parities for the nullspace computation; NFS-DL relation collection reads the integer
+/// exponents directly for GF(ℓ) linear algebra.
 ///
 /// # Representation
 ///
 /// Sparse: only non-zero exponents are stored. The ``index`` field refers to the factor-base
 /// index (column number in the matrix). Entries are sorted by index.
 ///
-/// # Over-specification for D.A
+/// # Over-specification for NFS-DL
 ///
 /// The exponent type is ``u32``, not ``u8`` or ``bool``. This accommodates:
 ///
-/// - NFS-factoring (G.E): exponents are small (typically 1–3), reduced mod 2.
-/// - NFS-DL (D.A): exponents are reduced mod ℓ where ℓ is the target group order;
-///   ℓ can be large, but exponents before reduction are still small integers.
+/// - NFS-factoring (linear algebra step): exponents are small (typically 1–3), reduced mod 2.
+/// - NFS-DL (relation collection): exponents are reduced mod ℓ where ℓ is the target group
+///   order; ℓ can be large, but exponents before reduction are still small integers.
 ///
 /// The ``u32`` type is the smallest that accommodates both without overflow risk.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -211,19 +212,20 @@ impl std::error::Error for RelationError {}
 /// # Sign handling
 ///
 /// The ``rational_sign`` field is true iff ``N_rat(a, b) = a − b·m < 0``. This is the
-/// "−1 column" for G.E's linear algebra: the product of all selected relations' rational norms
-/// must be a perfect square, which requires the sign product to be +1.
+/// "−1 column" for the linear algebra step: the product of all selected relations' rational
+/// norms must be a perfect square, which requires the sign product to be +1.
 ///
 /// The algebraic norm's sign is not stored separately because the algebraic square root
-/// computation (G.F) handles sign via the embedding into ℝ, not via a matrix column.
-/// (The quadratic-character columns in G.E serve a different purpose: ensuring the algebraic
-/// square root exists in K, not sign correction.)
+/// computation handles sign via the embedding into ℝ, not via a matrix column.
+/// (The quadratic-character columns in the linear algebra step serve a different purpose:
+/// ensuring the algebraic square root exists in K, not sign correction.)
 ///
-/// # Cross-track adaptation (D.A)
+/// # Cross-track adaptation (NFS-DL)
 ///
 /// NFS-DL uses the same relation structure but interprets exponents mod ℓ instead of mod 2.
-/// The integer exponents stored here support both interpretations without resharding. D.A may
-/// add Schirokauer-map columns; the ``ExponentVector`` structure accommodates additional entries.
+/// The integer exponents stored here support both interpretations without resharding. NFS-DL
+/// relation collection may add Schirokauer-map columns; the ``ExponentVector`` structure
+/// accommodates additional entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Relation {
     /// The a-coordinate of the relation (can be negative).
@@ -344,7 +346,7 @@ impl Relation {
         Ok(())
     }
 
-    /// Convert the rational exponents to a GF(2) row for G.E.
+    /// Convert the rational exponents to a GF(2) row for the linear algebra step.
     ///
     /// Returns a bit vector where bit ``i`` is ``exponents[i] mod 2``.
     /// The sign column is prepended: bit 0 is 1 iff ``rational_sign`` is true.
@@ -364,10 +366,11 @@ impl Relation {
         row
     }
 
-    /// Convert the algebraic exponents to a GF(2) row for G.E.
+    /// Convert the algebraic exponents to a GF(2) row for the linear algebra step.
     ///
     /// Returns a bit vector where bit ``i`` is ``exponents[i] mod 2``.
-    /// Obstruction columns (quadratic characters) are appended as zeros; G.E fills them in.
+    /// Obstruction columns (quadratic characters) are appended as zeros; the linear algebra
+    /// step fills them in.
     ///
     /// The length of the returned vector is ``fb.algebraic_size() + fb.obstruction_count``.
     ///
@@ -380,7 +383,7 @@ impl Relation {
                 row[idx] = (exp % 2) == 1;
             }
         }
-        // Obstruction columns remain false (zeros); G.E fills them in.
+        // Obstruction columns remain false (zeros); the linear algebra step fills them in.
         row
     }
 }

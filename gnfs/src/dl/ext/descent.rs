@@ -1,10 +1,10 @@
 //! k>1 individual-log descent for NFS-DL over F_{p^k}.
 //!
-//! # Contract C2-ext (frozen D.E.3 ◆)
+//! # k>1 individual-log descent contract
 //!
 //! This module implements the individual-log descent adapted to an extension target
-//! h ∈ F_{p^k}*, composing the frozen C-Descent node/frontier types with the frozen
-//! C-ExtTarget and C-ExtFactorBase substrate.
+//! h ∈ F_{p^k}*, composing the descent node/frontier types with the extension-target
+//! and extension factor-base substrate.
 //!
 //! ## Algorithm overview
 //!
@@ -19,7 +19,7 @@
 //!    virtual logs are known.
 //!
 //! 3. **Descent**: for each non-leaf factor, descend it to factor-base leaves using the
-//!    frozen C-Descent node/frontier types.
+//!    descent node/frontier types.
 //!
 //! 4. **Assembly**: sum the virtual logs of the leaves to recover `log_g(g^e · h)`, then
 //!    back out `e` to get `log_g(h)`.
@@ -109,7 +109,7 @@ pub fn bigint_to_ext_target(n: &BigInt, p: &BigInt, modulus: Vec<BigInt>) -> Ext
 /// The table has one entry per element of the extension factor base. For the toy k=2 case,
 /// the table is computed by brute force (the ℓ-subgroup has order ℓ, so the DL is trivial).
 ///
-/// # Contract C2-ext (frozen D.E.3 ◆)
+/// # k>1 descent contract
 ///
 /// This type is consumed by [`solve_dl_ext`] and [`init_ext_descent_frontier`].
 #[derive(Debug, Clone)]
@@ -126,8 +126,6 @@ pub struct ExtVirtualLogTable {
 ///
 /// Carries the extension factor base, virtual-log table, and the generator `g` (as an
 /// `ExtTarget`) for the ℓ-subgroup. This is the k>1 analogue of `SolveDlContext`.
-///
-/// # Contract C2-ext (frozen D.E.3 ◆)
 ///
 /// Consumed by [`init_ext_descent_frontier`] and [`run_ext_descent`].
 pub struct ExtSolveDlContext {
@@ -317,7 +315,7 @@ pub fn solve_dl_ext(
 /// Error type for [`solve_dl_ext`].
 ///
 /// Internal to the k>1 descent; converted to [`SolveDlError`] variants at the call site
-/// in `solve_dl` / `solve_dl_full`. The taxonomy is NOT part of the frozen C2 interface.
+/// in `solve_dl` / `solve_dl_full`. The taxonomy is NOT part of the frozen `solve_dl` interface.
 ///
 /// [`SolveDlError`]: crate::dl::descent::solve::SolveDlError
 #[derive(Debug, Clone, PartialEq, Eq)]

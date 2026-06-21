@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.E.2: block Lanczos GF(2) nullspace solver.
+//! Known-answer tests (KATs) for the block Lanczos GF(2) nullspace solver.
 //!
-//! Three KATs are required by the G.E.2 session spec:
+//! Three KATs:
 //!
 //! - **KAT (a) — Correctness with self-orthogonality**: for a small matrix with a known
 //!   left nullspace, `block_lanczos` recovers at least one valid kernel vector (verified

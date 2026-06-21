@@ -7,24 +7,23 @@
 //! - [`blockvec`] — `BlockVec` and `BLOCK_WIDTH`: blocked GF(2) vector representation
 //!   for block Lanczos and Wiedemann solvers.
 //! - [`operator`] — `MatrixOperator`: sparse matrix as a linear operator over GF(2).
-//! - [`kernel`] — `KernelVector`: nullspace vector representation (the G.F seam).
+//! - [`kernel`] — `KernelVector`: nullspace vector representation (the linear algebra → square root seam).
 //! - [`qc`] — `populate_qc_columns`, `select_qc_primes`, `DEFAULT_NUM_QC`: quadratic-
 //!   character column construction.
-//! - [`lanczos`] — `block_lanczos`: Montgomery's block Lanczos nullspace solver (G.E.2).
-//! - [`wiedemann`] — `block_wiedemann`: Coppersmith's block Wiedemann nullspace solver
-//!   (G.E.3).
+//! - [`lanczos`] — `block_lanczos`: Montgomery's block Lanczos nullspace solver.
+//! - [`wiedemann`] — `block_wiedemann`: Coppersmith's block Wiedemann nullspace solver.
 //!
 //! # Background
 //!
-//! The linear algebra step (G.E) takes the filtered sparse GF(2) matrix from G.D and finds
-//! vectors in its left nullspace. Each nullspace vector corresponds to a set of relations
-//! whose product is a perfect square on both sides — the raw material for the congruence of
-//! squares in the final factorisation step (G.F).
+//! The linear algebra step takes the filtered sparse GF(2) matrix from the filtering step
+//! and finds vectors in its left nullspace. Each nullspace vector corresponds to a set of
+//! relations whose product is a perfect square on both sides — the raw material for the
+//! congruence of squares in the square root step.
 //!
-//! # C-LinAlg contract
+//! # Linear algebra contract
 //!
-//! The types and functions in this module implement the C-LinAlg contract frozen at G.E.1.
-//! G.E.2 (block Lanczos), G.E.3 (Wiedemann), G.F (square root), and D.B (GF(ℓ) extension)
+//! The types and functions in this module implement the GF(2) linear-algebra substrate.
+//! The block Lanczos solver, Wiedemann solver, square root step, and the F_ℓ extension
 //! consume this interface directly.
 
 pub mod blockvec;

@@ -1,26 +1,26 @@
 //! Individual-logarithm descent substrate for NFS-DL.
 //!
-//! This module is the entry point for the D.C descent sub-track. It provides:
+//! This module is the entry point for the NFS-DL individual-log descent. It provides:
 //!
 //! - [`node`] — descent-tree data structures: [`DescentTarget`], [`DescentNode`],
-//!   [`DescentFrontier`] (C-Descent contract, frozen D.C.1).
-//! - [`solve`] — the C2 `solve_dl` interface and initialization-smoothing:
+//!   [`DescentFrontier`] (descent substrate contract).
+//! - [`solve`] — the `solve_dl` interface and initialization-smoothing:
 //!   [`solve_dl`], [`init_descent_frontier`], and the error types
 //!   [`SolveDlError`], [`InitSmoothingError`], [`DescentStepError`].
-//! - [`recurse`] — the D.C.2 descent recursion: [`descend_node`], [`run_descent`],
+//! - [`recurse`] — the special-q descent recursion: [`descend_node`], [`run_descent`],
 //!   and [`DescentSieveConfig`].
 //!
-//! # Contract C-Descent (frozen D.C.1)
+//! # Descent substrate contract
 //!
-//! The descent substrate is sub-track-internal: consumed by D.C.2 (special-q recursion) and
-//! D.C.3 (log assembly), but not exposed outside Track D. The types are re-exported here for
-//! convenience; callers within Track D import from `gnfs::dl::descent`.
+//! The descent substrate is internal to `gnfs::dl`: consumed by the special-q recursion and
+//! log assembly, but not exposed outside `gnfs::dl`. The types are re-exported here for
+//! convenience; callers within `gnfs::dl` import from `gnfs::dl::descent`.
 //!
-//! # Contract C2 (shape frozen D.C.1, finalized D.C.3)
+//! # `solve_dl` interface
 //!
-//! `solve_dl` is the cross-track interface consumed by E.C (the MOV bridge). Its signature and
-//! the `SolveDlError` shape are frozen at D.C.1. The error taxonomy may be extended additively
-//! at D.C.3 once the full pipeline is integrated.
+//! `solve_dl` is the cross-track interface consumed by the MOV bridge. Its signature and
+//! the `SolveDlError` shape are frozen. The error taxonomy was finalized once the full
+//! pipeline was integrated.
 
 pub mod node;
 pub mod recurse;

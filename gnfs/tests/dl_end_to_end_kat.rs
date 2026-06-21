@@ -1,4 +1,4 @@
-//! End-to-end toy-F_p discrete-log KAT (D.B.2 ◆ vehicle).
+//! End-to-end toy-F_p discrete-log KAT (F_ℓ linear-algebra integration vehicle).
 //!
 //! Recovers a known toy discrete log through the full NFS-DL linear-algebra path:
 //! DLMatrix construction → F_ℓ matrix build → solve (Lanczos and Wiedemann) →

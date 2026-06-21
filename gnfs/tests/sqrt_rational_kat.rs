@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.F.2: rational square root from a kernel vector.
+//! Known-answer tests (KATs) for the rational square root from a kernel vector.
 //!
-//! Three KATs are required by the G.F.2 session spec:
+//! Three KATs:
 //!
 //! - **KAT (a) — Algebraic correctness**: for a hand-built relation set whose rational-norm
 //!   product is a known perfect square, the recovered X satisfies X² ≡ product (mod N).

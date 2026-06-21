@@ -1,6 +1,6 @@
-//! Lattice sieving for GNFS (demonstration fidelity, G.C.4).
+//! Lattice sieving for GNFS (demonstration fidelity).
 //!
-//! The lattice sieve is an optimization layer over the special-q strategy (G.C.3). For a
+//! The lattice sieve is an optimization layer over the special-q strategy. For a
 //! special prime ``q`` with root ``r_q`` (so ``q | N_alg(a, b)`` iff ``a ≡ r_q·b (mod q)``),
 //! the sieve is restricted to the **lattice**
 //!
@@ -64,7 +64,7 @@
 //! the overhead of the reduction and enumeration at small ``q``. This is annotated in the
 //! KATs per ROADMAP principle 4.
 //!
-//! # Relation to special-q sieve (G.C.3)
+//! # Relation to special-q sieve
 //!
 //! The lattice sieve is a variant of the special-q sieve with a different enumeration
 //! strategy. Both restrict to ``L_q``; the special-q sieve steps through ``a`` in increments

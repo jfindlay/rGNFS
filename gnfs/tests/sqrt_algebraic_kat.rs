@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for G.F.3: algebraic square root via Couveignes' CRT algorithm.
+//! Known-answer tests (KATs) for the algebraic square root via Couveignes' CRT algorithm.
 //!
-//! Three KATs are required by the G.F.3 session spec:
+//! Three KATs:
 //!
 //! - **KAT (a) — Known-square test**: For a hand-built K and a γ that IS a known square β²
 //!   in K, Couveignes recovers β (up to sign) and |Norm(β)| matches the hand-computed Y.

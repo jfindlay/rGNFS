@@ -29,7 +29,7 @@
 //! The engineering heart of NFS — the ``log p`` mark-then-confirm pattern — is present in code,
 //! but its yield advantage over brute-force trial division only becomes visible at cryptographic
 //! scale (``B ≈ 10^7``, ``A ≈ 10^7``, ``B_rat/B_alg ≈ 10^6``). This is annotated here and in
-//! ``gnfs/docs/PEDAGOGY.md`` (G.C.W) per ROADMAP principle 4.
+//! ``gnfs/docs/PEDAGOGY.md`` per ROADMAP principle 4.
 //!
 //! # Entry surface
 //!

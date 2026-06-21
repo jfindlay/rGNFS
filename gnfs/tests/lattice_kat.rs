@@ -1,11 +1,11 @@
-//! Known-answer tests (KATs) for the lattice sieve (G.C.4).
+//! Known-answer tests (KATs) for the lattice sieve.
 //!
-//! Three KATs are required by the G.C.4 session spec:
+//! Three KATs:
 //!
 //! (a) The lattice-enumerated ``(a, b)`` pairs all lie in ``L_q``
 //!     (i.e., ``a ≡ r_q·b (mod q)``).
 //!
-//! (b) The lattice sieve reproduces a subset of the G.C.3 relations for the same ``q``.
+//! (b) The lattice sieve reproduces a subset of the special-q sieve relations for the same ``q``.
 //!
 //! (c) The yield-per-area improvement over line sieving is annotated as under-exposed at
 //!     toy scale (principle 4).
@@ -241,7 +241,7 @@ fn kat_a4_reduced_basis_q7_r5_is_correct() {
     );
 }
 
-// ─── KAT (b): Lattice sieve reproduces a subset of G.C.3 relations ────────────
+// ─── KAT (b): Lattice sieve reproduces a subset of special-q sieve relations ──
 
 /// KAT (b): The lattice sieve for ``q = 7`` reproduces a subset of the special-q sieve
 /// relations for the same ``q``.
@@ -297,7 +297,7 @@ fn kat_b_lattice_sieve_subset_of_special_q_sieve() {
 /// ``N_alg(5, 1) = 119 = 7×17``, so ``7 | 119`` ✓.
 /// ``N_rat(5, 1) = 5 − 1·2 = 3``, which is smooth over ``B_rat = 30`` ✓.
 ///
-/// This is the canonical KAT relation from G.C.1 and G.C.3.
+/// This is the canonical KAT relation from the factor-base and special-q sieve KATs.
 #[test]
 fn kat_b2_spot_check_known_relation_q7() {
     let poly = toy_poly_pair();
@@ -345,7 +345,7 @@ fn kat_b2_spot_check_known_relation_q7() {
 /// - The special-q line sieve steps through ``a`` in increments of ``q`` for each ``b``,
 ///   which is equivalent but less cache-friendly at large scale.
 /// - The lattice sieve enables **bucket sieving** (a further engineering optimization,
-///   out of scope for G.C.4) by grouping lattice points into cache-sized buckets.
+///   out of scope for the lattice sieve) by grouping lattice points into cache-sized buckets.
 ///
 /// **At toy scale (small ``A``, ``B``, ``q``), this advantage is not visible.** The lattice
 /// enumeration covers the same ``(a, b)`` pairs as the special-q line sieve for the same

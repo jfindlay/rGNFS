@@ -479,7 +479,7 @@ fn deduplicate_entries<F: Fp<L>, const L: usize>(
 /// The virtual-log table extracted from an F_ℓ solver solution.
 ///
 /// Maps factor-base element index → log_g(element) mod ℓ, as recovered from the
-/// kernel vector of the DL relation matrix. This is the table D.C's individual-log
+/// kernel vector of the DL relation matrix. This is the table the individual-log
 /// descent consumes.
 ///
 /// # Column layout (matching DLMatrix / build_fl_matrix)

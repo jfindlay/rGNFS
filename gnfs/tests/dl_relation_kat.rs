@@ -1,6 +1,6 @@
-//! Known-answer tests (KATs) for DL relation collection (D.A.2).
+//! Known-answer tests (KATs) for DL relation collection.
 //!
-//! This file verifies the D.A.2 deliverable: augmenting sieve relations with Schirokauer
+//! This file verifies the DL relation collection deliverable: augmenting sieve relations with Schirokauer
 //! columns and assembling the DL relation matrix.
 //!
 //! # KAT structure

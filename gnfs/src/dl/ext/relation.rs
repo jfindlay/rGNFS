@@ -1,10 +1,10 @@
 //! Extension relation collection for NFS-DL over F_{p^k}.
 //!
-//! # Contract C-ExtFactorBase (frozen D.E.2) — relation-collection half
+//! # Extension factor-base contract — relation-collection half
 //!
 //! This module adapts the standard NFS-DL relation collection ([`augment_relation`]) to the
 //! extension setting: relations collected against an F_{p^k} target, with Schirokauer columns
-//! computed over ℓ in the extension setting (C-Schirokauer's r>1, already carried).
+//! computed over ℓ in the extension setting (r>1 multi-coordinate shape, already carried).
 //!
 //! ## Algorithm
 //!
@@ -22,19 +22,19 @@
 //!
 //! The `init_ext_descent_frontier` function adapts `init_descent_frontier` to an extension
 //! target h ∈ F_{p^k}*: it finds an exponent e such that `g^e · h` (expressed via the
-//! C-ExtTarget residue map) is smooth over the extension factor base.
+//! extension-target residue map) is smooth over the extension factor base.
 //!
 //! ## Schirokauer map in the extension setting
 //!
-//! The Schirokauer map (C-Schirokauer, frozen D.A.1) is already r>1 capable — it takes a
-//! slice of `PrimeIdeal`s and returns a `Vec<BigInt>` of length r. In the extension setting,
-//! we use r ≥ 2 ideals above ℓ in K to exercise the r>1 multi-coordinate shape. The existing
-//! `compute_schirokauer` handles this cleanly (no modification needed).
+//! The Schirokauer map is already r>1 capable — it takes a slice of `PrimeIdeal`s and returns
+//! a `Vec<BigInt>` of length r. In the extension setting, we use r ≥ 2 ideals above ℓ in K
+//! to exercise the r>1 multi-coordinate shape. The existing `compute_schirokauer` handles
+//! this cleanly (no modification needed).
 //!
 //! ## Rigidity guard
 //!
 //! The number field K = ℚ[α]/(f) stays char-0. The extension-field arithmetic (F_{p^k})
-//! appears only in the residue map (C-ExtTarget) — it does not leak into the relation-
+//! appears only in the residue map (extension-target contract) — it does not leak into the relation-
 //! collection algebra. The `ExtTarget` is used only to express the DL target h; the sieve
 //! algebra remains over ℚ[α]/(f).
 
@@ -57,12 +57,12 @@ use crate::{
 /// exponent at index `fb.base.algebraic_size()` (the extension column). The Schirokauer
 /// columns are computed with r ≥ 2 ideals (exercising the r>1 multi-coordinate shape).
 ///
-/// # Contract C-ExtFactorBase (frozen D.E.2)
+/// # Extension factor-base contract
 ///
-/// This is the unit `augment_ext_relation` produces and D.E.3's descent consumes.
+/// This is the unit `augment_ext_relation` produces and the k>1 descent consumes.
 /// The `base` field is a `DLRelation` whose algebraic exponent vector has been extended
 /// with the degree-k prime column — it is ready to be passed to `ExtFactorBase::build_dl_matrix`
-/// and then to the unchanged `build_fl_matrix` (C-LinAlgFl).
+/// and then to the unchanged `build_fl_matrix` (F_ℓ linear-algebra substrate).
 #[derive(Debug, Clone)]
 pub struct ExtDLRelation {
     /// The underlying DL relation, with the degree-k prime exponent folded into the
@@ -95,7 +95,7 @@ impl ExtDLRelation {
 /// Adapts [`augment_relation`] to the extension setting:
 /// 1. Constructs β = a + b·α in K = ℚ[α]/(f).
 /// 2. Evaluates the Schirokauer map with `schirokauer_ideals` (r ≥ 1; r>1 exercises the
-///    multi-coordinate shape from C-Schirokauer).
+///    multi-coordinate shape of the Schirokauer map).
 /// 3. Records the degree-k prime's exponent in the algebraic exponent vector at index
 ///    `ext_prime_col_idx` (= `fb.base.algebraic_size()`).
 /// 4. Returns an [`ExtDLRelation`] wrapping the augmented `DLRelation`.
@@ -132,7 +132,7 @@ pub fn augment_ext_relation<'a>(
     let alpha = nf.alpha();
     let beta = a_elt.add(&b_elt.mul(&alpha));
 
-    // Evaluate the Schirokauer map (r>1 capable; C-Schirokauer frozen D.A.1).
+    // Evaluate the Schirokauer map (r>1 capable).
     let schirokauer_cols = compute_schirokauer(&beta, ell, schirokauer_ideals)?;
 
     // Fold the degree-k prime exponent into the algebraic exponent vector.
@@ -334,7 +334,7 @@ mod tests {
     /// KAT: a hand-built extension relation augments correctly with Schirokauer columns
     /// over ℓ, exercising r>1.
     ///
-    /// This is the primary C-ExtFactorBase KAT: verifies that:
+    /// This is the primary extension factor-base KAT: verifies that:
     /// 1. The Schirokauer columns are computed correctly (r=2, r>1 shape).
     /// 2. The degree-k prime exponent is correctly folded into the algebraic exponent vector.
     /// 3. The F_ℓ matrix assembles via the unchanged `build_fl_matrix`.
@@ -506,10 +506,10 @@ mod tests {
 
     /// KAT: the existing Schirokauer map handles r>1 cleanly in the extension setting.
     ///
-    /// This is the "confirm r>1 works cleanly" check from the PLAN subtleties. The
-    /// Schirokauer map (C-Schirokauer, frozen D.A.1) was over-specified for r>1 at D.A.1.
-    /// This KAT verifies that `compute_schirokauer` with r=2 ideals returns a Vec of length 2
-    /// without modification — the existing map handles the extension setting cleanly.
+    /// This is the "confirm r>1 works cleanly" check. The Schirokauer map was over-specified
+    /// for r>1 from the start. This KAT verifies that `compute_schirokauer` with r=2 ideals
+    /// returns a Vec of length 2 without modification — the existing map handles the extension
+    /// setting cleanly.
     ///
     /// If this KAT fails, it is a discovery (additive-reshard candidate), not a silent patch.
     #[test]

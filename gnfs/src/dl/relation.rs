@@ -1,8 +1,8 @@
 //! DL relation collection: augmenting sieve relations with Schirokauer columns.
 //!
-//! This module implements the D.A.2 deliverable: taking smooth factoring relations from the
+//! This module implements DL relation collection: taking smooth factoring relations from the
 //! sieve and augmenting each with Schirokauer virtual-log columns to produce the DL relation
-//! matrix that D.B's F_ℓ linear algebra will consume.
+//! matrix that the F_ℓ linear-algebra step will consume.
 //!
 //! # Algorithm
 //!
@@ -17,12 +17,13 @@
 //! - Algebraic exponent columns (one per algebraic factor-base ideal).
 //! - Schirokauer columns (one per prime ideal in the Schirokauer ideal set).
 //!
-//! D.B will reduce the exponent columns mod ℓ and the Schirokauer columns are already in ℤ/ℓ.
+//! The F_ℓ linear-algebra step reduces the exponent columns mod ℓ; the Schirokauer columns
+//! are already in ℤ/ℓ.
 //!
 //! # Scope
 //!
-//! D.A.2 stops at producing the augmented DL relation matrix. The F_ℓ linear algebra
-//! (solving the system to recover discrete logarithms) is D.B's responsibility.
+//! This module stops at producing the augmented DL relation matrix. The F_ℓ linear algebra
+//! (solving the system to recover discrete logarithms) is the next pipeline stage.
 
 use num_bigint::BigInt;
 use shared_numfield::NumberField;
@@ -82,8 +83,8 @@ pub fn augment_relation<'a>(
 /// - `algebraic_size` algebraic exponent columns (one per algebraic factor-base ideal).
 /// - `schirokauer_rank` Schirokauer columns (one per prime ideal in the Schirokauer set).
 ///
-/// D.B consumes this matrix to solve the F_ℓ linear system for discrete logarithms.
-/// The raw integer values are stored here; D.B reduces the exponent columns mod ℓ.
+/// The F_ℓ linear-algebra step consumes this matrix to solve the system for discrete logarithms.
+/// The raw integer values are stored here; the F_ℓ step reduces the exponent columns mod ℓ.
 #[derive(Debug, Clone)]
 pub struct DLMatrix {
     /// The DL relation rows.

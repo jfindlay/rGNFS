@@ -8,18 +8,19 @@
 //!
 //! 1. Call `kv.expand_provenance(matrix)` to recover the relation index set S.
 //! 2. Form the product P = ∏_{i ∈ S}(a_i − b_i·m) over ℤ.
-//! 3. Assert P > 0 (the sign column in G.E guarantees an even count of negative rational norms;
-//!    a negative P is an upstream kernel/sign-column bug, surfaced with a clear panic).
+//! 3. Assert P > 0 (the sign column in the linear algebra step guarantees an even count of
+//!    negative rational norms; a negative P is an upstream kernel/sign-column bug, surfaced
+//!    with a clear panic).
 //! 4. Call `isqrt(&P)` (from `shared_bigint`). If `None`, panic: the product is not a perfect
 //!    square, indicating an upstream kernel/sign-column bug.
 //! 5. Reduce X = isqrt_result mod N and return X.
 //!
 //! # Sign invariant
 //!
-//! The `rational_sign` field on each `Relation` records whether `a − b·m < 0`. The G.E linear
+//! The `rational_sign` field on each `Relation` records whether `a − b·m < 0`. The linear
 //! algebra step (via the sign/obstruction column) selects only subsets S where the count of
 //! negative rational norms is even, so P = ∏(a_i − b_i·m) is guaranteed positive. A negative P
-//! means the sign column was not honoured — an upstream G.E bug, not a normal path.
+//! means the sign column was not honoured — an upstream linear algebra bug, not a normal path.
 
 use num_bigint::BigInt;
 use num_traits::{Signed, Zero};
@@ -72,12 +73,13 @@ pub fn rational_sqrt(
         product *= factor;
     }
 
-    // Step 3: assert P > 0. A negative product is an upstream G.E bug (sign column not honoured).
+    // Step 3: assert P > 0. A negative product is an upstream linear algebra bug (sign column
+    // not honoured).
     if product.is_negative() {
         panic!(
             "rational_sqrt: rational norm product is negative — upstream kernel/sign-column bug \
-             (the sign column in G.E must guarantee an even count of negative rational norms; \
-             product = {product})"
+             (the sign column in the linear algebra step must guarantee an even count of negative \
+             rational norms; product = {product})"
         );
     }
 

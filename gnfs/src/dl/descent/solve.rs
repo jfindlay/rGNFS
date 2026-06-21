@@ -1,26 +1,26 @@
-//! NFS-DL solver entry point: `solve_dl` (C2 interface), initialization-smoothing,
+//! NFS-DL solver entry point: `solve_dl` (cross-track interface), initialization-smoothing,
 //! log assembly, and the context-bearing `solve_dl_full` implementation.
 //!
 //! This module provides:
 //!
-//! - [`solve_dl`] — the cross-track C2 interface (frozen D.C.1, finalized D.C.3): compute
-//!   `log_g(h)` in `F_{p^k}*` via NFS-DL. The k = 1 path is live; k > 1 returns
-//!   [`SolveDlError::Unsupported`]. This is the frozen public API consumed by E.C.
+//! - [`solve_dl`] — the cross-track `solve_dl` interface: compute `log_g(h)` in `F_{p^k}*`
+//!   via NFS-DL. The k = 1 path is live; k > 2 returns [`SolveDlError::Unsupported`].
+//!   This is the frozen public API consumed by the MOV bridge.
 //! - [`solve_dl_full`] — the context-bearing implementation: takes a [`SolveDlContext`]
 //!   bundling the NFS polynomial, factor base, virtual-log table, and sieve config. This is
-//!   what the end-to-end KAT exercises; `solve_dl` is the frozen interface E.C will call.
+//!   what the end-to-end KAT exercises; `solve_dl` is the frozen interface the MOV bridge calls.
 //! - [`SolveDlContext`] — bundles the pipeline parameters needed by `solve_dl_full`.
 //! - [`init_descent_frontier`] — the first descent step: find an exponent `e` such that
 //!   `g^e · h mod p` is smooth over primes up to `medium_bound`, producing the initial frontier.
 //! - [`assemble_log`] — walk the descent tree from leaves (known virtual logs) up to the root,
 //!   accumulating `log q = Σ log(child)` mod ℓ at each node.
-//! - [`SolveDlError`] — error type for `solve_dl` (shape frozen D.C.1, taxonomy finalized D.C.3).
+//! - [`SolveDlError`] — error type for `solve_dl` (taxonomy finalized at integration).
 //! - [`InitSmoothingError`] / [`DescentStepError`] — error types for the descent substrate.
 //!
-//! # Contract C2 (shape frozen D.C.1, finalized D.C.3)
+//! # `solve_dl` interface
 //!
-//! `solve_dl` is the cross-track interface consumed by E.C (the MOV bridge). Its signature and
-//! the `SolveDlError` taxonomy are **frozen** at D.C.3. No further variants will be added.
+//! `solve_dl` is the cross-track interface consumed by the MOV bridge. Its signature and
+//! the `SolveDlError` taxonomy are **frozen**. No further variants will be added.
 //!
 //! # Relationship between `solve_dl` and `solve_dl_full`
 //!
@@ -28,7 +28,7 @@
 //! or `VirtualLogTable` because those are not part of the cross-track interface. For the full
 //! pipeline (relation collection → F_ℓ solve → virtual-log table → descent → assembly), use
 //! `solve_dl_full(g, h, p, k, ell, ctx)` where `ctx: &SolveDlContext` bundles the pipeline
-//! parameters. The end-to-end KAT calls `solve_dl_full`; E.C calls `solve_dl`.
+//! parameters. The end-to-end KAT calls `solve_dl_full`; the MOV bridge calls `solve_dl`.
 //!
 //! # Log assembly
 //!
@@ -60,8 +60,8 @@ use crate::sieve::FactorBase;
 
 /// Error type for [`solve_dl`].
 ///
-/// The error taxonomy is **finalized at D.C.3**. No further variants will be added.
-/// E.C consumes this taxonomy.
+/// The error taxonomy is **finalized** (at full-pipeline integration). No further variants
+/// will be added. The MOV bridge consumes this taxonomy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SolveDlError {
     /// Extension degree k is beyond the toy ceiling (k > 2).
@@ -69,10 +69,10 @@ pub enum SolveDlError {
     /// k=1 (prime field F_p) and k=2 (extension field F_{p²}) are supported. k>2 is beyond
     /// the toy ceiling and returns this variant immediately without attempting any computation.
     ///
-    /// # D.E.3 ◆ note
+    /// # Extension wiring note
     ///
-    /// Before D.E.3, this variant fired for all k>1. After D.E.3, it fires only for k>2.
-    /// The taxonomy is FROZEN (D.C.3); no new variants will be added.
+    /// After the k=2 extension path was wired, this variant fires only for k>2.
+    /// The taxonomy is frozen; no new variants will be added.
     Unsupported {
         /// The unsupported extension degree.
         k: usize,
@@ -96,14 +96,14 @@ pub enum SolveDlError {
         /// The prime that could not be descended.
         stuck_prime: u64,
     },
-    // ─── D.C.3 taxonomy freeze ────────────────────────────────────────────────
+    // ─── Taxonomy freeze ──────────────────────────────────────────────────────
     //
-    // D.C.2 descent reality revealed no additional failure modes beyond the three above.
-    // The assembly step (D.C.3) can fail if a node's children are not all resolved, but
+    // Descent reality revealed no additional failure modes beyond the three above.
+    // The assembly step can fail if a node's children are not all resolved, but
     // this is a programming error (invariant violation), not a runtime failure mode — it
     // is surfaced as a panic rather than a new error variant.
     //
-    // The taxonomy is now FROZEN. E.C consumes exactly these three variants.
+    // The taxonomy is frozen. The MOV bridge consumes exactly these three variants.
 }
 
 impl std::fmt::Display for SolveDlError {
@@ -190,7 +190,8 @@ impl std::error::Error for DescentStepError {}
 ///
 /// # Relationship to `solve_dl`
 ///
-/// `solve_dl(g, h, p, k, ell)` is the frozen C2 interface consumed by E.C. It does not
+/// `solve_dl(g, h, p, k, ell)` is the frozen cross-track interface consumed by the MOV bridge.
+/// It does not
 /// take a `SolveDlContext` because the cross-track interface is parameter-minimal. For the
 /// full pipeline (including descent and assembly), use `solve_dl_full` with a context.
 ///
@@ -322,13 +323,13 @@ pub fn assemble_log<F: Clone>(
 /// one `DescentNode` per prime factor (with multiplicity — a prime appearing twice is pushed
 /// twice).
 ///
-/// # D.C.1 scope
+/// # Initial implementation scope
 ///
-/// At D.C.1, this function does not distinguish "medium primes" (above the factor-base bound)
-/// from "factor-base primes" (below it). All prime factors of the smooth candidate are pushed
-/// onto the frontier as `DescentTarget::Rational` nodes. D.C.2/D.C.3 will integrate the real
-/// `FactorBase` to detect leaf nodes (factor-base elements with known virtual logs) and only
-/// push non-leaf primes onto the frontier.
+/// In the initial implementation, this function does not distinguish "medium primes" (above
+/// the factor-base bound) from "factor-base primes" (below it). All prime factors of the
+/// smooth candidate are pushed onto the frontier as `DescentTarget::Rational` nodes. The
+/// full descent integration uses the real `FactorBase` to detect leaf nodes (factor-base
+/// elements with known virtual logs) and only push non-leaf primes onto the frontier.
 ///
 /// # Arguments
 ///
@@ -418,9 +419,10 @@ pub fn init_descent_frontier<F: Clone>(
 /// - [`SolveDlError::InitSmoothingFailed`] if initialization-smoothing fails.
 /// - [`SolveDlError::DescentFailed`] if a frontier prime cannot be descended.
 ///
-/// # Scope (C2 frozen D.C.3, extended D.E.3 ◆)
+/// # Scope
 ///
-/// This is the **frozen C2 interface** consumed by E.C. Its signature will not change.
+/// This is the **frozen `solve_dl` interface** consumed by the MOV bridge. Its signature
+/// will not change.
 ///
 /// - **k = 1 (prime field F_p):** Runs initialization-smoothing. Without a
 ///   [`SolveDlContext`], the descent and assembly cannot proceed. If the frontier is
@@ -442,13 +444,13 @@ pub fn solve_dl(
     ell: &BigInt,
 ) -> Result<BigInt, SolveDlError> {
     // k > 2: beyond the toy ceiling — Unsupported.
-    // k = 2: the extension field path (D.E.3).
-    // k = 1: the prime field path (D.C.3).
+    // k = 2: the extension field path.
+    // k = 1: the prime field path.
     if k > 2 {
         return Err(SolveDlError::Unsupported { k });
     }
 
-    // k = 2: delegate to the extension descent (D.E.3).
+    // k = 2: delegate to the extension descent.
     if k == 2 {
         return solve_dl_ext(g, h, p, k, ell).map_err(|e| match e {
             crate::dl::ext::descent::SolveDlExtError::UnsupportedDegree { k } => {
@@ -468,13 +470,14 @@ pub fn solve_dl(
     }
 
     // Step 2: Initialization-smoothing.
-    // For the frozen C2 interface, use a hardcoded medium_bound (toy scale).
+    // For the frozen `solve_dl` interface, use a hardcoded medium_bound (toy scale).
     // The full pipeline (with FactorBase and VirtualLogTable) is in solve_dl_full.
     let medium_bound = compute_medium_bound(p);
     let max_attempts = 1000u64;
 
     // Use u64 as the log type for the frontier nodes (known_log is None for all frontier
-    // nodes at this stage; the type parameter is only needed for leaf nodes in D.C.2/D.C.3).
+    // nodes at this stage; the type parameter is only needed for leaf nodes in the full
+    // descent + assembly path).
     let result = init_descent_frontier::<u64>(g, h, p, medium_bound, max_attempts);
 
     let (_e, mut frontier) = result.map_err(|err| match err {
@@ -755,13 +758,13 @@ mod tests {
 
     #[test]
     fn solve_dl_k2_does_not_return_unsupported() {
-        // k=2 is now wired (D.E.3); it must NOT return Unsupported.
+        // k=2 is wired (extension field path); it must NOT return Unsupported.
         // The result may be Ok or a known Err variant (InitSmoothingFailed / DescentFailed),
         // but must not be Unsupported.
         let result = solve_dl(&bi(2), &bi(3), &bi(11), 2, &bi(10));
         assert!(
             !matches!(result, Err(SolveDlError::Unsupported { .. })),
-            "k=2 must not return Unsupported (D.E.3 wired); got: {:?}",
+            "k=2 must not return Unsupported (extension field path wired); got: {:?}",
             result
         );
     }

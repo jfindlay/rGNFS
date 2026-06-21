@@ -1,6 +1,6 @@
 //! Known-answer tests (KATs) for the filter substrate: sparse GF(2) matrix and singleton removal.
 //!
-//! Three KATs are required by the G.D.1 session spec:
+//! Three KATs:
 //!
 //! 1. **Matrix construction KAT**: build a small hand-crafted relation set over a toy FactorBase.
 //!    Assert column count, row count, column sets, and provenance.

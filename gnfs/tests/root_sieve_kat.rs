@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for the root sieve (G.B.3).
+//! Known-answer tests (KATs) for the root sieve.
 //!
 //! The root sieve applies Kleinjung-style rotation `f' = f + (j·x + k)·g` over a grid
 //! of `(j, k)` values, scoring each candidate with Murphy-E and returning the best.

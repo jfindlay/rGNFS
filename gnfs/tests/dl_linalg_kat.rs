@@ -1,7 +1,7 @@
-//! Known-answer tests (KATs) for D.B.1 and D.B.2: F_ℓ linear-algebra substrate,
-//! block Lanczos, scalar Wiedemann, and virtual-log recovery.
+//! Known-answer tests (KATs) for the F_ℓ linear-algebra substrate: block Lanczos, scalar
+//! Wiedemann, and virtual-log recovery.
 //!
-//! D.B.1 KATs (three required):
+//! Initial substrate KATs (three required):
 //!
 //! - **KAT (a) — F_ℓ arithmetic KAT**: `FlBlockVec` operations match hand-computed F_ℓ values.
 //!   Tests `inner_product_matrix` on a small known example with ℓ = 7, verifying the result
@@ -15,7 +15,7 @@
 //!   with a known right kernel), call `block_lanczos_fl`, verify A·x ≡ 0 mod ℓ for the
 //!   returned solution vector.
 //!
-//! D.B.2 KATs (added here):
+//! Block Wiedemann + virtual-log recovery KATs (added here):
 //!
 //! - **KAT (d) — Block-Wiedemann-F_ℓ KAT**: `block_wiedemann_fl` finds a kernel vector for
 //!   the same 4×3 F_ℓ system used in KAT (c), cross-validating the two solvers.

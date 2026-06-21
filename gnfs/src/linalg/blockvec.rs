@@ -11,7 +11,7 @@
 ///
 /// Principle-4 annotation: at toy scale a single word suffices and the blocking overhead
 /// is invisible; at NFS scale the word-wide block is the inner loop's cache-friendly unit.
-/// The width is the scale knob — D.B may widen to 128 or parameterise over block width.
+/// The width is the scale knob — the F_ℓ extension may widen to 128 or parameterise over block width.
 pub const BLOCK_WIDTH: usize = 64;
 
 // ─── BlockVec ─────────────────────────────────────────────────────────────────
@@ -22,12 +22,12 @@ pub const BLOCK_WIDTH: usize = 64;
 /// value at row `i`. This is the "row of words" layout: iterating over rows is contiguous,
 /// and the 64 vectors are interleaved bit-by-bit within each word.
 ///
-/// # D.B generalisation note
+/// # F_ℓ generalisation note
 ///
 /// For F_ℓ (ℓ > 2), the natural generalisation is `data: Vec<[Scalar; BLOCK_WIDTH]>` where
 /// `Scalar` is the field element type. The GF(2) specialisation packs 64 scalars into one
-/// `u64`. D.B may introduce a `BlockVec<S>` generic or a parallel `BlockVecFl` type; the
-/// *interface* (inner products, apply, apply_transpose) is the stable seam.
+/// `u64`. The F_ℓ extension may introduce a `BlockVec<S>` generic or a parallel `BlockVecFl`
+/// type; the *interface* (inner products, apply, apply_transpose) is the stable seam.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlockVec {
     /// Packed row data: `data[row]` bit `j` = vector `j`'s value at `row`.

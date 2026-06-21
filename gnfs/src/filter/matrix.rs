@@ -1,10 +1,10 @@
 //! Sparse GF(2) matrix with relation-provenance map for GNFS filtering.
 //!
-//! This module defines the core data structures consumed by G.D.1 (singleton removal),
-//! G.D.2 (clique pruning and merging), and G.E (linear algebra). The representation is
-//! row-major (each row = sorted ``Vec<usize>`` of set-column indices) with a maintained
-//! column-weight side table, balancing the needs of row-XOR operations (G.D.2 merging)
-//! and column-weight queries (singleton removal).
+//! This module defines the core data structures consumed by singleton removal, clique pruning
+//! and merging, and the linear algebra step. The representation is row-major (each row =
+//! sorted ``Vec<usize>`` of set-column indices) with a maintained column-weight side table,
+//! balancing the needs of row-XOR operations (merging) and column-weight queries (singleton
+//! removal).
 //!
 //! # Column layout
 //!
@@ -13,25 +13,25 @@
 //! - ``[0, rational_size)``: rational factor-base columns.
 //! - ``[rational_size, rational_size + algebraic_size)``: algebraic factor-base columns.
 //! - ``[rational_size + algebraic_size, matrix_width)``: obstruction columns (sign bit first,
-//!   then quadratic-character columns filled by G.E).
+//!   then quadratic-character columns filled by the linear algebra step).
 //!
 //! # Provenance
 //!
 //! Each row carries a sorted, deduplicated ``Vec<usize>`` of *original* relation indices
 //! (indices into the ``Vec<Relation>`` passed to ``build_matrix``). For a freshly built row,
-//! provenance = ``[original_index]``. Under G.D.2 merging, provenance is combined by sorted
-//! union. G.F expands a nullspace vector by collecting ``row.provenance`` for each selected
-//! row and recovering the original ``(a, b)`` pairs.
+//! provenance = ``[original_index]``. Under merging, provenance is combined by sorted union.
+//! The square root step expands a nullspace vector by collecting ``row.provenance`` for each
+//! selected row and recovering the original ``(a, b)`` pairs.
 
 // ─── EXCESS_FLOOR ─────────────────────────────────────────────────────────────
 
-/// Minimum excess G.D.2 pruning must preserve.
+/// Minimum excess the clique pruning step must preserve.
 ///
 /// excess = rows − (columns − obstruction_count). At toy scale any positive excess
 /// suffices for a non-trivial nullspace; 20 is a conservative floor that keeps the
 /// matrix well-overdetermined. Annotated as scale-dependent (principle-4): at
 /// cryptographic scale the floor is typically set to ~200 or a fraction of the column
-/// count. G.D.1 defines the constant; G.D.2 enforces it during clique pruning.
+/// count. Singleton removal defines the constant; clique pruning enforces it.
 pub const EXCESS_FLOOR: usize = 20;
 
 // ─── MatrixRow ────────────────────────────────────────────────────────────────
@@ -45,16 +45,17 @@ pub const EXCESS_FLOOR: usize = 20;
 /// - ``[rational_size, rational_size + algebraic_size)``: algebraic columns.
 /// - ``[rational_size + algebraic_size, matrix_width)``: obstruction columns
 ///   (sign at ``rational_size + algebraic_size``; quadratic-character columns follow —
-///   G.E fills those; G.D carries them as zeros).
+///   the linear algebra step fills those; the filtering step carries them as zeros).
 ///
 /// ``provenance`` is a sorted, deduplicated ``Vec<usize>`` of *original* relation indices
 /// (indices into the ``Vec<Relation>`` passed to ``build_matrix``). For a freshly built
-/// row, provenance = ``[original_index]``. Under merge (G.D.2), provenance is combined
-/// by sorted union. G.F expands a nullspace vector by collecting ``row.provenance`` for
-/// each selected row and recovering the original ``(a, b)`` pairs.
+/// row, provenance = ``[original_index]``. Under merge (clique pruning and merging),
+/// provenance is combined by sorted union. The square root step expands a nullspace vector
+/// by collecting ``row.provenance`` for each selected row and recovering the original
+/// ``(a, b)`` pairs.
 ///
 /// Provenance stores original indices, not pre-reduced row sums — over-specified per
-/// the Discoveries & risks note so G.F can recover actual ``(a, b)`` pairs without
+/// the provenance design so the square root step can recover actual ``(a, b)`` pairs without
 /// re-deriving anything.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatrixRow {
@@ -67,7 +68,7 @@ pub struct MatrixRow {
 impl MatrixRow {
     /// XOR this row with ``other`` in GF(2), unioning their provenance sets.
     ///
-    /// Used by G.D.2 merging: combining two rows that share a column eliminates
+    /// Used by clique pruning and merging: combining two rows that share a column eliminates
     /// that column (symmetric difference of ``cols``) and unions their provenance.
     ///
     /// :param other: The row to XOR with.
@@ -132,13 +133,13 @@ impl MatrixRow {
 ///
 /// Total columns = ``FactorBase::matrix_width()`` = rational_size + algebraic_size + obstruction_count.
 /// The obstruction block starts at ``obstruction_col_start`` = rational_size + algebraic_size.
-/// Singleton removal and merging (G.D.2) skip any column >= ``obstruction_col_start``.
+/// Singleton removal and merging skip any column >= ``obstruction_col_start``.
 ///
 /// ``col_weights[c]`` = number of rows with a 1 in column ``c``. Maintained in sync with
 /// ``rows`` by all mutating operations (``remove_row``, ``xor_merge_rows``).
 ///
-/// ``excess()`` = rows.len() − (num_cols − obstruction_count). G.D.1 reports it; G.D.2
-/// enforces >= ``EXCESS_FLOOR``.
+/// ``excess()`` = rows.len() − (num_cols − obstruction_count). Singleton removal reports it;
+/// clique pruning enforces >= ``EXCESS_FLOOR``.
 #[derive(Debug, Clone)]
 pub struct SparseMatrix {
     /// The rows of the matrix, each with its column set and provenance.
@@ -157,7 +158,7 @@ impl SparseMatrix {
     /// Current excess: rows.len() − (num_cols − obstruction_count).
     ///
     /// Positive excess means the matrix is overdetermined (more rows than non-obstruction
-    /// columns), which is required for a non-trivial nullspace. G.D.2 enforces
+    /// columns), which is required for a non-trivial nullspace. Clique pruning enforces
     /// excess >= ``EXCESS_FLOOR`` during pruning.
     pub fn excess(&self) -> isize {
         self.rows.len() as isize - (self.num_cols as isize - self.obstruction_count as isize)
@@ -165,7 +166,7 @@ impl SparseMatrix {
 
     /// Remove a row by index, updating ``col_weights``.
     ///
-    /// Used by singleton removal (G.D.1) and clique pruning (G.D.2).
+    /// Used by singleton removal and clique pruning.
     ///
     /// IMPORTANT: uses ordered removal (``Vec::remove``, not ``swap_remove``) to preserve
     /// row-index stability during singleton fixpoint iteration.

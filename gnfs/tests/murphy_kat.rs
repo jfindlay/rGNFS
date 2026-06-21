@@ -1,4 +1,4 @@
-//! Known-answer tests (KATs) for Murphy-E polynomial scoring (G.B.2).
+//! Known-answer tests (KATs) for Murphy-E polynomial scoring.
 //!
 //! Murphy-E is a heuristic float, so the KATs test *ordering and self-consistency*
 //! rather than exact values:
