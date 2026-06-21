@@ -256,18 +256,27 @@ arc 2 runs.
   carries compiler blast radius). *Feeds REFACTOR + CONSOLIDATE → C-Coherence; binding on EXTEND
   naming.*
 
-### Open questions for the human (resolve at SURVEY close or earlier)
+### Open questions for the human — RESOLVED (ratified 2026-06-21 at D. REFACTOR shard)
 
-- Does the `rho`-hosts-Track-E overload (D5) warrant a crate split, or is the pedagogical "attacks
-  live with the rho baseline they're measured against" framing worth preserving? (Cohesion vs
-  organisation tension.)
-- C-Testing-Philosophy (D2): your lean — adopt template's 100% gate wholesale, or a math-library-
-  specific coverage doctrine?
-- F-EXTEND scope ceiling: if SURVEY finds genuine spectrum gaps, is arc 2 the place to fill them, or
-  do they become an arc-3 roadmap (keeping arc 2 consolidation-focused)?
-- C-Coherence (D9): for borderline groupings where track and topic nearly-but-not-exactly coincide,
-  what's the default — preserve the grouping under a topic label, or dissolve it into a purer topical
-  organization? (Sets how aggressively REFACTOR/CONSOLIDATE cut.)
+All four open-Qs surfaced at SURVEY close were ratified by the human at the D. REFACTOR shard,
+accepting the A.7 adjudicator recommendations:
+
+- **Q1 — `rho`-hosts-Track-E overload (D5): RATIFIED keep-with-baseline (no crate split).** The 8
+  Track-E attack modules stay co-located with the Pollard-rho baseline. Rationale: the E.W
+  cross-attack bench measures the attacks against the rho baseline; shared `rho::curve`/`rho::field`
+  types; "attacks live with the baseline they're measured against" pedagogy is load-bearing. Binds
+  C-Layout (frozen at REFACTOR D.6).
+- **Q2 — Coverage gate value (D2): RATIFIED 80% floor, ALIGN re-tunes to measured baseline.** The
+  doctrine shape (math-behavior KAT primary; line coverage a dead-code floor) is frozen
+  (C-Testing-Philosophy); ALIGN calibrates the number against a real `cargo llvm-cov` baseline.
+- **Q3 — F-EXTEND scope ceiling (D7): RATIFIED defer to arc-3.** The one genuine gap (hyperelliptic
+  Jacobian DLP via Gaudry index calculus) is real but self-contained; arc-2's spine is
+  consolidation/alignment. F-EXTEND in arc-2 reduces to a recommendations note (a deliberate
+  non-extension); the gap becomes an arc-3 roadmap candidate.
+- **Q4 — C-Coherence borderline default (D9): RATIFIED preserve-under-topic-label.** Coarse
+  groupings that map onto real mathematical families (Track-X labels; coarse G.*/S.* pipeline/Shor
+  stages) keep the grouping under a topic-native label; only fine-grained S.X.Y / G.X.Y session IDs
+  are pure residue and dissolve. Binds REFACTOR (code-half, D.4/D.5) and CONSOLIDATE (prose-half).
 
 ---
 
@@ -280,7 +289,7 @@ All not-started at construction. `/plan-shard` marks in-progress; the reconcile 
 | A. SURVEY | **done** (A.7 ◆ closed 2026-06-21; findings ledger frozen in docs/SURVEY.md; contracts frozen in docs/PLAN.md) |
 | B. ALIGN | not-started |
 | C. ORACLE | not-started |
-| D. REFACTOR | not-started |
+| D. REFACTOR | **in progress** (sharded 2026-06-21; 6 sessions, opus juncture; open-Qs 1 & 4 ratified) |
 | E. CONSOLIDATE | not-started |
 | F. EXTEND | not-started (content gated on SURVEY; scope-ceiling open-Q for human) |
 
@@ -354,3 +363,16 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
     → ORACLE; new algorithm/chapter → EXTEND. A finding routed to the wrong campaign is the
     primary cross-campaign defocus mode.
   A. SURVEY status: **done**. B–F campaigns: not-started (gated on SURVEY findings now frozen).
+- **2026-06-21 — D. REFACTOR sharded (sub-track-boundary reconciliation).** Second arc-2 sub-track
+  opened; first *campaign* (SURVEY was the substrate). `/plan-shard` from `@architect` decomposed
+  REFACTOR into 6 sessions: D.1 (Opus) collapses the contrived `rho` re-export wrappers + freezes
+  C-Layout (compiler-enforced); D.2–D.5 (Sonnet) execute the code-depth de-provenancing
+  (F-D9-01…06, ~524 doc-comment tokens) by crate weight (rho 55% / gnfs 21% / shor+shared 24%),
+  rho split at the Phase-N-vs-sub-track-ID token-class seam; D.6 ◆ (Opus @architect) freezes
+  C-Layout + C-Coherence code-half and folds up. `juncture-tier: opus` **held** despite the lever-5
+  opt-down being available (strong test loop + low criticality, the first arc-2 sub-track where it
+  is) — honoring REFACTOR's pre-committed blast-radius-node status; the D.1 wrapper-collapse proved
+  a genuine structural change. All four SURVEY open-Qs ratified (above). Design finding folded up:
+  the `rho` wrappers shadowed an existing upstream alias (`shared_field::FpMonty4`) and preserved
+  no parameterization the generic `Fp<L>` trait does not already give — the collapse removes
+  contrivance, not capability. D. REFACTOR status: **in progress**.
