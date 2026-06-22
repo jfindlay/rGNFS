@@ -301,8 +301,19 @@ The SURVEY-frozen contracts (C-Findings, C-Testing-Philosophy, C-Coherence prose
 here and restated only where REFACTOR binds them; the not-yet-frozen ones (C-DocsLayer, C-MathSpine,
 C-Oracle) are untouched and remain "to be frozen at <campaign>."
 
-### C-Layout *(compiler)* — **FROZEN at D.6 ◆**
+### C-Layout *(compiler)* — **FROZEN at D.6 ◆ (ratified)**
 
+- **Ratification (D.6 ◆, 2026-06-21).** The collapse landed at D.1 (`42e2356`) and is verified
+  complete: `cargo check --workspace` and `cargo test --workspace` are both green at the D.5 terminus
+  (`3ef9aca`). `rho/src/field/{mod,monty,naive}.rs`, `rho/src/util/{batch_inv,mp,mod}.rs` are removed;
+  `rho` imports `shared_field::{Fp, FpNaive4, FpMonty4}` and `shared_bigint::batch_invert` directly
+  (confirmed at call-sites, e.g. `rho/benches/attacks.rs:30`); the `F: Fp<4>` trait bounds are
+  preserved; no crate split; no other `shared/*` dedup. The compiler-enforced contract is **the proof
+  is the green workspace** — this is the lever-5-strong reality the PLAN names. **The layout is final
+  and binds CONSOLIDATE + EXTEND.** Two collapse-forced extras (digest D.1) are ratified as mechanical
+  consequences, not scope violations: `shor/Cargo.toml` gained a `shared-field` dev-dep (the compiler
+  forced it once `rho::field::FpMonty` was no longer re-exported), and `monty.rs`/`naive.rs` under
+  `rho/src/field/` turned out to be dead code never declared in `mod.rs` (removed with the wrapper).
 - **Defined-in:** D.1 (the collapse) + D.6 ◆ (the ratified freeze). A.2 (SURVEY) produced the
   layout-audit findings; open-Q 1 resolved the crate-split question.
 - **Consumed-by:** CONSOLIDATE (docs reference the final layout), EXTEND (new code sits in it).
@@ -327,8 +338,34 @@ C-Oracle) are untouched and remain "to be frozen at <campaign>."
   crates" → defocus (F-D5-03). The frozen layout is the boundary every later campaign is checked
   against.
 
-### C-Coherence *(prose)* — code-half **FROZEN at D.6 ◆**; prose-half **to be frozen at CONSOLIDATE**
+### C-Coherence *(prose)* — code-half **FROZEN at D.6 ◆ (ratified, with a recorded residue)**; prose-half **to be frozen at CONSOLIDATE**
 
+- **Ratification (D.6 ◆, 2026-06-21).** The cataloged code-depth residue (F-D9-01…06) is scrubbed
+  across D.2–D.5 (`89f1e22`, `84b993c`, `f2302a4`, `3ef9aca`) — the ~524-token catalog re-anchored
+  (the diffs touch more lines than that, since re-anchoring rewrites collateral surrounding text),
+  the full KAT suite identically green throughout (inertness invariant held). **Completeness ≈ 99%
+  against the catalog; fidelity confirmed.** The three load-bearing carve-outs all held (verified):
+  the algorithmic `Phase 1/2/3` step-indices in `rho/src/ecdlp/walk.rs` and `Phase 1/2` in
+  `rho/src/index_calculus/solve.rs` are preserved; the quantum-phase-estimation `Phase N/M` tokens
+  in `shor/tests/factor_kat.rs` are preserved. The named contract-label residue
+  (`C-AnomalousLift`/`C-IndexCalc`/`C-Pairing`) is removed. The codebase's own
+  **interface-contract vocabulary** (`C-StateVec`, `C-PointAdd`, `C-ModExp`, `C-QFT`, `C-Factor`,
+  `C-OrderFind`, `C-Sparse`, `C-Relation`, `C-Ideal`, `C-Res`, `C-NF`, `C-AlgSqrt`, `C-Padic`,
+  `C-Hensel`, `C-PadicLog`, `C-HyperCurve`, `C-MovBridge`) is **correctly preserved** — these are
+  arc-1 design vocabulary naming living interfaces, not planning-frame residue; scrubbing them would
+  be the defocus failure mode. Fidelity exemplar: `shor/src/lib.rs` had `(C-PointAdd, frozen S.C.1)`
+  — D.5 stripped the construction-history half and kept the interface name, exactly the intended
+  re-anchoring.
+- **Recorded residue (completeness gap, surfaced to the human — NOT a freeze blocker).** Five
+  pure-residue sub-track-ID tokens escaped the D.2–D.5 sweep, all behaviourally inert doc-comment
+  text in lower-density peripheral files: (1) `rho/src/curve/test_curves.rs:36` `Pohlig–Hellman
+  (E.A.2)`; (2) `rho/src/curve/test_curves.rs:139` `Pohlig–Hellman (E.A)`; (3–4)
+  `rho/benches/attacks.rs:20,26` `E.W table` / `E.W.2 chapter` (the line-1 `E.W.1` *was* scrubbed at
+  D.3; interior refs were missed); (5) `rho/tests/hyperelliptic_kat.rs:6` `## E.I.2` section header.
+  Per lever-3 (de-provenancing cost = LOW, trivially reversible, no downstream chain consumes the
+  wording) this is a rigidity-side miss, not a defocus or scope error, and is recorded for a fast
+  follow-up or fold into CONSOLIDATE (which owns the prose-half coherence sweep and will be in these
+  files' neighbourhood). The code-half freeze stands with this residue logged.
 - **Defined-in:** SURVEY A.7 (the catalog + classification, already frozen). REFACTOR D.6 freezes the
   **code-half execution** (the cataloged code-depth tokens are scrubbed); CONSOLIDATE freezes the
   prose-half.
@@ -379,12 +416,12 @@ contract(s) each session froze).
 
 | #   | Session                                                              | Status  | Commit | Froze |
 |-----|---------------------------------------------------------------------|---------|--------|-------|
-| D.1 | Collapse `rho` re-export wrappers + freeze final crate layout       | done    | 42e2356 | C-Layout (compiler, pending D.6 ratification); extras: `shor/Cargo.toml` (dev-dep forced by collapse), `shor/tests/ecdlp_kat.rs`, `Cargo.lock` |
+| D.1 | Collapse `rho` re-export wrappers + freeze final crate layout       | done    | 42e2356 | C-Layout (compiler, ratified at D.6); extras: `shor/Cargo.toml` (dev-dep forced by collapse), `shor/tests/ecdlp_kat.rs`, `Cargo.lock` |
 | D.2 | Re-anchor `rho` baseline doc-comment provenance                     | done    | 89f1e22 |       |
 | D.3 | Re-anchor `rho` attack-module provenance + rename the one test id   | done    | 84b993c |       |
 | D.4 | Re-anchor `gnfs` doc-comment provenance                             | done    | f2302a4 |       |
 | D.5 | Re-anchor `shor` + `shared/*` doc-comment provenance                | done    | 3ef9aca |       |
-| D.6 | ◆ Freeze C-Layout + C-Coherence code-half; fold up                  | pending |        |       |
+| D.6 | ◆ Freeze C-Layout + C-Coherence code-half; fold up                  | done    | 9f01faa | C-Layout (compiler, FROZEN); C-Coherence code-half (prose, FROZEN, ~99% completeness, 5-token residue for CONSOLIDATE) |
 
 ---
 
@@ -400,6 +437,12 @@ Discovery/flex: `rho/src/field/` had 3 files (monty.rs, naive.rs were dead code 
 Affected: C-Layout (no change to layout premise; extras are mechanical consequences of the collapse)
 Deferred: no
 Texture: Both discoveries are internal-continue; the `shor` dev-dep addition is a structural necessity (compiler-forced), not a REFACTOR-scope violation. C-Layout is established; D.6 ratifies.
+
+### D.6 — 2026-06-21
+Discovery/flex: ~1% completeness gap — five pure-residue sub-track-ID tokens escaped the D.2–D.5 sweep (behaviourally inert, lower-density peripheral files).
+Affected: C-Coherence code-half (freeze stands; residue recorded in contract subsection)
+Deferred: yes — fold into CONSOLIDATE (which owns the prose-half coherence sweep and will be in these files' neighbourhood); not a blocker for any downstream campaign.
+Texture: C-Layout ratified clean (green workspace proof). C-Coherence code-half frozen at ~99% completeness; the 5-token residue is a rigidity-side miss per lever-3, not a defocus or scope error.
 
 ---
 
@@ -432,6 +475,18 @@ The reverse flow — discoveries accrued here folded back *up* into the ROADMAP 
   Coarse pipeline/Shor-stage groupings keep the grouping, drop the letter-id; fine-grained IDs
   dissolve. **Internal-continue → apply the ratified default;** a genuinely-new borderline case the
   catalog did not anticipate is a digest note for D.6, not a reshard.
+- **~5 residue tokens escaped the D.2–D.5 sweep (recorded at D.6 ◆, NOT a freeze blocker) —
+  flagged for CONSOLIDATE.** Five pure-residue sub-track-ID tokens in lower-density peripheral
+  files were not caught by the D.2–D.5 sessions: (1) `rho/src/curve/test_curves.rs:36`
+  `Pohlig–Hellman (E.A.2)`; (2) `rho/src/curve/test_curves.rs:139` `Pohlig–Hellman (E.A)`;
+  (3–4) `rho/benches/attacks.rs:20,26` `E.W table` / `E.W.2 chapter` (the line-1 `E.W.1` was
+  scrubbed at D.3; interior refs were missed); (5) `rho/tests/hyperelliptic_kat.rs:6` `## E.I.2`
+  section header. All are behaviourally inert doc-comment text. Per lever-3 (de-provenancing cost
+  = LOW, trivially reversible, no downstream chain consumes the wording) this is a rigidity-side
+  miss, not a defocus or scope error. The code-half freeze stands with this residue logged.
+  **Recommended disposition: fold into CONSOLIDATE** (which owns the prose-half coherence sweep
+  and will be in these files' neighbourhood); alternatively, a fast follow-up scrub before
+  CONSOLIDATE opens.
 - **Risk — additive reshard at D.6.** If D.1–D.5 surface a *layout* concern SURVEY missed (a real
   dedup or peering need beyond F-D5-02/03), that is an **additive reshard** surfaced at D.6, never a
   silent scope expansion. If a finding *invalidates C-Layout's premise* (e.g. the collapse breaks a
