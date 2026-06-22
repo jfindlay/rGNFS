@@ -278,6 +278,38 @@ accepting the A.7 adjudicator recommendations:
   stages) keep the grouping under a topic-native label; only fine-grained S.X.Y / G.X.Y session IDs
   are pure residue and dissolve. Binds REFACTOR (code-half, D.4/D.5) and CONSOLIDATE (prose-half).
 
+### D. REFACTOR discoveries (folded up at D.6 ◆, 2026-06-21)
+
+- **D10 — `rho/src/field/` had 3 files, not 1 (D.1 discovery).** `rho/src/field/mod.rs` was the
+  25-line re-export wrapper; `monty.rs` and `naive.rs` were dead code never declared in `mod.rs`.
+  All three were removed with the wrapper collapse. No layout-premise change — the extras are
+  mechanical consequences of the collapse.
+- **D11 — `shor/Cargo.toml` required a `shared-field` dev-dep (D.1 collapse-forced).** Before the
+  collapse, `shor/tests/ecdlp_kat.rs` imported `rho::field::FpMonty` (the re-export wrapper). Once
+  `rho::field` was removed, the compiler forced a direct `shared-field` dev-dep in `shor/Cargo.toml`.
+  This is a structural necessity of the collapse, not a REFACTOR-scope violation. Recorded as a
+  mechanical consequence of C-Layout.
+- **D12 — C-Layout is now FROZEN (compiler-enforced, D.6 ◆).** Final crate layout: `rho/src/field/`
+  (`mod.rs`, `monty.rs`, `naive.rs`) and `rho/src/util/{batch_inv,mp,mod}.rs` removed; `rho` imports
+  `shared_field::{Fp, FpNaive4, FpMonty4}` and `shared_bigint::batch_invert` directly; `F: Fp<4>`
+  trait bounds preserved; no crate split (open-Q 1 ratified); no other `shared/*` dedup (F-D5-03).
+  Verified: `cargo check --workspace` and `cargo test --workspace` green at D.5 terminus (`3ef9aca`).
+  Binds CONSOLIDATE (docs reference final layout) and EXTEND (new code sits in it).
+- **D13 — C-Coherence code-half is FROZEN (D.6 ◆, with ~1% residue for CONSOLIDATE).** All ~524
+  cataloged F-D9-01…06 code-depth tokens re-anchored across D.2–D.5 (`89f1e22`, `84b993c`,
+  `f2302a4`, `3ef9aca`). Completeness ≈ 99%: five residue tokens escaped the sweep —
+  `rho/src/curve/test_curves.rs:36` (E.A.2), `:139` (E.A), `rho/benches/attacks.rs:20,26`
+  (E.W table / E.W.2 chapter), `rho/tests/hyperelliptic_kat.rs:6` (## E.I.2). All behaviourally
+  inert; recommended for CONSOLIDATE (which will be in these files' neighbourhood). The three
+  load-bearing carve-outs held: algorithmic `Phase 1/2/3` step-indices in `rho/src/ecdlp/walk.rs`
+  and `rho/src/index_calculus/solve.rs` preserved; quantum-phase-estimation `Phase N/M` tokens in
+  `shor/tests/factor_kat.rs` preserved. KAT suite identically green throughout (inertness invariant).
+- **D14 — `c_ek_relation_round_trip` renamed to `relation_round_trip` (D.3 scope).** The single
+  contract-label prefix (`c_ek_`) was removed from the test identifier in `rho/tests/
+  index_calculus_kat.rs`, within D.3's sub-track-ID + contract-label re-anchoring scope. Compiler-
+  and test-verified (the renamed test still passes). This is the only identifier rename in REFACTOR
+  (the `sub_track_close_curve_axioms_intact` → `binary_curve_axioms_intact` rename was also in D.3).
+
 ---
 
 ## Status
@@ -289,7 +321,7 @@ All not-started at construction. `/plan-shard` marks in-progress; the reconcile 
 | A. SURVEY | **done** (A.7 ◆ closed 2026-06-21; findings ledger frozen in docs/SURVEY.md; contracts frozen in docs/PLAN.md) |
 | B. ALIGN | not-started |
 | C. ORACLE | not-started |
-| D. REFACTOR | **in progress** (sharded 2026-06-21; 6 sessions, opus juncture; open-Qs 1 & 4 ratified) |
+| D. REFACTOR | **done** (D.6 ◆ closed 2026-06-21; C-Layout + C-Coherence code-half frozen; discoveries folded up) |
 | E. CONSOLIDATE | not-started |
 | F. EXTEND | not-started (content gated on SURVEY; scope-ceiling open-Q for human) |
 
@@ -375,4 +407,11 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
   a genuine structural change. All four SURVEY open-Qs ratified (above). Design finding folded up:
   the `rho` wrappers shadowed an existing upstream alias (`shared_field::FpMonty4`) and preserved
   no parameterization the generic `Fp<L>` trait does not already give — the collapse removes
-  contrivance, not capability. D. REFACTOR status: **in progress**.
+  contrivance, not capability. D. REFACTOR status: **in progress** (at shard time; closed at D.6 ◆, see below).
+- **2026-06-21 — D. REFACTOR closed at D.6 ◆ (C-Layout + C-Coherence code-half frozen).** All six
+  sessions complete. C-Layout FROZEN (compiler-enforced): `rho/src/field/` and `rho/src/util/
+  {batch_inv,mp,mod}.rs` removed; `rho` imports `shared_field::{Fp, FpNaive4, FpMonty4}` and
+  `shared_bigint::batch_invert` directly; `F: Fp<4>` bounds preserved; no crate split; no other
+  `shared/*` dedup. C-Coherence code-half FROZEN: ~524 cataloged F-D9-01…06 tokens re-anchored
+  (≈99% completeness; ~5 residue tokens for CONSOLIDATE). KAT suite identically green throughout.
+  Durable discoveries D10–D14 folded into Discoveries log above. D. REFACTOR status: **done**.
