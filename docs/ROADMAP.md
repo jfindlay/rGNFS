@@ -1,4 +1,4 @@
-# rGNFS — Roadmap (Arc 2: Survey, Consolidation & Extension)
+# rDLP — Roadmap (Arc 2: Survey, Consolidation & Extension)
 
 The durable, project-lifetime view of the work. Updated only at sub-track boundaries.
 For the current sub-track's actionable detail, see `docs/PLAN.md`.
@@ -7,7 +7,7 @@ For the planning philosophy this document embodies, see
 `~/.config/opencode/multisession/multi-session-planning.md` (the two-frame model).
 
 **Arc 1 (the original implementation) is complete** — five tracks (ρ, G, D, E, S), six shared
-crates, ~83 commit-shaped sessions, closed at `201df39` ("rGNFS complete"). The arc-1 roadmap that
+crates, ~83 commit-shaped sessions, closed at `201df39` ("rDLP complete"). The arc-1 roadmap that
 governed that work is preserved in git history at the commit prior to this document's introduction.
 This is the **arc-2 roadmap**: a meta-campaign over the now-complete codebase — survey, revision,
 consolidation, refactoring, and addendum/appendix work — plus a gated algorithmic-extension slot.
@@ -16,7 +16,7 @@ consolidation, refactoring, and addendum/appendix work — plus a gated algorith
 
 ## Design intent
 
-**Take the complete arc-1 rGNFS — a self-consistent, pedagogically clear Rust reference library for
+**Take the complete arc-1 rDLP — a self-consistent, pedagogically clear Rust reference library for
 discrete-logarithm and integer-factorisation algorithms — and bring it to a finished, disciplined,
 internally-coherent standard: aligned with its project seed, audited across docs/layout/testing,
 equipped with a live correctness oracle, with its mathematical exposition reading as a continuous
@@ -64,7 +64,7 @@ findings ledger; every campaign is **gated behind survey findings** — the road
   ┌───────────┐  ┌───────────┐    ┌───────────┐    ┌────────────┐    ┌──────────────┐
   │ B. ALIGN  │  │ C. ORACLE │    │ D.REFACTOR│───▶│E.CONSOLIDATE│   │  F. EXTEND   │
   │ template  │  │ CADO-NFS  │    │ crate     │    │ docs-layer  │   │ spectrum     │
-  │ ↔ rGNFS   │  │ sidecar   │    │ layout +  │    │ + math      │   │ additions    │
+  │ ↔ rDLP   │  │ sidecar   │    │ layout +  │    │ + math      │   │ additions    │
   │formalities│  │ build     │    │ dedup     │    │ continuity  │   │ (content TBD) │
   └───────────┘  └───────────┘    └─────┬─────┘    └──────┬──────┘   └──────┬───────┘
                                         │  (layout settles │ before docs    │
@@ -105,17 +105,17 @@ findings ledger; every campaign is **gated behind survey findings** — the road
   label). Each dimension's findings land as Discoveries-log entries that shape the campaigns.
   Category: **substrate (audit)** — high-judgment, wide design surface, front-loaded.
 
-- **B. ALIGN**. Charge: reconcile rGNFS with its `~/Source/rust-template` seed in **both
-  directions** — backport template formalities rGNFS lacks (per survey: `deny.toml`, `rustfmt.toml`,
+- **B. ALIGN**. Charge: reconcile rDLP with its `~/Source/rust-template` seed in **both
+  directions** — backport template formalities rDLP lacks (per survey: `deny.toml`, `rustfmt.toml`,
   `rust-toolchain.toml`, `LICENSE`, the `[lints]` table, a coverage gate, `development.md`), and
-  forward rGNFS-originated discipline worth seeding back into the template (multisession docs
+  forward rDLP-originated discipline worth seeding back into the template (multisession docs
   layering, the dev-oracle policy, the docs-register contracts). Category: **integrative / substrate
   (formalities)**. Largely independent of the other campaigns.
 
 - **C. ORACLE**. Charge: specify and build the **dynamic CADO-NFS sidecar** — automated build for
   regression and comparison testing, available both automatically (CI/test harness) and on-demand
   (user-invoked). Honors the arc-1 dev-oracle policy (CADO as opt-in validation sidecar, never part
-  of how rGNFS computes). Category: **substrate (test infrastructure) + integrative**. Largely
+  of how rDLP computes). Category: **substrate (test infrastructure) + integrative**. Largely
   independent.
 
 - **D. REFACTOR**. Charge: restructure crate peering/organisation and eliminate duplicative code,
@@ -160,7 +160,7 @@ junctures.
 | **C-MathSpine** | prose | CONSOLIDATE → EXTEND | The textbook's suggested-path spine, notation, voice, audience. Any EXTEND chapter must slot into this spine, not append incoherently. Frozen at CONSOLIDATE. |
 | **C-Coherence** | prose | SURVEY → REFACTOR, CONSOLIDATE, EXTEND | The artifact-stands-on-its-own-terms principle: the finished library is organized and named by mathematical topic, not by planning track/phase; provenance residue is re-anchored, groupings that coincide with a topic are kept under topic labels. Frozen at SURVEY (the residue catalog + the keep/rename classification); enforced by REFACTOR (identifiers) and CONSOLIDATE (prose), and binding on all EXTEND naming. |
 | **C-Oracle** | test | ORACLE → regression suite | The CADO-NFS sidecar build + invocation interface (automatic + on-demand). Downstream regression/comparison tests consume it. Frozen at ORACLE close. |
-| **C-TemplateSeed** | prose | ALIGN ↔ rust-template | The agreed bidirectional formalities set: what flows template→rGNFS and what flows rGNFS→template. Recorded so future template-derived projects inherit the reconciled discipline. |
+| **C-TemplateSeed** | prose | ALIGN ↔ rust-template | The agreed bidirectional formalities set: what flows template→rDLP and what flows rDLP→template. Recorded so future template-derived projects inherit the reconciled discipline. |
 
 ---
 
@@ -206,7 +206,7 @@ arc 2 runs.
 
 ### Construction-time seeds (from intent + substrate read)
 
-- **D1 — Template-formalities gap (confirmed, partial).** rGNFS workspace root lacks `deny.toml`,
+- **D1 — Template-formalities gap (confirmed, partial).** rDLP workspace root lacks `deny.toml`,
   `rustfmt.toml`, `rust-toolchain.toml`, `LICENSE`, the `[lints]` table, a coverage gate, and a
   `development.md` — all present in `rust-template`. SURVEY must confirm scope (per-crate vs
   workspace-level lints) and decide each item's flow direction. *Feeds ALIGN.*
@@ -353,7 +353,7 @@ revision triggers an inflection-point Opus juncture, not an ad-hoc edit by a Son
   stale arc-1 *terminus* PLAN.md (Z.1+T.Z, done at `201df39`) is superseded by the SURVEY PLAN.
 - **2026-06-21 — A. SURVEY closed at A.7 ◆ (findings ledger frozen).** All nine audit dimensions
   confirmed audited across A.1–A.6. Key findings folded up from `docs/SURVEY.md` and `docs/PLAN.md`:
-  - **D1 (ALIGN scope):** 8 absent root formalities items confirmed (F-D1-01…09); 3 rGNFS→template
+  - **D1 (ALIGN scope):** 8 absent root formalities items confirmed (F-D1-01…09); 3 rDLP→template
     forward-seeds recorded (F-D1-10…12). All 12 findings feed ALIGN.
   - **D2 (C-Testing-Philosophy frozen):** math-behavior KAT coverage is the primary correctness
     target; 80% line gate as a dead-code floor (gate value open-Q for human); two-tier test pattern

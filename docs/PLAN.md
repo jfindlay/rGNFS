@@ -2,7 +2,7 @@
 juncture-tier: opus
 -->
 
-# rGNFS — Current Plan: D. REFACTOR (arc-2 layout + code-depth de-provenancing)
+# rDLP — Current Plan: D. REFACTOR (arc-2 layout + code-depth de-provenancing)
 
 The rolling, current-sub-track view of the work, in `/plan-run`-executable form (session list +
 contracts + ledger + digest). Rewritten at sub-track boundaries. For the project-lifetime view, see

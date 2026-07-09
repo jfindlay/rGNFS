@@ -1,4 +1,4 @@
-# rGNFS — Mathematical Textbook
+# rDLP — Mathematical Textbook
 
 *A standing mathematical survey of discrete-logarithm and integer-factorisation algorithms.*
 *Maths-first, code-second, learnable on its own.*
@@ -121,7 +121,7 @@ integrative code-tour was written as the E.W chapter of the master tour, not as 
 that was a structural mis-pairing corrected here at T.Z.
 
 **Note on Ch. 12 (Modularity).** Chapter 12 has no code-tour sibling. The modularity
-correspondence is not implemented in the rGNFS workspace; the chapter is a mathematical survey and
+correspondence is not implemented in the rDLP workspace; the chapter is a mathematical survey and
 speculation. See §12.7 for the explicit statement.
 
 The code-tour cites the textbook chapter for the mathematics; the textbook chapter cites the
@@ -3871,7 +3871,7 @@ large-scale quantum computers exist, because:
    migration from RSA-1024 to RSA-2048 is still incomplete. Starting the migration before the
    threat materialises is the only way to complete it in time.
 
-3. **The classical+quantum arc this project demonstrates is the reason.** The rGNFS project
+3. **The classical+quantum arc this project demonstrates is the reason.** The rDLP project
    documents the complete classical attack surface (Pollard rho, GNFS, NFS-DL, algebraic ECDLP
    attacks) and the quantum attack (Shor's algorithm). Together, they show that every classical
    hardness assumption underlying RSA and ECC is broken — classically by subexponential
@@ -4027,7 +4027,7 @@ avoid the fatal torsion-point leakage.
 
 ### §11.7 The Migration Rationale: Closing the Through-Line
 
-The rGNFS project documents the complete arc from classical to quantum cryptanalysis:
+The rDLP project documents the complete arc from classical to quantum cryptanalysis:
 
 - **Track ρ (Pollard rho):** the generic $\sqrt{n}$ bound and the birthday-paradox collision
   argument — the baseline that every subsequent attack must beat.
@@ -4538,7 +4538,7 @@ is honest about its own uncertainty, and that honesty is the point.
 #### Code realisation
 
 This chapter has no code-tour sibling. The modularity correspondence is not implemented in the
-rGNFS workspace; no algorithm in this chapter is realised in code. The chapter is a mathematical
+rDLP workspace; no algorithm in this chapter is realised in code. The chapter is a mathematical
 survey and speculation, not a code-tour. The code-first umbrella (`docs/PEDAGOGY.md` §0) names
 the through-line and the five escape families; this chapter is the maths-first extension of that
 through-line into speculative territory.

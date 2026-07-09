@@ -1,4 +1,4 @@
-# rGNFS — Library-Wide Code-Tour: Structure-Based Escape from Search
+# rDLP — Library-Wide Code-Tour: Structure-Based Escape from Search
 
 > **Maths-first sibling.** For the mathematical foundations of every algorithm surveyed here —
 > the birthday-paradox collision argument, the $L$-notation hierarchy, the number-field bridge,
@@ -6,7 +6,7 @@
 > structure-based escapes — see `docs/MATHEMATICS.md`. That file is the maths-first textbook;
 > this file is the code-first tour. Neither is a prerequisite for the other.
 
-This document is the library-wide code-tour for the rGNFS workspace. It surveys all five tracks
+This document is the library-wide code-tour for the rDLP workspace. It surveys all five tracks
 of the project — ρ (Pollard rho), G (GNFS), D (NFS-DL), E (algebraic ECDLP attacks), and S
 (Shor's algorithm) — as chapters in one story: the story of how each track finds a different kind
 of exploitable structure that escapes the generic search bound. The code is the example; this

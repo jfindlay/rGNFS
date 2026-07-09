@@ -1,4 +1,4 @@
-# rGNFS — Survey Findings (Arc 2: A. SURVEY)
+# rDLP — Survey Findings (Arc 2: A. SURVEY)
 
 Findings-only ledger. Each entry names the item, its flow direction, and the consuming campaign.
 No config, code, or doc content is written here — ALIGN/ORACLE/REFACTOR/CONSOLIDATE/EXTEND do that.
@@ -10,8 +10,8 @@ Sessions: A.1 (done) · A.2–A.7 (pending).
 ## A.1 — Template-formalities gap, both flow directions (D1)
 
 **Charge:** audit every formalities item present in `~/Source/rust-template` but absent at the
-rGNFS workspace root, assign a flow direction (template→rGNFS backport or rGNFS→template
-forward-seed), and note scope (per-crate vs workspace-level). Also enumerate rGNFS-originated
+rDLP workspace root, assign a flow direction (template→rDLP backport or rDLP→template
+forward-seed), and note scope (per-crate vs workspace-level). Also enumerate rDLP-originated
 discipline worth seeding back. Feeds C-TemplateSeed; consumed by ALIGN.
 
 **Observed state of `~/Source/rust-template` root:**
@@ -19,30 +19,30 @@ discipline worth seeding back. Feeds C-TemplateSeed; consumed by ALIGN.
 `docs/NOTES.md`, `LICENSE`, `README.md`, `rustfmt.toml`, `src/`, `target/`, `tests/`.
 No `rust-toolchain.toml` at template root.
 
-**Observed state of rGNFS workspace root:**
+**Observed state of rDLP workspace root:**
 `.gitignore`, `Cargo.lock`, `Cargo.toml`, `docs/`, `gnfs/`, `README.md`, `rho/`, `shared/`,
 `shor/`, `target/`.
 No `deny.toml`, `rustfmt.toml`, `rust-toolchain.toml`, `LICENSE`, `development.md`, `.cargo/`.
 
 ---
 
-### F-D1-01 · `deny.toml` absent at rGNFS root
+### F-D1-01 · `deny.toml` absent at rDLP root
 
-**Direction:** template → rGNFS (backport).
+**Direction:** template → rDLP (backport).
 **Scope:** workspace-level (one file at root; applies to all 9 crates).
 **Template content:** advisories (`yanked = "deny"`), licenses allowlist
 (`MIT`, `Apache-2.0`, `Unicode-3.0`, `GPL-3.0`, `BSD-3-Clause`), bans
 (`multiple-versions = "warn"`), sources (`unknown-registry = "deny"`, `unknown-git = "deny"`).
-**Finding:** `deny.toml` absent at rGNFS root → ALIGN adds it at workspace root.
+**Finding:** `deny.toml` absent at rDLP root → ALIGN adds it at workspace root.
 
 ---
 
-### F-D1-02 · `rustfmt.toml` absent at rGNFS root
+### F-D1-02 · `rustfmt.toml` absent at rDLP root
 
-**Direction:** template → rGNFS (backport).
+**Direction:** template → rDLP (backport).
 **Scope:** workspace-level (one file at root; `cargo fmt --all` picks it up for all crates).
 **Template content:** `max_width = 100` (mirrors the 100-char wrap convention).
-**Finding:** `rustfmt.toml` absent at rGNFS root → ALIGN adds it at workspace root.
+**Finding:** `rustfmt.toml` absent at rDLP root → ALIGN adds it at workspace root.
 
 ---
 
@@ -64,15 +64,15 @@ This is an open-Q for ALIGN to resolve; A.1 records the gap and the mis-scoping.
 
 ---
 
-### F-D1-04 · `LICENSE` absent at rGNFS root
+### F-D1-04 · `LICENSE` absent at rDLP root
 
-**Direction:** template → rGNFS (backport).
+**Direction:** template → rDLP (backport).
 **Scope:** workspace-level (one file at root; covers all 9 crates).
 **Template content:** GNU General Public License v3.0 (GPL-3.0-or-later). The template's
 `Cargo.toml` declares `license = "GPL-3.0-or-later"` and `deny.toml` allows `GPL-3.0` in the
 license allowlist.
-**Finding:** `LICENSE` absent at rGNFS root → ALIGN adds GPL-3.0 `LICENSE` at workspace root.
-Note: rGNFS crate `Cargo.toml` files do not carry a `license` field; ALIGN should also add
+**Finding:** `LICENSE` absent at rDLP root → ALIGN adds GPL-3.0 `LICENSE` at workspace root.
+Note: rDLP crate `Cargo.toml` files do not carry a `license` field; ALIGN should also add
 `license = "GPL-3.0-or-later"` to each crate manifest (or to the workspace root manifest via
 `[workspace.package]` inheritance if the resolver supports it).
 
@@ -80,7 +80,7 @@ Note: rGNFS crate `Cargo.toml` files do not carry a `license` field; ALIGN shoul
 
 ### F-D1-05 · `[lints]` table present in 3/9 crates only; absent from workspace root
 
-**Direction:** template → rGNFS (backport), promoted to workspace-level.
+**Direction:** template → rDLP (backport), promoted to workspace-level.
 **Scope:** workspace-level `[workspace.lints]` table (Rust 1.74+, resolver = "2" already set) is
 the correct target — avoids per-crate repetition and ensures uniform lint policy across all 9 crates.
 **Template content:** `[lints.rust]` (`unsafe_code = "forbid"`, `missing_docs = "warn"`) and
@@ -108,64 +108,64 @@ to all 9 crate manifests.
 
 ---
 
-### F-D1-06 · Coverage gate absent at rGNFS
+### F-D1-06 · Coverage gate absent at rDLP
 
-**Direction:** template → rGNFS (backport), but gate value/config deferred to A.3.
+**Direction:** template → rDLP (backport), but gate value/config deferred to A.3.
 **Scope:** workspace-level (one `cargo llvm-cov --workspace` invocation covers all 9 crates).
 **Template content:** `cargo llvm-cov --all-targets --fail-under-lines 100` (100% line coverage
 gate); `cargo-llvm-cov` listed as a required dev tool in `docs/development.md`; the `.cargo/
 config.toml` alias `coverage = "llvm-cov --all-targets --fail-under-lines 100"` makes it
 discoverable.
-**Finding:** no coverage gate exists at rGNFS → ALIGN adds one, honoring the doctrine A.3 will
+**Finding:** no coverage gate exists at rDLP → ALIGN adds one, honoring the doctrine A.3 will
 set. **The gate value (100% line vs math-behavior KAT threshold vs other) is A.3's decision;
 A.1 records only that the gap exists and that ALIGN is the implementing campaign.** The
 `cargo-llvm-cov` tool and the `.cargo/config.toml` alias are the implementation vehicles.
 
 ---
 
-### F-D1-07 · `development.md` absent at rGNFS
+### F-D1-07 · `development.md` absent at rDLP
 
-**Direction:** template → rGNFS (backport, adapted).
+**Direction:** template → rDLP (backport, adapted).
 **Scope:** workspace-level (one file, e.g. `docs/development.md`).
 **Template content:** toolchain table (cargo, rustfmt, clippy, cargo test, cargo-llvm-cov,
 cargo-deny), setup instructions, formatting commands, full check-suite four-command sequence,
 versioning convention, code conventions summary, testing conventions summary, project layout.
-**Finding:** `docs/development.md` absent at rGNFS → ALIGN adds it, adapted for the workspace
+**Finding:** `docs/development.md` absent at rDLP → ALIGN adds it, adapted for the workspace
 (9 crates, no binary entry point, workspace-level `cargo` invocations, the coverage doctrine
 A.3 sets, and the CADO-NFS sidecar ORACLE builds).
 
 ---
 
-### F-D1-08 · `.cargo/config.toml` (cargo aliases) absent at rGNFS
+### F-D1-08 · `.cargo/config.toml` (cargo aliases) absent at rDLP
 
-**Direction:** template → rGNFS (backport, adapted).
+**Direction:** template → rDLP (backport, adapted).
 **Scope:** workspace-level (`.cargo/config.toml` at workspace root applies to all `cargo`
 invocations in the workspace).
 **Template content:** aliases `lint`, `fmt-check`, `format`, `test-all`, `coverage`, `audit` —
 the "tox environments as pure-cargo aliases" pattern.
-**Finding:** `.cargo/config.toml` absent at rGNFS root → ALIGN adds it, adapted for the workspace
+**Finding:** `.cargo/config.toml` absent at rDLP root → ALIGN adds it, adapted for the workspace
 (workspace-scoped `--workspace` flags, coverage alias honoring A.3's doctrine, `audit` alias for
 `cargo deny check`).
 
 ---
 
-### F-D1-09 · `AGENTS.md` absent at rGNFS root
+### F-D1-09 · `AGENTS.md` absent at rDLP root
 
-**Direction:** template → rGNFS (backport, adapted).
+**Direction:** template → rDLP (backport, adapted).
 **Scope:** workspace-level (one file at root).
 **Template content:** agent guide with commands (`cargo build`, `cargo test --all-targets`,
 `cargo clippy`, `cargo fmt`, `cargo llvm-cov`, `cargo deny check`) and code conventions summary.
-**Finding:** `AGENTS.md` absent at rGNFS root → ALIGN adds it, adapted for the workspace
+**Finding:** `AGENTS.md` absent at rDLP root → ALIGN adds it, adapted for the workspace
 (workspace-level commands, the 9-crate structure, the CADO oracle policy, and the docs-layer
 discipline CONSOLIDATE will freeze).
 
 ---
 
-### F-D1-10 · rGNFS-originated discipline: multisession docs layering
+### F-D1-10 · rDLP-originated discipline: multisession docs layering
 
-**Direction:** rGNFS → template (forward-seed).
+**Direction:** rDLP → template (forward-seed).
 **Scope:** project-level docs convention (not a single file — a three-tier discipline).
-**rGNFS content:** `docs/PLAN.md` (current sub-track, actionable session list + contracts +
+**rDLP content:** `docs/PLAN.md` (current sub-track, actionable session list + contracts +
 ledger + digest) + `docs/ROADMAP.md` (project-lifetime view, updated only at sub-track
 boundaries) + `docs/NOTES.md` (rolling-context durable framings, distinct from plan and roadmap).
 The three-tier separation — rolling-context / sub-track / project-lifetime — prevents the
@@ -177,11 +177,11 @@ for single-crate projects (PLAN.md and ROADMAP.md at appropriate grain for a tem
 
 ---
 
-### F-D1-11 · rGNFS-originated discipline: dev-oracle policy
+### F-D1-11 · rDLP-originated discipline: dev-oracle policy
 
-**Direction:** rGNFS → template (forward-seed).
+**Direction:** rDLP → template (forward-seed).
 **Scope:** testing convention (prose policy + `#[ignore]` gate pattern).
-**rGNFS content:** all external-tool oracle KATs (PARI, msolve, CADO-NFS) are gated behind
+**rDLP content:** all external-tool oracle KATs (PARI, msolve, CADO-NFS) are gated behind
 `#[ignore = "PARI not installed; run manually when available"]` — the oracle is an opt-in
 validation sidecar, never on the green test path, never a production dependency. The policy is
 stated explicitly in `docs/PEDAGOGY.md` (Principle 3 verification) and is the arc-2 ORACLE
@@ -192,11 +192,11 @@ template's `docs/development.md` testing conventions section.
 
 ---
 
-### F-D1-12 · rGNFS-originated discipline: docs-register contracts (three-layer reference discipline)
+### F-D1-12 · rDLP-originated discipline: docs-register contracts (three-layer reference discipline)
 
-**Direction:** rGNFS → template (forward-seed).
+**Direction:** rDLP → template (forward-seed).
 **Scope:** docs architecture convention (prose policy).
-**rGNFS content:** a three-layer reference-direction discipline — (1) inline doc-comments
+**rDLP content:** a three-layer reference-direction discipline — (1) inline doc-comments
 (`///`/`//!`) for API-adjacent exposition; (2) per-crate `PEDAGOGY.md` human-code-reference
 tours (code-adjacent but human-facing, may reference code identifiers); (3) `docs/MATHEMATICS.md`
 textbook layer (mathematical exposition, references code only where useful). Each layer has
@@ -205,7 +205,7 @@ and is the subject of A.4's audit; CONSOLIDATE will freeze it as C-DocsLayer.
 **Finding:** template carries only `docs/NOTES.md` and `docs/development.md` — no layered
 reference-direction discipline → ALIGN seeds the three-layer concept into the template at
 appropriate grain for a single-crate project (inline / human-code-ref / agent-docs), adapted
-from the rGNFS three-layer model.
+from the rDLP three-layer model.
 
 ---
 
@@ -213,32 +213,32 @@ from the rGNFS three-layer model.
 
 | # | Item | Direction | Scope | Consuming campaign |
 |---|---|---|---|---|
-| F-D1-01 | `deny.toml` absent | template → rGNFS | workspace-level | ALIGN |
-| F-D1-02 | `rustfmt.toml` absent | template → rGNFS | workspace-level | ALIGN |
+| F-D1-01 | `deny.toml` absent | template → rDLP | workspace-level | ALIGN |
+| F-D1-02 | `rustfmt.toml` absent | template → rDLP | workspace-level | ALIGN |
 | F-D1-03 | `rho/rust-toolchain.toml` stale per-crate artifact | mis-scoped (promote or remove) | workspace hygiene | ALIGN |
-| F-D1-04 | `LICENSE` absent | template → rGNFS | workspace-level | ALIGN |
-| F-D1-05 | `[lints]` in 3/9 crates only | template → rGNFS | workspace-level `[workspace.lints]` | ALIGN |
-| F-D1-06 | coverage gate absent | template → rGNFS (gate value deferred to A.3) | workspace-level | ALIGN |
-| F-D1-07 | `development.md` absent | template → rGNFS | workspace-level | ALIGN |
-| F-D1-08 | `.cargo/config.toml` absent | template → rGNFS | workspace-level | ALIGN |
-| F-D1-09 | `AGENTS.md` absent | template → rGNFS | workspace-level | ALIGN |
-| F-D1-10 | multisession docs layering | rGNFS → template | project-level docs convention | ALIGN |
-| F-D1-11 | dev-oracle policy | rGNFS → template | testing convention | ALIGN |
-| F-D1-12 | docs-register contracts (three-layer) | rGNFS → template | docs architecture convention | ALIGN |
+| F-D1-04 | `LICENSE` absent | template → rDLP | workspace-level | ALIGN |
+| F-D1-05 | `[lints]` in 3/9 crates only | template → rDLP | workspace-level `[workspace.lints]` | ALIGN |
+| F-D1-06 | coverage gate absent | template → rDLP (gate value deferred to A.3) | workspace-level | ALIGN |
+| F-D1-07 | `development.md` absent | template → rDLP | workspace-level | ALIGN |
+| F-D1-08 | `.cargo/config.toml` absent | template → rDLP | workspace-level | ALIGN |
+| F-D1-09 | `AGENTS.md` absent | template → rDLP | workspace-level | ALIGN |
+| F-D1-10 | multisession docs layering | rDLP → template | project-level docs convention | ALIGN |
+| F-D1-11 | dev-oracle policy | rDLP → template | testing convention | ALIGN |
+| F-D1-12 | docs-register contracts (three-layer) | rDLP → template | docs architecture convention | ALIGN |
 
 ---
 
 ### Subtleties and deferrals
 
 **`rho/rust-toolchain.toml` (F-D1-03).** The template carries no `rust-toolchain.toml` at its
-root, so this is not a clean template→rGNFS backport. The `rho/` file (`channel = "stable"`,
+root, so this is not a clean template→rDLP backport. The `rho/` file (`channel = "stable"`,
 no version pin) is a stale per-crate artifact — it has no effective scope for workspace-level
 `cargo` invocations. ALIGN must decide: promote to workspace root with a concrete pin, or remove.
 A.1 records the mis-scoping; ALIGN owns the decision.
 
 **Coverage gate (F-D1-06).** The gap is recorded here; the gate value and doctrine are A.3's
 charge. A.1 does not decide whether 100% line coverage (template default) or a math-behavior
-KAT threshold is correct for rGNFS. ALIGN implements whatever doctrine A.3 sets.
+KAT threshold is correct for rDLP. ALIGN implements whatever doctrine A.3 sets.
 
 **`[lints]` promotion (F-D1-05).** The three crates that already carry `[lints]` (`shor`,
 `shared/padic`, `shared/gf2m`) use a slightly different form than the template (`all = "deny"`
@@ -250,9 +250,9 @@ field. Adding `LICENSE` at the workspace root (F-D1-04) is necessary but not suf
 `cargo deny` license checks — ALIGN should also add `license = "GPL-3.0-or-later"` to each
 crate manifest or use `[workspace.package]` inheritance.
 
-**rGNFS → template seeds (F-D1-10, F-D1-11, F-D1-12).** These are forward-seeds of discipline
+**rDLP → template seeds (F-D1-10, F-D1-11, F-D1-12).** These are forward-seeds of discipline
 the template currently lacks. They require adaptation (the template is a single-crate project;
-rGNFS is a 9-crate workspace). ALIGN owns the adaptation; A.1 records the direction and the
+rDLP is a 9-crate workspace). ALIGN owns the adaptation; A.1 records the direction and the
 content to seed.
 
 ---
@@ -1558,7 +1558,7 @@ topic and survive as pipeline-stage labels under topic-native names.
 
 **Charge:** audit the design space for the dynamic CADO-NFS sidecar — build-trigger model,
 version pinning strategy, what regression/comparison tests it would gate, and how it honors the
-arc-1 dev-oracle policy (CADO as opt-in validation sidecar, never part of how rGNFS computes).
+arc-1 dev-oracle policy (CADO as opt-in validation sidecar, never part of how rDLP computes).
 Feeds C-Oracle (sketch); consumed by ORACLE.
 
 **Observed state of CADO-NFS oracle tests in the codebase:**
@@ -1567,7 +1567,7 @@ Four `#[ignore]`-gated CADO-NFS oracle tests exist across the `gnfs` crate:
 
 | File | Test name | Oracle role |
 |---|---|---|
-| `gnfs/tests/line_sieve_kat.rs` | `kat_c_cado_nfs_oracle` | Compare relation count from rGNFS line sieve against CADO-NFS at matched parameters; tolerance ±3× (CADO uses large-prime relations) |
+| `gnfs/tests/line_sieve_kat.rs` | `kat_c_cado_nfs_oracle` | Compare relation count from rDLP line sieve against CADO-NFS at matched parameters; tolerance ±3× (CADO uses large-prime relations) |
 | `gnfs/tests/merge_kat.rs` | `kat_c_cado_nfs_oracle` | Compare filtered matrix dimensions (row count, column count, Hamming weight) against CADO output at matched parameters; tolerance ±10% on row count |
 | `gnfs/tests/lanczos_kat.rs` | `kat_c_cado_oracle_n35` | Expand Lanczos kernel vector through provenance to a congruence of squares; verify the factor matches what CADO-NFS finds for N=35 |
 | `gnfs/tests/factor_end_to_end_kat.rs` | `kat_c_oracle_80_100_bit_challenge` | Factor an 80–100-bit semiprime end-to-end; verify against CADO-NFS / msieve |
@@ -1619,7 +1619,7 @@ Two trigger models are possible:
 **Lazy/on-demand + opt-in CI flag.** Rationale:
 
 - **Arc-1 dev-oracle policy fidelity.** The policy is explicit: CADO-NFS is an opt-in validation
-  sidecar, never part of how rGNFS computes. CI-eager violates this policy by making the oracle
+  sidecar, never part of how rDLP computes. CI-eager violates this policy by making the oracle
   mandatory — a CI failure due to CADO unavailability or a CADO version change would block the
   green path. The `#[ignore]` gate is the policy's mechanical expression; the trigger model must
   honor it.
@@ -1628,7 +1628,7 @@ Two trigger models are possible:
   currently runs `cargo test --workspace` only. The pedagogical library's CI should remain fast
   and dependency-light.
 - **Dependency surface.** CI-eager requires GCC/Clang, CMake, GMP, and Python in the CI
-  environment. The current rGNFS CI surface is pure Rust (`cargo`). Adding a C/C++ build
+  environment. The current rDLP CI surface is pure Rust (`cargo`). Adding a C/C++ build
   dependency to the mandatory CI path is a scope expansion that ORACLE must justify — and the
   arc-1 policy already answers: it is not justified for the mandatory path.
 - **Opt-in CI flag is sufficient.** A CI job variant (e.g., a separate GitHub Actions job or a
@@ -1729,22 +1729,22 @@ committing to a pin. If only `git-2.0.1` is accessible, pin to that.
 
 The four existing `#[ignore]`-gated stubs define the comparison surface ORACLE must implement:
 
-| Test | rGNFS output | CADO-NFS output | Comparison |
+| Test | rDLP output | CADO-NFS output | Comparison |
 |---|---|---|---|
-| `line_sieve_kat.rs` `kat_c_cado_nfs_oracle` | Relation count from `line_sieve` at matched polynomial + factor-base bounds | Relation count from `cado-nfs.py` at same parameters | rGNFS count ≥ CADO count / 3.0 (CADO finds more via large-prime relations) |
-| `merge_kat.rs` `kat_c_cado_nfs_oracle` | Filtered matrix dimensions (rows, cols, Hamming weight) from rGNFS filtering pipeline | Filtered matrix dimensions from CADO's `.mat` output at matched parameters | Dimensions within ±10% of CADO's output |
+| `line_sieve_kat.rs` `kat_c_cado_nfs_oracle` | Relation count from `line_sieve` at matched polynomial + factor-base bounds | Relation count from `cado-nfs.py` at same parameters | rDLP count ≥ CADO count / 3.0 (CADO finds more via large-prime relations) |
+| `merge_kat.rs` `kat_c_cado_nfs_oracle` | Filtered matrix dimensions (rows, cols, Hamming weight) from rDLP filtering pipeline | Filtered matrix dimensions from CADO's `.mat` output at matched parameters | Dimensions within ±10% of CADO's output |
 | `lanczos_kat.rs` `kat_c_cado_oracle_n35` | Lanczos kernel vector expanded through provenance to a factor of N=35 | CADO-NFS factor of N=35 | Both recover the same nontrivial factor (5 or 7) |
 | `factor_end_to_end_kat.rs` `kat_c_oracle_80_100_bit_challenge` | Full GNFS pipeline factor of an 80–100-bit semiprime | CADO-NFS factor of the same semiprime | Both recover the same nontrivial factor |
 
-**What the sidecar does NOT gate:** rGNFS's correctness on the green path. The green-path KATs
+**What the sidecar does NOT gate:** rDLP's correctness on the green path. The green-path KATs
 (the 53 external `*_kat.rs` files and the inline `#[test]` blocks) are self-contained — they do
 not require CADO. The sidecar gates only the cross-validation comparisons, which are opt-in.
 
-**What the sidecar enables:** the comparisons above validate that rGNFS's GNFS pipeline stages
+**What the sidecar enables:** the comparisons above validate that rDLP's GNFS pipeline stages
 (sieving, filtering, linear algebra, end-to-end) produce outputs that are quantitatively
 consistent with CADO-NFS at matched parameters. This is the "live correctness oracle" the ROADMAP
 charges ORACLE to build. The comparisons are not equality checks — they are tolerance-bounded
-consistency checks, because rGNFS is a demonstration-fidelity implementation (no large-prime
+consistency checks, because rDLP is a demonstration-fidelity implementation (no large-prime
 relations, no FFT sieve) while CADO is a production implementation.
 
 ---
@@ -1754,10 +1754,10 @@ relations, no FFT sieve) while CADO is a production implementation.
 **Falsifiable finding:**
 
 > **The CADO-NFS sidecar gates exactly four comparison tests, each with a documented tolerance:**
-> (1) relation count from line sieve: rGNFS ≥ CADO / 3.0; (2) filtered matrix dimensions: within
+> (1) relation count from line sieve: rDLP ≥ CADO / 3.0; (2) filtered matrix dimensions: within
 > ±10% of CADO; (3) Lanczos factor of N=35: same nontrivial factor as CADO; (4) end-to-end factor
 > of an 80–100-bit semiprime: same nontrivial factor as CADO. The comparisons are
-> tolerance-bounded, not equality checks, because rGNFS is a demonstration-fidelity
+> tolerance-bounded, not equality checks, because rDLP is a demonstration-fidelity
 > implementation. ORACLE implements these four tests by filling in the `unimplemented!` / `todo!`
 > stubs in the existing test files.
 >
@@ -1786,8 +1786,8 @@ The policy has three components:
    never runs them.
 2. **Never a production dependency.** CADO-NFS is not a `[dev-dependencies]` entry in any
    `Cargo.toml`; it is an external tool invoked by a test stub.
-3. **Opt-in validation only.** The oracle validates rGNFS outputs; it does not compute them.
-   rGNFS's GNFS pipeline is self-contained; CADO is a cross-check, not a component.
+3. **Opt-in validation only.** The oracle validates rDLP outputs; it does not compute them.
+   rDLP's GNFS pipeline is self-contained; CADO is a cross-check, not a component.
 
 #### How the sidecar design honors the policy
 
@@ -1796,16 +1796,16 @@ The lazy/on-demand + opt-in CI flag trigger model (F-D6-01) directly honors all 
 - **Never on the green path:** the `#[ignore]` gate is preserved; the sidecar is not built in
   the standard CI run.
 - **Never a production dependency:** CADO-NFS is built as an external binary sidecar, not linked
-  into the rGNFS workspace. No `Cargo.toml` entry is added.
-- **Opt-in validation only:** the sidecar's role is comparison (rGNFS output vs CADO output at
-  matched parameters). The comparison is always rGNFS-first: rGNFS computes the output; CADO
+  into the rDLP workspace. No `Cargo.toml` entry is added.
+- **Opt-in validation only:** the sidecar's role is comparison (rDLP output vs CADO output at
+  matched parameters). The comparison is always rDLP-first: rDLP computes the output; CADO
   validates it. The direction is never reversed.
 
 The tolerance-bounded comparison design (F-D6-03) also honors the policy: the tolerances
-acknowledge that rGNFS is a demonstration-fidelity implementation, not a CADO clone. A strict
-equality check would conflate "rGNFS is correct" with "rGNFS matches CADO exactly" — the latter
-is false by design (rGNFS has no large-prime relations, no FFT sieve). The tolerance-bounded
-check is the honest oracle: it validates that rGNFS is in the right ballpark, not that it
+acknowledge that rDLP is a demonstration-fidelity implementation, not a CADO clone. A strict
+equality check would conflate "rDLP is correct" with "rDLP matches CADO exactly" — the latter
+is false by design (rDLP has no large-prime relations, no FFT sieve). The tolerance-bounded
+check is the honest oracle: it validates that rDLP is in the right ballpark, not that it
 replicates CADO's engineering optimizations.
 
 ---
@@ -1817,7 +1817,7 @@ replicates CADO's engineering optimizations.
 > **The CADO-NFS sidecar honors the arc-1 dev-oracle policy on all three axes:**
 > (1) never on the green path — `#[ignore]` gate preserved, `cargo test --workspace` never runs
 > oracle tests; (2) never a production dependency — CADO-NFS is an external binary, no
-> `Cargo.toml` entry; (3) opt-in validation only — rGNFS computes, CADO validates, never the
+> `Cargo.toml` entry; (3) opt-in validation only — rDLP computes, CADO validates, never the
 > reverse. The tolerance-bounded comparison design (F-D6-03) is the honest oracle: it validates
 > correctness-in-ballpark, not engineering-optimization parity.
 >
@@ -1826,8 +1826,8 @@ replicates CADO's engineering optimizations.
 >   `Cargo.toml`. A `Cargo.toml` delta touching CADO is a policy violation.
 > - ORACLE must not change the `#[ignore]` attribute on any of the four oracle tests. Removing
 >   `#[ignore]` is a policy violation.
-> - The comparison direction is always rGNFS-first: rGNFS computes the output, CADO validates.
->   A test that calls CADO to compute a result and then checks rGNFS against it is a policy
+> - The comparison direction is always rDLP-first: rDLP computes the output, CADO validates.
+>   A test that calls CADO to compute a result and then checks rDLP against it is a policy
 >   violation.
 
 *Feeds ORACLE; seeds C-Oracle (sketch).*
@@ -2353,7 +2353,7 @@ The boundary is the falsifiable contract: a downstream session is checked agains
 
 #### ALIGN (B) — formalities reconciliation (A.1, F-D1-01…12)
 
-*In scope:* add the 8 absent root formalities items as backports and seed the 3 rGNFS→template
+*In scope:* add the 8 absent root formalities items as backports and seed the 3 rDLP→template
 forward-seeds.
 
 | Finding | Source | In-scope action | Defocus boundary |
@@ -2387,10 +2387,10 @@ coverage gate value is an open-Q (below); ALIGN calibrates the number against a 
 | F-D6-01 | A.5 | Lazy/on-demand + opt-in CI flag trigger; `#[ignore]` gate preserved | Must NOT promote oracle tests to the green path |
 | F-D6-02 | A.5 | Pin to git tag on GitHub mirror, tag + commit hash recorded; minimum `git-2.0.1` (`88c4751`) | Must clone/download pinned tag, not `master` or `HEAD` |
 | F-D6-03 | A.5 | Implement the four existing `#[ignore]`-gated stubs as tolerance-bounded consistency checks (relation count ≥ CADO/3.0; matrix dims ±10%; N=35 factor; 80–100-bit factor) | Must not add new oracle tests beyond the four stubs; must not change tolerances without documented rationale |
-| F-D6-04 | A.5 | Sidecar is validation-only, never on green path, never a `Cargo.toml` dependency | Must not add CADO to any `[dev-dependencies]`; must not remove `#[ignore]`; comparison direction is always rGNFS-first |
+| F-D6-04 | A.5 | Sidecar is validation-only, never on green path, never a `Cargo.toml` dependency | Must not add CADO to any `[dev-dependencies]`; must not remove `#[ignore]`; comparison direction is always rDLP-first |
 
 *Defocus boundary:* ORACLE must NOT promote any oracle test to the green path, add CADO to any
-`Cargo.toml`, reverse the rGNFS-first comparison direction, or add new oracle tests beyond the
+`Cargo.toml`, reverse the rDLP-first comparison direction, or add new oracle tests beyond the
 four stubs. Build-automation-intricacy (opus-ORACLE) is an ORACLE-internal call.
 
 ---
@@ -2546,9 +2546,9 @@ a faint planning-shaped silhouette in the section structure.)*
 | F-D1-07 | A.1 | ALIGN | `development.md` absent |
 | F-D1-08 | A.1 | ALIGN | `.cargo/config.toml` absent |
 | F-D1-09 | A.1 | ALIGN | `AGENTS.md` absent |
-| F-D1-10 | A.1 | ALIGN | multisession docs layering (rGNFS → template) |
-| F-D1-11 | A.1 | ALIGN | dev-oracle policy (rGNFS → template) |
-| F-D1-12 | A.1 | ALIGN | docs-register contracts (rGNFS → template) |
+| F-D1-10 | A.1 | ALIGN | multisession docs layering (rDLP → template) |
+| F-D1-11 | A.1 | ALIGN | dev-oracle policy (rDLP → template) |
+| F-D1-12 | A.1 | ALIGN | docs-register contracts (rDLP → template) |
 | F-D5-01 | A.2 | REFACTOR | `rho` hosts 8 Track-E modules (open-Q 1) |
 | F-D5-02 | A.2 | REFACTOR | `rho/src/field/` + `rho/src/util/` re-export wrappers; `batch_invert` tests duplicated |
 | F-D5-03 | A.2 | — | No dedup needed in `shared/*` |

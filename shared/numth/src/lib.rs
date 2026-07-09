@@ -1,4 +1,4 @@
-//! Number-theoretic primitives for the rGNFS project.
+//! Number-theoretic primitives for the rDLP project.
 //!
 //! This crate provides three families of primitives consumed by NFS sieving
 //! (`gnfs::sieve`), NFS-DL relation collection (`gnfs::dl`), and ECDLP index calculus

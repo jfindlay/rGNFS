@@ -1,6 +1,6 @@
-# rGNFS: A Survey of Discrete-Logarithm and Integer-Factorisation Algorithms
+# rDLP: A Survey of Discrete-Logarithm and Integer-Factorisation Algorithms
 
-rGNFS is a complete pedagogical treatment of discrete-logarithm solutions and integer-factorisation
+rDLP is a complete pedagogical treatment of discrete-logarithm solutions and integer-factorisation
 strategies — classical and quantum — organised by a single through-line: **structure-based escape
 from search**. Every algorithm in the library finds exploitable algebraic structure that escapes the
 generic $\sqrt{n}$ or $L$-notation search bound. The project surveys that escape hierarchy from the
@@ -288,7 +288,7 @@ rho/
 
 ## Design statement and honest scope
 
-rGNFS demonstrates the *mathematics* of each structure-based escape from the search bound at toy
+rDLP demonstrates the *mathematics* of each structure-based escape from the search bound at toy
 scale. It is not a cryptographically-relevant implementation: the parameters are small enough to
 run in seconds on a laptop, the code is not constant-time, and no attack here threatens real-world
 key sizes. The project's honest terminus is this: every escape family is surveyed, implemented, and

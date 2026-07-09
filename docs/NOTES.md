@@ -1,4 +1,4 @@
-# rGNFS — Notes
+# rDLP — Notes
 
 Rolling-context durable framings, decisions, and mental models. Distinct from `docs/PLAN.md`
 (current sub-track) and `docs/ROADMAP.md` (project-lifetime view). Captured framings that prove
